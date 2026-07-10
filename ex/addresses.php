@@ -213,12 +213,13 @@ function nxAddressesRenderSubjectDataAttributes($aSubject) {
     }
     $sHtml .= " data-primary=\"" . ((int)$aSubject["is_primary"] === 1 ? "1" : "0") . "\"";
     $sHtml .= " data-active=\"" . ((int)$aSubject["address_is_active"] === 1 ? "1" : "0") . "\"";
+    $sHtml .= " data-subject-active=\"" . (!empty($aSubject["is_active"]) ? "1" : "0") . "\"";
     return $sHtml;
 }
 
 function nxAddressesSubjectCellClass($aSubject) {
     $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aSubject["subject_type"]));
-    return "nx-address-subject-cell nx-address-subject-type-" . $sSubjectType . (!empty($aSubject["is_active"]) ? " nx-address-subject-active" : " nx-address-subject-inactive");
+    return "nx-address-subject-cell nx-address-subject-type-" . $sSubjectType . (!empty($aSubject["is_active"]) && (int)$aSubject["address_is_active"] === 1 ? " nx-address-subject-active" : " nx-address-subject-inactive");
 }
 
 function nxAddressesTypeLabel($sAddressType) {
@@ -234,6 +235,7 @@ function nxAddressesFetchRows($oPdo, $aAddressSettings) {
             continue;
         }
         $aSubjectNames[(int)$aSubjectRow["subject_id"]] = array(
+            "subject_id" => (int)$aSubjectRow["subject_id"],
             "subject_name" => (string)$aSubjectRow["subject_name"],
             "subject_type" => (string)$aSubjectRow["subject_type"],
             "is_active" => (int)$aSubjectRow["is_active"] === 1
@@ -322,6 +324,137 @@ $aAddressSettings = nxApplyExCountrySettings($aAddressSettings);
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     requireExCsrfToken();
+}
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "get_subject") {
+    if (!$blCanEdit) {
+        nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
+    }
+    $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
+    if ($iSubjectId < 1) {
+        nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
+    }
+    try {
+        $aSubject = nxFetchSubjectEditorData($oPdo, $iSubjectId);
+        if (!$aSubject) {
+            nxSendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
+        }
+        nxSendJsonAndExit(array("success" => true, "subject" => $aSubject));
+    } catch (Exception $oException) {
+        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_subject") {
+    if (!$blCanEdit) {
+        nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
+    }
+    $sPayload = nxGetPostedValue("subject_payload");
+    $aPayload = $sPayload !== "" ? json_decode($sPayload, true) : null;
+    if (!is_array($aPayload)) {
+        nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject data."), 400);
+    }
+
+    $iSubjectId = isset($aPayload["subject_id"]) ? (int)$aPayload["subject_id"] : 0;
+    $sSubjectType = nxPayloadValue($aPayload, "subject_type");
+    $sBirthDate = nxPayloadValue($aPayload, "birth_date");
+    $sDeathDate = nxPayloadValue($aPayload, "death_date");
+    $sBirthNumber = nxNormalizeBirthNumber(nxPayloadValue($aPayload, "birth_number"));
+    if ($iSubjectId < 1) {
+        nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
+    }
+    if ($sSubjectType !== "" && !in_array($sSubjectType, nxGetSubjectTypes(), true)) {
+        nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject type."), 400);
+    }
+    if ($sBirthDate !== "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sBirthDate)) {
+        nxSendJsonAndExit(array("success" => false, "message" => "Birth date must use YYYY-MM-DD."), 400);
+    }
+    if ($sDeathDate !== "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDeathDate)) {
+        nxSendJsonAndExit(array("success" => false, "message" => "Death date must use YYYY-MM-DD."), 400);
+    }
+    if ($sBirthNumber === false) {
+        nxSendJsonAndExit(array("success" => false, "message" => "Birth number must contain 9 or 10 digits."), 400);
+    }
+
+    try {
+        $oPdo->beginTransaction();
+        $oStatement = $oPdo->prepare("SELECT id, subject_type FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
+        $oStatement->execute(array("subject_id" => $iSubjectId));
+        $aSubjectRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+        if (!$aSubjectRow) {
+            $oPdo->rollBack();
+            nxSendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
+        }
+        if ($sSubjectType !== "" && $sSubjectType !== (string)$aSubjectRow["subject_type"]) {
+            $oPdo->rollBack();
+            nxSendJsonAndExit(array("success" => false, "message" => "Subject type cannot be changed."), 409);
+        }
+        $sEffectiveSubjectType = (string)$aSubjectRow["subject_type"];
+
+        $oStatement = $oPdo->prepare("UPDATE ex_subjects SET is_active = :is_active WHERE id = :subject_id");
+        $oStatement->execute(array(
+            "is_active" => nxPayloadFlag($aPayload, "is_active"),
+            "subject_id" => $iSubjectId
+        ));
+
+        $sSubjectName = nxPayloadValue($aPayload, "subject_name_value");
+        if ($sEffectiveSubjectType === "person" || $sSubjectName === "") {
+            $oStatement = $oPdo->prepare("DELETE FROM ex_subject_names WHERE subject_id = :subject_id");
+            $oStatement->execute(array("subject_id" => $iSubjectId));
+        } else {
+            $oStatement = $oPdo->prepare("INSERT INTO ex_subject_names (subject_id, name) VALUES (:subject_id, :name) ON DUPLICATE KEY UPDATE name = VALUES(name)");
+            $oStatement->execute(array("subject_id" => $iSubjectId, "name" => $sSubjectName));
+        }
+
+        if ($sEffectiveSubjectType !== "person") {
+            $oStatement = $oPdo->prepare("DELETE FROM ex_persons WHERE subject_id = :subject_id");
+            $oStatement->execute(array("subject_id" => $iSubjectId));
+        } else {
+            $aPersonValues = array(
+                "title_before" => nxDbValue(nxPayloadValue($aPayload, "title_before")),
+                "first_name" => nxDbValue(nxPayloadValue($aPayload, "first_name")),
+                "middle_name" => nxDbValue(nxPayloadValue($aPayload, "middle_name")),
+                "last_name" => nxDbValue(nxPayloadValue($aPayload, "last_name")),
+                "title_after" => nxDbValue(nxPayloadValue($aPayload, "title_after")),
+                "birth_name" => nxDbValue(nxPayloadValue($aPayload, "birth_name")),
+                "birth_number" => nxDbValue($sBirthNumber),
+                "birth_date" => $sBirthDate !== "" ? $sBirthDate : null,
+                "death_date" => $sDeathDate !== "" ? $sDeathDate : null
+            );
+            $blHasPersonValues = false;
+            foreach ($aPersonValues as $mValue) {
+                if ($mValue !== null) {
+                    $blHasPersonValues = true;
+                    break;
+                }
+            }
+            $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_persons WHERE subject_id = :subject_id");
+            $oStatement->execute(array("subject_id" => $iSubjectId));
+            $blHasPersonRow = (bool)$oStatement->fetch(PDO::FETCH_ASSOC);
+            if ($blHasPersonValues || $blHasPersonRow) {
+                if ($blHasPersonRow && !$blHasPersonValues) {
+                    $oStatement = $oPdo->prepare("DELETE FROM ex_persons WHERE subject_id = :subject_id");
+                    $oStatement->execute(array("subject_id" => $iSubjectId));
+                } elseif ($blHasPersonRow) {
+                    $oStatement = $oPdo->prepare("UPDATE ex_persons SET title_before = :title_before, first_name = :first_name, middle_name = :middle_name, last_name = :last_name, title_after = :title_after, birth_name = :birth_name, birth_number = :birth_number, birth_date = :birth_date, death_date = :death_date WHERE subject_id = :subject_id");
+                    $aPersonValues["subject_id"] = $iSubjectId;
+                    $oStatement->execute($aPersonValues);
+                } else {
+                    $oStatement = $oPdo->prepare("INSERT INTO ex_persons (subject_id, title_before, first_name, middle_name, last_name, title_after, birth_name, birth_number, birth_date, death_date) VALUES (:subject_id, :title_before, :first_name, :middle_name, :last_name, :title_after, :birth_name, :birth_number, :birth_date, :death_date)");
+                    $aPersonValues["subject_id"] = $iSubjectId;
+                    $oStatement->execute($aPersonValues);
+                }
+            }
+        }
+
+        $oPdo->commit();
+        nxSendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId, "reload_required" => true));
+    } catch (Exception $oException) {
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "save_addresses_settings") {
@@ -544,9 +677,10 @@ foreach ($aAddressRows as $aAddressRow) {
     }
     foreach ($aAddressRow["subjects"] as $aSubject) {
         $sSubjectActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject-address-local\" title=\"Edit subject address\" aria-label=\"Edit subject address\">" . $sEditActionEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-subject-address-local\" title=\"Delete subject address\" aria-label=\"Delete subject address\">" . $sDeleteActionEmoji . "</a></span>" : "";
+        $sSubjectEditAction = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $sEditActionEmoji . "</a></span>" : "";
         $sSubjectValueClass = "nx-subject-item-value" . ((string)$aSubject["address_values"]["address_type"] === "main" ? " nx-subject-address-main-value" : "");
-        $sSubjectPrimaryFlag = "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ((int)$aSubject["is_primary"] === 1 ? "&#11088;" : "") . "</span></span>";
-        echo "      <tr>\n";
+        $sSubjectPrimaryFlag = "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ((int)$aSubject["is_primary"] === 1 ? "&#11088;" : "") . "</span><span title=\"Inactive\">" . ((int)$aSubject["address_is_active"] === 1 ? "" : "&#9940;") . "</span></span>";
+        echo "      <tr data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\">\n";
         if ($blFirstSubject) {
             echo "        <td class=\"nx-address-cell\" rowspan=\"" . nxHtml($iSubjectCount) . "\"" . nxAddressesRenderDataAttributes($aAddressRow) . ">"
                 . "<span class=\"nx-subject-item-value\">" . nxHtmlValue($aAddressRow["address_text"]) . "</span>"
@@ -555,7 +689,7 @@ foreach ($aAddressRows as $aAddressRow) {
                 . "</td>\n";
             $blFirstSubject = false;
         }
-        echo "        <td class=\"" . nxHtml(nxAddressesSubjectCellClass($aSubject)) . " nx-list-item nx-subject-address-item\"" . nxAddressesRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sAddressFilterText) . "</span><span class=\"" . nxHtml($sSubjectValueClass) . "\">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectPrimaryFlag . $sSubjectActions . "</td>\n"
+        echo "        <td class=\"" . nxHtml(nxAddressesSubjectCellClass($aSubject)) . " nx-list-item nx-subject-address-item\"" . nxAddressesRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sAddressFilterText) . "</span><span class=\"" . nxHtml($sSubjectValueClass) . "\">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . $sSubjectPrimaryFlag . $sSubjectActions . "</td>\n"
             . "      </tr>\n";
     }
 }
