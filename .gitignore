@@ -1,0 +1,16 @@
+# Ignore everything in the project root by default.
+/*
+
+# Keep Git ignore rules and the two tracked subprojects.
+!/.gitignore
+!/ex/
+!/ex/**
+!/film/
+!/film/**
+
+# Do not track the root reference PDF.
+/reference.pdf
+
+# In film/img, track only .htaccess.
+/film/img/*
+!/film/img/.htaccess
