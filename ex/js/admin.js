@@ -1287,6 +1287,63 @@ document.addEventListener("click", function (oEvent) {
 }, true);
 
 document.addEventListener("DOMContentLoaded", function () {
+    var aRows = document.querySelectorAll("table tbody tr");
+    var sHoverColor = "#fff3cd";
+    var sSelectedColor = "#cfe2ff";
+
+    function getCurrentRowColor(oRow) {
+        if (oRow.getAttribute("data-saved") == "1") {
+            return "#dff0d8";
+        }
+        if (oRow.getAttribute("data-confirming") == "1") {
+            return "#cfe2ff";
+        }
+        if (oRow.getAttribute("data-selected") == "1") {
+            return sSelectedColor;
+        }
+        if (oRow.getAttribute("data-hover") == "1") {
+            return sHoverColor;
+        }
+        return "";
+    }
+
+    function applyRowColor(oRow) {
+        var sColor = getCurrentRowColor(oRow);
+        var aCells = oRow.cells || oRow.querySelectorAll("td");
+        var iI;
+        oRow.style.backgroundColor = sColor;
+        for (iI = 0; iI < aCells.length; iI += 1) {
+            aCells[iI].style.backgroundColor = sColor;
+        }
+    }
+
+    function bindTableRow(oRow) {
+        if (!oRow || oRow.getAttribute("data-admin-row-bound") == "1") {
+            return;
+        }
+        oRow.setAttribute("data-admin-row-bound", "1");
+        oRow.addEventListener("mouseenter", function () {
+            this.setAttribute("data-hover", "1");
+            applyRowColor(this);
+        });
+        oRow.addEventListener("mouseleave", function () {
+            this.setAttribute("data-hover", "0");
+            applyRowColor(this);
+        });
+        oRow.addEventListener("click", function () {
+            this.setAttribute("data-selected", this.getAttribute("data-selected") == "1" ? "0" : "1");
+            applyRowColor(this);
+        });
+        applyRowColor(oRow);
+    }
+
+    window.nxBindAdminTableRow = bindTableRow;
+    for (var iI = 0; iI < aRows.length; iI += 1) {
+        bindTableRow(aRows[iI]);
+    }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
     var oCanvas = document.getElementById("schema-canvas");
     var oSvg = document.getElementById("schema-lines");
     var aRelations = document.querySelectorAll(".schema-relations tbody tr");
