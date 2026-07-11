@@ -1,3 +1,8 @@
+html,
+body {
+    overscroll-behavior-y: none;
+}
+
 body {
     font-family: sans-serif;
     background: #F8F8F8;
@@ -125,16 +130,25 @@ select {
 }
 
 .confirm-dialog {
-    align-items: center;
     background: rgba(0, 0, 0, 0.25);
-    bottom: 0;
-    display: flex;
-    justify-content: center;
+    box-sizing: border-box;
+    display: block;
+    height: 100vh;
     left: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 40px 24px;
     position: fixed;
-    right: 0;
     top: 0;
+    width: 100vw;
     z-index: 2000;
+}
+
+@supports (height: 100dvh) {
+    .confirm-dialog {
+        height: 100dvh;
+        width: 100dvw;
+    }
 }
 
 .confirm-dialog-box {
@@ -142,8 +156,10 @@ select {
     background: #FFF;
     border: 1px solid #C0C0C0;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+    margin: 0 auto;
     max-width: 520px;
-    width: calc(100% - 48px);
+    width: 100%;
 }
 
 .confirm-dialog-header {

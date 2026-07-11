@@ -2,6 +2,7 @@ var iAdminModalCount = 0;
 var sAdminBodyOverflow = "";
 var iAdminScrollLeft = 0;
 var iAdminScrollTop = 0;
+var aRenderThrobbers = null;
 
 function logAdminException(oException) {
     if (window.console && window.console.error) {
@@ -190,6 +191,33 @@ function removeAdminClass(oElement, sClass) {
         oElement.className = (" " + oElement.className + " ").replace(" " + sClass + " ", " ").replace(/^\s+|\s+$/g, "");
     }
 }
+
+function prepareRenderThrobbers() {
+    aRenderThrobbers = document.querySelectorAll(".js-render-throbber");
+}
+
+function scheduleRenderThrobberHide() {
+    var aThrobbers = aRenderThrobbers || document.querySelectorAll(".js-render-throbber");
+    if (!aThrobbers || aThrobbers.length === 0) {
+        return;
+    }
+
+    function hideRenderThrobbers() {
+        for (var iI = 0; iI < aThrobbers.length; iI += 1) {
+            aThrobbers[iI].hidden = true;
+        }
+    }
+
+    if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(hideRenderThrobbers);
+        });
+        return;
+    }
+    window.setTimeout(hideRenderThrobbers, 0);
+}
+
+document.addEventListener("DOMContentLoaded", prepareRenderThrobbers);
 
 function setAdminMergeSourceListColumns(oDialog, oSourceList, iRenderedCount) {
     var iColumnCount = Math.max(1, Math.ceil(iRenderedCount / 10));
@@ -5446,3 +5474,5 @@ document.addEventListener("DOMContentLoaded", function () {
         })
     }
 });
+
+document.addEventListener("DOMContentLoaded", scheduleRenderThrobberHide);

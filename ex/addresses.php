@@ -655,6 +655,21 @@ $iTime = sendPageHeaders();
       </div>
     </form>
   </div>
+<?php
+
+if (count($aAddressRows) > 0) {
+
+?>
+  <div class="render-throbber js-render-throbber" role="status" aria-live="polite">
+    <div class="render-throbber-box">
+      <span class="render-throbber-icon" aria-hidden="true">&#8987;</span>
+    </div>
+  </div>
+<?php
+
+}
+
+?>
   <table id="nx-addresses-table" class="nx-contacts-table table-filter-target">
     <thead>
       <tr>

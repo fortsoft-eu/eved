@@ -188,6 +188,11 @@ if (count($aRows) === 0) {
 } else {
 
 ?>
+  <div class="render-throbber js-render-throbber" role="status" aria-live="polite">
+    <div class="render-throbber-box">
+      <span class="render-throbber-icon" aria-hidden="true">&#8987;</span>
+    </div>
+  </div>
   <table id="nx-contacts-table" class="nx-contacts-table table-filter-target">
     <thead>
       <tr>
