@@ -242,7 +242,6 @@ input[type="text"] {
 
 .render-throbber-icon {
     font-size: 36px;
-    line-height: 1;
 }
 
 @supports (height: 100dvh) {
@@ -300,7 +299,6 @@ input[type="text"] {
     border: 0;
     color: #000;
     font-size: 20px;
-    line-height: 1;
     margin: 0;
     padding: 0 16px;
     width: auto;
@@ -426,7 +424,6 @@ table {
     cursor: default;
     font-size: 14px;
     height: 28px;
-    line-height: 1;
     margin-top: 0;
     padding: 0;
     width: 28px;
@@ -469,7 +466,6 @@ table {
 .ex-menu-icon {
     flex: 0 0 20px;
     font-size: inherit;
-    line-height: 1;
     text-align: center;
 }
 
@@ -571,7 +567,6 @@ table {
 }
 
 .complex-filter-remove {
-    line-height: 1;
     margin-top: 0;
     padding: 4px 0;
     width: 28px;
@@ -597,7 +592,6 @@ table {
     display: inline-flex;
     height: 32px;
     justify-content: center;
-    line-height: 1;
     overflow-wrap: normal;
     padding: 6px;
     position: fixed;
@@ -698,11 +692,11 @@ table {
 td,
 th {
     border: 1px solid #C0C0C0;
+    height: 18px;
     padding: 1px 2px;
     text-align: left;
+    vertical-align: top;
     white-space: nowrap;
-    height: 18px;
-    line-height: 1.35;
 }
 
 th {
@@ -797,7 +791,6 @@ tr:nth-child(even) {
 .schema-table th {
     vertical-align: top;
     height: auto;
-    line-height: 1.25;
     white-space: normal;
     overflow-wrap: normal;
     word-break: normal;
@@ -1201,7 +1194,6 @@ body.phpinfo-page .admin-controls {
 
 .nx-contact-item,
 .nx-subject-item {
-    line-height: 1.35;
 }
 
 .nx-list-item-actions {
@@ -1209,7 +1201,6 @@ body.phpinfo-page .admin-controls {
 }
 
 .nx-add-item-row {
-    line-height: 1.35;
     text-align: left;
     white-space: nowrap;
 }
@@ -1217,12 +1208,12 @@ body.phpinfo-page .admin-controls {
 .nx-item-action {
     border: 0;
     color: inherit;
-    display: inline;
+    display: inline-block;
     font-size: inherit;
-    line-height: inherit;
     margin-left: 1px;
     padding: 0;
     text-decoration: none;
+    vertical-align: top;
 }
 
 .nx-item-action:hover {
@@ -1334,7 +1325,9 @@ body.phpinfo-page .admin-controls {
 }
 
 .nx-hidden-inactive-indicator {
+    display: inline-block;
     margin-left: 1px;
+    vertical-align: top;
 }
 
 .nx-contact-item-inactive,
@@ -1344,17 +1337,19 @@ body.phpinfo-page .admin-controls {
 
 .nx-contact-copy,
 .nx-copy-action {
+    display: inline-block;
     font-size: inherit;
-    line-height: inherit;
     margin-left: 0;
     text-decoration: none;
+    vertical-align: top;
 }
 
 .nx-contact-link {
+    display: inline-block;
     font-size: inherit;
-    line-height: inherit;
     margin-left: 1px;
     text-decoration: none;
+    vertical-align: top;
 }
 
 .nx-contact-copy:hover,
@@ -1366,7 +1361,7 @@ body.phpinfo-page .admin-controls {
 .nx-copy-action-box {
     display: inline-block;
     text-align: right;
-    vertical-align: baseline;
+    vertical-align: top;
     width: 1.35em;
 }
 
@@ -1383,7 +1378,9 @@ body.phpinfo-page .admin-controls {
 
 .nx-contact-flags span:not(:empty),
 .nx-subject-item-flags span:not(:empty) {
+    display: inline-block;
     margin-left: 1px;
+    vertical-align: top;
 }
 
 .nx-subject-item-list {
@@ -1490,7 +1487,6 @@ body.phpinfo-page .admin-controls {
 }
 
 .portal-help-list dd {
-    line-height: 1.45;
     margin: 6px 0 20px 24px;
     max-width: 980px;
 }

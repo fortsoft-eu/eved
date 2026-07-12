@@ -198,7 +198,6 @@ input[type="text"] {
     border: 0;
     color: #000;
     font-size: 20px;
-    line-height: 1;
     margin: 0;
     padding: 0 16px;
     width: auto;
@@ -296,7 +295,6 @@ table {
     display: inline-flex;
     height: 32px;
     justify-content: center;
-    line-height: 1;
     overflow-wrap: normal;
     padding: 6px;
     position: fixed;
@@ -491,7 +489,6 @@ tr:nth-child(even) {
 .schema-table th {
     vertical-align: top;
     height: auto;
-    line-height: 1.25;
     white-space: normal;
     overflow-wrap: normal;
     word-break: normal;
