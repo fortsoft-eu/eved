@@ -15,6 +15,11 @@ function getAdminCsrfToken() {
     return oMeta ? (oMeta.getAttribute("content") || "") : "";
 }
 
+function getAdminEmoji(sName) {
+    var oData = document.getElementById("nx-emoji-data");
+    return oData ? (oData.getAttribute("data-" + sName) || "") : "";
+}
+
 function appendAdminCsrfToken(oData) {
     var sToken = getAdminCsrfToken();
     if (oData && sToken) {
@@ -84,6 +89,17 @@ function dispatchAdminInputEvent(oElement) {
         oEvent.initEvent("input", true, true);
     }
     oElement.dispatchEvent(oEvent);
+}
+
+function refreshAdminTableFilter() {
+    dispatchAdminInputEvent(document.querySelector(".js-table-filter"));
+}
+
+function closeAdminDialogElement(oDialog) {
+    if (oDialog && oDialog.parentNode) {
+        oDialog.parentNode.removeChild(oDialog);
+        unlockAdminModalScroll();
+    }
 }
 
 function copyAdminTextWithTextarea(sText) {
@@ -229,7 +245,7 @@ function setAdminMergeSourceListColumns(oDialog, oSourceList, iRenderedCount) {
 }
 
 function findAdminSubjectRowById(sSubjectId) {
-    return sSubjectId ? document.querySelector("#nx-subjects-table tbody tr[data-subject-id=\"" + sSubjectId + "\"], #nx-birthdays-table tbody tr[data-subject-id=\"" + sSubjectId + "\"], #nx-interactions-table tbody tr[data-subject-id=\"" + sSubjectId + "\"]") : null;
+    return sSubjectId ? document.querySelector("#nx-subjects-table tbody tr[data-subject-id=\"" + sSubjectId + "\"], #nx-birthdays-table tbody tr[data-subject-id=\"" + sSubjectId + "\"], #nx-interactions-table tbody tr[data-subject-id=\"" + sSubjectId + "\"], #nx-contacts-table tbody tr[data-subject-id=\"" + sSubjectId + "\"]") : null;
 }
 
 function getAdminSubjectRow(oElement) {
@@ -525,8 +541,60 @@ document.addEventListener("DOMContentLoaded", function () {
         return aOptions && aOptions.length ? aOptions : [];
     }
 
+    function getComplexFilterSubjectTypeOptions() {
+        var sData = oRows ? (oRows.getAttribute("data-subject-type-options") || "[]") : "[]";
+        var aOptions = [];
+        try {
+            aOptions = JSON.parse(sData);
+        } catch (oException) {
+            logAdminException(oException);
+            aOptions = [];
+        }
+        return aOptions && aOptions.length ? aOptions : [];
+    }
+
     function isComplexFilterSelectValueType(sValueType) {
-        return sValueType == "boolean" || sValueType == "group" || sValueType == "address_type";
+        return sValueType == "boolean" || sValueType == "group" || sValueType == "subject_type" || sValueType == "address_type";
+    }
+
+    function isComplexFilterOperatorAllowed(sValueType, sOperator) {
+        if (sOperator == "") {
+            return true;
+        }
+        if (sValueType == "group" || sValueType == "subject_type" || sValueType == "address_type") {
+            return sOperator == "equals" || sOperator == "not_equals" || sOperator == "contains" || sOperator == "not_contains" || sOperator == "empty" || sOperator == "not_empty";
+        }
+        if (sValueType == "country") {
+            return sOperator == "equals" || sOperator == "not_equals" || sOperator == "contains" || sOperator == "not_contains" || sOperator == "empty" || sOperator == "not_empty";
+        }
+        return true;
+    }
+
+    function getComplexFilterDefaultOperator(sValueType) {
+        if (sValueType == "boolean" || sValueType == "country") {
+            return "equals";
+        }
+        return "contains";
+    }
+
+    function updateComplexFilterOperatorOptions(oOperator, sValueType) {
+        var oOption;
+        if (!oOperator) {
+            return;
+        }
+        for (var iI = 0; iI < oOperator.options.length; iI += 1) {
+            oOption = oOperator.options[iI];
+            if (isComplexFilterOperatorAllowed(sValueType, oOption.value)) {
+                oOption.hidden = false;
+                oOption.disabled = false;
+            } else {
+                oOption.hidden = true;
+                oOption.disabled = true;
+            }
+        }
+        if (!isComplexFilterOperatorAllowed(sValueType, oOperator.value)) {
+            oOperator.value = getComplexFilterDefaultOperator(sValueType);
+        }
     }
 
     function normalizeComplexFilterBooleanValue(sValue) {
@@ -648,6 +716,33 @@ document.addEventListener("DOMContentLoaded", function () {
         return oSelect;
     }
 
+    function createComplexFilterSubjectTypeSelect(sValue) {
+        var oSelect = document.createElement("select");
+        var oEmpty = document.createElement("option");
+        var aOptions = getComplexFilterSubjectTypeOptions();
+        var oOption;
+        var sCurrentValue = (sValue || "").toLowerCase();
+        oSelect.name = "complex_filter_value[]";
+        oSelect.className = "js-complex-filter-value";
+        oSelect.setAttribute("data-value-type", "subject_type");
+        oEmpty.value = "";
+        oEmpty.text = "";
+        oSelect.appendChild(oEmpty);
+        for (var iI = 0; iI < aOptions.length; iI += 1) {
+            oOption = document.createElement("option");
+            oOption.value = aOptions[iI].value;
+            oOption.text = aOptions[iI].label;
+            oSelect.appendChild(oOption);
+            if (sCurrentValue == String(aOptions[iI].value).toLowerCase() || sCurrentValue == String(aOptions[iI].label).toLowerCase()) {
+                oSelect.value = aOptions[iI].value;
+            }
+        }
+        if (!oSelect.value) {
+            oSelect.value = sValue || "";
+        }
+        return oSelect;
+    }
+
     function createComplexFilterTextInput(sValue, sValueType) {
         var oInput = document.createElement("input");
         oInput.name = "complex_filter_value[]";
@@ -676,6 +771,10 @@ document.addEventListener("DOMContentLoaded", function () {
             oValue = oNewValue;
         } else if (sValueType == "group" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "group")) {
             oNewValue = createComplexFilterGroupSelect(sCurrentValue);
+            oValue.parentNode.replaceChild(oNewValue, oValue);
+            oValue = oNewValue;
+        } else if (sValueType == "subject_type" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "subject_type")) {
+            oNewValue = createComplexFilterSubjectTypeSelect(sCurrentValue);
             oValue.parentNode.replaceChild(oNewValue, oValue);
             oValue = oNewValue;
         } else if (sValueType == "address_type" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "address_type")) {
@@ -825,6 +924,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oOperator || !oValue) {
             return;
         }
+        updateComplexFilterOperatorOptions(oOperator, sValueType);
         if (sValueType == "boolean") {
             oOperator.value = "equals";
             oOperator.disabled = true;
@@ -1233,9 +1333,6 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("DOMContentLoaded", function () {
     var aButtons = document.querySelectorAll(".js-copy-link");
 
-    function fallbackCopyLink(sText) {
-        return copyAdminTextWithTextarea(sText);
-    }
 
     function showCopyResult(oButton, blSuccess) {
         var sText = oButton.getAttribute("data-copy-text") || oButton.textContent;
@@ -1256,11 +1353,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 showCopyResult(oButton, true);
             }).catch(function (oException) {
                 logAdminException(oException);
-                showCopyResult(oButton, fallbackCopyLink(sLink));
+                showCopyResult(oButton, copyAdminTextWithTextarea(sLink));
             });
             return;
         }
-        showCopyResult(oButton, fallbackCopyLink(sLink));
+        showCopyResult(oButton, copyAdminTextWithTextarea(sLink));
     }
 
     for (var iI = 0; iI < aButtons.length; iI += 1) {
@@ -1280,18 +1377,16 @@ document.addEventListener("click", function (oEvent) {
     oEvent.stopPropagation();
     sValue = oButton.getAttribute("data-copy-value") || "";
 
-    function fallbackCopyValue(sText) {
-        return copyAdminTextWithTextarea(sText);
-    }
 
     function showCopyValueResult(blSuccess) {
         var oBox = oButton.querySelector ? oButton.querySelector(".nx-copy-action-box") : null;
         var sText = oButton.getAttribute("data-copy-text") || (oBox ? oBox.textContent : oButton.textContent);
+        var sResultText = blSuccess ? getAdminEmoji("copy-success") : getAdminEmoji("copy-failure");
         oButton.setAttribute("data-copy-text", sText);
         if (oBox) {
-            oBox.textContent = blSuccess ? "\u2714\uFE0F" : "\u274C\uFE0F";
+            oBox.textContent = sResultText;
         } else {
-            oButton.textContent = blSuccess ? "\u2714\uFE0F" : "\u274C\uFE0F";
+            oButton.textContent = sResultText;
         }
         window.setTimeout(function () {
             if (oBox) {
@@ -1307,15 +1402,14 @@ document.addEventListener("click", function (oEvent) {
             showCopyValueResult(true);
         }).catch(function (oException) {
             logAdminException(oException);
-            showCopyValueResult(fallbackCopyValue(sValue));
+            showCopyValueResult(copyAdminTextWithTextarea(sValue));
         });
         return;
     }
-    showCopyValueResult(fallbackCopyValue(sValue));
+    showCopyValueResult(copyAdminTextWithTextarea(sValue));
 }, true);
 
 document.addEventListener("DOMContentLoaded", function () {
-    var aRows = document.querySelectorAll("table tbody tr");
     var sHoverColor = "#fff3cd";
     var sSelectedColor = "#cfe2ff";
 
@@ -1345,6 +1439,28 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function isTableRowActionTarget(oTarget) {
+        if (oTarget && oTarget.nodeType == 3) {
+            oTarget = oTarget.parentNode;
+        }
+        return oTarget && oTarget.closest && oTarget.closest("a, button, input, select, textarea, label");
+    }
+
+    function copyTableRowState(oSourceRow, oTargetRow) {
+        if (!oSourceRow || !oTargetRow) {
+            return;
+        }
+        if ((" " + oSourceRow.className + " ").indexOf(" nx-admin-row-modal ") !== -1) {
+            addAdminClass(oTargetRow, "nx-admin-row-modal");
+        }
+        if (oSourceRow.getAttribute("data-selected") == "1") {
+            oTargetRow.setAttribute("data-selected", "1");
+        }
+        if (oSourceRow.getAttribute("data-hover") == "1") {
+            oTargetRow.setAttribute("data-hover", "1");
+        }
+    }
+
     function bindTableRow(oRow) {
         if (!oRow || oRow.getAttribute("data-admin-row-bound") == "1") {
             return;
@@ -1358,17 +1474,26 @@ document.addEventListener("DOMContentLoaded", function () {
             this.setAttribute("data-hover", "0");
             applyRowColor(this);
         });
-        oRow.addEventListener("click", function () {
+        oRow.addEventListener("click", function (oEvent) {
+            if (isTableRowActionTarget(oEvent.target)) {
+                return;
+            }
             this.setAttribute("data-selected", this.getAttribute("data-selected") == "1" ? "0" : "1");
             applyRowColor(this);
         });
         applyRowColor(oRow);
     }
 
-    window.nxBindAdminTableRow = bindTableRow;
-    for (var iI = 0; iI < aRows.length; iI += 1) {
-        bindTableRow(aRows[iI]);
+    function bindTableRows(oRoot) {
+        var aRows = oRoot ? oRoot.querySelectorAll("table tbody tr") : [];
+        for (var iI = 0; iI < aRows.length; iI += 1) {
+            bindTableRow(aRows[iI]);
+        }
     }
+
+    window.nxCopyAdminTableRowState = copyTableRowState;
+    window.nxBindAdminTableRow = bindTableRow;
+    bindTableRows(document);
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1876,23 +2001,46 @@ document.addEventListener("DOMContentLoaded", function () {
         aPortalPermissions = [];
     }
 
-    function setGroupDialogError(oError, sMessage) {
-        setAdminDialogError(oError, sMessage);
-    }
 
-    function refreshGroupFilter() {
-        dispatchAdminInputEvent(document.querySelector(".js-table-filter"));
-    }
 
     function findAdminGroupRowById(sGroupId) {
         return sGroupId ? oTable.querySelector("tbody tr[data-group-id=\"" + sGroupId + "\"]") : null;
     }
 
+    function getGroupRowStates() {
+        var aRows = oTable.querySelectorAll("tbody tr[data-group-id]");
+        var aStates = {};
+        var sGroupId;
+        for (var iI = 0; iI < aRows.length; iI += 1) {
+            sGroupId = aRows[iI].getAttribute("data-group-id") || "";
+            if (sGroupId !== "") {
+                aStates[sGroupId] = aRows[iI];
+            }
+        }
+        return aStates;
+    }
+
+    function restoreGroupRowStates(aStates) {
+        var aRows = oTable.querySelectorAll("tbody tr[data-group-id]");
+        var sGroupId;
+        for (var iI = 0; iI < aRows.length; iI += 1) {
+            sGroupId = aRows[iI].getAttribute("data-group-id") || "";
+            if (sGroupId !== "" && aStates[sGroupId] && window.nxCopyAdminTableRowState) {
+                window.nxCopyAdminTableRowState(aStates[sGroupId], aRows[iI]);
+            }
+            if (window.nxBindAdminTableRow) {
+                window.nxBindAdminTableRow(aRows[iI]);
+            }
+        }
+    }
+
     function replaceGroupRows(sRowsHtml) {
         var oBody = document.createElement("tbody");
+        var aStates = getGroupRowStates();
         oBody.innerHTML = sRowsHtml || "";
         oTable.querySelector("tbody").innerHTML = oBody.innerHTML;
-        refreshGroupFilter();
+        restoreGroupRowStates(aStates);
+        refreshAdminTableFilter();
     }
 
     function replaceGroupRow(iGroupId, sRowHtml) {
@@ -1904,22 +2052,25 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oNewRow) {
             return;
         }
-        if (oCurrentRow && (" " + oCurrentRow.className + " ").indexOf(" nx-admin-row-modal ") !== -1) {
-            addAdminClass(oNewRow, "nx-admin-row-modal");
+        if (oCurrentRow && window.nxCopyAdminTableRowState) {
+            window.nxCopyAdminTableRowState(oCurrentRow, oNewRow);
         }
         if (oCurrentRow) {
             oCurrentRow.parentNode.replaceChild(oNewRow, oCurrentRow);
         } else {
             oTable.querySelector("tbody").appendChild(oNewRow);
         }
-        refreshGroupFilter();
+        if (window.nxBindAdminTableRow) {
+            window.nxBindAdminTableRow(oNewRow);
+        }
+        refreshAdminTableFilter();
     }
 
     function removeGroupRow(iGroupId) {
         var oCurrentRow = oTable.querySelector("tbody tr[data-group-id=\"" + iGroupId + "\"]");
         if (oCurrentRow && oCurrentRow.parentNode) {
             oCurrentRow.parentNode.removeChild(oCurrentRow);
-            refreshGroupFilter();
+            refreshAdminTableFilter();
         }
     }
 
@@ -2139,7 +2290,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function submitGroupDialog(oDialogData, oData) {
-        setGroupDialogError(oDialogData.error, "");
+        setAdminDialogError(oDialogData.error, "");
         oDialogData.save.disabled = true;
         appendAdminCsrfToken(oData);
         fetch(window.location.href, {
@@ -2151,7 +2302,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return oResponse.json();
         }).then(function (aData) {
             if (!aData || !aData.success) {
-                setGroupDialogError(oDialogData.error, aData && aData.message ? aData.message : "Group could not be saved.");
+                setAdminDialogError(oDialogData.error, aData && aData.message ? aData.message : "Group could not be saved.");
                 oDialogData.save.disabled = false;
                 return;
             }
@@ -2170,7 +2321,7 @@ document.addEventListener("DOMContentLoaded", function () {
             oDialogData.close(true);
         }).catch(function (oException) {
             logAdminException(oException);
-            setGroupDialogError(oDialogData.error, "Group could not be saved.");
+            setAdminDialogError(oDialogData.error, "Group could not be saved.");
             oDialogData.save.disabled = false;
         })
     }
@@ -2252,7 +2403,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
             if (iSelectedCount < 1) {
-                setGroupDialogError(oDialogData.error, "Select at least one source group.");
+                setAdminDialogError(oDialogData.error, "Select at least one source group.");
                 return;
             }
             oData.append("delete_source_groups", oDeleteInput.checked ? "1" : "0");
@@ -2364,23 +2515,46 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
-    function setContactTypeDialogError(oError, sMessage) {
-        setAdminDialogError(oError, sMessage);
-    }
 
-    function refreshContactTypeFilter() {
-        dispatchAdminInputEvent(document.querySelector(".js-table-filter"));
-    }
 
     function findAdminContactTypeRowById(sContactTypeId) {
         return sContactTypeId ? oTable.querySelector("tbody tr[data-contact-type-id=\"" + sContactTypeId + "\"]") : null;
     }
 
+    function getContactTypeRowStates() {
+        var aRows = oTable.querySelectorAll("tbody tr[data-contact-type-id]");
+        var aStates = {};
+        var sContactTypeId;
+        for (var iI = 0; iI < aRows.length; iI += 1) {
+            sContactTypeId = aRows[iI].getAttribute("data-contact-type-id") || "";
+            if (sContactTypeId !== "") {
+                aStates[sContactTypeId] = aRows[iI];
+            }
+        }
+        return aStates;
+    }
+
+    function restoreContactTypeRowStates(aStates) {
+        var aRows = oTable.querySelectorAll("tbody tr[data-contact-type-id]");
+        var sContactTypeId;
+        for (var iI = 0; iI < aRows.length; iI += 1) {
+            sContactTypeId = aRows[iI].getAttribute("data-contact-type-id") || "";
+            if (sContactTypeId !== "" && aStates[sContactTypeId] && window.nxCopyAdminTableRowState) {
+                window.nxCopyAdminTableRowState(aStates[sContactTypeId], aRows[iI]);
+            }
+            if (window.nxBindAdminTableRow) {
+                window.nxBindAdminTableRow(aRows[iI]);
+            }
+        }
+    }
+
     function replaceContactTypeRows(sRowsHtml) {
         var oBody = document.createElement("tbody");
+        var aStates = getContactTypeRowStates();
         oBody.innerHTML = sRowsHtml || "";
         oTable.querySelector("tbody").innerHTML = oBody.innerHTML;
-        refreshContactTypeFilter();
+        restoreContactTypeRowStates(aStates);
+        refreshAdminTableFilter();
     }
 
     function replaceContactTypeRow(iContactTypeId, sRowHtml) {
@@ -2392,15 +2566,18 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oNewRow) {
             return;
         }
-        if (oCurrentRow && (" " + oCurrentRow.className + " ").indexOf(" nx-admin-row-modal ") !== -1) {
-            addAdminClass(oNewRow, "nx-admin-row-modal");
+        if (oCurrentRow && window.nxCopyAdminTableRowState) {
+            window.nxCopyAdminTableRowState(oCurrentRow, oNewRow);
         }
         if (oCurrentRow && oCurrentRow.parentNode) {
             oCurrentRow.parentNode.replaceChild(oNewRow, oCurrentRow);
         } else {
             oTable.querySelector("tbody").appendChild(oNewRow);
         }
-        refreshContactTypeFilter();
+        if (window.nxBindAdminTableRow) {
+            window.nxBindAdminTableRow(oNewRow);
+        }
+        refreshAdminTableFilter();
     }
 
     function removeContactTypeRow(iContactTypeId) {
@@ -2408,15 +2585,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (oRow && oRow.parentNode) {
             oRow.parentNode.removeChild(oRow);
         }
-        refreshContactTypeFilter();
+        refreshAdminTableFilter();
     }
 
-    function closeContactTypeDialog(oDialog) {
-        if (oDialog && oDialog.parentNode) {
-            oDialog.parentNode.removeChild(oDialog);
-            unlockAdminModalScroll();
-        }
-    }
 
     function createContactTypeDialog(sTitle, oRow) {
         var oDialog = document.createElement("div");
@@ -2442,7 +2613,7 @@ document.addEventListener("DOMContentLoaded", function () {
             blClosed = true;
             document.removeEventListener("keydown", closeOnEscape);
             finishAdminSubjectRowEdit(findAdminContactTypeRowById(sContactTypeId) || oRow, blSaved === true);
-            closeContactTypeDialog(oDialog);
+            closeAdminDialogElement(oDialog);
         };
         oDialog.className = "confirm-dialog";
         oForm.className = "confirm-dialog-box subject-edit-dialog";
@@ -2601,7 +2772,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function submitContactTypeDialog(oDialogData, oData) {
-        setContactTypeDialogError(oDialogData.error, "");
+        setAdminDialogError(oDialogData.error, "");
         oDialogData.save.disabled = true;
         appendAdminCsrfToken(oData);
         fetch(window.location.href, {
@@ -2613,7 +2784,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return oResponse.json();
         }).then(function (aData) {
             if (!aData || !aData.success) {
-                setContactTypeDialogError(oDialogData.error, aData && aData.message ? aData.message : "Contact type could not be saved.");
+                setAdminDialogError(oDialogData.error, aData && aData.message ? aData.message : "Contact type could not be saved.");
                 oDialogData.save.disabled = false;
                 return;
             }
@@ -2627,7 +2798,7 @@ document.addEventListener("DOMContentLoaded", function () {
             oDialogData.close(true);
         }).catch(function (oException) {
             logAdminException(oException);
-            setContactTypeDialogError(oDialogData.error, "Contact type could not be saved.");
+            setAdminDialogError(oDialogData.error, "Contact type could not be saved.");
             oDialogData.save.disabled = false;
         })
     }
@@ -2704,7 +2875,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             }
             if (iSelectedCount < 1) {
-                setContactTypeDialogError(oDialogData.error, "Select at least one source contact type.");
+                setAdminDialogError(oDialogData.error, "Select at least one source contact type.");
                 return;
             }
             oData.append("delete_source_contact_types", oDeleteInput.checked ? "1" : "0");
@@ -3297,18 +3468,12 @@ document.addEventListener("DOMContentLoaded", function () {
         return oField;
     }
 
-    function setSubjectDialogError(oError, sMessage) {
-        setAdminDialogError(oError, sMessage);
-    }
 
     function isSubjectBirthNumberDigitCountValid(sValue) {
         var sDigits = (sValue || "").replace(/\D/g, "");
         return sDigits.length === 0 || sDigits.length == 9 || sDigits.length == 10;
     }
 
-    function refreshSubjectFilter() {
-        dispatchAdminInputEvent(document.querySelector(".js-table-filter"));
-    }
 
     function replaceSubjectRow(iSubjectId, sRowHtml) {
         var oCurrentRow = findAdminSubjectRowById(iSubjectId);
@@ -3348,7 +3513,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 window.location.reload();
             }
         }
-        refreshSubjectFilter();
+        refreshAdminTableFilter();
     }
 
     function removeSubjectRow(iSubjectId) {
@@ -3356,7 +3521,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (oCurrentRow) {
             oCurrentRow.parentNode.removeChild(oCurrentRow);
         }
-        refreshSubjectFilter();
+        refreshAdminTableFilter();
     }
 
     window.nxReplaceSubjectRow = replaceSubjectRow;
@@ -3492,14 +3657,14 @@ document.addEventListener("DOMContentLoaded", function () {
         document.body.appendChild(oDialogData.dialog);
         oDialogData.openedAt = new Date().getTime();
         lockAdminModalScroll();
-        beginAdminSubjectRowEdit(findAdminSubjectRowById(oDialogData.subjectId) || oDialogData.subjectRow);
+        beginAdminSubjectRowEdit(oDialogData.subjectRow || findAdminSubjectRowById(oDialogData.subjectId));
         if (oFocus) {
             focusAdminElement(oFocus, true);
         }
     }
 
     function submitSubjectDialog(oDialogData, oData) {
-        setSubjectDialogError(oDialogData.error, "");
+        setAdminDialogError(oDialogData.error, "");
         oDialogData.save.disabled = true;
         appendAdminCsrfToken(oData);
         fetch(window.location.href, {
@@ -3511,7 +3676,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return oResponse.json();
         }).then(function (aData) {
             if (!aData || !aData.success) {
-                setSubjectDialogError(oDialogData.error, aData && aData.message ? aData.message : "Item could not be saved.");
+                setAdminDialogError(oDialogData.error, aData && aData.message ? aData.message : "Item could not be saved.");
                 oDialogData.save.disabled = false;
                 return;
             }
@@ -3530,7 +3695,7 @@ document.addEventListener("DOMContentLoaded", function () {
             oDialogData.close(true);
         }).catch(function (oException) {
             logAdminException(oException);
-            setSubjectDialogError(oDialogData.error, "Item could not be saved.");
+            setAdminDialogError(oDialogData.error, "Item could not be saved.");
             oDialogData.save.disabled = false;
         })
     }
@@ -3614,7 +3779,7 @@ document.addEventListener("DOMContentLoaded", function () {
             var blPerson = oType.value == "person";
             oEvent.preventDefault();
             if (oBirthNumber && blPerson && !isSubjectBirthNumberDigitCountValid(oBirthNumber.value)) {
-                setSubjectDialogError(oDialogData.error, "Birth number must contain 9 or 10 digits.");
+                setAdminDialogError(oDialogData.error, "Birth number must contain 9 or 10 digits.");
                 oBirthNumber.focus();
                 return;
             }
@@ -3740,7 +3905,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 oPortalEnabled.checked = false;
             }
             oDialogData.save.disabled = !blSupported;
-            setSubjectDialogError(oDialogData.error, blSupported ? "" : "Portal account can be set only for person or service.");
+            setAdminDialogError(oDialogData.error, blSupported ? "" : "Portal account can be set only for person or service.");
             blEnabled = blSupported && oPortalEnabled.checked;
             oPortalUserName.disabled = !blEnabled;
             oPortalPassword.disabled = !blEnabled;
@@ -3887,11 +4052,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 oCountry.setAttribute("data-country-invalid", oCountry._countryInput.value.replace(/^\s+|\s+$/g, "") !== "" && oCountry.value === "" ? "1" : "0");
             }
             if (oCountry._countryInput && oCountry._countryInput.value.replace(/^\s+|\s+$/g, "") === "") {
-                setSubjectDialogError(oDialogData.error, "Country is required.");
+                setAdminDialogError(oDialogData.error, "Country is required.");
                 return;
             }
             if (oCountry.getAttribute("data-country-invalid") == "1") {
-                setSubjectDialogError(oDialogData.error, "Invalid country.");
+                setAdminDialogError(oDialogData.error, "Invalid country.");
                 return;
             }
             appendAdminEncodedValue(oData, "address_type", oAddressType.value);
@@ -4110,12 +4275,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var aContactButtons = document.querySelectorAll(".js-add-subject-contact, .js-edit-subject-contact");
     var blCanEditContacts = aContactButtons.length > 0 && window.fetch && window.FormData;
 
-    function closeContactDialog(oDialog) {
-        if (oDialog && oDialog.parentNode) {
-            oDialog.parentNode.removeChild(oDialog);
-            unlockAdminModalScroll();
-        }
-    }
 
     function getContactTypeLabel(sType) {
         if (sType == "landline") {
@@ -4210,6 +4369,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         if (sType == "furaffinity") {
             return "Fur Affinity";
+        }
+        if (sType == "wikifur") {
+            return "WikiFur";
         }
         if (sType == "furryamino") {
             return "Furry Amino";
@@ -4489,16 +4651,37 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function isPhoneContactType(sType) {
+        sType = getContactTypeKey(sType);
         return sType == "landline" || sType == "cell" || sType == "fax" || sType == "pager";
     }
 
+    function getContactTypeKey(sType) {
+        return (sType || "").replace(/^\s+|\s+$/g, "").toLowerCase();
+    }
+
     function isKnownExternalContactType(sType) {
-        return sType == "web" || sType == "telegram" || sType == "messenger" || sType == "twitter" || sType == "mastodon" || sType == "bluesky" || sType == "threads" || sType == "facebook" || sType == "instagram" || sType == "tiktok" || sType == "linkedin" || sType == "github" || sType == "gitlab" || sType == "bitbucket" || sType == "stackoverflow" || sType == "deviantart" || sType == "furaffinity" || sType == "sofurry" || sType == "artstation" || sType == "behance" || sType == "dribbble" || sType == "youtube" || sType == "twitch" || sType == "kick" || sType == "vimeo" || sType == "reddit" || sType == "lemmy" || sType == "steam" || sType == "npm" || sType == "pypi" || sType == "docker" || sType == "codeberg" || sType == "paypal" || sType == "revolut" || sType == "orcid" || sType == "goodreads" || sType == "lastfm" || sType == "signaly";
+        sType = getContactTypeKey(sType);
+        return sType == "wikifur" || sType == "web" || sType == "telegram" || sType == "messenger" || sType == "twitter" || sType == "mastodon" || sType == "bluesky" || sType == "threads" || sType == "facebook" || sType == "instagram" || sType == "tiktok" || sType == "linkedin" || sType == "github" || sType == "gitlab" || sType == "bitbucket" || sType == "stackoverflow" || sType == "deviantart" || sType == "furaffinity" || sType == "sofurry" || sType == "artstation" || sType == "behance" || sType == "dribbble" || sType == "youtube" || sType == "twitch" || sType == "kick" || sType == "vimeo" || sType == "reddit" || sType == "lemmy" || sType == "steam" || sType == "npm" || sType == "pypi" || sType == "docker" || sType == "codeberg" || sType == "paypal" || sType == "revolut" || sType == "orcid" || sType == "goodreads" || sType == "lastfm" || sType == "signaly";
+    }
+
+    function getWebContactHref(sValue) {
+        var sText = (sValue || "").replace(/^\s+|\s+$/g, "");
+        if (!sText) {
+            return "";
+        }
+        if (/^https?:\/\//i.test(sText)) {
+            return sText;
+        }
+        if (/^\/\//.test(sText)) {
+            return "https:" + sText;
+        }
+        return "https://" + sText;
     }
 
     function getContactHref(sType, sValue) {
         var sText = (sValue || "").replace(/^\s+|\s+$/g, "");
         var sPhone;
+        sType = getContactTypeKey(sType);
         if (isPhoneContactType(sType)) {
             sPhone = (sValue || "").replace(/[^0-9+]/g, "");
             return sPhone ? "tel:" + sPhone : "";
@@ -4524,16 +4707,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return getTelegramContactHref(sValue);
         }
         if (sType == "web") {
-            if (!sText) {
-                return "";
-            }
-            if (/^https?:\/\//i.test(sText)) {
-                return sText;
-            }
-            if (/^\/\//.test(sText)) {
-                return "https:" + sText;
-            }
-            return "https://" + sText;
+            return getWebContactHref(sValue);
         }
         if (sType == "youtube") {
             return getYouTubeContactHref(sValue);
@@ -4545,6 +4719,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function getContactDisplayValue(sType, sValue) {
+        sType = getContactTypeKey(sType);
         if (isPhoneContactType(sType)) {
             return sValue || "";
         }
@@ -4567,40 +4742,42 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function getContactLinkEmoji(sType) {
+        sType = getContactTypeKey(sType);
         if (sType == "email") {
-            return "\uD83D\uDCE7";
+            return getAdminEmoji("contact-email");
         }
         if (sType == "landline") {
-            return "\uD83D\uDCDE";
+            return getAdminEmoji("contact-landline");
         }
         if (sType == "cell") {
-            return "\uD83D\uDCF1";
+            return getAdminEmoji("contact-cell");
         }
         if (sType == "fax") {
-            return "\uD83D\uDCE0";
+            return getAdminEmoji("contact-fax");
         }
         if (sType == "pager") {
-            return "\uD83D\uDCDF";
+            return getAdminEmoji("contact-pager");
         }
         if (sType == "web") {
-            return "\uD83C\uDF10";
+            return getAdminEmoji("contact-web");
         }
         if (sType == "telegram") {
-            return "\u2708\uFE0F";
+            return getAdminEmoji("contact-telegram");
         }
         if (sType == "whatsapp" || sType == "viber" || sType == "jabber" || sType == "matrix") {
-            return "\uD83D\uDCAC";
+            return getAdminEmoji("contact-message");
         }
         if (sType == "youtube") {
-            return "\u25B6\uFE0F";
+            return getAdminEmoji("contact-youtube");
         }
         if (isKnownExternalContactType(sType)) {
-            return "\uD83D\uDD17";
+            return getAdminEmoji("contact-web");
         }
         return "";
     }
 
     function getContactLinkLabel(sType) {
+        sType = getContactTypeKey(sType);
         if (sType == "email") {
             return "Send e-mail";
         }
@@ -4638,22 +4815,20 @@ document.addEventListener("DOMContentLoaded", function () {
             return "Open YouTube";
         }
         if (isKnownExternalContactType(sType)) {
-            return "Open link";
+            return "Open web";
         }
         return "";
     }
 
-    function fallbackCopyContactValue(sText) {
-        return copyAdminTextWithTextarea(sText);
-    }
 
     function showContactCopyResult(oButton, blSuccess) {
         var oBox = oButton.querySelector ? oButton.querySelector(".nx-copy-action-box") : null;
         var sText = oButton.getAttribute("data-copy-text") || (oBox ? oBox.textContent : oButton.textContent);
+        var sResultText = blSuccess ? getAdminEmoji("copy-success") : getAdminEmoji("copy-failure");
         if (oBox) {
-            oBox.textContent = blSuccess ? "\u2714\uFE0F" : "\u274C\uFE0F";
+            oBox.textContent = sResultText;
         } else {
-            oButton.textContent = blSuccess ? "\u2714\uFE0F" : "\u274C\uFE0F";
+            oButton.textContent = sResultText;
         }
         window.setTimeout(function () {
             if (oBox) {
@@ -4673,11 +4848,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 showContactCopyResult(oButton, true);
             }).catch(function (oException) {
                 logAdminException(oException);
-                showContactCopyResult(oButton, fallbackCopyContactValue(sValue));
+                showContactCopyResult(oButton, copyAdminTextWithTextarea(sValue));
             });
             return;
         }
-        showContactCopyResult(oButton, fallbackCopyContactValue(sValue));
+        showContactCopyResult(oButton, copyAdminTextWithTextarea(sValue));
     }
 
     function createContactValueElement(sType, sValue, blInvalid) {
@@ -4700,7 +4875,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oCopy.setAttribute("aria-label", "Copy");
         oBox = document.createElement("span");
         oBox.className = "nx-copy-action-box";
-        oBox.textContent = "\uD83D\uDCCB";
+        oBox.textContent = getAdminEmoji("copy");
         oCopy.appendChild(oBox);
         oCopy.addEventListener("click", function (oEvent) {
             oEvent.preventDefault();
@@ -4893,9 +5068,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return oSelect;
     }
 
-    function setContactDialogError(oError, sMessage) {
-        setAdminDialogError(oError, sMessage);
-    }
 
     function appendContactValue(oData, sValue) {
         appendAdminEncodedValue(oData, "contact_value", sValue);
@@ -4927,10 +5099,10 @@ document.addEventListener("DOMContentLoaded", function () {
             oNote.textContent = aContact.note ? " (" + aContact.note + ")" : "";
         }
         if (oPrimary) {
-            oPrimary.textContent = blIsPrimary ? "\u2B50" : "";
+            oPrimary.textContent = blIsPrimary ? getAdminEmoji("primary") : "";
         }
         if (oInactive) {
-            oInactive.textContent = blIsActive ? "" : "\u26D4";
+            oInactive.textContent = blIsActive ? "" : getAdminEmoji("inactive");
         }
     }
 
@@ -4976,7 +5148,7 @@ document.addEventListener("DOMContentLoaded", function () {
             blClosed = true;
             document.removeEventListener("keydown", closeOnEscape);
             finishAdminSubjectRowEdit(findAdminSubjectRowById(sSubjectId) || oSubjectRow, blSaved === true);
-            closeContactDialog(oDialog);
+            closeAdminDialogElement(oDialog);
         };
         oDialog.className = "confirm-dialog";
         oForm.className = "confirm-dialog-box contact-edit-dialog";
@@ -5027,10 +5199,10 @@ document.addEventListener("DOMContentLoaded", function () {
         oForm.addEventListener("submit", function (oEvent) {
             var oData = new FormData();
             oEvent.preventDefault();
-            setContactDialogError(oError, "");
+            setAdminDialogError(oError, "");
             oSave.disabled = true;
             if (!oType.value) {
-                setContactDialogError(oError, "Select a contact type from the list.");
+                setAdminDialogError(oError, "Select a contact type from the list.");
                 oSave.disabled = false;
                 focusAdminElement(oType, false);
                 return;
@@ -5056,8 +5228,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 return oResponse.json();
             }).then(function (aData) {
                 if (!aData || !aData.success) {
-                    setContactDialogError(oError, aData && aData.message ? aData.message : "Contact could not be saved.");
+                    setAdminDialogError(oError, aData && aData.message ? aData.message : "Contact could not be saved.");
                     oSave.disabled = false;
+                    return;
+                }
+                if (aData.reload_required) {
+                    window.location.reload();
                     return;
                 }
                 if (aData.contact) {
@@ -5077,7 +5253,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 closeDialog(true);
             }).catch(function (oException) {
                 logAdminException(oException);
-                setContactDialogError(oError, "Contact could not be saved.");
+                setAdminDialogError(oError, "Contact could not be saved.");
                 oSave.disabled = false;
             })
         });
@@ -5097,6 +5273,170 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
     }, true)
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    if (!document.getElementById("nx-contacts-table")) {
+        return;
+    }
+    var oEditDialog = document.getElementById("shared-contact-edit-dialog");
+    var oDeleteDialog = document.getElementById("shared-contact-delete-dialog");
+    var oEditForm = oEditDialog ? oEditDialog.querySelector("form") : null;
+    var oDeleteForm = oDeleteDialog ? oDeleteDialog.querySelector("form") : null;
+    var oEditError = oEditDialog ? oEditDialog.querySelector(".contact-edit-error") : null;
+    var oDeleteError = oDeleteDialog ? oDeleteDialog.querySelector(".contact-edit-error") : null;
+    var oCurrentContactCell = null;
+    var closeOnEscape = function (oEvent) {
+        if (oEvent.key == "Escape") {
+            closeSharedContactDialog(false);
+        }
+    };
+
+    function getContactCell(oButton) {
+        return oButton && oButton.closest ? oButton.closest(".nx-contact-cell") : null;
+    }
+
+    function getActionButton(oTarget) {
+        if (oTarget && oTarget.nodeType == 3) {
+            oTarget = oTarget.parentNode;
+        }
+        return oTarget && oTarget.closest ? oTarget.closest(".js-edit-shared-contact, .js-delete-shared-contact, .js-shared-contact-edit-close, .js-shared-contact-edit-cancel, .js-shared-contact-delete-close, .js-shared-contact-delete-cancel") : null;
+    }
+
+    function getField(oForm, sName) {
+        return oForm ? oForm.querySelector("[name=\"" + sName + "\"]") : null;
+    }
+
+    function setDialogError(oError, sMessage) {
+        if (!oError) {
+            return;
+        }
+        oError.textContent = sMessage || "";
+        oError.hidden = !sMessage;
+    }
+
+    function openDialog(oDialog, oFocus) {
+        if (!oDialog) {
+            return;
+        }
+        oDialog.hidden = false;
+        lockAdminModalScroll();
+        document.addEventListener("keydown", closeOnEscape);
+        if (oFocus) {
+            focusAdminElement(oFocus, true);
+        }
+    }
+
+    function hideDialog(oDialog) {
+        if (oDialog && !oDialog.hidden) {
+            oDialog.hidden = true;
+            unlockAdminModalScroll();
+        }
+    }
+
+    function closeSharedContactDialog(blSaved) {
+        if (oCurrentContactCell) {
+            finishAdminSubjectRowEdit(oCurrentContactCell.parentNode, blSaved === true);
+        }
+        document.removeEventListener("keydown", closeOnEscape);
+        hideDialog(oEditDialog);
+        hideDialog(oDeleteDialog);
+        setDialogError(oEditError, "");
+        setDialogError(oDeleteError, "");
+        oCurrentContactCell = null;
+    }
+
+    function openSharedContactEdit(oCell) {
+        var oContactId = getField(oEditForm, "contact_id");
+        var oContactType = getField(oEditForm, "contact_type_id");
+        var oContactValue = getField(oEditForm, "contact_value");
+        oCurrentContactCell = oCell;
+        setDialogError(oEditError, "");
+        if (oContactId) {
+            oContactId.value = oCell ? (oCell.getAttribute("data-contact-id") || "") : "";
+        }
+        if (oContactType) {
+            oContactType.value = oCell ? (oCell.getAttribute("data-contact-type-id") || "") : "";
+        }
+        if (oContactValue) {
+            oContactValue.value = oCell ? (oCell.getAttribute("data-contact-value") || "") : "";
+        }
+        beginAdminSubjectRowEdit(oCell ? oCell.parentNode : null);
+        openDialog(oEditDialog, oContactValue);
+    }
+
+    function openSharedContactDelete(oCell) {
+        var oContactId = getField(oDeleteForm, "contact_id");
+        oCurrentContactCell = oCell;
+        setDialogError(oDeleteError, "");
+        if (oContactId) {
+            oContactId.value = oCell ? (oCell.getAttribute("data-contact-id") || "") : "";
+        }
+        beginAdminSubjectRowEdit(oCell ? oCell.parentNode : null);
+        openDialog(oDeleteDialog, oDeleteForm ? oDeleteForm.querySelector(".js-shared-contact-delete-cancel") : null);
+    }
+
+    function submitSharedContactForm(oForm, sAction, oError) {
+        var oData = new FormData();
+        var oContactId = getField(oForm, "contact_id");
+        var oContactType = getField(oForm, "contact_type_id");
+        var oContactValue = getField(oForm, "contact_value");
+        setDialogError(oError, "");
+        oData.append("action", sAction);
+        oData.append("contact_id", oContactId ? oContactId.value : "");
+        if (oContactType) {
+            oData.append("contact_type_id", oContactType.value);
+        }
+        if (oContactValue) {
+            appendAdminEncodedValue(oData, "contact_value", oContactValue.value);
+        }
+        appendAdminCsrfToken(oData);
+        fetch(window.location.href, {
+            "method": "POST",
+            "body": oData,
+            "credentials": "same-origin",
+            "headers": getAdminAjaxHeaders()
+        }).then(function (oResponse) {
+            return oResponse.json();
+        }).then(function (aData) {
+            if (!aData || !aData.success) {
+                setDialogError(oError, aData && aData.message ? aData.message : "Contact could not be saved.");
+                return;
+            }
+            window.location.reload();
+        }).catch(function (oException) {
+            logAdminException(oException);
+            setDialogError(oError, "Contact could not be saved.");
+        });
+    }
+
+    if (oEditForm) {
+        oEditForm.addEventListener("submit", function (oEvent) {
+            oEvent.preventDefault();
+            submitSharedContactForm(oEditForm, "update_shared_contact", oEditError);
+        });
+    }
+    if (oDeleteForm) {
+        oDeleteForm.addEventListener("submit", function (oEvent) {
+            oEvent.preventDefault();
+            submitSharedContactForm(oDeleteForm, "delete_shared_contact", oDeleteError);
+        });
+    }
+    document.addEventListener("click", function (oEvent) {
+        var oButton = getActionButton(oEvent.target);
+        if (!oButton) {
+            return;
+        }
+        oEvent.preventDefault();
+        oEvent.stopPropagation();
+        if (oButton.className.indexOf("js-edit-shared-contact") !== -1) {
+            openSharedContactEdit(getContactCell(oButton));
+        } else if (oButton.className.indexOf("js-delete-shared-contact") !== -1) {
+            openSharedContactDelete(getContactCell(oButton));
+        } else {
+            closeSharedContactDialog(false);
+        }
+    }, true);
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -5345,11 +5685,11 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         oPrimaryFlag = oCell.querySelector(".nx-subject-item-flags span[title=\"Primary\"]");
         if (oPrimaryFlag) {
-            oPrimaryFlag.textContent = blIsPrimary ? "\u2B50" : "";
+            oPrimaryFlag.textContent = blIsPrimary ? getAdminEmoji("primary") : "";
         }
         oInactiveFlag = oCell.querySelector(".nx-subject-item-flags span[title=\"Inactive\"]");
         if (oInactiveFlag) {
-            oInactiveFlag.textContent = blIsActive ? "" : "\u26D4";
+            oInactiveFlag.textContent = blIsActive ? "" : getAdminEmoji("inactive");
         }
     }
 

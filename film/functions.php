@@ -51,7 +51,7 @@ function sendQuickTableFilterJsonAndExit($aData, $iStatusCode = 200) {
 }
 
 function isQuickTableFilterAjaxRequest() {
-    return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] === "XMLHttpRequest";
+    return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
 }
 
 function getQuickTableFilterScriptName() {
@@ -106,7 +106,7 @@ function resetQuickTableFilterValue($sFilterId) {
     if (isset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId])) {
         unset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId]);
     }
-    if (isset($_SESSION["quick_table_filters"][$sScriptName]) && is_array($_SESSION["quick_table_filters"][$sScriptName]) && count($_SESSION["quick_table_filters"][$sScriptName]) === 0) {
+    if (isset($_SESSION["quick_table_filters"][$sScriptName]) && is_array($_SESSION["quick_table_filters"][$sScriptName]) && !$_SESSION["quick_table_filters"][$sScriptName]) {
         unset($_SESSION["quick_table_filters"][$sScriptName]);
     }
 }
@@ -140,8 +140,7 @@ function getContentSecurityPolicySource() {
     $sRequestScheme = "http";
     if (isset($GLOBALS["sScheme"]) && ($GLOBALS["sScheme"] == "http" || $GLOBALS["sScheme"] == "https")) {
         $sRequestScheme = $GLOBALS["sScheme"];
-    } elseif ((isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] != "" && $_SERVER["HTTPS"] != "off")
-        || (isset($_SERVER["HTTP_X_FORWARDED_PROTO"]) && $_SERVER["HTTP_X_FORWARDED_PROTO"] == "https")) {
+    } elseif ((isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] != "" && $_SERVER["HTTPS"] != "off") || (isset($_SERVER["HTTP_X_FORWARDED_PROTO"]) && $_SERVER["HTTP_X_FORWARDED_PROTO"] == "https")) {
         $sRequestScheme = "https";
     }
     $sHost = preg_replace("/[^A-Za-z0-9\\.\\-\\:\\[\\]]/", "", $_SERVER["HTTP_HOST"]);
@@ -215,9 +214,10 @@ function isFilmUaFingerprintRequest() {
 }
 
 function startFilmUaPageRequest($iRequestedFilmScanId) {
+    global $iVisitTimeout;
+
     $iRequestedFilmScanId = $iRequestedFilmScanId !== null ? (int)$iRequestedFilmScanId : null;
     $iNow = time();
-    $iVisitTimeout = 20 * 60;
     $aPageVisits = array();
     if (!isset($_SESSION["film"]) || !is_array($_SESSION["film"])) {
         $_SESSION["film"] = array();
@@ -250,18 +250,18 @@ function startFilmUaPageRequest($iRequestedFilmScanId) {
 }
 
 function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension, $aAllowedIps) {
+    global $iVisitTimeout;
+
     if (!$oPdo || isAllowedIp($aAllowedIps)) {
         return;
     }
-
     $sRequestedImg = basename($sImgParam);
-    if ($sRequestedImg === "") {
+    if ($sRequestedImg == "") {
         return;
     }
     $sSubdir = substr(pathinfo($sRequestedImg, PATHINFO_FILENAME), 0, 8);
     $sFileName = $sRequestedImg . $sExtension;
     $iRequestedFilmScanId = null;
-
     try {
         $oPdoStatement = $oPdo->prepare("SELECT scan_id FROM fs_film_photos WHERE subdir = :subdir AND filename = :filename LIMIT 1");
         $oPdoStatement->execute(array("subdir" => $sSubdir, "filename" => $sFileName));
@@ -272,9 +272,7 @@ function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension, $aAllowedIps) {
     } catch (PDOException $oException) {
         return;
     }
-
     $iNow = time();
-    $iVisitTimeout = 20 * 60;
     $aPageVisits = array();
     if (!isset($_SESSION["film"]) || !is_array($_SESSION["film"])) {
         $_SESSION["film"] = array();
@@ -298,7 +296,6 @@ function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension, $aAllowedIps) {
     if ($iRequestedFilmScanId !== null && isset($aPageVisits[$iRequestedFilmScanId])) {
         return;
     }
-
     $aData = array();
     if (isset($_SESSION["film"]["ua"]["fingerprint"]) && is_array($_SESSION["film"]["ua"]["fingerprint"])) {
         $aData = $_SESSION["film"]["ua"]["fingerprint"];
@@ -338,7 +335,7 @@ function getFilmUaFingerprintText($aData, $sName) {
 
 function getFilmUaFingerprintNullableText($aData, $sName, $iMaxLength = 0) {
     $sValue = trim(getFilmUaFingerprintText($aData, $sName));
-    if ($sValue === "") {
+    if ($sValue == "") {
         return null;
     }
     if ($iMaxLength > 0) {
@@ -348,7 +345,7 @@ function getFilmUaFingerprintNullableText($aData, $sName, $iMaxLength = 0) {
 }
 
 function getFilmUaFingerprintBoolean($aData, $sName) {
-    if (!array_key_exists($sName, $aData) || !is_scalar($aData[$sName]) || $aData[$sName] === "") {
+    if (!array_key_exists($sName, $aData) || !is_scalar($aData[$sName]) || $aData[$sName] == "") {
         return null;
     }
     return $aData[$sName] ? 1 : 0;
@@ -358,7 +355,6 @@ function insertFilmUaRequest($oPdo, $aRequest, $aData) {
     if (!$oPdo) {
         return false;
     }
-
     try {
         $oPdoStatement = $oPdo->prepare("INSERT INTO fs_film_ua (ip_address, x_real_ip, x_forwarded_for, x_web_id, x_geo_provider, x_geo_continent_code, x_geo_country_code, user_agent, browser_name, browser_version, os_name, os_version, platform_type, device_vendor, device_model, architecture, bitness, is_mobile, ua_brands, request_uri, requested_film_scan_id, requested_img, referer, gpu_info, fonts, screen_resolution, screen_physical, color_depth, timezone, language, platform, plugins, mime_types, `timestamp`) VALUES (:ip_address, :x_real_ip, :x_forwarded_for, :x_web_id, :x_geo_provider, :x_geo_continent_code, :x_geo_country_code, :user_agent, :browser_name, :browser_version, :os_name, :os_version, :platform_type, :device_vendor, :device_model, :architecture, :bitness, :is_mobile, :ua_brands, :request_uri, :requested_film_scan_id, :requested_img, :referer, :gpu_info, :fonts, :screen_resolution, :screen_physical, :color_depth, :timezone, :language, :platform, :plugins, :mime_types, CURRENT_TIMESTAMP(6))");
         $oPdoStatement->execute(array(
@@ -399,7 +395,6 @@ function insertFilmUaRequest($oPdo, $aRequest, $aData) {
     } catch (PDOException $oException) {
         return false;
     }
-
     return true;
 }
 
@@ -432,7 +427,6 @@ function sendFilmUaFingerprintResponse($oPdo, $aAllowedIps) {
     if (!insertFilmUaRequest($oPdo, $_SESSION["film"]["ua"]["request"], $aData)) {
         sendFilmUaJsonAndExit(array("status" => "error"), 500);
     }
-
     unset($_SESSION["film"]["ua"]["request"]);
     sendFilmUaJsonAndExit(array("status" => "ok"));
 }
@@ -507,7 +501,6 @@ function getRequestPlainTextInfo() {
         $sOutput .= $sHeaderName . ": " . $sHeaderValue . "\n";
     }
     $sOutput .= "<hr>";
-
     $sOutput .= "<b>PHP \$_SERVER array</b>\n";
     foreach ($_SERVER as $sKey => $sValue) {
         $sOutput .= $sKey . ": " . $sValue . "\n";
@@ -620,12 +613,12 @@ function formatDatabaseStructureHtml($sSql) {
     $aParts = preg_split("/('(?:\\\\.|''|[^'\\\\])*'|`(?:``|[^`])*`)/", $sSql, -1, PREG_SPLIT_DELIM_CAPTURE);
     $sHtml = "";
     foreach ($aParts as $sPart) {
-        if ($sPart === "") {
+        if ($sPart == "") {
             continue;
         }
-        if ($sPart[0] === "'") {
+        if ($sPart[0] == "'") {
             $sHtml .= "<span class=\"sql-string\">" . htmlspecialchars($sPart, ENT_NOQUOTES | ENT_SUBSTITUTE, "UTF-8") . "</span>";
-        } elseif ($sPart[0] === "`") {
+        } elseif ($sPart[0] == "`") {
             $sHtml .= "<span class=\"sql-identifier\">" . htmlspecialchars($sPart, ENT_NOQUOTES | ENT_SUBSTITUTE, "UTF-8") . "</span>";
         } else {
             $sEscapedPart = htmlspecialchars($sPart, ENT_NOQUOTES | ENT_SUBSTITUTE, "UTF-8");
@@ -674,7 +667,6 @@ function formatExpirationDate($sDate) {
     $iYear = (int)$oDateTime->format("Y");
     $iMonth = (int)$oDateTime->format("m");
     $iDay = (int)$oDateTime->format("d");
-
     if ($iMonth == 12 && $iDay == 31) {
         return (string)$iYear;
     }
@@ -699,7 +691,6 @@ function formatPushPull($iValue) {
 function renderFilmScanHtml($oPdo, $aRow) {
     $aDates = loadExposureDates($oPdo, $aRow["id"]);
     $sDates = count($aDates) > 0 ? implode(", ", $aDates) : "Unknown";
-
     $sLabRoll = "";
     $aParts = preg_split("/\s+/", trim($aRow["folder_name"]));
     if (isset($aParts[1])) {
@@ -744,7 +735,6 @@ function renderFilmScanHtml($oPdo, $aRow) {
 function sendFilmMetadataTxt($oPdo, $aRow) {
     $aDates = loadExposureDates($oPdo, $aRow["id"]);
     $sDates = count($aDates) > 0 ? implode(", ", $aDates) : "Unknown";
-
     $sLabRoll = "";
     $sCode = "";
     $aParts = preg_split("/\s+/", trim($aRow["folder_name"]));
@@ -776,7 +766,6 @@ function sendFilmMetadataTxt($oPdo, $aRow) {
         sprintf("Archive format:      %s", $aRow["archive_format"] ?? ""),
         sprintf("Corrections:         %s", $aRow["corrections"] ?? "None")
     );
-
     $sContent = "";
     foreach ($aLines as $aLine) {
         $sContent .= trim($aLine) . "\r\n";
@@ -786,7 +775,6 @@ function sendFilmMetadataTxt($oPdo, $aRow) {
     }
     $sFileName = $sCode . "_RAW.txt";
     $sBody = $sContent;
-
     $sDate = gmdate("D, d M Y H:i:s", time());
     header("Content-Type: text/html; charset=utf-8", true);
     header("Content-Language: en-US", true);
@@ -800,7 +788,6 @@ function sendFilmMetadataTxt($oPdo, $aRow) {
     header("Pragma: no-cache", true);
     header("X-Robots-Tag: noindex, nofollow", true);
     sendSecurityHeaders();
-
     echo $sBody;
     exit;
 }
@@ -809,12 +796,10 @@ function generateRandomId($iLength = 8) {
     $sSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     $iLen = strlen($sSet);
     $sResult = "";
-
     for ($iI = 0; $iI < $iLength; $iI++) {
         $iIndex = mt_rand(0, $iLen - 1);
         $sResult .= $sSet[$iIndex];
     }
-
     return $sResult;
 }
 
@@ -833,10 +818,10 @@ function formatFilmOptionLabel($aFilm) {
 
 function formatOrderOptionLabel($aOrder) {
     $sLabel = "";
-    if ($aOrder["bag_no"] !== null && $aOrder["bag_no"] !== "") {
+    if ($aOrder["bag_no"] !== null && $aOrder["bag_no"] != "") {
         $sLabel .= $aOrder["bag_no"];
     }
-    if ($aOrder["order_no"] !== null && $aOrder["order_no"] !== "") {
+    if ($aOrder["order_no"] !== null && $aOrder["order_no"] != "") {
         $sLabel .= " (" . $aOrder["order_no"] . ")";
     }
     return $sLabel;
@@ -844,7 +829,7 @@ function formatOrderOptionLabel($aOrder) {
 
 function formatFilmUaCountryFlag($sCountryCode) {
     $sCountryCode = strtoupper(trim((string)$sCountryCode));
-    if (strlen($sCountryCode) !== 2 || !ctype_alpha($sCountryCode)) {
+    if (strlen($sCountryCode) != 2 || !ctype_alpha($sCountryCode)) {
         return "";
     }
     return "&#" . (127462 + ord($sCountryCode[0]) - 65) . ";&#" . (127462 + ord($sCountryCode[1]) - 65) . ";";
@@ -864,7 +849,6 @@ function formatFilmUaUserAgent($sUserAgent) {
         "6.0"  => "Windows Vista",
         "5.1"  => "Windows XP"
     );
-
     if (preg_match("#Edg(?:A|iOS)?/([0-9.]+)#", $sUserAgent, $aMatches)) {
         $sBrowser = "Microsoft Edge " . $aMatches[1];
     } elseif (preg_match("#OPR/([0-9.]+)#", $sUserAgent, $aMatches)) {
@@ -878,7 +862,6 @@ function formatFilmUaUserAgent($sUserAgent) {
     } elseif (preg_match("#Version/([0-9.]+).*Safari/#", $sUserAgent, $aMatches)) {
         $sBrowser = "Safari " . $aMatches[1];
     }
-
     if (preg_match("#Windows NT ([0-9.]+)#", $sUserAgent, $aMatches)) {
         $sOperatingSystem = isset($aWindowsVersions[$aMatches[1]]) ? $aWindowsVersions[$aMatches[1]] : "Windows NT " . $aMatches[1];
     } elseif (preg_match("#Android ([0-9.]+)#", $sUserAgent, $aMatches)) {
@@ -890,7 +873,6 @@ function formatFilmUaUserAgent($sUserAgent) {
     } elseif (stripos($sUserAgent, "Linux") !== false) {
         $sOperatingSystem = "Linux";
     }
-
     if (preg_match("#Win64|x86_64|x64|amd64#i", $sUserAgent)) {
         $sArchitecture = " (64-bit)";
     } elseif (preg_match("#i[3-6]86|Win32#i", $sUserAgent)) {
@@ -902,22 +884,20 @@ function formatFilmUaUserAgent($sUserAgent) {
 
 function formatFilmUaGpu($sGpuInfo) {
     $sGpuInfo = trim((string)$sGpuInfo);
-    if ($sGpuInfo === "") {
+    if ($sGpuInfo == "") {
         return "";
     }
-
     $sFriendly = preg_replace("#^ANGLE\\s*\\(#i", "", $sGpuInfo);
     $sFriendly = preg_replace("#\\)?,?\\s*or similar\\s*$#i", "", $sFriendly);
     $sFriendly = preg_replace("#\\)\\s*$#", "", $sFriendly);
     $aParts = array_map("trim", explode(",", $sFriendly));
-    if (isset($aParts[1]) && $aParts[1] !== "") {
+    if (isset($aParts[1]) && $aParts[1] != "") {
         $sFriendly = $aParts[1];
     } elseif (isset($aParts[0])) {
         $sFriendly = $aParts[0];
     }
     $sFriendly = preg_replace("#\\s+(?:Direct3D|OpenGL|Vulkan|Metal)\\b.*$#i", "", $sFriendly);
     $sFriendly = preg_replace("#\\s+vs_[0-9_]+.*$#i", "", $sFriendly);
-
     return trim($sFriendly);
 }
 
@@ -930,7 +910,6 @@ function send403AndExit() {
         . "<h1>Forbidden</h1>\n"
         . "<p>You don't have permission to access this resource.</p>\n"
         . "</body></html>\n";
-
     http_response_code(403);
     header("Content-Type: text/html; charset=utf-8", true);
     header("Content-Language: en-US", true);
@@ -956,7 +935,6 @@ function send404AndExit() {
         . "<h1>Not Found</h1>\n"
         . "<p>The requested URL was not found on this server.</p>\n"
         . "</body></html>\n";
-
     http_response_code(404);
     header("Content-Type: text/html; charset=utf-8", true);
     header("Content-Language: en-US", true);
@@ -968,7 +946,6 @@ function send404AndExit() {
     header("Pragma: no-cache", true);
     header("X-Robots-Tag: noindex, nofollow", true);
     sendSecurityHeaders();
-
     echo $sHtml;
     exit;
 }
@@ -982,7 +959,6 @@ function send500AndExit($sMessage) {
         . "<h1>Internal Server Error</h1>\n"
         . "<p>" . htmlspecialchars($sMessage, ENT_QUOTES, "UTF-8") . "</p>\n"
         . "</body></html>\n";
-
     http_response_code(500);
     header("Content-Type: text/html; charset=utf-8", true);
     header("Content-Language: en-US", true);
@@ -994,7 +970,141 @@ function send500AndExit($sMessage) {
     header("Pragma: no-cache", true);
     header("X-Robots-Tag: noindex, nofollow", true);
     sendSecurityHeaders();
-
     echo $sHtml;
     exit;
+}
+
+function getPhpGeneratedStyleTag($sStyleNonce) {
+    return "  <style type=\"text/css\" nonce=\"" . htmlspecialchars($sStyleNonce, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n"
+        . "    body {background-color: #fff; color: #222; font-family: sans-serif;}\n"
+        . "    pre {margin: 0; font-family: monospace;}\n"
+        . "    a {color: inherit;}\n"
+        . "    a:hover {text-decoration: none;}\n"
+        . "    table {border-collapse: collapse; border: 0; width: 934px; box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.2);}\n"
+        . "    .center {text-align: center;}\n"
+        . "    .center table {margin: 1em auto; text-align: left;}\n"
+        . "    .center th {text-align: center !important;}\n"
+        . "    td, th {border: 1px solid #666; font-size: 75%; vertical-align: baseline; padding: 4px 5px;}\n"
+        . "    th {position: sticky; top: 0; background: inherit;}\n"
+        . "    h1 {font-size: 150%;}\n"
+        . "    h2 {font-size: 125%;}\n"
+        . "    h2 > a {text-decoration: none;}\n"
+        . "    h2 > a:hover {text-decoration: underline;}\n"
+        . "    .p {text-align: left;}\n"
+        . "    .e {background-color: #ccf; width: 300px; font-weight: bold;}\n"
+        . "    .h {background-color: #99c; font-weight: bold;}\n"
+        . "    .v {background-color: #ddd; max-width: 300px; overflow-x: auto; word-wrap: normal;}\n"
+        . "    .v i {color: #999;}\n"
+        . "    img {float: right; border: 0;}\n"
+        . "    hr {width: 934px; background-color: #ccc; border: 0; height: 1px;}\n"
+        . "    :root {--php-dark-grey: #333; --php-dark-blue: #4F5B93; --php-medium-blue: #8892BF; --php-light-blue: #E2E4EF; --php-accent-purple: #793862;}\n"
+        . "    @media (prefers-color-scheme: dark) {\n"
+        . "      body {background: var(--php-dark-grey); color: var(--php-light-blue);}\n"
+        . "      .h td, td.e, th {border-color: #606A90;}\n"
+        . "      td {border-color: #505153;}\n"
+        . "      .e {background-color: #404A77;}\n"
+        . "      .h {background-color: var(--php-dark-blue);}\n"
+        . "      .v {background-color: var(--php-dark-grey);}\n"
+        . "      hr {background-color: #505153;}\n"
+        . "    }\n"
+        . "  </style>\n";
+}
+
+function addPhpGeneratedStyleAttributes($sHtml, $sStyleNonce) {
+    $sNonce = htmlspecialchars($sStyleNonce, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    return preg_replace_callback("#<style([^>]*)>#i", function ($aMatches) use ($sNonce) {
+        $sAttributes = $aMatches[1];
+        if (!preg_match("#\\stype\\s*=#i", $sAttributes)) {
+            $sAttributes .= " type=\"text/css\"";
+        }
+        if (!preg_match("#\\snonce\\s*=#i", $sAttributes)) {
+            $sAttributes .= " nonce=\"" . $sNonce . "\"";
+        }
+        return "<style" . $sAttributes . ">";
+    }, $sHtml);
+}
+
+function addPhpGeneratedViewportMeta($sHtml) {
+    if (preg_match("#<meta\\b[^>]*\\bname\\s*=\\s*([\"'])viewport\\1#i", $sHtml) || stripos($sHtml, "</head>") === false) {
+        return $sHtml;
+    }
+    return preg_replace("#</head>#i", "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>", $sHtml, 1);
+}
+
+function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
+    $sHtml = addPhpGeneratedStyleAttributes($sHtml, $sStyleNonce);
+    if (stripos($sHtml, "<html") !== false) {
+        if (stripos($sHtml, "<style") === false && stripos($sHtml, "</head>") !== false) {
+            $sHtml = preg_replace("#</head>#i", getPhpGeneratedStyleTag($sStyleNonce) . "</head>", $sHtml, 1);
+        }
+        return addPhpGeneratedViewportMeta($sHtml);
+    }
+    return "<!DOCTYPE html>\n"
+        . "<html lang=\"en-US\" dir=\"ltr\">\n"
+        . "<head>\n"
+        . "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
+        . "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+        . "  <title>" . htmlspecialchars($sTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</title>\n"
+        . getPhpGeneratedStyleTag($sStyleNonce)
+        . "</head>\n"
+        . "<body><div class=\"center\">\n"
+        . $sHtml
+        . "\n</div></body>\n"
+        . "</html>\n";
+}
+
+function sendPhpGeneratedHeaders($sStyleNonce) {
+    $iTime = time();
+    $sDate = gmdate("D, d M Y H:i:s", $iTime);
+
+    header("Content-Type: text/html; charset=utf-8", true);
+    header("Content-Language: en-US", true);
+    header("Last-Modified: " . $sDate . " GMT", true);
+    header("Expires: " . $sDate . " GMT", true);
+    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0", true);
+    header("Cache-Control: post-check=0, pre-check=0", false);
+    header("Pragma: no-cache", true);
+    header("X-Robots-Tag: noindex, nofollow", true);
+    sendSecurityHeaders($sStyleNonce);
+}
+
+function sendPhpGeneratedOutputAndExit($sType, $iSelect) {
+    $sStyleNonce = base64_encode(random_bytes(16));
+    ob_start();
+    if ($sType == "credits") {
+        if ($iSelect > 0) {
+            phpcredits($iSelect | CREDITS_FULLPAGE);
+        } else {
+            phpcredits();
+        }
+    } else {
+        if ($iSelect > 0) {
+            phpinfo($iSelect);
+        } else {
+            phpinfo();
+        }
+    }
+    $sHtml = formatPhpGeneratedOutput(ob_get_clean(), $sStyleNonce, $sType == "credits" ? "PHP Credits" : "PHP Info");
+    sendPhpGeneratedHeaders($sStyleNonce);
+    echo $sHtml;
+    exit;
+}
+
+function nxSchemaColumnTypeDisplay($sColumnType, $bShorten = true) {
+    $sColumnType = (string)$sColumnType;
+    if (preg_match("/^enum\\((.*)\\)$/i", $sColumnType, $aMatches)) {
+        preg_match_all("/'((?:''|[^'])*)'/", $aMatches[1], $aEnumValues);
+        $aDisplayValues = array();
+        foreach ($aEnumValues[1] as $sEnumValue) {
+            $aDisplayValues[] = "'" . $sEnumValue . "'";
+        }
+        if ($bShorten && count($aDisplayValues) > 24) {
+            $aShortValues = array_slice($aDisplayValues, 0, 12);
+            $aShortValues[] = "\xE2\x80\xA6";
+            $aShortValues[] = $aDisplayValues[count($aDisplayValues) - 1];
+            return "enum(" . implode(", ", $aShortValues) . ")";
+        }
+        return "enum(" . implode(", ", $aDisplayValues) . ")";
+    }
+    return $sColumnType;
 }

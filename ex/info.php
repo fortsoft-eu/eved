@@ -6,6 +6,10 @@ $iDefaultSelectedCredits = CREDITS_GROUP;
 include "main.php";
 
 
+if (!$oPdo) {
+    send500AndExit("Database error: " . $sError);
+}
+
 requireExFullAccess($aAllowedIps);
 
 $aInfoTypes = array(
@@ -119,6 +123,6 @@ foreach ($aCreditsTypes as $sKey => $iValue) {
     </form>
   </div>
   <iframe class="phpinfo-frame" name="phpinfo-frame" src="<?php echo htmlspecialchars($sDefaultFrameUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" title="PHP Info"></iframe>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+<?php echo nxRenderAdminScript($sBaseUrl); ?>
 </body>
 </html>

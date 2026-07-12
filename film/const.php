@@ -49,10 +49,10 @@ $iTime = sendPageHeaders();
 
 foreach ($aConstants as $sGroup => $aGroupConstants) {
     foreach ($aGroupConstants as $sName => $mValue) {
-        if ($sName === "PHP_EOL") {
+        if ($sName == "PHP_EOL") {
             $sValue = "";
             for ($i = 0; $i < strlen($mValue); $i++) {
-                if ($sValue !== "") {
+                if ($sValue != "") {
                     $sValue .= ".";
                 }
                 $sValue .= "chr(" . ord($mValue[$i]) . ")";
@@ -82,7 +82,8 @@ foreach ($aConstants as $sGroup => $aGroupConstants) {
 ?>
     </tbody>
   </table>
-  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter">&#128269; Filter</button>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>
 </html>

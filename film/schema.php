@@ -8,26 +8,6 @@ if (!$oPdo) {
 }
 
 
-function nxSchemaColumnTypeDisplay($sColumnType, $bShorten = true) {
-    $sColumnType = (string)$sColumnType;
-    if (preg_match("/^enum\\((.*)\\)$/i", $sColumnType, $aMatches)) {
-        preg_match_all("/'((?:''|[^'])*)'/", $aMatches[1], $aEnumValues);
-        $aDisplayValues = array();
-        foreach ($aEnumValues[1] as $sEnumValue) {
-            $aDisplayValues[] = "'" . $sEnumValue . "'";
-        }
-        if ($bShorten && count($aDisplayValues) > 24) {
-            $aShortValues = array_slice($aDisplayValues, 0, 12);
-            $aShortValues[] = "\xE2\x80\xA6";
-            $aShortValues[] = $aDisplayValues[count($aDisplayValues) - 1];
-            return "enum(" . implode(", ", $aShortValues) . ")";
-        }
-        return "enum(" . implode(", ", $aDisplayValues) . ")";
-    }
-    return $sColumnType;
-}
-
-
 $aTables = array();
 $aRelations = array();
 $aForeignKeys = array();
@@ -121,14 +101,14 @@ foreach ($aTables as $sTableName => $aColumns) {
         $sColumnType = (string)$aColumn["COLUMN_TYPE"];
         $sColumnTypeDisplay = nxSchemaColumnTypeDisplay($sColumnType);
         $sColumnTypeTitleDisplay = nxSchemaColumnTypeDisplay($sColumnType, false);
-        $sColumnTypeTitle = $sColumnTypeDisplay !== $sColumnTypeTitleDisplay ? " title=\"" . htmlspecialchars($sColumnTypeTitleDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"" : "";
-        if ($aColumn["COLUMN_KEY"] === "PRI") {
+        $sColumnTypeTitle = $sColumnTypeDisplay != $sColumnTypeTitleDisplay ? " title=\"" . htmlspecialchars($sColumnTypeTitleDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"" : "";
+        if ($aColumn["COLUMN_KEY"] == "PRI") {
             $sKey = "PK";
             $sKeyClass = " schema-key-pk";
         } elseif (isset($aForeignKeys[$sTableName . "." . $aColumn["COLUMN_NAME"]])) {
             $sKey = "FK";
             $sKeyClass = " schema-key-fk";
-        } elseif ($aColumn["COLUMN_KEY"] === "UNI") {
+        } elseif ($aColumn["COLUMN_KEY"] == "UNI") {
             $sKey = "UQ";
         }
         $sColumnId = "column-" . preg_replace("/[^a-zA-Z0-9_-]/", "-", $sTableName . "-" . $aColumn["COLUMN_NAME"]);
@@ -136,7 +116,7 @@ foreach ($aTables as $sTableName => $aColumns) {
             . "              <td class=\"schema-key" . $sKeyClass . "\">" . $sKey . "</td>\n"
             . "              <td>" . htmlspecialchars($aColumn["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
             . "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . htmlspecialchars($sColumnTypeDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "              <td class=\"schema-null\">" . ($aColumn["IS_NULLABLE"] === "YES" ? "Yes" : "No") . "</td>\n"
+            . "              <td class=\"schema-null\">" . ($aColumn["IS_NULLABLE"] == "YES" ? "Yes" : "No") . "</td>\n"
             . "              <td>" . htmlspecialchars($aColumn["EXTRA"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
             . "            </tr>\n";
     }
@@ -211,6 +191,7 @@ foreach ($aRelations as $aRelation) {
 ?>
     </tbody>
   </table>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

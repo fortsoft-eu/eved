@@ -44,7 +44,7 @@ try {
                 ":film_id" => $iFilmId
             ));
             $aUnassign = $oStmt->fetch(PDO::FETCH_ASSOC);
-            if ($aUnassign && $aUnassign["lab_order_id"] !== null && (int)$aUnassign["can_unassign"] === 1) {
+            if ($aUnassign && $aUnassign["lab_order_id"] !== null && (int)$aUnassign["can_unassign"] == 1) {
                 $oStmt = $oPdo->prepare("UPDATE fs_film_scans SET lab_order_id = NULL, updated_at = NOW(6) WHERE id = :film_id AND lab_order_id IS NOT NULL");
                 $oStmt->execute(array(
                     ":film_id" => $iFilmId
@@ -83,7 +83,7 @@ try {
     if (isset($_SESSION["film"]["link"]["bag"])) {
         if (is_int($_SESSION["film"]["link"]["bag"])) {
             foreach ($aOrders as $aOrder) {
-                if ((int)$aOrder["id"] === (int)$_SESSION["film"]["link"]["bag"]) {
+                if ((int)$aOrder["id"] == (int)$_SESSION["film"]["link"]["bag"]) {
                     $iLastBagId = (int)$_SESSION["film"]["link"]["bag"];
                     break;
                 }
@@ -103,13 +103,13 @@ try {
             $oStmt->execute(array(":film_id" => $iFilmId));
             $aSelectedFilm = $oStmt->fetch(PDO::FETCH_ASSOC);
             foreach ($aOrders as $aOrder) {
-                if ((int)$aOrder["id"] === $iOrderId) {
+                if ((int)$aOrder["id"] == $iOrderId) {
                     $aSelectedOrder = $aOrder;
                     break;
                 }
             }
             if ($aSelectedFilm && $aSelectedOrder) {
-                if ((int)$aSelectedFilm["lab_order_id"] === $iOrderId) {
+                if ((int)$aSelectedFilm["lab_order_id"] == $iOrderId) {
                     $sMessage = "The film roll <strong>" . htmlspecialchars(formatFilmOptionLabel($aSelectedFilm), ENT_QUOTES, "UTF-8") . "</strong> is already assigned to the lab bag <strong>" . htmlspecialchars(formatOrderOptionLabel($aSelectedOrder), ENT_QUOTES, "UTF-8") . "</strong>.";
                     $sMessageType = "warning";
                 } else {
@@ -191,8 +191,9 @@ foreach ($aFilms as $aFilm) {
 
 }
 
+echo "      </select>\n";
+
 ?>
-      </select>
 
       <label for="order_id">Bag Number:</label>
       <select name="order_id" id="order_id" required>
@@ -207,8 +208,9 @@ foreach ($aOrders as $aOrder) {
 
 }
 
+echo "      </select>\n";
+
 ?>
-      </select>
 
       <button type="submit">Assign</button>
     </form>
@@ -280,7 +282,7 @@ foreach ($aLinks as $aLink) {
         <td><?php echo $sOrderDateDisplay; ?></td>
         <td><?php echo $sScanDateDisplay; ?></td>
         <td><?php echo htmlspecialchars($sReturnDate, ENT_QUOTES, "UTF-8"); ?></td>
-        <td><?php echo $aLink["lab_order_id"] === null ? "No" : (((int)$aLink["can_unassign"] === 1) ? "Yes <button type=\"button\" class=\"button-link js-confirm-unassign\" data-confirm-action=\"" . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]) . "\" data-unassign-id=\"" . (int)$aLink["film_id"] . "\" data-film-roll=\"" . htmlspecialchars($sFilmLabel, ENT_QUOTES, "UTF-8") . "\" data-lab-bag=\"" . htmlspecialchars($sOrderLabel, ENT_QUOTES, "UTF-8") . "\">Unassign</button>" : "Yes"); ?></td>
+        <td><?php echo $aLink["lab_order_id"] === null ? "No" : (((int)$aLink["can_unassign"] == 1) ? "Yes <button type=\"button\" class=\"button-link js-confirm-unassign\" data-confirm-action=\"" . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]) . "\" data-unassign-id=\"" . (int)$aLink["film_id"] . "\" data-film-roll=\"" . htmlspecialchars($sFilmLabel, ENT_QUOTES, "UTF-8") . "\" data-lab-bag=\"" . htmlspecialchars($sOrderLabel, ENT_QUOTES, "UTF-8") . "\">Unassign</button>" : "Yes"); ?></td>
       </tr>
 <?php
 
@@ -290,6 +292,7 @@ foreach ($aLinks as $aLink) {
     </tbody>
   </table>
 
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>
 </html>

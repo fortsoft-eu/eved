@@ -1406,7 +1406,15 @@ body.phpinfo-page .admin-controls {
     background: #FFF;
 }
 
+#nx-contacts-table .nx-contact-cell {
+    background: #FFF;
+}
+
 #nx-addresses-table {
+    table-layout: auto;
+}
+
+#nx-contacts-table {
     table-layout: auto;
 }
 
@@ -1414,7 +1422,15 @@ body.phpinfo-page .admin-controls {
     background: #F9F9F9;
 }
 
+#nx-contacts-table tr:nth-child(even) > .nx-contact-cell {
+    background: #F9F9F9;
+}
+
 #nx-addresses-table .nx-address-subject-active.nx-address-subject-type-organization {
+    background: #F8F5FF;
+}
+
+#nx-contacts-table .nx-contact-subject-active.nx-contact-subject-type-organization {
     background: #F8F5FF;
 }
 
@@ -1422,11 +1438,23 @@ body.phpinfo-page .admin-controls {
     background: #F7FFF8;
 }
 
+#nx-contacts-table .nx-contact-subject-active.nx-contact-subject-type-service {
+    background: #F7FFF8;
+}
+
 #nx-addresses-table .nx-address-subject-active.nx-address-subject-type-other {
     background: #FFFDF4;
 }
 
+#nx-contacts-table .nx-contact-subject-active.nx-contact-subject-type-other {
+    background: #FFFDF4;
+}
+
 #nx-addresses-table .nx-address-subject-inactive {
+    background: #FEE;
+}
+
+#nx-contacts-table .nx-contact-subject-inactive {
     background: #FEE;
 }
 

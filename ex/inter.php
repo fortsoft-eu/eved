@@ -10,127 +10,6 @@ if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-function nxBdGetBirthdayInfo($sCommunicationServedAt) {
-    $sCommunicationServedAt = trim((string)$sCommunicationServedAt);
-    $oToday = new DateTimeImmutable("today");
-
-    if ($sCommunicationServedAt === "" || strpos($sCommunicationServedAt, "0000-00-00") === 0) {
-        return array(
-            "days_to_birthday" => 0,
-            "birthday_date" => $oToday->format("Y-m-d")
-        );
-    }
-    try {
-        $oCommunicationDue = (new DateTimeImmutable($sCommunicationServedAt))->modify("+2 months")->setTime(0, 0, 0);
-    } catch (Exception $oException) {
-        return null;
-    }
-    $iDaysToCommunication = (int)$oToday->diff($oCommunicationDue)->format("%r%a");
-    if ($iDaysToCommunication < 0 || $iDaysToCommunication > 20) {
-        return null;
-    }
-    return array(
-        "days_to_birthday" => $iDaysToCommunication,
-        "birthday_date" => $oCommunicationDue->format("Y-m-d")
-    );
-}
-
-function nxBdFetchBirthdayServedRows($oPdo) {
-    $aServedRows = array();
-    $oStatement = $oPdo->query("SELECT subject_id, inter_served_at FROM ex_persons");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
-        $aServedRows[(int)$aRow["subject_id"]] = $aRow;
-    }
-    return $aServedRows;
-}
-
-function nxBdCompareRows($aFirst, $aSecond) {
-    $iFirstCountdown = isset($aFirst["days_to_birthday"]) ? (int)$aFirst["days_to_birthday"] : 0;
-    $iSecondCountdown = isset($aSecond["days_to_birthday"]) ? (int)$aSecond["days_to_birthday"] : 0;
-
-    if ($iFirstCountdown === $iSecondCountdown) {
-        return strcmp((string)$aFirst["subject_name"], (string)$aSecond["subject_name"]);
-    }
-    return $iFirstCountdown < $iSecondCountdown ? -1 : 1;
-}
-
-function nxGetPostedContactValue() {
-    return nxGetPostedValue("contact_value");
-}
-
-function nxBdRenderSubjectActions($aRow, $blShowActions) {
-    global $sDeleteEmoji, $sEditEmoji, $sPortalEmoji;
-
-    if (!$blShowActions) {
-        return "";
-    }
-    if (!isset($sPortalEmoji)) {
-        $sPortalEmoji = "&#128272;";
-    }
-    return "<span class=\"nx-list-item-actions\">"
-        . "<a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aRow["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>"
-        . "<a href=\"#\" class=\"nx-item-action js-edit-subject-portal\" data-subject-id=\"" . nxHtml($aRow["subject_id"]) . "\" title=\"Portal account\" aria-label=\"Portal account\">" . $sPortalEmoji . "</a>"
-        . "<a href=\"#\" class=\"nx-item-action js-delete-subject\" data-subject-id=\"" . nxHtml($aRow["subject_id"]) . "\" data-subject-name=\"" . nxHtml($aRow["subject_name"]) . "\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>"
-        . "</span>";
-}
-
-function nxBdRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings) {
-    $iSubjectId = (int)$aRow["subject_id"];
-    $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aRow["subject_type"]));
-    $blIsActive = (int)$aRow["is_active"] === 1;
-    $sBirthNumberClass = nxBirthNumberClass($aRow["birth_number"], "nx-column-hidden");
-    $sBirthDateClass = nxBirthDateClass($aRow["birth_number"], $aRow["birth_date"]);
-    $sBirthDateClassAttribute = $sBirthDateClass !== "" ? " class=\"" . nxHtml($sBirthDateClass) . "\"" : "";
-    $sBirthdayServedAction = $blShowActions ? "<a class=\"nx-item-action nx-birthday-served-action js-communication-served\" href=\"#\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" title=\"Mark communication served\" aria-label=\"Mark communication served\"><span class=\"nx-copy-action-box\">&#128232;</span></a>" : "";
-    $sBirthdayInCell = nxHtmlValue($aRow["days_to_birthday"]) . ($sBirthdayServedAction !== "" ? "&#8288;" . $sBirthdayServedAction : "");
-    return "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
-        . "        <td class=\"nx-column-hidden\">" . nxHtml($aRow["subject_type"]) . "</td>\n"
-        . "        <td class=\"nx-birthday-in-column\">" . $sBirthdayInCell . "</td>\n"
-        . "        <td>" . nxHtmlValue($aRow["subject_name"]) . nxRenderCopyAction($aRow["subject_name"]) . nxBdRenderSubjectActions($aRow, $blShowActions) . "</td>\n"
-        . "        <td class=\"nx-column-hidden\">" . nxHtmlValue($aRow["first_name"]) . "</td>\n"
-        . "        <td class=\"nx-column-hidden\">" . nxHtmlValue($aRow["last_name"]) . "</td>\n"
-        . "        <td class=\"nx-column-step-two\">" . nxHtmlValue($aRow["birth_name"]) . "</td>\n"
-        . "        <td class=\"" . nxHtml($sBirthNumberClass) . "\">" . nxRenderBirthNumberValue($aRow["birth_number"]) . "</td>\n"
-        . "        <td" . $sBirthDateClassAttribute . " style=\"overflow-wrap: normal; white-space: nowrap; word-break: normal;\">" . nxHtmlValue($aRow["birth_date"]) . "</td>\n"
-        . "        <td class=\"nx-column-step-two\" style=\"overflow-wrap: normal; white-space: nowrap; word-break: normal;\">" . nxHtmlValue($aRow["death_date"]) . "</td>\n"
-        . "        <td class=\"nx-column-step-one\">" . nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true) . "</td>\n"
-        . "        <td class=\"nx-column-step-one\">" . nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aBirthdaySettings, true) . "</td>\n"
-        . "        <td>" . nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true) . "</td>\n"
-        . "        <td class=\"nx-column-step-three\">" . nxRenderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true) . "</td>\n"
-        . "        <td class=\"nx-column-step-three\">" . nxRenderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true) . "</td>\n"
-        . "      </tr>\n";
-}
-
-function nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions) {
-    $aRows = nxFetchSubjectRows($oPdo, $iSubjectId);
-    if (count($aRows) === 0) {
-        return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
-    }
-    $aContacts = nxFetchSubjectContacts($oPdo, $iSubjectId);
-    $aNicknames = nxFetchSubjectNicknames($oPdo, $iSubjectId);
-    $aAddresses = nxFetchSubjectAddresses($oPdo, $iSubjectId);
-    $aGroups = nxFetchSubjectGroups($oPdo, $iSubjectId);
-    $aNotes = nxFetchSubjectNotes($oPdo, $iSubjectId);
-    $aHiddenInactive = nxGetHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aBirthdaySettings);
-    nxApplySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $aNotes, $aBirthdaySettings);
-    if (count($aRows) === 0 || (string)$aRows[0]["subject_type"] !== "person") {
-        return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
-    }
-    $aBirthdayServedRows = nxBdFetchBirthdayServedRows($oPdo);
-    $sCommunicationServedAt = isset($aBirthdayServedRows[$iSubjectId]["inter_served_at"]) ? $aBirthdayServedRows[$iSubjectId]["inter_served_at"] : "";
-    $aBirthdayInfo = nxBdGetBirthdayInfo($sCommunicationServedAt);
-    if (!is_array($aBirthdayInfo)) {
-        return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
-    }
-    $aRows[0]["days_to_birthday"] = $aBirthdayInfo["days_to_birthday"];
-    $aRows[0]["birthday_date"] = $aBirthdayInfo["birthday_date"];
-    return array(
-        "success" => true,
-        "subject_id" => $iSubjectId,
-        "row_html" => nxBdRenderSubjectRow($aRows[0], $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings)
-    );
-}
-
 $aBirthdaySettingsDefaults = array(
     "show_inactive_subjects" => 0,
     "show_inactive_nicknames" => 0,
@@ -145,18 +24,18 @@ if (!isset($_SESSION["ex_inter_settings"]) || !is_array($_SESSION["ex_inter_sett
 }
 foreach ($aBirthdaySettingsDefaults as $sBirthdaySettingName => $iBirthdaySettingDefault) {
     if (isset($_SESSION["ex_inter_settings"][$sBirthdaySettingName])) {
-        $aBirthdaySettings[$sBirthdaySettingName] = (int)$_SESSION["ex_inter_settings"][$sBirthdaySettingName] === 1 ? 1 : 0;
+        $aBirthdaySettings[$sBirthdaySettingName] = (int)$_SESSION["ex_inter_settings"][$sBirthdaySettingName] == 1 ? 1 : 0;
     } else {
         $aBirthdaySettings[$sBirthdaySettingName] = $iBirthdaySettingDefault;
     }
 }
 $aBirthdaySettings = nxApplyExCountrySettings($aBirthdaySettings);
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireExCsrfToken();
 }
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "mark_communication_served") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "mark_communication_served") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if (!$blCanEdit) {
         nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -174,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
-        $aBirthdayInfo = nxBdGetBirthdayInfo(isset($aPerson["inter_served_at"]) ? $aPerson["inter_served_at"] : "");
+        $aBirthdayInfo = nxInterGetBirthdayInfo(isset($aPerson["inter_served_at"]) ? $aPerson["inter_served_at"] : "");
         if (!is_array($aBirthdayInfo)) {
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Communication is not in the current service window."), 409);
@@ -192,9 +71,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     }
 }
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "save_inter_settings") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_inter_settings") {
     foreach ($aBirthdaySettingsDefaults as $sBirthdaySettingName => $iBirthdaySettingDefault) {
-        $aBirthdaySettings[$sBirthdaySettingName] = isset($_POST[$sBirthdaySettingName]) && (string)$_POST[$sBirthdaySettingName] === "1" ? 1 : 0;
+        $aBirthdaySettings[$sBirthdaySettingName] = isset($_POST[$sBirthdaySettingName]) && (string)$_POST[$sBirthdaySettingName] == "1" ? 1 : 0;
     }
     $aBirthdaySettings = nxSaveExCountrySettings($aBirthdaySettings, $_POST);
     $_SESSION["ex_inter_settings"] = nxRemoveExCountrySettings($aBirthdaySettings);
@@ -204,7 +83,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     exit;
 }
 
-$sBdPostAction = $_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) ? (string)$_POST["action"] : "";
+$sBdPostAction = $_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) ? (string)$_POST["action"] : "";
 $aBdEditActions = array(
     "get_subject",
     "get_subject_portal_user",
@@ -237,7 +116,7 @@ if (!$blCanEdit && in_array($sBdPostAction, $aBdEditActions, true)) {
     nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
 
-if ($sBdPostAction === "get_subject") {
+if ($sBdPostAction == "get_subject") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
@@ -253,7 +132,7 @@ if ($sBdPostAction === "get_subject") {
     }
 }
 
-if ($sBdPostAction === "get_subject_portal_user") {
+if ($sBdPostAction == "get_subject_portal_user") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
@@ -269,7 +148,7 @@ if ($sBdPostAction === "get_subject_portal_user") {
     }
 }
 
-if ($sBdPostAction === "update_subject_portal_user") {
+if ($sBdPostAction == "update_subject_portal_user") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $aPermissionKeys = isset($_POST["permissions"]) && is_array($_POST["permissions"]) ? $_POST["permissions"] : array();
     if ($iSubjectId < 1) {
@@ -286,29 +165,29 @@ if ($sBdPostAction === "update_subject_portal_user") {
             nxSendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
         $aPayload = array(
-            "portal_user_enabled" => isset($_POST["portal_user_enabled"]) && (string)$_POST["portal_user_enabled"] === "1" ? "1" : "0",
+            "portal_user_enabled" => isset($_POST["portal_user_enabled"]) && (string)$_POST["portal_user_enabled"] == "1" ? "1" : "0",
             "portal_user_name" => nxGetPostedTrimmedValue("portal_user_name"),
             "portal_password" => nxGetPostedValue("portal_password"),
-            "portal_user_active" => isset($_POST["portal_user_active"]) && (string)$_POST["portal_user_active"] === "1" ? "1" : "0",
+            "portal_user_active" => isset($_POST["portal_user_active"]) && (string)$_POST["portal_user_active"] == "1" ? "1" : "0",
             "portal_permission_keys" => $aPermissionKeys
         );
         nxSaveSubjectPortalAccess($oPdo, $iSubjectId, (string)$aSubjectRow["subject_type"], $aPayload);
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected user name already exists."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
-if ($sBdPostAction === "update_subject") {
+if ($sBdPostAction == "update_subject") {
     $sPayload = nxGetPostedValue("subject_payload");
-    $aPayload = $sPayload !== "" ? json_decode($sPayload, true) : null;
+    $aPayload = $sPayload != "" ? json_decode($sPayload, true) : null;
     if (!is_array($aPayload)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject data."), 400);
     }
@@ -321,13 +200,13 @@ if ($sBdPostAction === "update_subject") {
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sSubjectType !== "" && !in_array($sSubjectType, nxGetSubjectTypes(), true)) {
+    if ($sSubjectType != "" && !in_array($sSubjectType, nxGetSubjectTypes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject type."), 400);
     }
-    if ($sBirthDate !== "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sBirthDate)) {
+    if ($sBirthDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sBirthDate)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Birth date must use YYYY-MM-DD."), 400);
     }
-    if ($sDeathDate !== "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDeathDate)) {
+    if ($sDeathDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDeathDate)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Death date must use YYYY-MM-DD."), 400);
     }
     if ($sBirthNumber === false) {
@@ -343,7 +222,7 @@ if ($sBdPostAction === "update_subject") {
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
-        if ($sSubjectType !== "" && $sSubjectType !== (string)$aSubjectRow["subject_type"]) {
+        if ($sSubjectType != "" && $sSubjectType != (string)$aSubjectRow["subject_type"]) {
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Subject type cannot be changed."), 409);
         }
@@ -356,7 +235,7 @@ if ($sBdPostAction === "update_subject") {
         ));
 
         $sSubjectName = nxPayloadValue($aPayload, "subject_name_value");
-        if ($sEffectiveSubjectType === "person" || $sSubjectName === "") {
+        if ($sEffectiveSubjectType == "person" || $sSubjectName == "") {
             $oStatement = $oPdo->prepare("DELETE FROM ex_subject_names WHERE subject_id = :subject_id");
             $oStatement->execute(array("subject_id" => $iSubjectId));
         } else {
@@ -364,7 +243,7 @@ if ($sBdPostAction === "update_subject") {
             $oStatement->execute(array("subject_id" => $iSubjectId, "name" => $sSubjectName));
         }
 
-        if ($sEffectiveSubjectType !== "person") {
+        if ($sEffectiveSubjectType != "person") {
             $oStatement = $oPdo->prepare("DELETE FROM ex_persons WHERE subject_id = :subject_id");
             $oStatement->execute(array("subject_id" => $iSubjectId));
         } else {
@@ -376,8 +255,8 @@ if ($sBdPostAction === "update_subject") {
                 "title_after" => nxDbValue(nxPayloadValue($aPayload, "title_after")),
                 "birth_name" => nxDbValue(nxPayloadValue($aPayload, "birth_name")),
                 "birth_number" => nxDbValue($sBirthNumber),
-                "birth_date" => $sBirthDate !== "" ? $sBirthDate : null,
-                "death_date" => $sDeathDate !== "" ? $sDeathDate : null
+                "birth_date" => $sBirthDate != "" ? $sBirthDate : null,
+                "death_date" => $sDeathDate != "" ? $sDeathDate : null
             );
             $blHasPersonValues = false;
             foreach ($aPersonValues as $mValue) {
@@ -407,7 +286,7 @@ if ($sBdPostAction === "update_subject") {
 
         $oPdo->commit();
 
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -416,18 +295,18 @@ if ($sBdPostAction === "update_subject") {
     }
 }
 
-if ($sBdPostAction === "update_subject_nickname") {
+if ($sBdPostAction == "update_subject_nickname") {
     $iNicknameId = isset($_POST["nickname_id"]) ? (int)$_POST["nickname_id"] : 0;
     $sNickname = nxGetPostedTrimmedValue("nickname");
     $sContext = nxGetPostedTrimmedValue("context");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iNicknameId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid nickname."), 400);
     }
-    if ($sNickname === "") {
+    if ($sNickname == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Nickname is required."), 400);
     }
 
@@ -443,14 +322,14 @@ if ($sBdPostAction === "update_subject_nickname") {
         $oStatement = $oPdo->prepare("UPDATE ex_subject_nicknames SET nickname = :nickname, context = :context, is_primary = :is_primary, is_active = :is_active, note = :note WHERE id = :id");
         $oStatement->execute(array(
             "nickname" => $sNickname,
-            "context" => $sContext !== "" ? $sContext : null,
+            "context" => $sContext != "" ? $sContext : null,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null,
+            "note" => $sNote != "" ? $sNote : null,
             "id" => $iNicknameId
         ));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -459,18 +338,18 @@ if ($sBdPostAction === "update_subject_nickname") {
     }
 }
 
-if ($sBdPostAction === "create_subject_nickname") {
+if ($sBdPostAction == "create_subject_nickname") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sNickname = nxGetPostedTrimmedValue("nickname");
     $sContext = nxGetPostedTrimmedValue("context");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sNickname === "") {
+    if ($sNickname == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Nickname is required."), 400);
     }
 
@@ -486,13 +365,13 @@ if ($sBdPostAction === "create_subject_nickname") {
         $oStatement->execute(array(
             "subject_id" => $iSubjectId,
             "nickname" => $sNickname,
-            "context" => $sContext !== "" ? $sContext : null,
+            "context" => $sContext != "" ? $sContext : null,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null
+            "note" => $sNote != "" ? $sNote : null
         ));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -501,7 +380,7 @@ if ($sBdPostAction === "create_subject_nickname") {
     }
 }
 
-if ($sBdPostAction === "update_subject_address") {
+if ($sBdPostAction == "update_subject_address") {
     $iAddressId = isset($_POST["address_id"]) ? (int)$_POST["address_id"] : 0;
     $sAddressType = nxGetPostedTrimmedValue("address_type");
     $sOrganizationName = nxGetPostedTrimmedValue("organization_name");
@@ -519,32 +398,32 @@ if ($sBdPostAction === "update_subject_address") {
     $sRegion = nxGetPostedTrimmedValue("region");
     $sCountry = nxGetPostedTrimmedValue("country");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
-    if ($sCountry !== "") {
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
+    if ($sCountry != "") {
         $sCountry = strtoupper($sCountry);
     }
 
     if ($iAddressId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
     }
-    if ($sAddressType === "") {
+    if ($sAddressType == "") {
         $sAddressType = "main";
     }
     if (!in_array($sAddressType, nxGetAddressTypes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid address type."), 400);
     }
-    if ($sCountry === "") {
+    if ($sCountry == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Country is required."), 400);
     }
-    if ($sCountry !== "" && !in_array($sCountry, nxGetCountryCodes(), true)) {
+    if ($sCountry != "" && !in_array($sCountry, nxGetCountryCodes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid country."), 400);
     }
     $sPostalCode = nxNormalizePostalCode($sCountry, $sPostalCode);
     if ($sPostalCode === false) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid postal code."), 400);
     }
-    if ($sOrganizationName === "" && $sDepartmentName === "" && $sCareOf === "" && $sStreetName === "" && $sHouseNumber === "" && $sEvidenceNumber === "" && $sOrientationNumber === "" && $sOrientationSuffix === "" && $sAddressLine2 === "" && $sCity === "" && $sCityPart === "" && $sPostalCode === "" && $sRegion === "" && $sCountry === "" && $sNote === "") {
+    if ($sOrganizationName == "" && $sDepartmentName == "" && $sCareOf == "" && $sStreetName == "" && $sHouseNumber == "" && $sEvidenceNumber == "" && $sOrientationNumber == "" && $sOrientationSuffix == "" && $sAddressLine2 == "" && $sCity == "" && $sCityPart == "" && $sPostalCode == "" && $sRegion == "" && $sCountry == "" && $sNote == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Address is required."), 400);
     }
 
@@ -560,27 +439,27 @@ if ($sBdPostAction === "update_subject_address") {
         $oStatement = $oPdo->prepare("UPDATE ex_subject_addresses SET address_type = :address_type, organization_name = :organization_name, department_name = :department_name, care_of = :care_of, street_name = :street_name, house_number = :house_number, evidence_number = :evidence_number, orientation_number = :orientation_number, orientation_suffix = :orientation_suffix, address_line2 = :address_line2, city = :city, city_part = :city_part, postal_code = :postal_code, region = :region, country = :country, is_primary = :is_primary, is_active = :is_active, note = :note WHERE id = :id");
         $oStatement->execute(array(
             "address_type" => $sAddressType,
-            "organization_name" => $sOrganizationName !== "" ? $sOrganizationName : null,
-            "department_name" => $sDepartmentName !== "" ? $sDepartmentName : null,
-            "care_of" => $sCareOf !== "" ? $sCareOf : null,
-            "street_name" => $sStreetName !== "" ? $sStreetName : null,
-            "house_number" => $sHouseNumber !== "" ? $sHouseNumber : null,
-            "evidence_number" => $sEvidenceNumber !== "" ? $sEvidenceNumber : null,
-            "orientation_number" => $sOrientationNumber !== "" ? $sOrientationNumber : null,
-            "orientation_suffix" => $sOrientationSuffix !== "" ? $sOrientationSuffix : null,
-            "address_line2" => $sAddressLine2 !== "" ? $sAddressLine2 : null,
-            "city" => $sCity !== "" ? $sCity : null,
-            "city_part" => $sCityPart !== "" ? $sCityPart : null,
-            "postal_code" => $sPostalCode !== "" ? $sPostalCode : null,
-            "region" => $sRegion !== "" ? $sRegion : null,
+            "organization_name" => $sOrganizationName != "" ? $sOrganizationName : null,
+            "department_name" => $sDepartmentName != "" ? $sDepartmentName : null,
+            "care_of" => $sCareOf != "" ? $sCareOf : null,
+            "street_name" => $sStreetName != "" ? $sStreetName : null,
+            "house_number" => $sHouseNumber != "" ? $sHouseNumber : null,
+            "evidence_number" => $sEvidenceNumber != "" ? $sEvidenceNumber : null,
+            "orientation_number" => $sOrientationNumber != "" ? $sOrientationNumber : null,
+            "orientation_suffix" => $sOrientationSuffix != "" ? $sOrientationSuffix : null,
+            "address_line2" => $sAddressLine2 != "" ? $sAddressLine2 : null,
+            "city" => $sCity != "" ? $sCity : null,
+            "city_part" => $sCityPart != "" ? $sCityPart : null,
+            "postal_code" => $sPostalCode != "" ? $sPostalCode : null,
+            "region" => $sRegion != "" ? $sRegion : null,
             "country" => $sCountry,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null,
+            "note" => $sNote != "" ? $sNote : null,
             "id" => $iAddressId
         ));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -589,7 +468,7 @@ if ($sBdPostAction === "update_subject_address") {
     }
 }
 
-if ($sBdPostAction === "create_subject_address") {
+if ($sBdPostAction == "create_subject_address") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sAddressType = nxGetPostedTrimmedValue("address_type");
     $sOrganizationName = nxGetPostedTrimmedValue("organization_name");
@@ -607,32 +486,32 @@ if ($sBdPostAction === "create_subject_address") {
     $sRegion = nxGetPostedTrimmedValue("region");
     $sCountry = nxGetPostedTrimmedValue("country");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
-    if ($sCountry !== "") {
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
+    if ($sCountry != "") {
         $sCountry = strtoupper($sCountry);
     }
 
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sAddressType === "") {
+    if ($sAddressType == "") {
         $sAddressType = "main";
     }
     if (!in_array($sAddressType, nxGetAddressTypes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid address type."), 400);
     }
-    if ($sCountry === "") {
+    if ($sCountry == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Country is required."), 400);
     }
-    if ($sCountry !== "" && !in_array($sCountry, nxGetCountryCodes(), true)) {
+    if ($sCountry != "" && !in_array($sCountry, nxGetCountryCodes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid country."), 400);
     }
     $sPostalCode = nxNormalizePostalCode($sCountry, $sPostalCode);
     if ($sPostalCode === false) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid postal code."), 400);
     }
-    if ($sOrganizationName === "" && $sDepartmentName === "" && $sCareOf === "" && $sStreetName === "" && $sHouseNumber === "" && $sEvidenceNumber === "" && $sOrientationNumber === "" && $sOrientationSuffix === "" && $sAddressLine2 === "" && $sCity === "" && $sCityPart === "" && $sPostalCode === "" && $sRegion === "" && $sCountry === "" && $sNote === "") {
+    if ($sOrganizationName == "" && $sDepartmentName == "" && $sCareOf == "" && $sStreetName == "" && $sHouseNumber == "" && $sEvidenceNumber == "" && $sOrientationNumber == "" && $sOrientationSuffix == "" && $sAddressLine2 == "" && $sCity == "" && $sCityPart == "" && $sPostalCode == "" && $sRegion == "" && $sCountry == "" && $sNote == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Address is required."), 400);
     }
 
@@ -648,26 +527,26 @@ if ($sBdPostAction === "create_subject_address") {
         $oStatement->execute(array(
             "subject_id" => $iSubjectId,
             "address_type" => $sAddressType,
-            "organization_name" => $sOrganizationName !== "" ? $sOrganizationName : null,
-            "department_name" => $sDepartmentName !== "" ? $sDepartmentName : null,
-            "care_of" => $sCareOf !== "" ? $sCareOf : null,
-            "street_name" => $sStreetName !== "" ? $sStreetName : null,
-            "house_number" => $sHouseNumber !== "" ? $sHouseNumber : null,
-            "evidence_number" => $sEvidenceNumber !== "" ? $sEvidenceNumber : null,
-            "orientation_number" => $sOrientationNumber !== "" ? $sOrientationNumber : null,
-            "orientation_suffix" => $sOrientationSuffix !== "" ? $sOrientationSuffix : null,
-            "address_line2" => $sAddressLine2 !== "" ? $sAddressLine2 : null,
-            "city" => $sCity !== "" ? $sCity : null,
-            "city_part" => $sCityPart !== "" ? $sCityPart : null,
-            "postal_code" => $sPostalCode !== "" ? $sPostalCode : null,
-            "region" => $sRegion !== "" ? $sRegion : null,
+            "organization_name" => $sOrganizationName != "" ? $sOrganizationName : null,
+            "department_name" => $sDepartmentName != "" ? $sDepartmentName : null,
+            "care_of" => $sCareOf != "" ? $sCareOf : null,
+            "street_name" => $sStreetName != "" ? $sStreetName : null,
+            "house_number" => $sHouseNumber != "" ? $sHouseNumber : null,
+            "evidence_number" => $sEvidenceNumber != "" ? $sEvidenceNumber : null,
+            "orientation_number" => $sOrientationNumber != "" ? $sOrientationNumber : null,
+            "orientation_suffix" => $sOrientationSuffix != "" ? $sOrientationSuffix : null,
+            "address_line2" => $sAddressLine2 != "" ? $sAddressLine2 : null,
+            "city" => $sCity != "" ? $sCity : null,
+            "city_part" => $sCityPart != "" ? $sCityPart : null,
+            "postal_code" => $sPostalCode != "" ? $sPostalCode : null,
+            "region" => $sRegion != "" ? $sRegion : null,
             "country" => $sCountry,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null
+            "note" => $sNote != "" ? $sNote : null
         ));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -676,7 +555,7 @@ if ($sBdPostAction === "create_subject_address") {
     }
 }
 
-if ($sBdPostAction === "update_subject_group") {
+if ($sBdPostAction == "update_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     $sGroupName = nxGetPostedTrimmedValue("name");
@@ -684,7 +563,7 @@ if ($sBdPostAction === "update_subject_group") {
     if ($iSubjectId < 1 || $iGroupId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid group link."), 400);
     }
-    if ($sGroupName === "") {
+    if ($sGroupName == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
 
@@ -694,7 +573,7 @@ if ($sBdPostAction === "update_subject_group") {
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+            nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
         }
         $oStatement = $oPdo->prepare("SELECT id FROM ex_groups WHERE id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iGroupId));
@@ -711,7 +590,7 @@ if ($sBdPostAction === "update_subject_group") {
         $oStatement = $oPdo->prepare("UPDATE ex_groups SET name = :name WHERE id = :id");
         $oStatement->execute(array("name" => $sGroupName, "id" => $iGroupId));
         $oPdo->commit();
-        $aResponse = nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
+        $aResponse = nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
         $aResponse["group"] = array(
             "group_id" => $iGroupId,
             "name" => $sGroupName
@@ -725,14 +604,14 @@ if ($sBdPostAction === "update_subject_group") {
     }
 }
 
-if ($sBdPostAction === "create_subject_group") {
+if ($sBdPostAction == "create_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sGroupName = nxGetPostedTrimmedValue("name");
 
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sGroupName === "") {
+    if ($sGroupName == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
 
@@ -761,7 +640,7 @@ if ($sBdPostAction === "create_subject_group") {
         $oStatement = $oPdo->prepare("INSERT INTO ex_subject_groups (subject_id, group_id) VALUES (:subject_id, :group_id)");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         $oPdo->commit();
-        $aResponse = nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
+        $aResponse = nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
         $aResponse["group"] = array(
             "group_id" => $iGroupId,
             "name" => $sGroupName
@@ -771,22 +650,22 @@ if ($sBdPostAction === "create_subject_group") {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected group already exists or is already assigned."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
-if ($sBdPostAction === "update_subject_note") {
+if ($sBdPostAction == "update_subject_note") {
     $iNoteId = isset($_POST["note_id"]) ? (int)$_POST["note_id"] : 0;
     $sNoteText = nxGetPostedTrimmedValue("note_text");
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iNoteId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid note."), 400);
     }
-    if ($sNoteText === "") {
+    if ($sNoteText == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Note text is required."), 400);
     }
 
@@ -802,7 +681,7 @@ if ($sBdPostAction === "update_subject_note") {
         $oStatement = $oPdo->prepare("UPDATE ex_subject_notes SET note_text = :note_text, is_active = :is_active WHERE id = :id");
         $oStatement->execute(array("note_text" => $sNoteText, "is_active" => $iIsActive, "id" => $iNoteId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -811,15 +690,15 @@ if ($sBdPostAction === "update_subject_note") {
     }
 }
 
-if ($sBdPostAction === "create_subject_note") {
+if ($sBdPostAction == "create_subject_note") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sNoteText = nxGetPostedTrimmedValue("note_text");
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sNoteText === "") {
+    if ($sNoteText == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Note text is required."), 400);
     }
 
@@ -834,7 +713,7 @@ if ($sBdPostAction === "create_subject_note") {
         $oStatement = $oPdo->prepare("INSERT INTO ex_subject_notes (subject_id, note_text, is_active) VALUES (:subject_id, :note_text, :is_active)");
         $oStatement->execute(array("subject_id" => $iSubjectId, "note_text" => $sNoteText, "is_active" => $iIsActive));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -843,7 +722,7 @@ if ($sBdPostAction === "create_subject_note") {
     }
 }
 
-if ($sBdPostAction === "delete_subject") {
+if ($sBdPostAction == "delete_subject") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
@@ -869,7 +748,7 @@ if ($sBdPostAction === "delete_subject") {
     }
 }
 
-if ($sBdPostAction === "delete_subject_contact") {
+if ($sBdPostAction == "delete_subject_contact") {
     $iSubjectContactId = isset($_POST["subject_contact_id"]) ? (int)$_POST["subject_contact_id"] : 0;
     if ($iSubjectContactId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid contact link."), 400);
@@ -887,7 +766,7 @@ if ($sBdPostAction === "delete_subject_contact") {
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_contacts WHERE id = :id");
         $oStatement->execute(array("id" => $iSubjectContactId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -896,7 +775,7 @@ if ($sBdPostAction === "delete_subject_contact") {
     }
 }
 
-if ($sBdPostAction === "delete_subject_nickname") {
+if ($sBdPostAction == "delete_subject_nickname") {
     $iNicknameId = isset($_POST["nickname_id"]) ? (int)$_POST["nickname_id"] : 0;
     if ($iNicknameId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid nickname."), 400);
@@ -914,7 +793,7 @@ if ($sBdPostAction === "delete_subject_nickname") {
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_nicknames WHERE id = :id");
         $oStatement->execute(array("id" => $iNicknameId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -923,7 +802,7 @@ if ($sBdPostAction === "delete_subject_nickname") {
     }
 }
 
-if ($sBdPostAction === "delete_subject_address") {
+if ($sBdPostAction == "delete_subject_address") {
     $iAddressId = isset($_POST["address_id"]) ? (int)$_POST["address_id"] : 0;
     if ($iAddressId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
@@ -941,7 +820,7 @@ if ($sBdPostAction === "delete_subject_address") {
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_addresses WHERE id = :id");
         $oStatement->execute(array("id" => $iAddressId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -950,7 +829,7 @@ if ($sBdPostAction === "delete_subject_address") {
     }
 }
 
-if ($sBdPostAction === "delete_subject_group") {
+if ($sBdPostAction == "delete_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     if ($iSubjectId < 1 || $iGroupId < 1) {
@@ -963,12 +842,12 @@ if ($sBdPostAction === "delete_subject_group") {
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+            nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
         }
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -977,7 +856,7 @@ if ($sBdPostAction === "delete_subject_group") {
     }
 }
 
-if ($sBdPostAction === "delete_subject_note") {
+if ($sBdPostAction == "delete_subject_note") {
     $iNoteId = isset($_POST["note_id"]) ? (int)$_POST["note_id"] : 0;
     if ($iNoteId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid note."), 400);
@@ -995,7 +874,7 @@ if ($sBdPostAction === "delete_subject_note") {
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_notes WHERE id = :id");
         $oStatement->execute(array("id" => $iNoteId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        nxSendJsonAndExit(nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -1004,13 +883,13 @@ if ($sBdPostAction === "delete_subject_note") {
     }
 }
 
-if ($sBdPostAction === "create_contact") {
+if ($sBdPostAction == "create_contact") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
-    $sContactValue = nxGetPostedContactValue();
+    $sContactValue = nxGetPostedValue("contact_value");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
     $aContactType = nxGetContactTypeById($iContactTypeId, $oPdo, true);
 
     if ($iSubjectId < 1) {
@@ -1023,7 +902,7 @@ if ($sBdPostAction === "create_contact") {
     if ($sContactValue === false) {
         nxSendJsonAndExit(array("success" => false, "message" => nxContactInputErrorMessage((string)$aContactType["contact_type"])), 400);
     }
-    if ($sContactValue === "") {
+    if ($sContactValue == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Contact value is required."), 400);
     }
 
@@ -1058,12 +937,12 @@ if ($sBdPostAction === "create_contact") {
             "contact_id" => $iContactId,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null
+            "note" => $sNote != "" ? $sNote : null
         ));
         $iSubjectContactId = (int)$oPdo->lastInsertId();
         $oPdo->commit();
 
-        $aResponse = nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
+        $aResponse = nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
         $aResponse["contact"] = array(
             "subject_contact_id" => $iSubjectContactId,
             "contact_id" => $iContactId,
@@ -1081,20 +960,20 @@ if ($sBdPostAction === "create_contact") {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected contact value already exists or is already assigned."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
-if ($sBdPostAction === "update_contact") {
+if ($sBdPostAction == "update_contact") {
     $iSubjectContactId = isset($_POST["subject_contact_id"]) ? (int)$_POST["subject_contact_id"] : 0;
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
-    $sContactValue = nxGetPostedContactValue();
+    $sContactValue = nxGetPostedValue("contact_value");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
     $aContactType = nxGetContactTypeById($iContactTypeId, $oPdo, true);
 
     if ($iSubjectContactId < 1) {
@@ -1107,7 +986,7 @@ if ($sBdPostAction === "update_contact") {
     if ($sContactValue === false) {
         nxSendJsonAndExit(array("success" => false, "message" => nxContactInputErrorMessage((string)$aContactType["contact_type"])), 400);
     }
-    if ($sContactValue === "") {
+    if ($sContactValue == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Contact value is required."), 400);
     }
 
@@ -1133,12 +1012,12 @@ if ($sBdPostAction === "update_contact") {
         $oStatement->execute(array(
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null,
+            "note" => $sNote != "" ? $sNote : null,
             "id" => $iSubjectContactId
         ));
         $oPdo->commit();
 
-        $aResponse = nxBdGetUpdatedSubjectResponse($oPdo, (int)$aSubjectContact["subject_id"], $aBirthdaySettings, $blCanEdit);
+        $aResponse = nxInterGetUpdatedSubjectResponse($oPdo, (int)$aSubjectContact["subject_id"], $aBirthdaySettings, $blCanEdit);
         $aResponse["contact"] = array(
             "subject_contact_id" => $iSubjectContactId,
             "contact_id" => $iContactId,
@@ -1156,7 +1035,7 @@ if ($sBdPostAction === "update_contact") {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected contact value already exists."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -1183,7 +1062,7 @@ try {
     $aGroups = nxFetchSubjectGroups($oPdo);
     $aAllGroups = nxFetchGroups($oPdo);
     $aNotes = nxFetchSubjectNotes($oPdo);
-    $aBirthdayServedRows = nxBdFetchBirthdayServedRows($oPdo);
+    $aBirthdayServedRows = nxInterFetchBirthdayServedRows($oPdo);
 } catch (Exception $oException) {
     send500AndExit("Database error: " . $oException->getMessage());
 }
@@ -1193,10 +1072,10 @@ nxApplySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $
 
 $aBirthdayRows = array();
 foreach ($aRows as $aRow) {
-    if ((string)$aRow["subject_type"] !== "person") {
+    if ((string)$aRow["subject_type"] != "person") {
         continue;
     }
-    $aBirthdayInfo = nxBdGetBirthdayInfo(isset($aBirthdayServedRows[(int)$aRow["subject_id"]]["inter_served_at"]) ? $aBirthdayServedRows[(int)$aRow["subject_id"]]["inter_served_at"] : "");
+    $aBirthdayInfo = nxInterGetBirthdayInfo(isset($aBirthdayServedRows[(int)$aRow["subject_id"]]["inter_served_at"]) ? $aBirthdayServedRows[(int)$aRow["subject_id"]]["inter_served_at"] : "");
     if (!is_array($aBirthdayInfo)) {
         continue;
     }
@@ -1251,8 +1130,8 @@ $iTime = sendPageHeaders();
         <label><input type="checkbox" name="show_inactive_notes" value="1"<?php echo $aBirthdaySettings["show_inactive_notes"] ? " checked" : ""; ?>> Show inactive notes</label>
         <hr>
         <label><input type="checkbox" name="show_czechia_country" value="1" class="js-czechia-country-toggle"<?php echo $aBirthdaySettings["show_czechia_country"] ? " checked" : ""; ?>> Also show the country Czechia</label>
-        <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent" data-czechia-stored="<?php echo $aBirthdaySettings["show_czechia_country_in_czech"] ? "1" : "0"; ?>"<?php echo $aBirthdaySettings["show_czechia_country"] && $aBirthdaySettings["show_czechia_country_in_czech"] ? " checked" : ""; ?><?php echo $aBirthdaySettings["show_czechia_country"] ? "" : " disabled"; ?>> Show the country Czechia in Czech</label>
-        <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent" data-czechia-stored="<?php echo $aBirthdaySettings["show_czechia_country_as_czech_republic"] ? "1" : "0"; ?>"<?php echo $aBirthdaySettings["show_czechia_country"] && $aBirthdaySettings["show_czechia_country_as_czech_republic"] ? " checked" : ""; ?><?php echo $aBirthdaySettings["show_czechia_country"] ? "" : " disabled"; ?>> Show &#268;esk&aacute; republika instead of &#268;esko</label>
+        <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aBirthdaySettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aBirthdaySettings["show_czechia_country"] && $aBirthdaySettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aBirthdaySettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
+        <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aBirthdaySettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aBirthdaySettings["show_czechia_country"] && $aBirthdaySettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aBirthdaySettings["show_czechia_country"] ? "" : " disabled"); ?>> Show &#268;esk&aacute; republika instead of &#268;esko</label>
       </div>
       <?php echo nxRenderExSettingsScopeNote(); ?>
       <div class="confirm-dialog-actions">
@@ -1261,36 +1140,29 @@ $iTime = sendPageHeaders();
       </div>
     </form>
   </div>
-  <datalist id="nx-group-list">
 <?php
+
+echo "  <datalist id=\"nx-group-list\">\n";
 
 foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . nxHtml($aGroup["name"]) . "\"></option>\n";
 }
 
-?>
-  </datalist>
-  <select id="nx-contact-type-list" hidden>
-<?php
+echo "  </datalist>\n";
+echo "  <select id=\"nx-contact-type-list\" hidden>\n";
 
 foreach ($aContactTypes as $aContactType) {
     echo "    <option value=\"" . nxHtml($aContactType["id"]) . "\" data-contact-type=\"" . nxHtml($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . nxHtml($aContactType["is_active"]) . "\">" . nxHtml($aContactType["name"]) . "</option>\n";
 }
 
-?>
-  </select>
-<?php
+echo "  </select>\n";
 
-if (count($aBirthdayRows) === 0) {
+if (!$aBirthdayRows) {
     echo "  <p>No visible records found.</p>\n";
 } else {
+    echo nxRenderPageThrobber();
 
 ?>
-  <div class="render-throbber js-render-throbber" role="status" aria-live="polite">
-    <div class="render-throbber-box">
-      <span class="render-throbber-icon" aria-hidden="true">&#8987;</span>
-    </div>
-  </div>
   <table id="nx-interactions-table" class="nx-contacts-table table-filter-target" style="table-layout: auto;">
     <thead>
       <tr>
@@ -1314,18 +1186,15 @@ if (count($aBirthdayRows) === 0) {
 <?php
 
     foreach ($aBirthdayRows as $aRow) {
-        echo nxBdRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aBirthdaySettings);
+        echo nxInterRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aBirthdaySettings);
     }
 
-?>
-    </tbody>
-  </table>
-<?php
-
+    echo "    </tbody>\n";
+echo "  </table>\n";
 }
 
+echo nxRenderFilterFocusButton();
+echo nxRenderAdminScript($sBaseUrl);
 ?>
-  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter">&#128269; Filter</button>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

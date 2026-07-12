@@ -42,7 +42,7 @@ $iTime = sendPageHeaders();
 
 if ($sError) {
     echo "  <p><strong>Error:</strong> " . htmlspecialchars($sError) . "</p>\n";
-} elseif (count($aRows) === 0) {
+} elseif (!$aRows) {
     echo "  <p>No records found in <code>fs_film_scans</code>.</p>\n";
 } else {
 ?>
@@ -90,7 +90,7 @@ if ($sError) {
         }
 
         $mExposureValue = $aRow["exposure_index"];
-        if ((int)$mExposureValue === 0) {
+        if (!$mExposureValue) {
             $mExposureValue = "unknown";
         }
 
@@ -98,7 +98,7 @@ if ($sError) {
         $sPushPull = formatPushPull($aRow["push_pull"]);
         $blScanError = false;
         $sScanDateDisplay = $sScanDateRaw;
-        if (substr($sScanDateRaw, 0, 10) === "0000-00-00") {
+        if (substr($sScanDateRaw, 0, 10) == "0000-00-00") {
             $sScanDateDisplay = "not set";
             $blScanError = true;
         }
@@ -122,7 +122,8 @@ if ($sError) {
 }
 
 ?>
-  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter">&#128269; Filter</button>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>
 </html>

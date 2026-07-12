@@ -44,7 +44,7 @@ try {
         $aStack = array($aTable[0]);
         while (count($aStack) > 0) {
             $sTableName = end($aStack);
-            if (isset($aTableStates[$sTableName]) && $aTableStates[$sTableName] === "done") {
+            if (isset($aTableStates[$sTableName]) && $aTableStates[$sTableName] == "done") {
                 array_pop($aStack);
                 continue;
             }
@@ -74,12 +74,12 @@ try {
 
 if (isset($_GET["download"])) {
     $sDownload = (string)$_GET["download"];
-    if ($sDownload === "db.sql") {
+    if ($sDownload == "db.sql") {
         $sDownload = "schema";
     }
-    if ($sDownload === "schema" || $sDownload === "backup") {
+    if ($sDownload == "schema" || $sDownload == "backup") {
         try {
-            $sBody = $sDownload === "backup" ? getDatabaseBackupSql($oPdo, $aTables) : getDatabaseSchemaSql($aTables);
+            $sBody = $sDownload == "backup" ? getDatabaseBackupSql($oPdo, $aTables) : getDatabaseSchemaSql($aTables);
         } catch (Exception $oException) {
             send500AndExit("Database error: " . $oException->getMessage());
         }
@@ -144,10 +144,10 @@ foreach ($aTables as $aTable) {
         . "      </tr>\n";
 }
 
+echo "    </tbody>\n";
+echo "  </table>\n";
+echo nxRenderFilterFocusButton();
+echo nxRenderAdminScript($sBaseUrl);
 ?>
-    </tbody>
-  </table>
-  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter">&#128269; Filter</button>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

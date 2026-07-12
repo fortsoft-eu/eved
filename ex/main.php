@@ -80,11 +80,34 @@ if ($sDatabaseDownloadProject == "") {
 }
 
 
-$sEditEmoji = "📝";
-$sDeleteEmoji = "🗑️";
+$sMenuEmoji = "&#9776;";
+$sEditEmoji = "&#128221;";
+$sDeleteEmoji = "&#128465;&#65039;";
 $sAddEmoji = "&#10133;";
-$sHiddenInactiveEmoji = "🗃️";
-$sPortalEmoji = "🔐";
+$sHiddenInactiveEmoji = "&#128451;&#65039;";
+$sPortalEmoji = "&#128272;";
+$sEmptyValueEmoji = "&#10134;";
+$sThrobberEmoji = "&#8987;";
+$sFilterFocusEmoji = "&#128269;";
+$sCopyEmoji = "&#128203;";
+$sCopySuccessEmoji = "&#10004;&#65039;";
+$sCopyFailureEmoji = "&#10060;&#65039;";
+$sPrimaryEmoji = "&#11088;";
+$sInactiveEmoji = "&#9940;";
+$sMergeEmoji = "&#128260;";
+$sMoveUpEmoji = "&#9650;";
+$sMoveDownEmoji = "&#9660;";
+$sBirthdayServedEmoji = "&#9745;&#65039;";
+$sCommunicationServedEmoji = "&#128232;";
+$sContactEmailEmoji = "&#128231;";
+$sContactLandlineEmoji = "&#128222;";
+$sContactCellEmoji = "&#128241;";
+$sContactFaxEmoji = "&#128224;";
+$sContactPagerEmoji = "&#128223;";
+$sContactWebEmoji = "&#127760;";
+$sContactTelegramEmoji = "&#9992;&#65039;";
+$sContactMessageEmoji = "&#128172;";
+$sContactYouTubeEmoji = "&#9654;&#65039;";
 $iCalendarFirstDay = 1;
 $sDateInputFormat = "YYYY-MM-DD";
 $sDateInputPattern = "\\d{4}-\\d{2}-\\d{2}";
@@ -95,8 +118,12 @@ $oPdo = null;
 
 
 try {
-    $oPdo = new PDO("mysql:host=" . $sDbHost . ";dbname=" . $sDbName . ";charset=utf8mb4", $sDbUserName, $sDbUserPass,
-        array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false));
+    $oPdo = new PDO(
+        "mysql:host=" . $sDbHost . ";dbname=" . $sDbName . ";charset=utf8mb4",
+        $sDbUserName,
+        $sDbUserPass,
+        array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false)
+    );
 } catch (PDOException $oException) {
     $sError = $oException->getMessage();
 }

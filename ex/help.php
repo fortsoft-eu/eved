@@ -3,8 +3,6 @@
 include "main.php";
 
 
-requireExViewAccess($aAllowedIps);
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
@@ -94,6 +92,6 @@ $iTime = sendPageHeaders();
     <dt><a href="<?php echo $sBaseUrl; ?>demo.php" target="_blank" rel="noopener noreferrer">Demo Subjects</a></dt>
     <dd>Otevírá demonstrační stránku se vzorovými subjekty v novém okně stejně jako položka menu. Slouží k testování rozložení tabulek, filtrů, nastavení, modálů, vykreslení akcí, formátování kontaktů a zobrazení adres bez úprav skutečných záznamů.</dd>
   </dl>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+<?php echo nxRenderAdminScript($sBaseUrl); ?>
 </body>
 </html>

@@ -3,60 +3,14 @@
 include "main.php";
 
 
+if (!$oPdo) {
+    send500AndExit("Database error: " . $sError);
+}
+
 requireExFullAccess($aAllowedIps);
 
 $aExternalLibraries = array();
 $sLibraryDirectory = __DIR__ . "/lib";
-
-function nxExternalLibraryPermissions($sPath) {
-    $iPerms = @fileperms($sPath);
-    if ($iPerms === false) {
-        return "";
-    }
-
-    if (($iPerms & 0xC000) === 0xC000) {
-        $sInfo = "s";
-    } else if (($iPerms & 0xA000) === 0xA000) {
-        $sInfo = "l";
-    } else if (($iPerms & 0x8000) === 0x8000) {
-        $sInfo = "-";
-    } else if (($iPerms & 0x6000) === 0x6000) {
-        $sInfo = "b";
-    } else if (($iPerms & 0x4000) === 0x4000) {
-        $sInfo = "d";
-    } else if (($iPerms & 0x2000) === 0x2000) {
-        $sInfo = "c";
-    } else if (($iPerms & 0x1000) === 0x1000) {
-        $sInfo = "p";
-    } else {
-        $sInfo = "u";
-    }
-
-    $sInfo .= ($iPerms & 0x0100) ? "r" : "-";
-    $sInfo .= ($iPerms & 0x0080) ? "w" : "-";
-    $sInfo .= ($iPerms & 0x0040) ? (($iPerms & 0x0800) ? "s" : "x") : (($iPerms & 0x0800) ? "S" : "-");
-    $sInfo .= ($iPerms & 0x0020) ? "r" : "-";
-    $sInfo .= ($iPerms & 0x0010) ? "w" : "-";
-    $sInfo .= ($iPerms & 0x0008) ? (($iPerms & 0x0400) ? "s" : "x") : (($iPerms & 0x0400) ? "S" : "-");
-    $sInfo .= ($iPerms & 0x0004) ? "r" : "-";
-    $sInfo .= ($iPerms & 0x0002) ? "w" : "-";
-    $sInfo .= ($iPerms & 0x0001) ? (($iPerms & 0x0200) ? "t" : "x") : (($iPerms & 0x0200) ? "T" : "-");
-    return $sInfo;
-}
-
-function nxExternalLibraryOwner($sPath) {
-    $iOwner = @fileowner($sPath);
-    if ($iOwner === false) {
-        return "";
-    }
-    if (function_exists("posix_getpwuid")) {
-        $aOwner = @posix_getpwuid($iOwner);
-        if (is_array($aOwner) && isset($aOwner["name"])) {
-            return (string)$aOwner["name"];
-        }
-    }
-    return (string)$iOwner;
-}
 
 if (is_dir($sLibraryDirectory)) {
     $oDirectory = new DirectoryIterator($sLibraryDirectory);
@@ -126,10 +80,10 @@ foreach ($aExternalLibraries as $aExternalLibrary) {
         . "      </tr>\n";
 }
 
+echo "    </tbody>\n";
+echo "  </table>\n";
+echo nxRenderFilterFocusButton();
+echo nxRenderAdminScript($sBaseUrl);
 ?>
-    </tbody>
-  </table>
-  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter">&#128269; Filter</button>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

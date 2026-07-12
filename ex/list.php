@@ -24,468 +24,21 @@ if (!isset($_SESSION["ex_full_list_settings"]) || !is_array($_SESSION["ex_full_l
 }
 foreach ($aFullListSettingsDefaults as $sFullListSettingName => $iFullListSettingDefault) {
     if (isset($_SESSION["ex_full_list_settings"][$sFullListSettingName])) {
-        $aFullListSettings[$sFullListSettingName] = (int)$_SESSION["ex_full_list_settings"][$sFullListSettingName] === 1 ? 1 : 0;
+        $aFullListSettings[$sFullListSettingName] = (int)$_SESSION["ex_full_list_settings"][$sFullListSettingName] == 1 ? 1 : 0;
     } else {
         $aFullListSettings[$sFullListSettingName] = $iFullListSettingDefault;
     }
 }
 $aFullListSettings = nxApplyExCountrySettings($aFullListSettings);
 
-function nxGetFullListComplexFilterFields() {
-    return array(
-        "subject_type" => array("label" => "Type", "sql" => "`subject_type`", "value_type" => "text"),
-        "subject_name" => array("label" => "Name", "sql" => "`subject_name`"),
-        "title_before" => array("label" => "Title Before", "sql" => "`title_before`", "scope_sql" => "`subject_type` = 'person'"),
-        "first_name" => array("label" => "First Name", "sql" => "`first_name`", "scope_sql" => "`subject_type` = 'person'"),
-        "middle_name" => array("label" => "Middle Name", "sql" => "`middle_name`", "scope_sql" => "`subject_type` = 'person'"),
-        "last_name" => array("label" => "Last Name", "sql" => "`last_name`", "scope_sql" => "`subject_type` = 'person'"),
-        "title_after" => array("label" => "Title After", "sql" => "`title_after`", "scope_sql" => "`subject_type` = 'person'"),
-        "birth_name" => array("label" => "Birth Name", "sql" => "`birth_name`", "scope_sql" => "`subject_type` = 'person'"),
-        "birth_number" => array("label" => "Birth Number", "sql" => "`birth_number`", "value_type" => "birth_number", "scope_sql" => "`subject_type` = 'person'"),
-        "birth_date" => array("label" => "Birth Date", "sql" => "`birth_date`", "value_type" => "date", "scope_sql" => "`subject_type` = 'person'"),
-        "death_date" => array("label" => "Death Date", "sql" => "`death_date`", "value_type" => "date", "scope_sql" => "`subject_type` = 'person'"),
-        "birthday_served_at" => array("label" => "Birthday Served At", "sql" => "`birthday_served_at`", "value_type" => "datetime", "scope_sql" => "`subject_type` = 'person'"),
-        "inter_served_at" => array("label" => "Interaction Served At", "sql" => "`inter_served_at`", "value_type" => "datetime", "scope_sql" => "`subject_type` = 'person'"),
-        "nicknames" => array("label" => "Nicknames", "sql" => "`nicknames`"),
-        "addresses" => array("label" => "Addresses", "sql" => "`addresses`"),
-        "address_type" => array("label" => "Address Type", "address_column" => "address_type", "value_type" => "address_type"),
-        "organization_name" => array("label" => "Organization Name", "address_column" => "organization_name"),
-        "department_name" => array("label" => "Department Name", "address_column" => "department_name"),
-        "care_of" => array("label" => "Care Of", "address_column" => "care_of"),
-        "street_name" => array("label" => "Street Name", "address_column" => "street_name"),
-        "house_number" => array("label" => "House Number", "address_column" => "house_number"),
-        "evidence_number" => array("label" => "Evidence Number", "address_column" => "evidence_number"),
-        "orientation_number" => array("label" => "Orientation Number", "address_column" => "orientation_number"),
-        "orientation_suffix" => array("label" => "Orientation Suffix", "address_column" => "orientation_suffix"),
-        "address_line2" => array("label" => "Address Line 2", "address_column" => "address_line2"),
-        "city" => array("label" => "City", "address_column" => "city"),
-        "city_part" => array("label" => "City Part", "address_column" => "city_part"),
-        "postal_code" => array("label" => "Postal Code", "address_column" => "postal_code"),
-        "region" => array("label" => "Region", "address_column" => "region"),
-        "country" => array("label" => "Country", "address_column" => "country", "value_type" => "country"),
-        "address_is_primary" => array("label" => "Address Is Primary", "address_column" => "is_primary", "value_type" => "boolean"),
-        "address_is_active" => array("label" => "Address Is Active", "address_column" => "is_active", "value_type" => "boolean"),
-        "address_note" => array("label" => "Address Note", "address_column" => "note"),
-        "contacts" => array("label" => "Contacts", "sql" => "`contacts`"),
-        "group_names" => array("label" => "Groups", "sql" => "`group_names`", "value_type" => "group"),
-        "notes" => array("label" => "Subject Notes", "sql" => "`notes`"),
-        "is_active" => array("label" => "Active", "sql" => "`is_active`", "value_type" => "boolean"),
-        "created_at" => array("label" => "Created At", "sql" => "`created_at`", "value_type" => "datetime")
-    );
+$aFullListComplexFilterContactTypes = array();
+try {
+    $oStatement = $oPdo->query("SELECT id, contact_type, name FROM ex_contact_types ORDER BY `order` ASC, id ASC");
+    $aFullListComplexFilterContactTypes = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $oException) {
+    send500AndExit("Database error: " . $oException->getMessage());
 }
-
-function nxGetFullListComplexFilterOperators() {
-    return array(
-        "equals" => array("label" => "is equal to", "needs_value" => 1),
-        "not_equals" => array("label" => "is not equal to", "needs_value" => 1),
-        "is_lower_than" => array("label" => "is lower than", "needs_value" => 1),
-        "is_lower_than_or_equal" => array("label" => "is lower than or equal to", "needs_value" => 1),
-        "is_greater_than" => array("label" => "is greater than", "needs_value" => 1),
-        "is_greater_than_or_equal" => array("label" => "is greater than or equal to", "needs_value" => 1),
-        "contains" => array("label" => "contains", "needs_value" => 1),
-        "not_contains" => array("label" => "does not contain", "needs_value" => 1),
-        "starts" => array("label" => "starts with", "needs_value" => 1),
-        "not_starts" => array("label" => "does not start with", "needs_value" => 1),
-        "ends" => array("label" => "ends with", "needs_value" => 1),
-        "not_ends" => array("label" => "does not end with", "needs_value" => 1),
-        "empty" => array("label" => "is empty", "needs_value" => 0),
-        "not_empty" => array("label" => "is not empty", "needs_value" => 0)
-    );
-}
-
-function nxGetDefaultFullListComplexFilter() {
-    return array(
-        "match" => "all",
-        "conditions" => array()
-    );
-}
-
-function nxGetDefaultFullListComplexFilterDraft() {
-    return array(
-        "match" => "all",
-        "conditions" => array(
-            array(
-                "field" => "subject_name",
-                "operator" => "contains",
-                "value" => ""
-            )
-        )
-    );
-}
-
-function nxNormalizeFullListComplexFilter($aPayload, $aFields, $aOperators) {
-    $aFilter = nxGetDefaultFullListComplexFilter();
-
-    if (isset($aPayload["match"]) && (string)$aPayload["match"] === "any") {
-        $aFilter["match"] = "any";
-    } elseif (isset($aPayload["complex_filter_match"]) && (string)$aPayload["complex_filter_match"] === "any") {
-        $aFilter["match"] = "any";
-    }
-    if (isset($aPayload["conditions"]) && is_array($aPayload["conditions"])) {
-        $iCount = 0;
-        foreach ($aPayload["conditions"] as $aCondition) {
-            if ($iCount >= 25) {
-                break;
-            }
-            $sField = isset($aCondition["field"]) ? (string)$aCondition["field"] : "";
-            $sOperator = isset($aCondition["operator"]) ? (string)$aCondition["operator"] : "";
-            $sValue = isset($aCondition["value"]) ? (string)$aCondition["value"] : "";
-            if (!isset($aFields[$sField])) {
-                continue;
-            }
-            if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] === "boolean") {
-                $sOperator = "equals";
-            } elseif (!isset($aOperators[$sOperator])) {
-                continue;
-            }
-            if (empty($aOperators[$sOperator]["needs_value"])) {
-                $sValue = "";
-            }
-            $aFilter["conditions"][] = array(
-                "field" => $sField,
-                "operator" => $sOperator,
-                "value" => $sValue
-            );
-            $iCount += 1;
-        }
-        return $aFilter;
-    }
-
-    $aInputFields = isset($aPayload["complex_filter_field"]) && is_array($aPayload["complex_filter_field"]) ? $aPayload["complex_filter_field"] : array();
-    $aInputOperators = isset($aPayload["complex_filter_operator"]) && is_array($aPayload["complex_filter_operator"]) ? $aPayload["complex_filter_operator"] : array();
-    $aInputValues = isset($aPayload["complex_filter_value"]) && is_array($aPayload["complex_filter_value"]) ? $aPayload["complex_filter_value"] : array();
-    $iCount = max(count($aInputFields), count($aInputOperators), count($aInputValues));
-    for ($iI = 0; $iI < $iCount && $iI < 25; $iI += 1) {
-        $sField = isset($aInputFields[$iI]) ? (string)$aInputFields[$iI] : "";
-        $sOperator = isset($aInputOperators[$iI]) ? (string)$aInputOperators[$iI] : "";
-        $sValue = isset($aInputValues[$iI]) ? (string)$aInputValues[$iI] : "";
-        if (!isset($aFields[$sField])) {
-            continue;
-        }
-        if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] === "boolean") {
-            $sOperator = "equals";
-        } elseif (!isset($aOperators[$sOperator])) {
-            continue;
-        }
-        if (empty($aOperators[$sOperator]["needs_value"])) {
-            $sValue = "";
-        }
-        $aFilter["conditions"][] = array(
-            "field" => $sField,
-            "operator" => $sOperator,
-            "value" => $sValue
-        );
-    }
-    return $aFilter;
-}
-
-function nxNormalizeFullListComplexFilterDraft($aPayload, $aFields, $aOperators) {
-    $aFilter = nxGetDefaultFullListComplexFilterDraft();
-    $aFilter["conditions"] = array();
-
-    if (isset($aPayload["match"]) && (string)$aPayload["match"] === "any") {
-        $aFilter["match"] = "any";
-    } elseif (isset($aPayload["complex_filter_match"]) && (string)$aPayload["complex_filter_match"] === "any") {
-        $aFilter["match"] = "any";
-    }
-    if (isset($aPayload["conditions"]) && is_array($aPayload["conditions"])) {
-        $iCount = 0;
-        foreach ($aPayload["conditions"] as $aCondition) {
-            if ($iCount >= 25) {
-                break;
-            }
-            $sField = isset($aCondition["field"]) ? (string)$aCondition["field"] : "";
-            $sOperator = isset($aCondition["operator"]) ? (string)$aCondition["operator"] : "";
-            $sValue = isset($aCondition["value"]) ? (string)$aCondition["value"] : "";
-            if ($sField === "" || $sOperator === "") {
-                $aFilter["conditions"][] = array(
-                    "field" => $sField,
-                    "operator" => $sOperator,
-                    "value" => $sValue
-                );
-                $iCount += 1;
-                continue;
-            }
-            if (!isset($aFields[$sField])) {
-                $sField = "subject_name";
-            }
-            if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] === "boolean") {
-                $sOperator = "equals";
-            } elseif (!isset($aOperators[$sOperator])) {
-                $sOperator = "contains";
-            }
-            if (empty($aOperators[$sOperator]["needs_value"])) {
-                $sValue = "";
-            }
-            $aFilter["conditions"][] = array(
-                "field" => $sField,
-                "operator" => $sOperator,
-                "value" => $sValue
-            );
-            $iCount += 1;
-        }
-    } else {
-        $aInputFields = isset($aPayload["complex_filter_field"]) && is_array($aPayload["complex_filter_field"]) ? $aPayload["complex_filter_field"] : array();
-        $aInputOperators = isset($aPayload["complex_filter_operator"]) && is_array($aPayload["complex_filter_operator"]) ? $aPayload["complex_filter_operator"] : array();
-        $aInputValues = isset($aPayload["complex_filter_value"]) && is_array($aPayload["complex_filter_value"]) ? $aPayload["complex_filter_value"] : array();
-        $iCount = max(count($aInputFields), count($aInputOperators), count($aInputValues));
-        for ($iI = 0; $iI < $iCount && $iI < 25; $iI += 1) {
-            $sField = isset($aInputFields[$iI]) ? (string)$aInputFields[$iI] : "";
-            $sOperator = isset($aInputOperators[$iI]) ? (string)$aInputOperators[$iI] : "";
-            $sValue = isset($aInputValues[$iI]) ? (string)$aInputValues[$iI] : "";
-            if ($sField === "" || $sOperator === "") {
-                $aFilter["conditions"][] = array(
-                    "field" => $sField,
-                    "operator" => $sOperator,
-                    "value" => $sValue
-                );
-                continue;
-            }
-            if (!isset($aFields[$sField])) {
-                $sField = "subject_name";
-            }
-            if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] === "boolean") {
-                $sOperator = "equals";
-            } elseif (!isset($aOperators[$sOperator])) {
-                $sOperator = "contains";
-            }
-            if (empty($aOperators[$sOperator]["needs_value"])) {
-                $sValue = "";
-            }
-            $aFilter["conditions"][] = array(
-                "field" => $sField,
-                "operator" => $sOperator,
-                "value" => $sValue
-            );
-        }
-    }
-    if (count($aFilter["conditions"]) === 0) {
-        $aFilter = nxGetDefaultFullListComplexFilterDraft();
-    }
-    return $aFilter;
-}
-
-function nxEscapeFullListComplexFilterLike($sValue) {
-    return str_replace(array("!", "%", "_"), array("!!", "!%", "!_"), $sValue);
-}
-
-function nxNormalizeFullListComplexFilterSqlValue($aField, $sValue) {
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] === "boolean") {
-        $sNormalized = strtolower(trim((string)$sValue));
-        if ($sNormalized === "0" || $sNormalized === "false" || $sNormalized === "no" || $sNormalized === "off") {
-            return "0";
-        }
-        return "1";
-    }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] === "birth_number") {
-        $sNormalized = nxNormalizeBirthNumber($sValue);
-        return $sNormalized === false ? (string)$sValue : $sNormalized;
-    }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] === "country") {
-        return nxCountryNameToCode($sValue);
-    }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] === "address_type") {
-        $sNormalized = strtolower(trim((string)$sValue));
-        foreach (nxGetAddressTypes() as $sAddressType) {
-            if ($sNormalized === $sAddressType || $sNormalized === strtolower(nxAddressTypeLabel($sAddressType))) {
-                return $sAddressType;
-            }
-        }
-        return $sNormalized;
-    }
-    return (string)$sValue;
-}
-
-function nxBuildFullListComplexAddressFilterSql($sColumn, $sOperator, $sParam, $sValue) {
-    $sColumnSql = "COALESCE(CAST(a_cf.`" . $sColumn . "` AS CHAR), '')";
-    $sColumnLowerSql = "LOWER(" . $sColumnSql . ")";
-    $sNonEmptySql = $sColumnSql . " <> ''";
-    $sHasRowSql = "EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id)";
-    $sHasValueSql = "EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sNonEmptySql . ")";
-    $sExactSql = $sHasValueSql
-        . " AND NOT EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sNonEmptySql . " AND " . $sColumnLowerSql . " <> LOWER(:" . $sParam . "))";
-
-    if ($sOperator === "empty") {
-        return $sHasRowSql . " AND NOT " . $sHasValueSql;
-    }
-    if ($sOperator === "not_empty") {
-        return $sHasValueSql;
-    }
-    if ($sOperator === "equals") {
-        if ((string)$sValue === "") {
-            return $sHasRowSql . " AND NOT " . $sHasValueSql;
-        }
-        return $sExactSql;
-    }
-    if ($sOperator === "not_equals") {
-        if ((string)$sValue === "") {
-            return $sHasValueSql;
-        }
-        return $sHasRowSql . " AND NOT (" . $sExactSql . ")";
-    }
-    if ($sOperator === "is_lower_than") {
-        return "EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sNonEmptySql . " AND " . $sColumnLowerSql . " < LOWER(:" . $sParam . "))";
-    }
-    if ($sOperator === "is_lower_than_or_equal") {
-        return "EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sNonEmptySql . " AND " . $sColumnLowerSql . " <= LOWER(:" . $sParam . "))";
-    }
-    if ($sOperator === "is_greater_than") {
-        return "EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sNonEmptySql . " AND " . $sColumnLowerSql . " > LOWER(:" . $sParam . "))";
-    }
-    if ($sOperator === "is_greater_than_or_equal") {
-        return "EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sNonEmptySql . " AND " . $sColumnLowerSql . " >= LOWER(:" . $sParam . "))";
-    }
-    if ($sOperator === "contains") {
-        return "EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sColumnLowerSql . " LIKE LOWER(:" . $sParam . ") ESCAPE '!')";
-    }
-    if ($sOperator === "not_contains") {
-        return $sHasRowSql . " AND NOT EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sColumnLowerSql . " LIKE LOWER(:" . $sParam . ") ESCAPE '!')";
-    }
-    if ($sOperator === "starts") {
-        return "EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sColumnLowerSql . " LIKE LOWER(:" . $sParam . ") ESCAPE '!')";
-    }
-    if ($sOperator === "not_starts") {
-        return $sHasRowSql . " AND NOT EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sColumnLowerSql . " LIKE LOWER(:" . $sParam . ") ESCAPE '!')";
-    }
-    if ($sOperator === "ends") {
-        return "EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sColumnLowerSql . " LIKE LOWER(:" . $sParam . ") ESCAPE '!')";
-    }
-    if ($sOperator === "not_ends") {
-        return $sHasRowSql . " AND NOT EXISTS (SELECT 1 FROM ex_subject_addresses AS a_cf WHERE a_cf.subject_id = s.id AND " . $sColumnLowerSql . " LIKE LOWER(:" . $sParam . ") ESCAPE '!')";
-    }
-    return "";
-}
-
-function nxApplyFullListComplexFilterScopeSql($sSql, $aField) {
-    if ($sSql !== "" && isset($aField["scope_sql"]) && (string)$aField["scope_sql"] !== "") {
-        return "(" . (string)$aField["scope_sql"] . " AND " . $sSql . ")";
-    }
-    return $sSql;
-}
-
-function nxBuildFullListComplexFilterSql($aFilter, $aFields, $aOperators) {
-    $aSql = array();
-    $aParams = array();
-    $iIndex = 0;
-
-    if (!is_array($aFilter) || empty($aFilter["conditions"]) || !is_array($aFilter["conditions"])) {
-        return array("sql" => "", "params" => array());
-    }
-    foreach ($aFilter["conditions"] as $aCondition) {
-        $sField = isset($aCondition["field"]) ? (string)$aCondition["field"] : "";
-        $sOperator = isset($aCondition["operator"]) ? (string)$aCondition["operator"] : "";
-        $sValue = isset($aCondition["value"]) ? (string)$aCondition["value"] : "";
-        if (!isset($aFields[$sField]) || !isset($aOperators[$sOperator])) {
-            continue;
-        }
-        $sValue = nxNormalizeFullListComplexFilterSqlValue($aFields[$sField], $sValue);
-        if (isset($aFields[$sField]["address_column"])) {
-            $sParam = "complex_filter_" . $iIndex;
-            $sAddressSql = nxBuildFullListComplexAddressFilterSql($aFields[$sField]["address_column"], $sOperator, $sParam, $sValue);
-            if ($sAddressSql === "") {
-                continue;
-            }
-            $aSql[] = $sAddressSql;
-            if ($sOperator !== "empty" && $sOperator !== "not_empty") {
-                if ($sOperator === "contains" || $sOperator === "not_contains") {
-                    $aParams[$sParam] = "%" . nxEscapeFullListComplexFilterLike($sValue) . "%";
-                } elseif ($sOperator === "starts" || $sOperator === "not_starts") {
-                    $aParams[$sParam] = nxEscapeFullListComplexFilterLike($sValue) . "%";
-                } elseif ($sOperator === "ends" || $sOperator === "not_ends") {
-                    $aParams[$sParam] = "%" . nxEscapeFullListComplexFilterLike($sValue);
-                } else {
-                    $aParams[$sParam] = $sValue;
-                }
-                $iIndex += 1;
-            }
-            continue;
-        }
-        if (isset($aFields[$sField]["value_type"]) && $aFields[$sField]["value_type"] === "datetime") {
-            $sSqlValueBase = "DATE_FORMAT(" . $aFields[$sField]["sql"] . ", '%Y-%m-%dT%H:%i')";
-        } else {
-            $sSqlValueBase = "CAST(" . $aFields[$sField]["sql"] . " AS CHAR)";
-        }
-        $sSqlValue = "LOWER(COALESCE(" . $sSqlValueBase . ", ''))";
-        $sSqlTrimmedValue = "COALESCE(CAST(" . $aFields[$sField]["sql"] . " AS CHAR), '')";
-        $sConditionSql = "";
-        if ($sOperator === "empty") {
-            $sConditionSql = $sSqlTrimmedValue . " = ''";
-        } elseif ($sOperator === "not_empty") {
-            $sConditionSql = $sSqlTrimmedValue . " <> ''";
-        } else {
-            $sParam = "complex_filter_" . $iIndex;
-            if ($sOperator === "equals") {
-                $sConditionSql = $sSqlValue . " = LOWER(:" . $sParam . ")";
-                $aParams[$sParam] = $sValue;
-            } elseif ($sOperator === "not_equals") {
-                $sConditionSql = $sSqlValue . " <> LOWER(:" . $sParam . ")";
-                $aParams[$sParam] = $sValue;
-            } elseif ($sOperator === "is_lower_than") {
-                $sConditionSql = $sSqlValue . " < LOWER(:" . $sParam . ")";
-                $aParams[$sParam] = $sValue;
-            } elseif ($sOperator === "is_lower_than_or_equal") {
-                $sConditionSql = $sSqlValue . " <= LOWER(:" . $sParam . ")";
-                $aParams[$sParam] = $sValue;
-            } elseif ($sOperator === "is_greater_than") {
-                $sConditionSql = $sSqlValue . " > LOWER(:" . $sParam . ")";
-                $aParams[$sParam] = $sValue;
-            } elseif ($sOperator === "is_greater_than_or_equal") {
-                $sConditionSql = $sSqlValue . " >= LOWER(:" . $sParam . ")";
-                $aParams[$sParam] = $sValue;
-            } elseif ($sOperator === "contains") {
-                $sConditionSql = $sSqlValue . " LIKE LOWER(:" . $sParam . ") ESCAPE '!'";
-                $aParams[$sParam] = "%" . nxEscapeFullListComplexFilterLike($sValue) . "%";
-            } elseif ($sOperator === "not_contains") {
-                $sConditionSql = $sSqlValue . " NOT LIKE LOWER(:" . $sParam . ") ESCAPE '!'";
-                $aParams[$sParam] = "%" . nxEscapeFullListComplexFilterLike($sValue) . "%";
-            } elseif ($sOperator === "starts") {
-                $sConditionSql = $sSqlValue . " LIKE LOWER(:" . $sParam . ") ESCAPE '!'";
-                $aParams[$sParam] = nxEscapeFullListComplexFilterLike($sValue) . "%";
-            } elseif ($sOperator === "not_starts") {
-                $sConditionSql = $sSqlValue . " NOT LIKE LOWER(:" . $sParam . ") ESCAPE '!'";
-                $aParams[$sParam] = nxEscapeFullListComplexFilterLike($sValue) . "%";
-            } elseif ($sOperator === "ends") {
-                $sConditionSql = $sSqlValue . " LIKE LOWER(:" . $sParam . ") ESCAPE '!'";
-                $aParams[$sParam] = "%" . nxEscapeFullListComplexFilterLike($sValue);
-            } elseif ($sOperator === "not_ends") {
-                $sConditionSql = $sSqlValue . " NOT LIKE LOWER(:" . $sParam . ") ESCAPE '!'";
-                $aParams[$sParam] = "%" . nxEscapeFullListComplexFilterLike($sValue);
-            }
-            $iIndex += 1;
-        }
-        if ($sConditionSql !== "") {
-            $aSql[] = nxApplyFullListComplexFilterScopeSql($sConditionSql, $aFields[$sField]);
-        }
-    }
-    if (count($aSql) === 0) {
-        return array("sql" => "", "params" => array());
-    }
-    return array(
-        "sql" => "(" . implode(!empty($aFilter["match"]) && $aFilter["match"] === "any" ? ") OR (" : ") AND (", $aSql) . ")",
-        "params" => $aParams
-    );
-}
-
-function nxRenderFullListComplexFilterFieldOptions($aFields, $sSelected) {
-    $sHtml = "<option value=\"\" data-value-type=\"text\"" . ($sSelected === "" ? " selected" : "") . "></option>";
-
-    foreach ($aFields as $sField => $aField) {
-        $sValueType = isset($aField["value_type"]) ? (string)$aField["value_type"] : "text";
-        $sHtml .= "<option value=\"" . nxHtml($sField) . "\" data-value-type=\"" . nxHtml($sValueType) . "\"" . ($sSelected === $sField ? " selected" : "") . ">" . nxHtml($aField["label"]) . "</option>";
-    }
-    return $sHtml;
-}
-
-function nxRenderFullListComplexFilterOperatorOptions($aOperators, $sSelected) {
-    $sHtml = "<option value=\"\" data-needs-value=\"1\"" . ($sSelected === "" ? " selected" : "") . "></option>";
-
-    foreach ($aOperators as $sOperator => $aOperator) {
-        $sHtml .= "<option value=\"" . nxHtml($sOperator) . "\" data-needs-value=\"" . (!empty($aOperator["needs_value"]) ? "1" : "0") . "\"" . ($sSelected === $sOperator ? " selected" : "") . ">" . nxHtml($aOperator["label"]) . "</option>";
-    }
-    return $sHtml;
-}
-
-$aFullListComplexFilterFields = nxGetFullListComplexFilterFields();
+$aFullListComplexFilterFields = nxGetFullListComplexFilterFields($aFullListComplexFilterContactTypes);
 $aFullListComplexFilterOperators = nxGetFullListComplexFilterOperators();
 $aFullListComplexFilter = nxGetDefaultFullListComplexFilter();
 $aFullListComplexFilterDraft = nxGetDefaultFullListComplexFilterDraft();
@@ -500,14 +53,14 @@ if (isset($_SESSION["ex_full_list_complex_filter_draft"]) && is_array($_SESSION[
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireExCsrfToken();
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "save_full_list_settings") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_settings") {
     foreach ($aFullListSettingsDefaults as $sFullListSettingName => $iFullListSettingDefault) {
-        $aFullListSettings[$sFullListSettingName] = isset($_POST[$sFullListSettingName]) && (string)$_POST[$sFullListSettingName] === "1" ? 1 : 0;
+        $aFullListSettings[$sFullListSettingName] = isset($_POST[$sFullListSettingName]) && (string)$_POST[$sFullListSettingName] == "1" ? 1 : 0;
     }
     $aFullListSettings = nxSaveExCountrySettings($aFullListSettings, $_POST);
     $_SESSION["ex_full_list_settings"] = nxRemoveExCountrySettings($aFullListSettings);
@@ -518,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "save_full_list_complex_filter") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter") {
     $aFullListComplexFilterPayload = nxGetFullListComplexFilterPostPayload();
     $aFullListComplexFilterDraft = nxNormalizeFullListComplexFilterDraft($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
     $aFullListComplexFilter = nxNormalizeFullListComplexFilter($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
@@ -531,7 +84,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "save_full_list_complex_filter_draft") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter_draft") {
     $aFullListComplexFilterDraft = nxNormalizeFullListComplexFilterDraft(nxGetFullListComplexFilterPostPayload(), $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
     $_SESSION["ex_full_list_complex_filter_draft"] = $aFullListComplexFilterDraft;
     session_write_close();
@@ -539,7 +92,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "reset_full_list_complex_filter") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "reset_full_list_complex_filter") {
     $aFullListComplexFilter = nxGetDefaultFullListComplexFilter();
     $_SESSION["ex_full_list_complex_filter"] = $aFullListComplexFilter;
     session_write_close();
@@ -549,26 +102,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] === "POST") {
+if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] == "POST") {
     nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
 
 
-function nxGetPostedContactValue() {
-    return nxGetPostedValue("contact_value");
-}
-
-
-function nxGetFullListComplexFilterPostPayload() {
-    $aPayload = $_POST;
-    if (isset($_POST["complex_filter_value_b64"]) && is_array($_POST["complex_filter_value_b64"])) {
-        $aPayload["complex_filter_value"] = nxGetPostedValues("complex_filter_value");
-    }
-    return $aPayload;
-}
-
-
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "get_subject") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "get_subject") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
@@ -585,7 +124,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "get_subject_portal_user") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "get_subject_portal_user") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
@@ -602,7 +141,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_subject_portal_user") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject_portal_user") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $aPermissionKeys = isset($_POST["permissions"]) && is_array($_POST["permissions"]) ? $_POST["permissions"] : array();
     if ($iSubjectId < 1) {
@@ -619,10 +158,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
             nxSendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
         $aPayload = array(
-            "portal_user_enabled" => isset($_POST["portal_user_enabled"]) && (string)$_POST["portal_user_enabled"] === "1" ? "1" : "0",
+            "portal_user_enabled" => isset($_POST["portal_user_enabled"]) && (string)$_POST["portal_user_enabled"] == "1" ? "1" : "0",
             "portal_user_name" => nxGetPostedTrimmedValue("portal_user_name"),
             "portal_password" => nxGetPostedValue("portal_password"),
-            "portal_user_active" => isset($_POST["portal_user_active"]) && (string)$_POST["portal_user_active"] === "1" ? "1" : "0",
+            "portal_user_active" => isset($_POST["portal_user_active"]) && (string)$_POST["portal_user_active"] == "1" ? "1" : "0",
             "portal_permission_keys" => $aPermissionKeys
         );
         nxSaveSubjectPortalAccess($oPdo, $iSubjectId, (string)$aSubjectRow["subject_type"], $aPayload);
@@ -632,7 +171,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected user name already exists."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -640,9 +179,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_subject") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject") {
     $sPayload = nxGetPostedValue("subject_payload");
-    $aPayload = $sPayload !== "" ? json_decode($sPayload, true) : null;
+    $aPayload = $sPayload != "" ? json_decode($sPayload, true) : null;
     if (!is_array($aPayload)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject data."), 400);
     }
@@ -655,13 +194,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sSubjectType !== "" && !in_array($sSubjectType, nxGetSubjectTypes(), true)) {
+    if ($sSubjectType != "" && !in_array($sSubjectType, nxGetSubjectTypes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject type."), 400);
     }
-    if ($sBirthDate !== "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sBirthDate)) {
+    if ($sBirthDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sBirthDate)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Birth date must use YYYY-MM-DD."), 400);
     }
-    if ($sDeathDate !== "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDeathDate)) {
+    if ($sDeathDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDeathDate)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Death date must use YYYY-MM-DD."), 400);
     }
     if ($sBirthNumber === false) {
@@ -677,7 +216,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
-        if ($sSubjectType !== "" && $sSubjectType !== (string)$aSubjectRow["subject_type"]) {
+        if ($sSubjectType != "" && $sSubjectType != (string)$aSubjectRow["subject_type"]) {
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Subject type cannot be changed."), 409);
         }
@@ -690,7 +229,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         ));
 
         $sSubjectName = nxPayloadValue($aPayload, "subject_name_value");
-        if ($sEffectiveSubjectType === "person" || $sSubjectName === "") {
+        if ($sEffectiveSubjectType == "person" || $sSubjectName == "") {
             $oStatement = $oPdo->prepare("DELETE FROM ex_subject_names WHERE subject_id = :subject_id");
             $oStatement->execute(array("subject_id" => $iSubjectId));
         } else {
@@ -698,7 +237,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
             $oStatement->execute(array("subject_id" => $iSubjectId, "name" => $sSubjectName));
         }
 
-        if ($sEffectiveSubjectType !== "person") {
+        if ($sEffectiveSubjectType != "person") {
             $oStatement = $oPdo->prepare("DELETE FROM ex_persons WHERE subject_id = :subject_id");
             $oStatement->execute(array("subject_id" => $iSubjectId));
         } else {
@@ -710,8 +249,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
                 "title_after" => nxDbValue(nxPayloadValue($aPayload, "title_after")),
                 "birth_name" => nxDbValue(nxPayloadValue($aPayload, "birth_name")),
                 "birth_number" => nxDbValue($sBirthNumber),
-                "birth_date" => $sBirthDate !== "" ? $sBirthDate : null,
-                "death_date" => $sDeathDate !== "" ? $sDeathDate : null
+                "birth_date" => $sBirthDate != "" ? $sBirthDate : null,
+                "death_date" => $sDeathDate != "" ? $sDeathDate : null
             );
             $blHasPersonValues = false;
             foreach ($aPersonValues as $mValue) {
@@ -751,9 +290,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "create_subject") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_subject") {
     $sPayload = nxGetPostedValue("subject_payload");
-    $aPayload = $sPayload !== "" ? json_decode($sPayload, true) : null;
+    $aPayload = $sPayload != "" ? json_decode($sPayload, true) : null;
     if (!is_array($aPayload)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject data."), 400);
     }
@@ -765,10 +304,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     if (!in_array($sSubjectType, nxGetSubjectTypes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject type."), 400);
     }
-    if ($sBirthDate !== "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sBirthDate)) {
+    if ($sBirthDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sBirthDate)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Birth date must use YYYY-MM-DD."), 400);
     }
-    if ($sDeathDate !== "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDeathDate)) {
+    if ($sDeathDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDeathDate)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Death date must use YYYY-MM-DD."), 400);
     }
     if ($sBirthNumber === false) {
@@ -785,12 +324,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         $iSubjectId = (int)$oPdo->lastInsertId();
 
         $sSubjectName = nxPayloadValue($aPayload, "subject_name_value");
-        if ($sSubjectType !== "person" && $sSubjectName !== "") {
+        if ($sSubjectType != "person" && $sSubjectName != "") {
             $oStatement = $oPdo->prepare("INSERT INTO ex_subject_names (subject_id, name) VALUES (:subject_id, :name)");
             $oStatement->execute(array("subject_id" => $iSubjectId, "name" => $sSubjectName));
         }
 
-        if ($sSubjectType === "person") {
+        if ($sSubjectType == "person") {
             $aPersonValues = array(
                 "title_before" => nxDbValue(nxPayloadValue($aPayload, "title_before")),
                 "first_name" => nxDbValue(nxPayloadValue($aPayload, "first_name")),
@@ -799,8 +338,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
                 "title_after" => nxDbValue(nxPayloadValue($aPayload, "title_after")),
                 "birth_name" => nxDbValue(nxPayloadValue($aPayload, "birth_name")),
                 "birth_number" => nxDbValue($sBirthNumber),
-                "birth_date" => $sBirthDate !== "" ? $sBirthDate : null,
-                "death_date" => $sDeathDate !== "" ? $sDeathDate : null
+                "birth_date" => $sBirthDate != "" ? $sBirthDate : null,
+                "death_date" => $sDeathDate != "" ? $sDeathDate : null
             );
             $blHasPersonValues = false;
             foreach ($aPersonValues as $mValue) {
@@ -828,18 +367,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_subject_nickname") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject_nickname") {
     $iNicknameId = isset($_POST["nickname_id"]) ? (int)$_POST["nickname_id"] : 0;
     $sNickname = nxGetPostedTrimmedValue("nickname");
     $sContext = nxGetPostedTrimmedValue("context");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iNicknameId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid nickname."), 400);
     }
-    if ($sNickname === "") {
+    if ($sNickname == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Nickname is required."), 400);
     }
 
@@ -855,10 +394,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         $oStatement = $oPdo->prepare("UPDATE ex_subject_nicknames SET nickname = :nickname, context = :context, is_primary = :is_primary, is_active = :is_active, note = :note WHERE id = :id");
         $oStatement->execute(array(
             "nickname" => $sNickname,
-            "context" => $sContext !== "" ? $sContext : null,
+            "context" => $sContext != "" ? $sContext : null,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null,
+            "note" => $sNote != "" ? $sNote : null,
             "id" => $iNicknameId
         ));
         $oPdo->commit();
@@ -872,18 +411,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "create_subject_nickname") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_subject_nickname") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sNickname = nxGetPostedTrimmedValue("nickname");
     $sContext = nxGetPostedTrimmedValue("context");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sNickname === "") {
+    if ($sNickname == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Nickname is required."), 400);
     }
 
@@ -899,10 +438,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         $oStatement->execute(array(
             "subject_id" => $iSubjectId,
             "nickname" => $sNickname,
-            "context" => $sContext !== "" ? $sContext : null,
+            "context" => $sContext != "" ? $sContext : null,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null
+            "note" => $sNote != "" ? $sNote : null
         ));
         $oPdo->commit();
         nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
@@ -915,7 +454,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_subject_address") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject_address") {
     $iAddressId = isset($_POST["address_id"]) ? (int)$_POST["address_id"] : 0;
     $sAddressType = nxGetPostedTrimmedValue("address_type");
     $sOrganizationName = nxGetPostedTrimmedValue("organization_name");
@@ -933,32 +472,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     $sRegion = nxGetPostedTrimmedValue("region");
     $sCountry = nxGetPostedTrimmedValue("country");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
-    if ($sCountry !== "") {
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
+    if ($sCountry != "") {
         $sCountry = strtoupper($sCountry);
     }
 
     if ($iAddressId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
     }
-    if ($sAddressType === "") {
+    if ($sAddressType == "") {
         $sAddressType = "main";
     }
     if (!in_array($sAddressType, nxGetAddressTypes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid address type."), 400);
     }
-    if ($sCountry === "") {
+    if ($sCountry == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Country is required."), 400);
     }
-    if ($sCountry !== "" && !in_array($sCountry, nxGetCountryCodes(), true)) {
+    if ($sCountry != "" && !in_array($sCountry, nxGetCountryCodes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid country."), 400);
     }
     $sPostalCode = nxNormalizePostalCode($sCountry, $sPostalCode);
     if ($sPostalCode === false) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid postal code."), 400);
     }
-    if ($sOrganizationName === "" && $sDepartmentName === "" && $sCareOf === "" && $sStreetName === "" && $sHouseNumber === "" && $sEvidenceNumber === "" && $sOrientationNumber === "" && $sOrientationSuffix === "" && $sAddressLine2 === "" && $sCity === "" && $sCityPart === "" && $sPostalCode === "" && $sRegion === "" && $sCountry === "" && $sNote === "") {
+    if ($sOrganizationName == "" && $sDepartmentName == "" && $sCareOf == "" && $sStreetName == "" && $sHouseNumber == "" && $sEvidenceNumber == "" && $sOrientationNumber == "" && $sOrientationSuffix == "" && $sAddressLine2 == "" && $sCity == "" && $sCityPart == "" && $sPostalCode == "" && $sRegion == "" && $sCountry == "" && $sNote == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Address is required."), 400);
     }
 
@@ -974,23 +513,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         $oStatement = $oPdo->prepare("UPDATE ex_subject_addresses SET address_type = :address_type, organization_name = :organization_name, department_name = :department_name, care_of = :care_of, street_name = :street_name, house_number = :house_number, evidence_number = :evidence_number, orientation_number = :orientation_number, orientation_suffix = :orientation_suffix, address_line2 = :address_line2, city = :city, city_part = :city_part, postal_code = :postal_code, region = :region, country = :country, is_primary = :is_primary, is_active = :is_active, note = :note WHERE id = :id");
         $oStatement->execute(array(
             "address_type" => $sAddressType,
-            "organization_name" => $sOrganizationName !== "" ? $sOrganizationName : null,
-            "department_name" => $sDepartmentName !== "" ? $sDepartmentName : null,
-            "care_of" => $sCareOf !== "" ? $sCareOf : null,
-            "street_name" => $sStreetName !== "" ? $sStreetName : null,
-            "house_number" => $sHouseNumber !== "" ? $sHouseNumber : null,
-            "evidence_number" => $sEvidenceNumber !== "" ? $sEvidenceNumber : null,
-            "orientation_number" => $sOrientationNumber !== "" ? $sOrientationNumber : null,
-            "orientation_suffix" => $sOrientationSuffix !== "" ? $sOrientationSuffix : null,
-            "address_line2" => $sAddressLine2 !== "" ? $sAddressLine2 : null,
-            "city" => $sCity !== "" ? $sCity : null,
-            "city_part" => $sCityPart !== "" ? $sCityPart : null,
-            "postal_code" => $sPostalCode !== "" ? $sPostalCode : null,
-            "region" => $sRegion !== "" ? $sRegion : null,
+            "organization_name" => $sOrganizationName != "" ? $sOrganizationName : null,
+            "department_name" => $sDepartmentName != "" ? $sDepartmentName : null,
+            "care_of" => $sCareOf != "" ? $sCareOf : null,
+            "street_name" => $sStreetName != "" ? $sStreetName : null,
+            "house_number" => $sHouseNumber != "" ? $sHouseNumber : null,
+            "evidence_number" => $sEvidenceNumber != "" ? $sEvidenceNumber : null,
+            "orientation_number" => $sOrientationNumber != "" ? $sOrientationNumber : null,
+            "orientation_suffix" => $sOrientationSuffix != "" ? $sOrientationSuffix : null,
+            "address_line2" => $sAddressLine2 != "" ? $sAddressLine2 : null,
+            "city" => $sCity != "" ? $sCity : null,
+            "city_part" => $sCityPart != "" ? $sCityPart : null,
+            "postal_code" => $sPostalCode != "" ? $sPostalCode : null,
+            "region" => $sRegion != "" ? $sRegion : null,
             "country" => $sCountry,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null,
+            "note" => $sNote != "" ? $sNote : null,
             "id" => $iAddressId
         ));
         $oPdo->commit();
@@ -1004,7 +543,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "create_subject_address") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_subject_address") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sAddressType = nxGetPostedTrimmedValue("address_type");
     $sOrganizationName = nxGetPostedTrimmedValue("organization_name");
@@ -1022,32 +561,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     $sRegion = nxGetPostedTrimmedValue("region");
     $sCountry = nxGetPostedTrimmedValue("country");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
-    if ($sCountry !== "") {
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
+    if ($sCountry != "") {
         $sCountry = strtoupper($sCountry);
     }
 
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sAddressType === "") {
+    if ($sAddressType == "") {
         $sAddressType = "main";
     }
     if (!in_array($sAddressType, nxGetAddressTypes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid address type."), 400);
     }
-    if ($sCountry === "") {
+    if ($sCountry == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Country is required."), 400);
     }
-    if ($sCountry !== "" && !in_array($sCountry, nxGetCountryCodes(), true)) {
+    if ($sCountry != "" && !in_array($sCountry, nxGetCountryCodes(), true)) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid country."), 400);
     }
     $sPostalCode = nxNormalizePostalCode($sCountry, $sPostalCode);
     if ($sPostalCode === false) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid postal code."), 400);
     }
-    if ($sOrganizationName === "" && $sDepartmentName === "" && $sCareOf === "" && $sStreetName === "" && $sHouseNumber === "" && $sEvidenceNumber === "" && $sOrientationNumber === "" && $sOrientationSuffix === "" && $sAddressLine2 === "" && $sCity === "" && $sCityPart === "" && $sPostalCode === "" && $sRegion === "" && $sCountry === "" && $sNote === "") {
+    if ($sOrganizationName == "" && $sDepartmentName == "" && $sCareOf == "" && $sStreetName == "" && $sHouseNumber == "" && $sEvidenceNumber == "" && $sOrientationNumber == "" && $sOrientationSuffix == "" && $sAddressLine2 == "" && $sCity == "" && $sCityPart == "" && $sPostalCode == "" && $sRegion == "" && $sCountry == "" && $sNote == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Address is required."), 400);
     }
 
@@ -1063,23 +602,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         $oStatement->execute(array(
             "subject_id" => $iSubjectId,
             "address_type" => $sAddressType,
-            "organization_name" => $sOrganizationName !== "" ? $sOrganizationName : null,
-            "department_name" => $sDepartmentName !== "" ? $sDepartmentName : null,
-            "care_of" => $sCareOf !== "" ? $sCareOf : null,
-            "street_name" => $sStreetName !== "" ? $sStreetName : null,
-            "house_number" => $sHouseNumber !== "" ? $sHouseNumber : null,
-            "evidence_number" => $sEvidenceNumber !== "" ? $sEvidenceNumber : null,
-            "orientation_number" => $sOrientationNumber !== "" ? $sOrientationNumber : null,
-            "orientation_suffix" => $sOrientationSuffix !== "" ? $sOrientationSuffix : null,
-            "address_line2" => $sAddressLine2 !== "" ? $sAddressLine2 : null,
-            "city" => $sCity !== "" ? $sCity : null,
-            "city_part" => $sCityPart !== "" ? $sCityPart : null,
-            "postal_code" => $sPostalCode !== "" ? $sPostalCode : null,
-            "region" => $sRegion !== "" ? $sRegion : null,
+            "organization_name" => $sOrganizationName != "" ? $sOrganizationName : null,
+            "department_name" => $sDepartmentName != "" ? $sDepartmentName : null,
+            "care_of" => $sCareOf != "" ? $sCareOf : null,
+            "street_name" => $sStreetName != "" ? $sStreetName : null,
+            "house_number" => $sHouseNumber != "" ? $sHouseNumber : null,
+            "evidence_number" => $sEvidenceNumber != "" ? $sEvidenceNumber : null,
+            "orientation_number" => $sOrientationNumber != "" ? $sOrientationNumber : null,
+            "orientation_suffix" => $sOrientationSuffix != "" ? $sOrientationSuffix : null,
+            "address_line2" => $sAddressLine2 != "" ? $sAddressLine2 : null,
+            "city" => $sCity != "" ? $sCity : null,
+            "city_part" => $sCityPart != "" ? $sCityPart : null,
+            "postal_code" => $sPostalCode != "" ? $sPostalCode : null,
+            "region" => $sRegion != "" ? $sRegion : null,
             "country" => $sCountry,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null
+            "note" => $sNote != "" ? $sNote : null
         ));
         $oPdo->commit();
         nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
@@ -1092,7 +631,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_subject_group") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     $sGroupName = nxGetPostedTrimmedValue("name");
@@ -1100,7 +639,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     if ($iSubjectId < 1 || $iGroupId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid group link."), 400);
     }
-    if ($sGroupName === "") {
+    if ($sGroupName == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
 
@@ -1142,14 +681,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "create_subject_group") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sGroupName = nxGetPostedTrimmedValue("name");
 
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sGroupName === "") {
+    if ($sGroupName == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
 
@@ -1188,7 +727,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected group already exists or is already assigned."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -1196,15 +735,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_subject_note") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject_note") {
     $iNoteId = isset($_POST["note_id"]) ? (int)$_POST["note_id"] : 0;
     $sNoteText = nxGetPostedTrimmedValue("note_text");
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iNoteId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid note."), 400);
     }
-    if ($sNoteText === "") {
+    if ($sNoteText == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Note text is required."), 400);
     }
 
@@ -1230,15 +769,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "create_subject_note") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_subject_note") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sNoteText = nxGetPostedTrimmedValue("note_text");
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sNoteText === "") {
+    if ($sNoteText == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Note text is required."), 400);
     }
 
@@ -1263,7 +802,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "delete_subject") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_subject") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
@@ -1290,7 +829,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "delete_subject_contact") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_subject_contact") {
     $iSubjectContactId = isset($_POST["subject_contact_id"]) ? (int)$_POST["subject_contact_id"] : 0;
     if ($iSubjectContactId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid contact link."), 400);
@@ -1318,7 +857,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "delete_subject_nickname") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_subject_nickname") {
     $iNicknameId = isset($_POST["nickname_id"]) ? (int)$_POST["nickname_id"] : 0;
     if ($iNicknameId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid nickname."), 400);
@@ -1346,7 +885,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "delete_subject_address") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_subject_address") {
     $iAddressId = isset($_POST["address_id"]) ? (int)$_POST["address_id"] : 0;
     if ($iAddressId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
@@ -1374,7 +913,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "delete_subject_group") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     if ($iSubjectId < 1 || $iGroupId < 1) {
@@ -1402,7 +941,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "delete_subject_note") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_subject_note") {
     $iNoteId = isset($_POST["note_id"]) ? (int)$_POST["note_id"] : 0;
     if ($iNoteId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid note."), 400);
@@ -1430,13 +969,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "create_contact") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_contact") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
-    $sContactValue = nxGetPostedContactValue();
+    $sContactValue = nxGetPostedValue("contact_value");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
     $aContactType = nxGetContactTypeById($iContactTypeId, $oPdo, true);
 
     if ($iSubjectId < 1) {
@@ -1449,7 +988,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     if ($sContactValue === false) {
         nxSendJsonAndExit(array("success" => false, "message" => nxContactInputErrorMessage((string)$aContactType["contact_type"])), 400);
     }
-    if ($sContactValue === "") {
+    if ($sContactValue == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Contact value is required."), 400);
     }
 
@@ -1484,7 +1023,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
             "contact_id" => $iContactId,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null
+            "note" => $sNote != "" ? $sNote : null
         ));
         $iSubjectContactId = (int)$oPdo->lastInsertId();
         $oPdo->commit();
@@ -1507,7 +1046,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected contact value already exists or is already assigned."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -1515,13 +1054,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_contact") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_contact") {
     $iSubjectContactId = isset($_POST["subject_contact_id"]) ? (int)$_POST["subject_contact_id"] : 0;
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
-    $sContactValue = nxGetPostedContactValue();
+    $sContactValue = nxGetPostedValue("contact_value");
     $sNote = nxGetPostedTrimmedValue("note");
-    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] === "1" ? 1 : 0;
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
     $aContactType = nxGetContactTypeById($iContactTypeId, $oPdo, true);
 
     if ($iSubjectContactId < 1) {
@@ -1534,7 +1073,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     if ($sContactValue === false) {
         nxSendJsonAndExit(array("success" => false, "message" => nxContactInputErrorMessage((string)$aContactType["contact_type"])), 400);
     }
-    if ($sContactValue === "") {
+    if ($sContactValue == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Contact value is required."), 400);
     }
 
@@ -1560,7 +1099,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         $oStatement->execute(array(
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive,
-            "note" => $sNote !== "" ? $sNote : null,
+            "note" => $sNote != "" ? $sNote : null,
             "id" => $iSubjectContactId
         ));
         $oPdo->commit();
@@ -1583,7 +1122,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected contact value already exists."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -1630,6 +1169,13 @@ while (count($aFullListComplexFilterRows) < 1) {
 $aFullListComplexFilterGroups = array();
 foreach ($aAllGroups as $aGroup) {
     $aFullListComplexFilterGroups[] = (string)$aGroup["name"];
+}
+$aFullListComplexFilterSubjectTypes = array();
+foreach (nxGetSubjectTypes() as $sSubjectType) {
+    $aFullListComplexFilterSubjectTypes[] = array(
+        "value" => $sSubjectType,
+        "label" => ucfirst($sSubjectType)
+    );
 }
 $aFullListComplexFilterAddressTypes = array();
 foreach (nxGetAddressTypes() as $sAddressType) {
@@ -1692,31 +1238,34 @@ if ($blCanEdit) {
       </div>
       <div class="complex-filter-options">
         <div class="complex-filter-match">
-          <label><input type="radio" name="complex_filter_match" value="all"<?php echo $aFullListComplexFilterDraft["match"] === "all" ? " checked" : ""; ?>> Match all conditions</label>
-          <label><input type="radio" name="complex_filter_match" value="any"<?php echo $aFullListComplexFilterDraft["match"] === "any" ? " checked" : ""; ?>> Match any condition</label>
+          <label><input type="radio" name="complex_filter_match" value="all"<?php echo $aFullListComplexFilterDraft["match"] == "all" ? " checked" : ""; ?>> Match all conditions</label>
+          <label><input type="radio" name="complex_filter_match" value="any"<?php echo $aFullListComplexFilterDraft["match"] == "any" ? " checked" : ""; ?>> Match any condition</label>
         </div>
-        <div class="complex-filter-rows js-complex-filter-rows" data-empty-row-count="1" data-group-options="<?php echo nxHtml(json_encode($aFullListComplexFilterGroups)); ?>" data-address-type-options="<?php echo nxHtml(json_encode($aFullListComplexFilterAddressTypes)); ?>">
+        <div class="complex-filter-rows js-complex-filter-rows" data-empty-row-count="1" data-group-options="<?php echo nxHtml(json_encode($aFullListComplexFilterGroups)); ?>" data-subject-type-options="<?php echo nxHtml(json_encode($aFullListComplexFilterSubjectTypes)); ?>" data-address-type-options="<?php echo nxHtml(json_encode($aFullListComplexFilterAddressTypes)); ?>">
 <?php
 
 foreach ($aFullListComplexFilterRows as $aCondition) {
     $sComplexField = isset($aCondition["field"]) ? (string)$aCondition["field"] : "subject_name";
-    if ($sComplexField !== "" && !isset($aFullListComplexFilterFields[$sComplexField])) {
+    if ($sComplexField != "" && !isset($aFullListComplexFilterFields[$sComplexField])) {
         $sComplexField = "subject_name";
     }
     $sComplexOperator = isset($aCondition["operator"]) ? (string)$aCondition["operator"] : "contains";
-    if ($sComplexOperator !== "" && !isset($aFullListComplexFilterOperators[$sComplexOperator])) {
-        $sComplexOperator = "contains";
+    if ($sComplexOperator != "" && !isset($aFullListComplexFilterOperators[$sComplexOperator])) {
+        $sComplexOperator = $sComplexField != "" ? nxGetFullListComplexFilterDefaultOperator($aFullListComplexFilterFields[$sComplexField]) : "contains";
     }
-    $sComplexValueType = $sComplexField !== "" && isset($aFullListComplexFilterFields[$sComplexField]["value_type"]) ? (string)$aFullListComplexFilterFields[$sComplexField]["value_type"] : "text";
-    if ($sComplexValueType === "boolean") {
+    $sComplexValueType = $sComplexField != "" && isset($aFullListComplexFilterFields[$sComplexField]["value_type"]) ? (string)$aFullListComplexFilterFields[$sComplexField]["value_type"] : "text";
+    if ($sComplexValueType == "boolean") {
         $sComplexOperator = "equals";
     }
+    if ($sComplexField != "" && !nxIsFullListComplexFilterOperatorAllowed($aFullListComplexFilterFields[$sComplexField], $sComplexOperator)) {
+        $sComplexOperator = nxGetFullListComplexFilterDefaultOperator($aFullListComplexFilterFields[$sComplexField]);
+    }
     $sComplexValue = isset($aCondition["value"]) ? (string)$aCondition["value"] : "";
-    $blComplexNeedsValue = $sComplexOperator === "" || !empty($aFullListComplexFilterOperators[$sComplexOperator]["needs_value"]);
-    $blComplexOperatorHidden = $sComplexValueType === "boolean";
+    $blComplexNeedsValue = $sComplexOperator == "" || !empty($aFullListComplexFilterOperators[$sComplexOperator]["needs_value"]);
+    $blComplexOperatorHidden = $sComplexValueType == "boolean";
     echo "          <div class=\"complex-filter-row js-complex-filter-row\">\n"
         . "            <select name=\"complex_filter_field[]\" class=\"js-complex-filter-field\">" . nxRenderFullListComplexFilterFieldOptions($aFullListComplexFilterFields, $sComplexField) . "</select>\n"
-        . "            <select name=\"complex_filter_operator[]\" class=\"js-complex-filter-operator\"" . ($blComplexOperatorHidden ? " disabled aria-hidden=\"true\" tabindex=\"-1\"" : "") . ">" . nxRenderFullListComplexFilterOperatorOptions($aFullListComplexFilterOperators, $sComplexOperator) . "</select>\n"
+        . "            <select name=\"complex_filter_operator[]\" class=\"js-complex-filter-operator\"" . ($blComplexOperatorHidden ? " disabled aria-hidden=\"true\" tabindex=\"-1\"" : "") . ">" . nxRenderFullListComplexFilterOperatorOptions($aFullListComplexFilterOperators, $sComplexOperator, $sComplexField != "" ? $aFullListComplexFilterFields[$sComplexField] : null) . "</select>\n"
         . "            <input type=\"text\" name=\"complex_filter_value[]\" class=\"js-complex-filter-value\" value=\"" . nxHtml($sComplexValue) . "\" autocomplete=\"off\"" . ($blComplexNeedsValue ? "" : " disabled") . ">\n"
         . "            <button type=\"button\" class=\"complex-filter-remove js-complex-filter-remove\" title=\"Remove condition\" aria-label=\"Remove condition\">&times;</button>\n"
         . "          </div>\n";
@@ -1749,46 +1298,43 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
         <label><input type="checkbox" name="show_inactive_notes" value="1"<?php echo $aFullListSettings["show_inactive_notes"] ? " checked" : ""; ?>> Show inactive notes</label>
         <hr>
         <label><input type="checkbox" name="show_czechia_country" value="1" class="js-czechia-country-toggle"<?php echo $aFullListSettings["show_czechia_country"] ? " checked" : ""; ?>> Also show the country Czechia</label>
-        <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent" data-czechia-stored="<?php echo $aFullListSettings["show_czechia_country_in_czech"] ? "1" : "0"; ?>"<?php echo $aFullListSettings["show_czechia_country"] && $aFullListSettings["show_czechia_country_in_czech"] ? " checked" : ""; ?><?php echo $aFullListSettings["show_czechia_country"] ? "" : " disabled"; ?>> Show the country Czechia in Czech</label>
-        <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent" data-czechia-stored="<?php echo $aFullListSettings["show_czechia_country_as_czech_republic"] ? "1" : "0"; ?>"<?php echo $aFullListSettings["show_czechia_country"] && $aFullListSettings["show_czechia_country_as_czech_republic"] ? " checked" : ""; ?><?php echo $aFullListSettings["show_czechia_country"] ? "" : " disabled"; ?>> Show Česká republika instead of Česko</label>
+        <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aFullListSettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aFullListSettings["show_czechia_country"] && $aFullListSettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aFullListSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
+        <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aFullListSettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aFullListSettings["show_czechia_country"] && $aFullListSettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aFullListSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show Česká republika instead of Česko</label>
       </div>
-      <?php echo nxRenderExSettingsScopeNote(); ?>
+<?php
+
+echo nxRenderExSettingsScopeNote();
+
+?>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Save</button>
         <button type="button" class="confirm-dialog-button js-index-settings-cancel">Cancel</button>
       </div>
     </form>
   </div>
-  <datalist id="nx-group-list">
 <?php
+
+echo "  <datalist id=\"nx-group-list\">\n";
 
 foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . nxHtml($aGroup["name"]) . "\"></option>\n";
 }
 
-?>
-  </datalist>
-  <select id="nx-contact-type-list" hidden>
-<?php
+echo "  </datalist>\n";
+echo "  <select id=\"nx-contact-type-list\" hidden>\n";
 
 foreach ($aContactTypes as $aContactType) {
     echo "    <option value=\"" . nxHtml($aContactType["id"]) . "\" data-contact-type=\"" . nxHtml($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . nxHtml($aContactType["is_active"]) . "\">" . nxHtml($aContactType["name"]) . "</option>\n";
 }
 
-?>
-  </select>
-<?php
+echo "  </select>\n";
 
-if (count($aRows) === 0) {
+if (!$aRows) {
     echo "  <p>" . ($blFullListComplexFilterActive ? "<strong>Complex Filter: </strong>" : "") . "No visible records found.</p>\n";
 } else {
+    echo nxRenderPageThrobber();
 
 ?>
-  <div class="render-throbber js-render-throbber" role="status" aria-live="polite">
-    <div class="render-throbber-box">
-      <span class="render-throbber-icon" aria-hidden="true">&#8987;</span>
-    </div>
-  </div>
   <table id="nx-subjects-table" class="table-filter-target">
     <thead>
       <tr>
@@ -1814,15 +1360,13 @@ if (count($aRows) === 0) {
         echo nxRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aFullListSettings);
     }
 
-?>
-    </tbody>
-  </table>
-<?php
-
+    echo "    </tbody>\n";
+echo "  </table>\n";
 }
 
+echo nxRenderFilterFocusButton();
+echo nxRenderAdminScript($sBaseUrl);
+
 ?>
-  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter">&#128269; Filter</button>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

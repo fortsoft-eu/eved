@@ -11,29 +11,20 @@ if (!$oPdo) {
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireExCsrfToken();
 }
 
 
-if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] === "POST") {
+if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] == "POST") {
     nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
 
 
-function nxRenderContactTypeAdminRows($oPdo, $blCanEdit) {
-    $sHtml = "";
-    foreach (nxFetchContactTypeAdminRows($oPdo) as $aContactType) {
-        $sHtml .= nxRenderContactTypeAdminRow($aContactType, $blCanEdit);
-    }
-    return $sHtml;
-}
-
-
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "create_contact_type") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_contact_type") {
     $sName = nxGetPostedTrimmedValue("name");
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
-    if ($sName === "") {
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
+    if ($sName == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Contact type name is required."), 400);
     }
 
@@ -57,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected contact type name already exists."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -65,14 +56,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_contact_type") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_contact_type") {
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
     $sName = nxGetPostedTrimmedValue("name");
-    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] === "1" ? 1 : 0;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
     if ($iContactTypeId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid contact type."), 400);
     }
-    if ($sName === "") {
+    if ($sName == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Contact type name is required."), 400);
     }
 
@@ -98,7 +89,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected contact type name already exists."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -106,7 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "delete_contact_type") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_contact_type") {
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
     if ($iContactTypeId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid contact type."), 400);
@@ -140,10 +131,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "move_contact_type") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "move_contact_type") {
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
     $sDirection = isset($_POST["direction"]) ? (string)$_POST["direction"] : "";
-    if ($iContactTypeId < 1 || ($sDirection !== "up" && $sDirection !== "down")) {
+    if ($iContactTypeId < 1 || ($sDirection != "up" && $sDirection != "down")) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid order change."), 400);
     }
 
@@ -161,10 +152,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "merge_contact_types") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "merge_contact_types") {
     $iTargetContactTypeId = isset($_POST["target_contact_type_id"]) ? (int)$_POST["target_contact_type_id"] : 0;
     $aSourceContactTypeValues = isset($_POST["source_contact_type_ids"]) && is_array($_POST["source_contact_type_ids"]) ? $_POST["source_contact_type_ids"] : array();
-    $blDeleteSourceContactTypes = isset($_POST["delete_source_contact_types"]) && (int)$_POST["delete_source_contact_types"] === 1;
+    $blDeleteSourceContactTypes = isset($_POST["delete_source_contact_types"]) && (int)$_POST["delete_source_contact_types"] == 1;
     $aSourceContactTypeIds = array();
     $aSourceContactTypeIdMap = array();
     foreach ($aSourceContactTypeValues as $mSourceContactTypeId) {
@@ -177,7 +168,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     if ($iTargetContactTypeId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid target contact type."), 400);
     }
-    if (count($aSourceContactTypeIds) === 0) {
+    if (!$aSourceContactTypeIds) {
         nxSendJsonAndExit(array("success" => false, "message" => "Select at least one source contact type."), 400);
     }
 
@@ -304,10 +295,10 @@ foreach ($aContactTypes as $aContactType) {
     echo nxRenderContactTypeAdminRow($aContactType, $blCanEdit);
 }
 
+echo "    </tbody>\n";
+echo "  </table>\n";
+echo nxRenderFilterFocusButton();
+echo nxRenderAdminScript($sBaseUrl);
 ?>
-    </tbody>
-  </table>
-  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter">&#128269; Filter</button>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

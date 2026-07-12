@@ -81,10 +81,10 @@ try {
         $oStatement->execute();
         $aRows = $oStatement->fetchAll(PDO::FETCH_ASSOC);
         $aChecks[$iCheckIndex]["rows"] = $aRows;
-        if (count($aRows) > 0 && $aCheck["type"] === "error") {
+        if (count($aRows) > 0 && $aCheck["type"] == "error") {
             $blHasErrors = true;
         }
-        if (count($aRows) > 0 && $aCheck["type"] === "warning") {
+        if (count($aRows) > 0 && $aCheck["type"] == "warning") {
             $blHasWarnings = true;
         }
     }
@@ -112,10 +112,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php nxRenderExMenu(); ?>
-  </p>
-  <h1>Database Consistency</h1>
 <?php
+
+nxRenderExMenu();
+echo "  </p>\n";
+echo "  <h1>Database Consistency</h1>\n";
 
 if ($blHasErrors) {
     echo "  <p class=\"consistency-status consistency-status-error\">Database inconsistencies were found.</p>\n";
@@ -128,7 +129,7 @@ if ($blHasErrors) {
 foreach ($aChecks as $aCheck) {
     $aRows = isset($aCheck["rows"]) ? $aCheck["rows"] : array();
     echo "  <h2>" . nxHtml($aCheck["title"]) . " (" . count($aRows) . ")</h2>\n";
-    if (count($aRows) === 0) {
+    if (!$aRows) {
         echo "  <p><em>&mdash;</em></p>\n";
         continue;
     }
@@ -153,7 +154,8 @@ foreach ($aChecks as $aCheck) {
     echo "  </table>\n";
 }
 
+echo nxRenderAdminScript($sBaseUrl);
+
 ?>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

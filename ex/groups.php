@@ -11,29 +11,20 @@ if (!$oPdo) {
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireExCsrfToken();
 }
 
 
-if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] === "POST") {
+if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] == "POST") {
     nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
 
 
-function nxRenderGroupAdminRows($oPdo, $blCanEdit) {
-    $sHtml = "";
-    foreach (nxFetchGroupAdminRows($oPdo) as $aGroup) {
-        $sHtml .= nxRenderGroupAdminRow($aGroup, $blCanEdit);
-    }
-    return $sHtml;
-}
-
-
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "create_group") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_group") {
     $sName = nxGetPostedTrimmedValue("name");
     $aPermissionKeys = isset($_POST["permissions"]) && is_array($_POST["permissions"]) ? $_POST["permissions"] : array();
-    if ($sName === "") {
+    if ($sName == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
 
@@ -52,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected group name already exists."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -60,14 +51,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_group") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_group") {
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     $sName = nxGetPostedTrimmedValue("name");
     $aPermissionKeys = isset($_POST["permissions"]) && is_array($_POST["permissions"]) ? $_POST["permissions"] : array();
     if ($iGroupId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid group."), 400);
     }
-    if ($sName === "") {
+    if ($sName == "") {
         nxSendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
 
@@ -90,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        if ((string)$oException->getCode() === "23000") {
+        if ((string)$oException->getCode() == "23000") {
             nxSendJsonAndExit(array("success" => false, "message" => "The selected group name already exists."), 409);
         }
         nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -98,7 +89,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "delete_group") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_group") {
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     if ($iGroupId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid group."), 400);
@@ -132,10 +123,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "move_group") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "move_group") {
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     $sDirection = isset($_POST["direction"]) ? (string)$_POST["direction"] : "";
-    if ($iGroupId < 1 || ($sDirection !== "up" && $sDirection !== "down")) {
+    if ($iGroupId < 1 || ($sDirection != "up" && $sDirection != "down")) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid order change."), 400);
     }
 
@@ -153,10 +144,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
 }
 
 
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "merge_groups") {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "merge_groups") {
     $iTargetGroupId = isset($_POST["target_group_id"]) ? (int)$_POST["target_group_id"] : 0;
     $aSourceGroupValues = isset($_POST["source_group_ids"]) && is_array($_POST["source_group_ids"]) ? $_POST["source_group_ids"] : array();
-    $blDeleteSourceGroups = isset($_POST["delete_source_groups"]) && (int)$_POST["delete_source_groups"] === 1;
+    $blDeleteSourceGroups = isset($_POST["delete_source_groups"]) && (int)$_POST["delete_source_groups"] == 1;
     $aSourceGroupIds = array();
     $aSourceGroupIdMap = array();
     foreach ($aSourceGroupValues as $mSourceGroupId) {
@@ -169,7 +160,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["
     if ($iTargetGroupId < 1) {
         nxSendJsonAndExit(array("success" => false, "message" => "Invalid target group."), 400);
     }
-    if (count($aSourceGroupIds) === 0) {
+    if (!$aSourceGroupIds) {
         nxSendJsonAndExit(array("success" => false, "message" => "Select at least one source group."), 400);
     }
     if ($blDeleteSourceGroups && isset($aSourceGroupIdMap[1])) {
@@ -345,10 +336,10 @@ foreach ($aGroups as $aGroup) {
     echo nxRenderGroupAdminRow($aGroup, $blCanEdit);
 }
 
+echo "    </tbody>\n";
+echo "  </table>\n";
+echo nxRenderFilterFocusButton();
+echo nxRenderAdminScript($sBaseUrl);
 ?>
-    </tbody>
-  </table>
-  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter">&#128269; Filter</button>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

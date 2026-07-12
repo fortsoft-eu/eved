@@ -51,7 +51,7 @@ $iTime = sendPageHeaders();
   </p>
 <?php
 
-if (count($aRows) === 0) {
+if (!$aRows) {
     echo "  <p>No records found in <code>fs_film_ua</code>.</p>\n";
 } else {
 
@@ -84,23 +84,23 @@ if (count($aRows) === 0) {
     foreach ($aRows as $aRow) {
         $sCountryCode = strtoupper(trim((string)$aRow["x_geo_country_code"]));
         $sCountryFlag = formatFilmUaCountryFlag($sCountryCode);
-        $sCountry = $sCountryFlag . ($sCountryFlag !== "" ? " " : "") . htmlspecialchars($sCountryCode, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+        $sCountry = $sCountryFlag . ($sCountryFlag != "" ? " " : "") . htmlspecialchars($sCountryCode, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
         $sUserAgentRaw = (string)$aRow["user_agent"];
         $sUserAgent = formatFilmUaUserAgent($sUserAgentRaw);
         $sBrowser = trim((string)$aRow["browser_name"] . " " . (string)$aRow["browser_version"]);
         $sOperatingSystem = trim((string)$aRow["os_name"] . " " . (string)$aRow["os_version"]);
         $sDevice = trim((string)$aRow["device_vendor"] . " " . (string)$aRow["device_model"]);
         $aUserAgentParts = array();
-        if ($sBrowser !== "") {
+        if ($sBrowser != "") {
             $aUserAgentParts[] = $sBrowser;
         }
-        if ($sOperatingSystem !== "") {
+        if ($sOperatingSystem != "") {
             $aUserAgentParts[] = $sOperatingSystem;
         }
-        if ($aRow["platform_type"] !== null && $aRow["platform_type"] !== "") {
+        if ($aRow["platform_type"] !== null && $aRow["platform_type"] != "") {
             $aUserAgentParts[] = ucfirst((string)$aRow["platform_type"]);
         }
-        if ($sDevice !== "") {
+        if ($sDevice != "") {
             $aUserAgentParts[] = $sDevice;
         }
         if (count($aUserAgentParts) > 0) {
@@ -114,7 +114,7 @@ if (count($aRows) === 0) {
             foreach ($aUaBrands as $aUaBrand) {
                 if (is_array($aUaBrand) && isset($aUaBrand["brand"])) {
                     $sUaBrandLabel = (string)$aUaBrand["brand"];
-                    if (isset($aUaBrand["version"]) && $aUaBrand["version"] !== "") {
+                    if (isset($aUaBrand["version"]) && $aUaBrand["version"] != "") {
                         $sUaBrandLabel .= " " . $aUaBrand["version"];
                     }
                     $aUaBrandLabels[] = $sUaBrandLabel;
@@ -123,35 +123,35 @@ if (count($aRows) === 0) {
             $sUaBrands = implode(", ", $aUaBrandLabels);
         }
         $aUserAgentDetails = array($sUserAgentRaw);
-        if ($sBrowser !== "") {
+        if ($sBrowser != "") {
             $aUserAgentDetails[] = "Browser: " . $sBrowser;
         }
-        if ($sOperatingSystem !== "") {
+        if ($sOperatingSystem != "") {
             $aUserAgentDetails[] = "Operating system: " . $sOperatingSystem;
         }
-        if ($aRow["platform_type"] !== null && $aRow["platform_type"] !== "") {
+        if ($aRow["platform_type"] !== null && $aRow["platform_type"] != "") {
             $aUserAgentDetails[] = "Platform type: " . $aRow["platform_type"];
         }
-        if ($sDevice !== "") {
+        if ($sDevice != "") {
             $aUserAgentDetails[] = "Device: " . $sDevice;
         }
-        if ($aRow["architecture"] !== null && $aRow["architecture"] !== "") {
+        if ($aRow["architecture"] !== null && $aRow["architecture"] != "") {
             $aUserAgentDetails[] = "Architecture: " . $aRow["architecture"];
         }
-        if ($aRow["bitness"] !== null && $aRow["bitness"] !== "") {
+        if ($aRow["bitness"] !== null && $aRow["bitness"] != "") {
             $aUserAgentDetails[] = "Bitness: " . $aRow["bitness"];
         }
         if ($aRow["is_mobile"] !== null) {
-            $aUserAgentDetails[] = "Mobile: " . ((int)$aRow["is_mobile"] === 1 ? "Yes" : "No");
+            $aUserAgentDetails[] = "Mobile: " . ((int)$aRow["is_mobile"] == 1 ? "Yes" : "No");
         }
-        if ($sUaBrands !== "") {
+        if ($sUaBrands != "") {
             $aUserAgentDetails[] = "UA brands: " . $sUaBrands;
         }
         $sUserAgentTitle = implode("\n", $aUserAgentDetails);
         $sGpuRaw = (string)$aRow["gpu_info"];
         $sGpu = formatFilmUaGpu($sGpuRaw);
         $sFilmRoll = "";
-        if ($aRow["folder_name"] !== null && $aRow["folder_name"] !== "") {
+        if ($aRow["folder_name"] !== null && $aRow["folder_name"] != "") {
             $sFilmRoll = (string)$aRow["folder_name"];
         } elseif ($aRow["requested_film_scan_id"] !== null) {
             $sFilmRoll = (string)$aRow["requested_film_scan_id"];
@@ -168,14 +168,14 @@ if (count($aRows) === 0) {
             . "        <td title=\"" . htmlspecialchars($sTimestampRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . $sTimestamp . "</td>\n"
             . "        <td>" . htmlspecialchars((string)$aRow["ip_address"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
             . "        <td>" . htmlspecialchars(strtoupper((string)$aRow["x_geo_continent_code"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td>" . ($sCountry !== "" ? $sCountry : "<em>&mdash;</em>") . "</td>\n"
+            . "        <td>" . ($sCountry != "" ? $sCountry : "<em>&mdash;</em>") . "</td>\n"
             . "        <td class=\"js-user-agent\" data-user-agent=\"" . htmlspecialchars($sUserAgentRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-browser-name=\"" . htmlspecialchars((string)$aRow["browser_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-browser-version=\"" . htmlspecialchars((string)$aRow["browser_version"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-os-name=\"" . htmlspecialchars((string)$aRow["os_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-os-version=\"" . htmlspecialchars((string)$aRow["os_version"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-platform-type=\"" . htmlspecialchars((string)$aRow["platform_type"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-device-vendor=\"" . htmlspecialchars((string)$aRow["device_vendor"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-device-model=\"" . htmlspecialchars((string)$aRow["device_model"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . htmlspecialchars($sUserAgentTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars($sUserAgent, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td>" . ($sFilmRoll !== "" ? htmlspecialchars($sFilmRoll, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n"
+            . "        <td>" . ($sFilmRoll != "" ? htmlspecialchars($sFilmRoll, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n"
             . "        <td>" . ($aRow["requested_img"] !== null ? htmlspecialchars((string)$aRow["requested_img"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n"
-            . "        <td title=\"" . htmlspecialchars($sGpuRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . ($sGpu !== "" ? htmlspecialchars($sGpu, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n"
+            . "        <td title=\"" . htmlspecialchars($sGpuRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . ($sGpu != "" ? htmlspecialchars($sGpu, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n"
             . "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["fonts"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars((string)$aRow["fonts"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td>" . ($sScreenResolution !== "" ? $sScreenResolution : "<em>&mdash;</em>") . "</td>\n"
-            . "        <td>" . ($sScreenPhysical !== "" ? $sScreenPhysical : "<em>&mdash;</em>") . "</td>\n"
+            . "        <td>" . ($sScreenResolution != "" ? $sScreenResolution : "<em>&mdash;</em>") . "</td>\n"
+            . "        <td>" . ($sScreenPhysical != "" ? $sScreenPhysical : "<em>&mdash;</em>") . "</td>\n"
             . "        <td>" . htmlspecialchars((string)$aRow["color_depth"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
             . "        <td>" . htmlspecialchars((string)$aRow["timezone"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
             . "        <td>" . htmlspecialchars((string)$aRow["language"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
@@ -185,16 +185,14 @@ if (count($aRows) === 0) {
             . "      </tr>\n";
     }
 
-?>
-    </tbody>
-  </table>
-<?php
-
+    echo "    </tbody>\n";
+    echo "  </table>\n";
 }
 
 ?>
-  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter">&#128269; Filter</button>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/bowser-2.14.1/es5.js"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>
