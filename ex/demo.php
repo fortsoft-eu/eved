@@ -473,21 +473,21 @@ $aGroups = array(
 
 $aNotes = array(
     101 => array(
-        array("id" => 5001, "subject_id" => 101, "note_text" => "Visible dummy note.", "is_active" => 1),
-        array("id" => 5002, "subject_id" => 101, "note_text" => "Inactive dummy note.", "is_active" => 0)
+        array("id" => 5001, "subject_id" => 101, "note_text" => "Visible dummy note.", "is_primary" => 1, "is_active" => 1),
+        array("id" => 5002, "subject_id" => 101, "note_text" => "Inactive dummy note.", "is_primary" => 0, "is_active" => 0)
     ),
     103 => array(
-        array("id" => 5003, "subject_id" => 103, "note_text" => "Inactive organization note.", "is_active" => 0)
+        array("id" => 5003, "subject_id" => 103, "note_text" => "Inactive organization note.", "is_primary" => 0, "is_active" => 0)
     ),
     105 => array(
-        array("id" => 5004, "subject_id" => 105, "note_text" => "Person with mixed phone and messenger contacts.", "is_active" => 1)
+        array("id" => 5004, "subject_id" => 105, "note_text" => "Person with mixed phone and messenger contacts.", "is_primary" => 0, "is_active" => 1)
     ),
     106 => array(
-        array("id" => 5005, "subject_id" => 106, "note_text" => "Service row showing social and payment contact types.", "is_active" => 1),
-        array("id" => 5006, "subject_id" => 106, "note_text" => "Old payment profile kept inactive.", "is_active" => 0)
+        array("id" => 5005, "subject_id" => 106, "note_text" => "Service row showing social and payment contact types.", "is_primary" => 1, "is_active" => 1),
+        array("id" => 5006, "subject_id" => 106, "note_text" => "Old payment profile kept inactive.", "is_primary" => 0, "is_active" => 0)
     ),
     107 => array(
-        array("id" => 5007, "subject_id" => 107, "note_text" => "Foreign address exercises country display.", "is_active" => 1)
+        array("id" => 5007, "subject_id" => 107, "note_text" => "Foreign address exercises country display.", "is_primary" => 0, "is_active" => 1)
     )
 );
 

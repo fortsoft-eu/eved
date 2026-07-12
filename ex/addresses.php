@@ -382,6 +382,7 @@ foreach ($aAddressRows as $aAddressRow) {
     $blFirstSubject = true;
     $sAddressFilterText = (string)$aAddressRow["address_text"];
     $sAddressActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-shared-address\" title=\"Edit shared address\" aria-label=\"Edit shared address\">" . $sEditEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-shared-address\" title=\"Delete shared address\" aria-label=\"Delete shared address\">" . $sDeleteEmoji . "</a></span>" : "";
+    $sAddressCellCopyAction = nxRenderSubjectCellCopyAction(array($aAddressRow["address_text"]), true);
     foreach ($aAddressRow["subjects"] as $aFilterSubject) {
         $sAddressFilterText .= " " . (string)$aFilterSubject["subject_name"];
     }
@@ -396,6 +397,7 @@ foreach ($aAddressRows as $aAddressRow) {
                 . "<span class=\"nx-subject-item-value\">" . nxHtmlValue($aAddressRow["address_text"]) . "</span>"
                 . nxRenderCopyAction($aAddressRow["address_copy_text"])
                 . $sAddressActions
+                . $sAddressCellCopyAction
                 . "</td>\n";
             $blFirstSubject = false;
         }

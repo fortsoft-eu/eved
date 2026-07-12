@@ -170,6 +170,15 @@ select {
     margin-top: 10px;
 }
 
+input[type="date"],
+input[type="datetime-local"],
+input[type="number"],
+input[type="password"],
+input[type="text"] {
+    padding-left: 0;
+    padding-right: 0;
+}
+
 .button-link {
     border: 1px solid #C0C0C0;
     margin-left: 8px;
@@ -435,10 +444,10 @@ table {
     display: block;
     left: 8px;
     max-height: calc(100vh - 16px);
-    min-width: 250px;
     overflow-y: auto;
     position: fixed;
     top: 8px;
+    width: max-content;
     z-index: 7;
 }
 
@@ -452,7 +461,7 @@ table {
     cursor: default;
     display: flex;
     gap: 10px;
-    padding: 7px 10px;
+    padding: 7px 40px 7px 10px;
     text-decoration: none;
     white-space: nowrap;
 }
@@ -664,7 +673,6 @@ table {
 @media (max-width: 600px) {
     .ex-menu-panel {
         max-width: calc(100vw - 16px);
-        min-width: 160px;
     }
 
     .complex-filter-row {
@@ -690,10 +698,11 @@ table {
 td,
 th {
     border: 1px solid #C0C0C0;
-    padding: 2px 4px;
+    padding: 1px 2px;
     text-align: left;
     white-space: nowrap;
     height: 18px;
+    line-height: 1.35;
 }
 
 th {
@@ -1187,7 +1196,7 @@ body.phpinfo-page .admin-controls {
 
 .nx-contact-list {
     display: grid;
-    gap: 4px;
+    gap: 0;
 }
 
 .nx-contact-item,
@@ -1199,12 +1208,18 @@ body.phpinfo-page .admin-controls {
     white-space: nowrap;
 }
 
+.nx-add-item-row {
+    line-height: 1.35;
+    text-align: left;
+    white-space: nowrap;
+}
+
 .nx-item-action {
     border: 0;
     color: inherit;
     display: inline;
     font-size: inherit;
-    line-height: 1;
+    line-height: inherit;
     margin-left: 1px;
     padding: 0;
     text-decoration: none;
@@ -1308,9 +1323,10 @@ body.phpinfo-page .admin-controls {
     text-align: left;
 }
 
-.nx-add-item-row {
-    line-height: 1.35;
-    text-align: left;
+.nx-add-item-row .nx-add-item-action,
+.nx-add-item-row .nx-copy-action,
+.nx-add-item-row .nx-hidden-inactive-indicator {
+    margin-left: 0;
 }
 
 .nx-add-item-action {
@@ -1329,12 +1345,14 @@ body.phpinfo-page .admin-controls {
 .nx-contact-copy,
 .nx-copy-action {
     font-size: inherit;
+    line-height: inherit;
     margin-left: 0;
     text-decoration: none;
 }
 
 .nx-contact-link {
     font-size: inherit;
+    line-height: inherit;
     margin-left: 1px;
     text-decoration: none;
 }
@@ -1370,7 +1388,7 @@ body.phpinfo-page .admin-controls {
 
 .nx-subject-item-list {
     display: grid;
-    gap: 4px;
+    gap: 0;
 }
 
 .nx-subject-address-main-value {

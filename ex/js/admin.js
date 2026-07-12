@@ -4122,6 +4122,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var oDialogData = createSubjectDialog(blNewNote ? "New Note" : "Edit Note", blNewNote ? oSubjectRow : getAdminSubjectRow(oItem));
         var sSubjectId = blNewNote && oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : getSubjectItemValue(oItem, "data-subject-id");
         var oNoteText = appendSubjectTextField(oDialogData.form, "Text", "note_text", getSubjectNoteText(oItem));
+        var oPrimary = appendSubjectCheckbox(oDialogData.form, "Primary", "is_primary", blNewNote ? false : getSubjectItemFlag(oItem, "data-primary"));
         var oActive = appendSubjectCheckbox(oDialogData.form, "Active", "is_active", blNewNote ? true : getSubjectItemFlag(oItem, "data-active"));
         oDialogData.form.addEventListener("submit", function (oEvent) {
             var oData = new FormData();
@@ -4133,6 +4134,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 oData.append("note_id", getSubjectItemValue(oItem, "data-note-id"));
             }
             appendAdminEncodedValue(oData, "note_text", oNoteText.value);
+            oData.append("is_primary", oPrimary.checked ? "1" : "0");
             oData.append("is_active", oActive.checked ? "1" : "0");
             submitSubjectDialog(oDialogData, oData);
         });

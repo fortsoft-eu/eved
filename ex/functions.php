@@ -906,14 +906,28 @@ function nxHtmlValue($mValue) {
     return $sValue != "" ? nxHtml($sValue) : $sEmptyValueEmoji;
 }
 
-function nxRenderCopyAction($mValue) {
+function nxRenderCopyAction($mValue, $sTitle = "Copy") {
     global $sCopyEmoji;
 
     $sValue = trim((string)$mValue);
     if ($sValue == "") {
         return "";
     }
-    return "<a class=\"nx-copy-action\" href=\"#\" data-copy-value=\"" . nxHtml($sValue) . "\" title=\"Copy\" aria-label=\"Copy\"><span class=\"nx-copy-action-box\">" . $sCopyEmoji . "</span></a>";
+    return "<a class=\"nx-copy-action\" href=\"#\" data-copy-value=\"" . nxHtml($sValue) . "\" title=\"" . nxHtml($sTitle) . "\" aria-label=\"" . nxHtml($sTitle) . "\"><span class=\"nx-copy-action-box\">" . $sCopyEmoji . "</span></a>";
+}
+
+function nxRenderSubjectCellCopyAction($aValues, $blShowSingleItem = false) {
+    $aCopyValues = array();
+    foreach ($aValues as $mValue) {
+        $sValue = trim((string)$mValue);
+        if ($sValue != "") {
+            $aCopyValues[] = $sValue;
+        }
+    }
+    if (!$aCopyValues || (!$blShowSingleItem && count($aCopyValues) < 2)) {
+        return "";
+    }
+    return nxRenderCopyAction(implode("\n", $aCopyValues), "Copy items");
 }
 
 function nxHtmlMultiline($mValue) {
@@ -2629,13 +2643,23 @@ function nxGetPostedValues($sName) {
     return $aRawValues;
 }
 
-function nxRenderAddSubjectItemAction($sClass, $sTitle, $iSubjectId, $sPrefix = "") {
+function nxRenderAddSubjectItemAction($sClass, $sTitle, $iSubjectId, $sPrefix = "", $sSuffix = "") {
     global $sAddEmoji, $sEmptyValueEmoji;
 
     if ((int)$iSubjectId < 1) {
         return $sEmptyValueEmoji;
     }
-    return "<div class=\"nx-add-item-row\">" . $sPrefix . "<a href=\"#\" class=\"nx-item-action nx-add-item-action " . nxHtml($sClass) . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" title=\"" . nxHtml($sTitle) . "\" aria-label=\"" . nxHtml($sTitle) . "\">" . $sAddEmoji . "</a></div>";
+    return "<div class=\"nx-add-item-row\">" . $sPrefix . "<a href=\"#\" class=\"nx-item-action nx-add-item-action " . nxHtml($sClass) . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" title=\"" . nxHtml($sTitle) . "\" aria-label=\"" . nxHtml($sTitle) . "\">" . $sAddEmoji . "</a>" . $sSuffix . "</div>";
+}
+
+function nxRenderSubjectCellActionRow($sFirstAction, $sSecondAction = "") {
+    if ($sFirstAction == "") {
+        return $sSecondAction;
+    }
+    if ($sSecondAction == "") {
+        return $sFirstAction;
+    }
+    return "<div class=\"nx-add-item-row\">" . $sFirstAction . $sSecondAction . "</div>";
 }
 
 function nxRenderHiddenInactiveIndicator() {
@@ -2654,13 +2678,15 @@ function nxRenderEmptySubjectItemCell($blShowActions, $sClass, $sTitle, $iSubjec
     return $sHiddenInactive != "" ? $sHiddenInactive : $sEmptyValueEmoji;
 }
 
-function nxRenderContactList($aContacts, $blShowActions = true, $iSubjectId = 0, $blShowCopy = true, $blAllowExternalLinks = true, $blHasHiddenInactive = false, $blShowAddAction = true) {
+function nxRenderContactList($aContacts, $blShowActions = true, $iSubjectId = 0, $blShowCopy = true, $blAllowExternalLinks = true, $blHasHiddenInactive = false, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true) {
     global $sEditEmoji, $sDeleteEmoji, $sPrimaryEmoji, $sInactiveEmoji;
 
     if (!$aContacts) {
         return nxRenderEmptySubjectItemCell($blShowActions, "js-add-subject-contact", "New contact", $iSubjectId, $blHasHiddenInactive, $blShowAddAction);
     }
     $sHtml = "<div class=\"nx-contact-list\">";
+    $aCellCopyValues = array();
+    $sHiddenInactiveAction = $blHasHiddenInactive ? nxRenderHiddenInactiveIndicator() : "";
     foreach ($aContacts as $aContact) {
         $sNote = trim((string)$aContact["note"]);
         $blIsPrimary = (int)$aContact["is_primary"] == 1;
@@ -2668,6 +2694,7 @@ function nxRenderContactList($aContacts, $blShowActions = true, $iSubjectId = 0,
         $sContactType = isset($aContact["contact_type"]) ? (string)$aContact["contact_type"] : "";
         $sContactTypeName = isset($aContact["contact_type_name"]) && trim((string)$aContact["contact_type_name"]) != "" ? (string)$aContact["contact_type_name"] : nxContactTypeLabel($sContactType);
         $sContactValue = nxContactDisplayValue($sContactType, $aContact["contact_value"]);
+        $aCellCopyValues[] = $sContactTypeName . ": " . $sContactValue . ($sNote != "" ? " (" . $sNote . ")" : "");
         $sActions = "";
         if ($blShowActions) {
             $sActions = "<span class=\"nx-list-item-actions\">"
@@ -2695,23 +2722,29 @@ function nxRenderContactList($aContacts, $blShowActions = true, $iSubjectId = 0,
             . $sActions
             . "</div>";
     }
+    $sCellCopyAction = $blShowCellCopyAction ? nxRenderSubjectCellCopyAction($aCellCopyValues) : "";
     if ($blShowActions && $blShowAddAction) {
-        $sHtml .= nxRenderAddSubjectItemAction("js-add-subject-contact", "New contact", $iSubjectId);
+        $sHtml .= nxRenderAddSubjectItemAction("js-add-subject-contact", "New contact", $iSubjectId, ($blCellCopyBeforeAddAction ? $sCellCopyAction : "") . $sHiddenInactiveAction, $blCellCopyBeforeAddAction ? "" : $sCellCopyAction);
+    } else {
+        $sHtml .= nxRenderSubjectCellActionRow($sCellCopyAction, $sHiddenInactiveAction);
     }
     return $sHtml . "</div>";
 }
 
-function nxRenderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 0, $blHasHiddenInactive = false, $blShowAddAction = true) {
+function nxRenderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 0, $blHasHiddenInactive = false, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true) {
     global $sEditEmoji, $sDeleteEmoji, $sPrimaryEmoji, $sInactiveEmoji;
 
     if (!$aNicknames) {
         return nxRenderEmptySubjectItemCell($blShowActions, "js-add-subject-nickname", "New nickname", $iSubjectId, $blHasHiddenInactive, $blShowAddAction);
     }
     $sHtml = "<div class=\"nx-subject-item-list\">";
+    $aCellCopyValues = array();
+    $sHiddenInactiveAction = $blHasHiddenInactive ? nxRenderHiddenInactiveIndicator() : "";
     foreach ($aNicknames as $aNickname) {
         $sContext = trim((string)$aNickname["context"]);
         $sNote = trim((string)$aNickname["note"]);
         $sCopyText = $aNickname["nickname"] . ($sContext != "" ? " [" . $sContext . "]" : "") . ($sNote != "" ? " (" . $sNote . ")" : "");
+        $aCellCopyValues[] = $sCopyText;
         $blIsPrimary = (int)$aNickname["is_primary"] == 1;
         $blIsActive = (int)$aNickname["is_active"] == 1;
         $sActions = "";
@@ -2737,8 +2770,11 @@ function nxRenderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 
             . $sActions
             . "</div>";
     }
+    $sCellCopyAction = $blShowCellCopyAction ? nxRenderSubjectCellCopyAction($aCellCopyValues) : "";
     if ($blShowActions && $blShowAddAction) {
-        $sHtml .= nxRenderAddSubjectItemAction("js-add-subject-nickname", "New nickname", $iSubjectId);
+        $sHtml .= nxRenderAddSubjectItemAction("js-add-subject-nickname", "New nickname", $iSubjectId, ($blCellCopyBeforeAddAction ? $sCellCopyAction : "") . $sHiddenInactiveAction, $blCellCopyBeforeAddAction ? "" : $sCellCopyAction);
+    } else {
+        $sHtml .= nxRenderSubjectCellActionRow($sCellCopyAction, $sHiddenInactiveAction);
     }
     return $sHtml . "</div>";
 }
@@ -2872,23 +2908,26 @@ function nxRenderAddressText($aAddress, $aSettings = null) {
     return implode(", ", nxBuildAddressLines($aAddress, "", $aSettings, true));
 }
 
-function nxRenderAddressCopyText($aAddress, $sSubjectName = "") {
-    $aLines = nxBuildAddressLines($aAddress, $sSubjectName, null, true);
+function nxRenderAddressCopyText($aAddress, $sSubjectName = "", $aSettings = null) {
+    $aLines = nxBuildAddressLines($aAddress, $sSubjectName, $aSettings, true);
     nxAppendAddressCopyLine($aLines, $aAddress["note"]);
     return implode("\n", $aLines);
 }
 
-function nxRenderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0, $sSubjectName = "", $blHasHiddenInactive = false, $aAddressDisplaySettings = null, $blShowAddAction = true) {
+function nxRenderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0, $sSubjectName = "", $blHasHiddenInactive = false, $aAddressDisplaySettings = null, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true) {
     global $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji, $sPrimaryEmoji, $sInactiveEmoji;
 
     if (!$aAddresses) {
         return nxRenderEmptySubjectItemCell($blShowActions, "js-add-subject-address", "New address", $iSubjectId, $blHasHiddenInactive, $blShowAddAction);
     }
     $sHtml = "<div class=\"nx-subject-item-list\">";
+    $aCellCopyValues = array();
+    $sHiddenInactiveAction = $blHasHiddenInactive ? nxRenderHiddenInactiveIndicator() : "";
     foreach ($aAddresses as $aAddress) {
         $sText = nxRenderAddressText($aAddress, $aAddressDisplaySettings);
         $sNote = trim((string)$aAddress["note"]);
-        $sCopyText = nxRenderAddressCopyText($aAddress, $sSubjectName);
+        $sCopyText = nxRenderAddressCopyText($aAddress, $sSubjectName, $aAddressDisplaySettings);
+        $aCellCopyValues[] = $sText . ($sNote != "" ? " (" . $sNote . ")" : "");
         $blIsPrimary = (int)$aAddress["is_primary"] == 1;
         $blIsActive = (int)$aAddress["is_active"] == 1;
         $sValueClass = (string)$aAddress["address_type"] == "main" ? " nx-subject-address-main-value" : "";
@@ -2927,20 +2966,25 @@ function nxRenderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0
             . $sActions
             . "</div>";
     }
+    $sCellCopyAction = $blShowCellCopyAction ? nxRenderSubjectCellCopyAction($aCellCopyValues, true) : "";
     if ($blShowActions && $blShowAddAction) {
-        $sHtml .= nxRenderAddSubjectItemAction("js-add-subject-address", "New address", $iSubjectId);
+        $sHtml .= nxRenderAddSubjectItemAction("js-add-subject-address", "New address", $iSubjectId, ($blCellCopyBeforeAddAction ? $sCellCopyAction : "") . $sHiddenInactiveAction, $blCellCopyBeforeAddAction ? "" : $sCellCopyAction);
+    } else {
+        $sHtml .= nxRenderSubjectCellActionRow($sCellCopyAction, $sHiddenInactiveAction);
     }
     return $sHtml . "</div>";
 }
 
-function nxRenderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $blShowAddAction = true) {
+function nxRenderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true) {
     global $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji;
 
     if (!$aGroups) {
         return $blShowActions && $blShowAddAction ? nxRenderAddSubjectItemAction("js-add-subject-group", "Assign group", $iSubjectId) : $sEmptyValueEmoji;
     }
     $sHtml = "<div class=\"nx-subject-item-list\">";
+    $aCellCopyValues = array();
     foreach ($aGroups as $aGroup) {
+        $aCellCopyValues[] = $aGroup["name"];
         $sActions = "";
         if ($blShowActions) {
             $sActions = "<span class=\"nx-list-item-actions\">"
@@ -2957,21 +3001,28 @@ function nxRenderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $bl
             . $sActions
             . "</div>";
     }
+    $sCellCopyAction = $blShowCellCopyAction ? nxRenderSubjectCellCopyAction($aCellCopyValues) : "";
     if ($blShowActions && $blShowAddAction) {
-        $sHtml .= nxRenderAddSubjectItemAction("js-add-subject-group", "Assign group", $iSubjectId);
+        $sHtml .= nxRenderAddSubjectItemAction("js-add-subject-group", "Assign group", $iSubjectId, $blCellCopyBeforeAddAction ? $sCellCopyAction : "", $blCellCopyBeforeAddAction ? "" : $sCellCopyAction);
+    } else {
+        $sHtml .= $sCellCopyAction;
     }
     return $sHtml . "</div>";
 }
 
-function nxRenderNoteList($aNotes, $blShowActions = true, $iSubjectId = 0, $blHasHiddenInactive = false, $blShowAddAction = true) {
-    global $sEditEmoji, $sDeleteEmoji, $sInactiveEmoji;
+function nxRenderNoteList($aNotes, $blShowActions = true, $iSubjectId = 0, $blHasHiddenInactive = false, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true) {
+    global $sEditEmoji, $sDeleteEmoji, $sPrimaryEmoji, $sInactiveEmoji;
 
     if (!$aNotes) {
         return nxRenderEmptySubjectItemCell($blShowActions, "js-add-subject-note", "New note", $iSubjectId, $blHasHiddenInactive, $blShowAddAction);
     }
     $sHtml = "<div class=\"nx-subject-item-list\">";
+    $aCellCopyValues = array();
+    $sHiddenInactiveAction = $blHasHiddenInactive ? nxRenderHiddenInactiveIndicator() : "";
     foreach ($aNotes as $aNote) {
+        $aCellCopyValues[] = $aNote["note_text"];
         $blIsActive = (int)$aNote["is_active"] == 1;
+        $blIsPrimary = (int)$aNote["is_primary"] == 1;
         $sActions = "";
         if ($blShowActions) {
             $sActions = "<span class=\"nx-list-item-actions\">"
@@ -2982,16 +3033,20 @@ function nxRenderNoteList($aNotes, $blShowActions = true, $iSubjectId = 0, $blHa
         $sHtml .= "<div class=\"nx-subject-item nx-list-item nx-subject-note-item" . ($blIsActive ? "" : " nx-subject-item-inactive") . "\""
             . " data-note-id=\"" . nxHtml($aNote["id"]) . "\""
             . " data-subject-id=\"" . nxHtml($aNote["subject_id"]) . "\""
+            . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
             . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
             . "<span class=\"nx-subject-item-value\">" . nxHtmlMultiline($aNote["note_text"]) . "</span>"
             . nxRenderCopyAction($aNote["note_text"])
-            . "<span class=\"nx-subject-item-flags\"><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
+            . "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
             . "<span class=\"nx-subject-note-source\">" . nxHtml($aNote["note_text"]) . "</span>"
             . $sActions
             . "</div>";
     }
+    $sCellCopyAction = $blShowCellCopyAction ? nxRenderSubjectCellCopyAction($aCellCopyValues) : "";
     if ($blShowActions && $blShowAddAction) {
-        $sHtml .= nxRenderAddSubjectItemAction("js-add-subject-note", "New note", $iSubjectId);
+        $sHtml .= nxRenderAddSubjectItemAction("js-add-subject-note", "New note", $iSubjectId, ($blCellCopyBeforeAddAction ? $sCellCopyAction : "") . $sHiddenInactiveAction, $blCellCopyBeforeAddAction ? "" : $sCellCopyAction);
+    } else {
+        $sHtml .= nxRenderSubjectCellActionRow($sCellCopyAction, $sHiddenInactiveAction);
     }
     return $sHtml . "</div>";
 }
@@ -3293,7 +3348,7 @@ function nxFetchSubjectRows($oPdo, $iSubjectId = 0, $aFilterSql = null) {
         LEFT JOIN (SELECT subject_id, GROUP_CONCAT(NULLIF(CONCAT_WS(', ', NULLIF(TRIM(CONCAT_WS(' ', NULLIF(street_name, ''), NULLIF(CONCAT_WS('/', NULLIF(house_number, ''), NULLIF(orientation_number, '')), ''))), ''), NULLIF(city, ''), NULLIF(postal_code, ''), NULLIF(country, '')), '') ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n') AS addresses FROM ex_subject_addresses GROUP BY subject_id) AS a ON a.subject_id = s.id
         LEFT JOIN (SELECT subject_id, GROUP_CONCAT(CONCAT(nickname, IF(context IS NULL OR context = '', '', CONCAT(' [', context, ']')), IF(note IS NULL OR note = '', '', CONCAT(' (', note, ')'))) ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n') AS nicknames, SUBSTRING_INDEX(GROUP_CONCAT(nickname ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n'), '\n', 1) AS primary_nickname FROM ex_subject_nicknames GROUP BY subject_id) AS n ON n.subject_id = s.id
         LEFT JOIN (SELECT sg.subject_id, GROUP_CONCAT(g.name ORDER BY g.`order` ASC, g.id ASC SEPARATOR '\n') AS group_names FROM ex_subject_groups AS sg INNER JOIN ex_groups AS g ON g.id = sg.group_id GROUP BY sg.subject_id) AS g ON g.subject_id = s.id
-        LEFT JOIN (SELECT subject_id, GROUP_CONCAT(note_text ORDER BY is_active DESC, id ASC SEPARATOR '\n') AS notes FROM ex_subject_notes GROUP BY subject_id) AS sn ON sn.subject_id = s.id";
+        LEFT JOIN (SELECT subject_id, GROUP_CONCAT(note_text ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n') AS notes FROM ex_subject_notes GROUP BY subject_id) AS sn ON sn.subject_id = s.id";
     if ($iSubjectId > 0) {
         $sSql .= " WHERE s.id = :subject_id";
     }
@@ -3646,11 +3701,11 @@ function nxRenderGroupAdminRow($aGroup, $blShowActions = true) {
 
 function nxFetchSubjectNotes($oPdo, $iSubjectId = 0) {
     $aNotes = array();
-    $sSql = "SELECT id, subject_id, note_text, is_active FROM ex_subject_notes";
+    $sSql = "SELECT id, subject_id, note_text, is_primary, is_active FROM ex_subject_notes";
     if ($iSubjectId > 0) {
         $sSql .= " WHERE subject_id = :subject_id";
     }
-    $sSql .= " ORDER BY subject_id ASC, is_active DESC, id ASC";
+    $sSql .= " ORDER BY subject_id ASC, is_active DESC, is_primary DESC, id ASC";
     $oStatement = $oPdo->prepare($sSql);
     if ($iSubjectId > 0) {
         $oStatement->execute(array("subject_id" => $iSubjectId));
@@ -3791,11 +3846,11 @@ function nxRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroup
         . ($blShowBirthNumber ? "        <td" . $sBirthNumberClassAttribute . " style=\"vertical-align: top;\">" . nxRenderBirthNumberValue($aRow["birth_number"]) . "</td>\n" : "")
         . "        <td" . $sBirthDateClassAttribute . " style=\"vertical-align: top;\">" . nxHtmlValue($aRow["birth_date"]) . "</td>\n"
         . "        <td style=\"vertical-align: top;\">" . nxHtmlValue($aRow["death_date"]) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId])) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId])) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . nxRenderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . nxRenderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId])) . "</td>\n"
+        . "        <td style=\"vertical-align: top;\">" . nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true, true, true) . "</td>\n"
+        . "        <td style=\"vertical-align: top;\">" . nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, true, true, true) . "</td>\n"
+        . "        <td style=\"vertical-align: top;\">" . nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true, true, true) . "</td>\n"
+        . "        <td style=\"vertical-align: top;\">" . nxRenderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, true) . "</td>\n"
+        . "        <td style=\"vertical-align: top;\">" . nxRenderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true, true, true) . "</td>\n"
         . "      </tr>\n";
 }
 
@@ -4204,7 +4259,7 @@ function nxAddressesFetchRows($oPdo, $aAddressSettings) {
             $sAddressKey = json_encode($aAddressMatch);
             $aCopyAddress = $aAddress;
             $aCopyAddress["note"] = "";
-            $sAddressCopyText = nxRenderAddressCopyText($aCopyAddress, "");
+            $sAddressCopyText = nxRenderAddressCopyText($aCopyAddress, "", $aAddressSettings);
             $sAddressText = nxRenderAddressText($aAddress, $aAddressSettings);
             if (trim($sAddressText) == "") {
                 continue;
@@ -4358,11 +4413,11 @@ function nxBdRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGro
         . "        <td class=\"" . nxHtml($sBirthNumberClass) . "\">" . nxRenderBirthNumberValue($aRow["birth_number"]) . "</td>\n"
         . "        <td" . $sBirthDateClassAttribute . " style=\"overflow-wrap: normal; white-space: nowrap; word-break: normal;\">" . nxHtmlValue($aRow["birth_date"]) . "</td>\n"
         . "        <td class=\"nx-column-step-two\" style=\"overflow-wrap: normal; white-space: nowrap; word-break: normal;\">" . nxHtmlValue($aRow["death_date"]) . "</td>\n"
-        . "        <td class=\"nx-column-step-one\">" . nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true) . "</td>\n"
-        . "        <td class=\"nx-column-step-one\">" . nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aBirthdaySettings, true) . "</td>\n"
-        . "        <td>" . nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true) . "</td>\n"
-        . "        <td class=\"nx-column-step-three\">" . nxRenderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true) . "</td>\n"
-        . "        <td class=\"nx-column-step-three\">" . nxRenderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true) . "</td>\n"
+        . "        <td class=\"nx-column-step-one\">" . nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true, true, false) . "</td>\n"
+        . "        <td class=\"nx-column-step-one\">" . nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aBirthdaySettings, true, true, false) . "</td>\n"
+        . "        <td>" . nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true, true, false) . "</td>\n"
+        . "        <td class=\"nx-column-step-three\">" . nxRenderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, false) . "</td>\n"
+        . "        <td class=\"nx-column-step-three\">" . nxRenderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true, true, false) . "</td>\n"
         . "      </tr>\n";
 }
 
@@ -5877,40 +5932,40 @@ function nxRenderGroupAdminRows($oPdo, $blCanEdit) {
 
 function nxGetFullListComplexFilterFields($aContactTypes) {
     $aFields = array(
-        "subject_type" => array("label" => "Subject Type", "sql" => "`subject_type`", "value_type" => "subject_type"),
-        "subject_name" => array("label" => "Subject Name", "sql" => "`subject_name`"),
-        "title_before" => array("label" => "Title Before", "sql" => "`title_before`", "scope_sql" => "`subject_type` = 'person'"),
-        "first_name" => array("label" => "First Name", "sql" => "`first_name`", "scope_sql" => "`subject_type` = 'person'"),
-        "middle_name" => array("label" => "Middle Name", "sql" => "`middle_name`", "scope_sql" => "`subject_type` = 'person'"),
-        "last_name" => array("label" => "Last Name", "sql" => "`last_name`", "scope_sql" => "`subject_type` = 'person'"),
-        "title_after" => array("label" => "Title After", "sql" => "`title_after`", "scope_sql" => "`subject_type` = 'person'"),
-        "birth_name" => array("label" => "Birth Name", "sql" => "`birth_name`", "scope_sql" => "`subject_type` = 'person'"),
-        "birth_number" => array("label" => "Birth Number", "sql" => "`birth_number`", "value_type" => "birth_number", "scope_sql" => "`subject_type` = 'person'"),
-        "birth_date" => array("label" => "Birth Date", "sql" => "`birth_date`", "value_type" => "date", "scope_sql" => "`subject_type` = 'person'"),
-        "death_date" => array("label" => "Death Date", "sql" => "`death_date`", "value_type" => "date", "scope_sql" => "`subject_type` = 'person'"),
-        "birthday_served_at" => array("label" => "Birthday Served At", "sql" => "`birthday_served_at`", "value_type" => "datetime", "scope_sql" => "`subject_type` = 'person'"),
-        "inter_served_at" => array("label" => "Interaction Served At", "sql" => "`inter_served_at`", "value_type" => "datetime", "scope_sql" => "`subject_type` = 'person'"),
-        "nicknames" => array("label" => "Nicknames", "sql" => "`nicknames`"),
-        "addresses" => array("label" => "Addresses", "sql" => "`addresses`"),
-        "address_type" => array("label" => "Address Type", "address_column" => "address_type", "value_type" => "address_type"),
-        "organization_name" => array("label" => "Organization Name", "address_column" => "organization_name"),
-        "department_name" => array("label" => "Department Name", "address_column" => "department_name"),
-        "care_of" => array("label" => "Care Of", "address_column" => "care_of"),
-        "street_name" => array("label" => "Street Name", "address_column" => "street_name"),
-        "house_number" => array("label" => "House Number", "address_column" => "house_number"),
-        "evidence_number" => array("label" => "Evidence Number", "address_column" => "evidence_number"),
-        "orientation_number" => array("label" => "Orientation Number", "address_column" => "orientation_number"),
-        "orientation_suffix" => array("label" => "Orientation Suffix", "address_column" => "orientation_suffix"),
-        "address_line2" => array("label" => "Address Line 2", "address_column" => "address_line2"),
-        "city" => array("label" => "City", "address_column" => "city"),
-        "city_part" => array("label" => "City Part", "address_column" => "city_part"),
-        "postal_code" => array("label" => "Postal Code", "address_column" => "postal_code"),
-        "region" => array("label" => "Region", "address_column" => "region"),
-        "country" => array("label" => "Country", "address_column" => "country", "value_type" => "country"),
-        "address_is_primary" => array("label" => "Address Is Primary", "address_column" => "is_primary", "value_type" => "boolean"),
-        "address_is_active" => array("label" => "Address Is Active", "address_column" => "is_active", "value_type" => "boolean"),
-        "address_note" => array("label" => "Address Note", "address_column" => "note"),
-        "contacts" => array("label" => "Contacts", "sql" => "`contacts`")
+        "subject_type" => array("label" => "Subject: Type", "sql" => "`subject_type`", "value_type" => "subject_type"),
+        "subject_name" => array("label" => "Subject: Name", "sql" => "`subject_name`"),
+        "title_before" => array("label" => "Person: Title Before", "sql" => "`title_before`", "scope_sql" => "`subject_type` = 'person'"),
+        "first_name" => array("label" => "Person: First Name", "sql" => "`first_name`", "scope_sql" => "`subject_type` = 'person'"),
+        "middle_name" => array("label" => "Person: Middle Name", "sql" => "`middle_name`", "scope_sql" => "`subject_type` = 'person'"),
+        "last_name" => array("label" => "Person: Last Name", "sql" => "`last_name`", "scope_sql" => "`subject_type` = 'person'"),
+        "title_after" => array("label" => "Person: Title After", "sql" => "`title_after`", "scope_sql" => "`subject_type` = 'person'"),
+        "birth_name" => array("label" => "Person: Birth Name", "sql" => "`birth_name`", "scope_sql" => "`subject_type` = 'person'"),
+        "birth_number" => array("label" => "Person: Birth Number", "sql" => "`birth_number`", "value_type" => "birth_number", "scope_sql" => "`subject_type` = 'person'"),
+        "birth_date" => array("label" => "Person: Birth Date", "sql" => "`birth_date`", "value_type" => "date", "scope_sql" => "`subject_type` = 'person'"),
+        "death_date" => array("label" => "Person: Death Date", "sql" => "`death_date`", "value_type" => "date", "scope_sql" => "`subject_type` = 'person'"),
+        "birthday_served_at" => array("label" => "Person: Birthday Served At", "sql" => "`birthday_served_at`", "value_type" => "datetime", "scope_sql" => "`subject_type` = 'person'"),
+        "inter_served_at" => array("label" => "Person: Interaction Served At", "sql" => "`inter_served_at`", "value_type" => "datetime", "scope_sql" => "`subject_type` = 'person'"),
+        "nicknames" => array("label" => "Subject: Nicknames", "sql" => "`nicknames`"),
+        "addresses" => array("label" => "Subject: Addresses", "sql" => "`addresses`"),
+        "address_type" => array("label" => "Address: Type", "address_column" => "address_type", "value_type" => "address_type"),
+        "organization_name" => array("label" => "Address: Organization Name", "address_column" => "organization_name"),
+        "department_name" => array("label" => "Address: Department Name", "address_column" => "department_name"),
+        "care_of" => array("label" => "Address: Care Of", "address_column" => "care_of"),
+        "street_name" => array("label" => "Address: Street Name", "address_column" => "street_name"),
+        "house_number" => array("label" => "Address: House Number", "address_column" => "house_number"),
+        "evidence_number" => array("label" => "Address: Evidence Number", "address_column" => "evidence_number"),
+        "orientation_number" => array("label" => "Address: Orientation Number", "address_column" => "orientation_number"),
+        "orientation_suffix" => array("label" => "Address: Orientation Suffix", "address_column" => "orientation_suffix"),
+        "address_line2" => array("label" => "Address: Address Line 2", "address_column" => "address_line2"),
+        "city" => array("label" => "Address: City", "address_column" => "city"),
+        "city_part" => array("label" => "Address: City Part", "address_column" => "city_part"),
+        "postal_code" => array("label" => "Address: Postal Code", "address_column" => "postal_code"),
+        "region" => array("label" => "Address: Region", "address_column" => "region"),
+        "country" => array("label" => "Address: Country", "address_column" => "country", "value_type" => "country"),
+        "address_is_primary" => array("label" => "Address: Primary", "address_column" => "is_primary", "value_type" => "boolean"),
+        "address_is_active" => array("label" => "Address: Active", "address_column" => "is_active", "value_type" => "boolean"),
+        "address_note" => array("label" => "Address: Note", "address_column" => "note"),
+        "contacts" => array("label" => "Subject: Contacts", "sql" => "`contacts`")
     );
     foreach ($aContactTypes as $aContactType) {
         $iContactTypeId = isset($aContactType["id"]) ? (int)$aContactType["id"] : 0;
@@ -5923,10 +5978,10 @@ function nxGetFullListComplexFilterFields($aContactTypes) {
         }
     }
     $aFields += array(
-        "group_names" => array("label" => "Groups", "sql" => "`group_names`", "value_type" => "group"),
-        "notes" => array("label" => "Subject Notes", "sql" => "`notes`"),
-        "is_active" => array("label" => "Active", "sql" => "`is_active`", "value_type" => "boolean"),
-        "created_at" => array("label" => "Created At", "sql" => "`created_at`", "value_type" => "datetime")
+        "group_names" => array("label" => "Subject: Groups", "sql" => "`group_names`", "value_type" => "group"),
+        "notes" => array("label" => "Subject: Notes", "sql" => "`notes`"),
+        "is_active" => array("label" => "Subject: Active", "sql" => "`is_active`", "value_type" => "boolean"),
+        "created_at" => array("label" => "Subject: Created At", "sql" => "`created_at`", "value_type" => "datetime")
     );
     return $aFields;
 }

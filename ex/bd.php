@@ -663,6 +663,7 @@ if ($sBdPostAction == "create_subject_group") {
 if ($sBdPostAction == "update_subject_note") {
     $iNoteId = isset($_POST["note_id"]) ? (int)$_POST["note_id"] : 0;
     $sNoteText = nxGetPostedTrimmedValue("note_text");
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
     $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iNoteId < 1) {
@@ -681,8 +682,8 @@ if ($sBdPostAction == "update_subject_note") {
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Note was not found."), 404);
         }
-        $oStatement = $oPdo->prepare("UPDATE ex_subject_notes SET note_text = :note_text, is_active = :is_active WHERE id = :id");
-        $oStatement->execute(array("note_text" => $sNoteText, "is_active" => $iIsActive, "id" => $iNoteId));
+        $oStatement = $oPdo->prepare("UPDATE ex_subject_notes SET note_text = :note_text, is_primary = :is_primary, is_active = :is_active WHERE id = :id");
+        $oStatement->execute(array("note_text" => $sNoteText, "is_primary" => $iIsPrimary, "is_active" => $iIsActive, "id" => $iNoteId));
         $oPdo->commit();
         nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
@@ -696,6 +697,7 @@ if ($sBdPostAction == "update_subject_note") {
 if ($sBdPostAction == "create_subject_note") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sNoteText = nxGetPostedTrimmedValue("note_text");
+    $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
     $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iSubjectId < 1) {
@@ -713,8 +715,8 @@ if ($sBdPostAction == "create_subject_note") {
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
-        $oStatement = $oPdo->prepare("INSERT INTO ex_subject_notes (subject_id, note_text, is_active) VALUES (:subject_id, :note_text, :is_active)");
-        $oStatement->execute(array("subject_id" => $iSubjectId, "note_text" => $sNoteText, "is_active" => $iIsActive));
+        $oStatement = $oPdo->prepare("INSERT INTO ex_subject_notes (subject_id, note_text, is_primary, is_active) VALUES (:subject_id, :note_text, :is_primary, :is_active)");
+        $oStatement->execute(array("subject_id" => $iSubjectId, "note_text" => $sNoteText, "is_primary" => $iIsPrimary, "is_active" => $iIsActive));
         $oPdo->commit();
         nxSendJsonAndExit(nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
