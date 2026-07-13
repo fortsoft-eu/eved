@@ -1187,11 +1187,16 @@ foreach (nxGetAddressTypes() as $sAddressType) {
     );
 }
 
+$sRenderThrobberHtmlAttributes = "";
+if (count($aRows) > 50) {
+    $sRenderThrobberHtmlAttributes = " data-render-throbber-lock-target=\"" . nxHtml(nxGetRenderThrobberLockTarget($sUserAgent)) . "\" data-render-throbber-lock-active=\"1\"";
+}
+
 $iTime = sendPageHeaders();
 
 ?>
 <!DOCTYPE html>
-<html lang="en-US" dir="ltr">
+<html lang="en-US" dir="ltr"<?php echo $sRenderThrobberHtmlAttributes; ?>>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">

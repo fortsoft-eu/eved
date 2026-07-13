@@ -211,14 +211,24 @@ input[type="text"] {
     display: none;
 }
 
+html[data-render-throbber-lock-target="body"][data-render-throbber-lock-active="1"] body,
+html[data-render-throbber-lock-target="body"]:has(.js-render-throbber:not([hidden])) body,
+html[data-render-throbber-lock-target="html"][data-render-throbber-lock-active="1"],
+html[data-render-throbber-lock-target="html"]:has(.js-render-throbber:not([hidden])) {
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
 .render-throbber {
     background: rgba(0, 0, 0, 0.25);
-    height: 100vh;
+    bottom: 0;
     left: 0;
     overflow: hidden;
+    overscroll-behavior: none;
     position: fixed;
+    right: 0;
     top: 0;
-    width: 100vw;
+    touch-action: none;
     z-index: 9;
 }
 
@@ -246,11 +256,6 @@ input[type="text"] {
 
 @supports (height: 100dvh) {
     .confirm-dialog {
-        height: 100dvh;
-        width: 100dvw;
-    }
-
-    .render-throbber {
         height: 100dvh;
         width: 100dvw;
     }

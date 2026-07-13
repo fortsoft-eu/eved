@@ -3,6 +3,12 @@ var sAdminBodyOverflow = "";
 var iAdminScrollLeft = 0;
 var iAdminScrollTop = 0;
 var aRenderThrobbers = null;
+var blRenderThrobberScrollLocked = false;
+var sRenderThrobberLockTarget = "";
+var sRenderThrobberBodyOverflow = "";
+var sRenderThrobberHtmlOverflow = "";
+var iRenderThrobberScrollLeft = 0;
+var iRenderThrobberScrollTop = 0;
 
 function logAdminException(oException) {
     if (window.console && window.console.error) {
@@ -208,8 +214,92 @@ function removeAdminClass(oElement, sClass) {
     }
 }
 
+function preventRenderThrobberScroll(oEvent) {
+    if (!blRenderThrobberScrollLocked) {
+        return;
+    }
+    if (oEvent && oEvent.cancelable !== false && oEvent.preventDefault) {
+        oEvent.preventDefault();
+    }
+}
+
+function restoreRenderThrobberScroll() {
+    if (blRenderThrobberScrollLocked) {
+        window.scrollTo(iRenderThrobberScrollLeft, iRenderThrobberScrollTop);
+    }
+}
+
+function addRenderThrobberScrollLockEvent(sType) {
+    try {
+        document.addEventListener(sType, preventRenderThrobberScroll, {
+            "capture": true,
+            "passive": false
+        });
+    } catch (oException) {
+        logAdminException(oException);
+        document.addEventListener(sType, preventRenderThrobberScroll, true);
+    }
+}
+
+function removeRenderThrobberScrollLockEvent(sType) {
+    document.removeEventListener(sType, preventRenderThrobberScroll, true);
+}
+
+function lockRenderThrobberScroll() {
+    var oRoot = document.documentElement;
+    var oBody = document.body;
+    if (blRenderThrobberScrollLocked || !oRoot || !oBody) {
+        return;
+    }
+    sRenderThrobberLockTarget = oRoot.getAttribute("data-render-throbber-lock-target") == "html" ? "html" : "body";
+    sRenderThrobberBodyOverflow = oBody.style.overflow || "";
+    sRenderThrobberHtmlOverflow = oRoot.style.overflow || "";
+    iRenderThrobberScrollLeft = window.pageXOffset || oRoot.scrollLeft || oBody.scrollLeft || 0;
+    iRenderThrobberScrollTop = window.pageYOffset || oRoot.scrollTop || oBody.scrollTop || 0;
+    if (sRenderThrobberLockTarget == "html") {
+        oRoot.style.overflow = "hidden";
+    } else {
+        oBody.style.overflow = "hidden";
+    }
+    oRoot.setAttribute("data-render-throbber-lock-active", "1");
+    blRenderThrobberScrollLocked = true;
+    addRenderThrobberScrollLockEvent("touchstart");
+    addRenderThrobberScrollLockEvent("touchmove");
+    addRenderThrobberScrollLockEvent("wheel");
+    window.addEventListener("scroll", restoreRenderThrobberScroll, true);
+    window.scrollTo(iRenderThrobberScrollLeft, iRenderThrobberScrollTop);
+}
+
+function unlockRenderThrobberScroll() {
+    var oRoot = document.documentElement;
+    var oBody = document.body;
+    if (!blRenderThrobberScrollLocked) {
+        if (oRoot) {
+            oRoot.removeAttribute("data-render-throbber-lock-active");
+        }
+        return;
+    }
+    removeRenderThrobberScrollLockEvent("touchstart");
+    removeRenderThrobberScrollLockEvent("touchmove");
+    removeRenderThrobberScrollLockEvent("wheel");
+    window.removeEventListener("scroll", restoreRenderThrobberScroll, true);
+    if (sRenderThrobberLockTarget == "html" && oRoot) {
+        oRoot.style.overflow = sRenderThrobberHtmlOverflow;
+    } else if (oBody) {
+        oBody.style.overflow = sRenderThrobberBodyOverflow;
+    }
+    if (oRoot) {
+        oRoot.removeAttribute("data-render-throbber-lock-active");
+    }
+    blRenderThrobberScrollLocked = false;
+    window.scrollTo(iRenderThrobberScrollLeft, iRenderThrobberScrollTop);
+}
+
 function prepareRenderThrobbers() {
     aRenderThrobbers = document.querySelectorAll(".js-render-throbber");
+    if (aRenderThrobbers && aRenderThrobbers.length > 0) {
+        lockRenderThrobberScroll();
+    }
 }
 
 function scheduleRenderThrobberHide() {
@@ -222,6 +312,7 @@ function scheduleRenderThrobberHide() {
         for (var iI = 0; iI < aThrobbers.length; iI += 1) {
             aThrobbers[iI].hidden = true;
         }
+        unlockRenderThrobberScroll();
     }
 
     if (window.requestAnimationFrame) {
@@ -232,6 +323,8 @@ function scheduleRenderThrobberHide() {
     }
     window.setTimeout(hideRenderThrobbers, 0);
 }
+
+prepareRenderThrobbers();
 
 document.addEventListener("DOMContentLoaded", prepareRenderThrobbers);
 
