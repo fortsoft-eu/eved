@@ -6637,9 +6637,9 @@ function nxSchemaColumnTypeDisplay($sColumnType, $bShorten = true) {
     return $sColumnType;
 }
 
-function nxGetRenderThrobberLockTarget($sUserAgent) {
+function isThrobberLockTarget($sUserAgent) {
     $blThrobberGeckoEngine = preg_match("/Gecko\/\d+/i", $sUserAgent) && preg_match("/Firefox\/\d+/i", $sUserAgent);
     $blThrobberPmdLike = preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle)/i", $sUserAgent);
     $blThrobberChromiumEngine = preg_match("/(?:Chrome|Chromium|CriOS|EdgA|SamsungBrowser|OPR|Opera)/i", $sUserAgent);
-    return !$blThrobberGeckoEngine && $blThrobberPmdLike && $blThrobberChromiumEngine ? "html" : "body";
+    return !$blThrobberGeckoEngine && $blThrobberPmdLike && $blThrobberChromiumEngine;
 }

@@ -1187,9 +1187,17 @@ foreach (nxGetAddressTypes() as $sAddressType) {
     );
 }
 
+$sViewportContent = "width=device-width, initial-scale=1.0";
+$sRenderThrobberViewportContent = $sViewportContent;
 $sRenderThrobberHtmlAttributes = "";
+$sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
 if (count($aRows) > 50) {
-    $sRenderThrobberHtmlAttributes = " data-render-throbber-lock-target=\"" . nxHtml(nxGetRenderThrobberLockTarget($sUserAgent)) . "\" data-render-throbber-lock-active=\"1\"";
+    $blIsThrobberLockTarget = isThrobberLockTarget($sUserAgent);
+    $sRenderThrobberHtmlAttributes = " data-render-throbber-lock-target=\"" . nxHtml($blIsThrobberLockTarget ? "html" : "body") . "\" data-render-throbber-lock-active=\"1\"";
+    if ($blIsThrobberLockTarget) {
+        $sViewportContent = "width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no";
+        $sRenderThrobberHtmlAttributes .= " data-render-throbber-zoom-lock=\"1\" data-render-throbber-viewport-content=\"" . nxHtml($sRenderThrobberViewportContent) . "\"";
+    }
 }
 
 $iTime = sendPageHeaders();
@@ -1202,7 +1210,7 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="<?php echo nxHtml($sViewportContent); ?>">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
@@ -1368,7 +1376,7 @@ if (!$aRows) {
     }
 
     echo "    </tbody>\n";
-echo "  </table>\n";
+    echo "  </table>\n";
 }
 
 echo nxRenderFilterFocusButton();

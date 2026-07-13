@@ -7,6 +7,7 @@ var blRenderThrobberScrollLocked = false;
 var sRenderThrobberLockTarget = "";
 var sRenderThrobberBodyOverflow = "";
 var sRenderThrobberHtmlOverflow = "";
+var sRenderThrobberViewportContent = "";
 var iRenderThrobberScrollLeft = 0;
 var iRenderThrobberScrollTop = 0;
 
@@ -229,6 +230,28 @@ function restoreRenderThrobberScroll() {
     }
 }
 
+function getRenderThrobberViewportElement() {
+    return document.querySelector("meta[name=\"viewport\"]");
+}
+
+function lockRenderThrobberZoom() {
+    var oRoot = document.documentElement;
+    var oViewport = getRenderThrobberViewportElement();
+    if (!oRoot || !oViewport || oRoot.getAttribute("data-render-throbber-zoom-lock") != "1") {
+        return;
+    }
+    sRenderThrobberViewportContent = oRoot.getAttribute("data-render-throbber-viewport-content") || oViewport.getAttribute("content") || "";
+    oViewport.setAttribute("content", "width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no");
+}
+
+function unlockRenderThrobberZoom() {
+    var oViewport = getRenderThrobberViewportElement();
+    if (oViewport && sRenderThrobberViewportContent != "") {
+        oViewport.setAttribute("content", sRenderThrobberViewportContent);
+    }
+    sRenderThrobberViewportContent = "";
+}
+
 function addRenderThrobberScrollLockEvent(sType) {
     try {
         document.addEventListener(sType, preventRenderThrobberScroll, {
@@ -263,6 +286,7 @@ function lockRenderThrobberScroll() {
     }
     oRoot.setAttribute("data-render-throbber-lock-active", "1");
     blRenderThrobberScrollLocked = true;
+    lockRenderThrobberZoom();
     addRenderThrobberScrollLockEvent("touchstart");
     addRenderThrobberScrollLockEvent("touchmove");
     addRenderThrobberScrollLockEvent("wheel");
@@ -291,6 +315,7 @@ function unlockRenderThrobberScroll() {
     if (oRoot) {
         oRoot.removeAttribute("data-render-throbber-lock-active");
     }
+    unlockRenderThrobberZoom();
     blRenderThrobberScrollLocked = false;
     window.scrollTo(iRenderThrobberScrollLeft, iRenderThrobberScrollTop);
 }
