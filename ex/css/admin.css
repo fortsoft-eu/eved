@@ -352,35 +352,57 @@ table {
 }
 
 .admin-controls {
+    margin: 0px;
     align-items: center;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
+.ex-list-page .admin-controls {
+    margin-bottom: calc(1em - 6px);
+}
+
 .admin-controls .button-link {
     box-sizing: border-box;
+    height: calc(1lh + 9px);
     margin-left: 0;
     padding: 4px 8px;
+}
+
+.admin-controls .table-filter-left {
+    align-items: center;
+    display: flex;
+    flex: 0 0 237px;
+    gap: 6px;
+}
+
+.admin-controls label[for="table-filter"] {
+    flex: 0 0 calc(54px - 1lh);
+    width: calc(54px - 1lh);
 }
 
 .admin-controls .js-table-filter {
     box-sizing: border-box;
     min-width: 0;
-    width: 164px;
+    width: 159px;
+}
+
+.admin-controls .table-filter-left .js-table-filter {
+    width: 161px;
 }
 
 .admin-controls .js-filter-operator {
-    width: 76px;
+    width: 75px;
 }
 
 .admin-controls .js-filter-reset {
-    width: 76px;
+    width: 75px;
 }
 
 .admin-controls .js-complex-filter-open,
 .admin-controls .js-complex-filter-page-reset {
-    width: 76px;
+    width: 75px;
 }
 
 .admin-controls .complex-filter-active {
@@ -392,16 +414,16 @@ table {
 }
 
 .admin-controls .js-index-settings-open {
-    width: 76px;
+    width: 75px;
 }
 
 .admin-controls .js-add-subject {
-    width: 76px;
+    width: 75px;
 }
 
 .admin-controls .js-add-contact-type,
 .admin-controls .js-add-group {
-    width: 76px;
+    width: 75px;
 }
 
 .admin-controls .database-action-button {
@@ -428,10 +450,10 @@ table {
     box-sizing: border-box;
     cursor: default;
     font-size: 14px;
-    height: 28px;
+    height: calc(1lh + 9px);
     margin-top: 0;
     padding: 0;
-    width: 28px;
+    width: calc(1lh + 9px);
 }
 
 .ex-menu-button:hover {
