@@ -431,10 +431,11 @@ function sendFilmUaFingerprintResponse($oPdo, $aAllowedIps) {
     sendFilmUaJsonAndExit(array("status" => "ok"));
 }
 
-function printPhpFileLinks($sBaseUrl) {
+function getFilmPhpFileLinkGroups() {
     $aExcludedFiles = array("index.php", "main.php", "functions.php");
     $aPhotoFiles = array("equip.php", "link.php", "list.php", "orders.php", "ua.php");
     $aPhpFiles = array();
+    $aGroups = array();
     foreach (scandir(".") as $sFileName) {
         if (!is_file($sFileName)) {
             continue;
@@ -448,6 +449,7 @@ function printPhpFileLinks($sBaseUrl) {
         $aPhpFiles[] = $sFileName;
     }
     foreach (array(true, false) as $blPhotoFiles) {
+        $aGroup = array();
         foreach ($aPhpFiles as $sFileName) {
             if (in_array($sFileName, $aPhotoFiles, true) !== $blPhotoFiles) {
                 continue;
@@ -470,10 +472,49 @@ function printPhpFileLinks($sBaseUrl) {
                 }
             }
             $sTitle = preg_replace("/\bphp\b/iu", "PHP", mbUcfirst($sName));
-            $sTitle = htmlspecialchars($sTitle, ENT_QUOTES, "UTF-8");
-            echo "          <p><a href=\"" . $sBaseUrl . $sFileName . "\" target=\"_blank\" rel=\"noopener\" data-admin-link=\"1\" title=\"" . $sTitle . "\">" . $sTitle . "</a></p>\n";
+            $aGroup[] = array(
+                "file_name" => $sFileName,
+                "title" => $sTitle
+            );
         }
-        if ($blPhotoFiles) {
+        $aGroups[] = $aGroup;
+    }
+    return $aGroups;
+}
+
+function renderFilmMenu() {
+    global $sBaseUrl, $sMenuEmoji;
+
+    $aGroups = getFilmPhpFileLinkGroups();
+    $sLinks = "";
+    foreach ($aGroups as $iGroup => $aGroup) {
+        if ($iGroup > 0 && $sLinks != "" && count($aGroup) > 0) {
+            $sLinks .= "        <span class=\"film-menu-separator\"></span>\n";
+        }
+        foreach ($aGroup as $aItem) {
+            $sTitle = htmlspecialchars($aItem["title"], ENT_QUOTES, "UTF-8");
+            $sLinks .= "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl . $aItem["file_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n";
+        }
+    }
+    if ($sLinks == "") {
+        return;
+    }
+    echo "    <span class=\"film-menu\" data-film-menu>\n"
+        . "      <button type=\"button\" class=\"film-menu-button\" data-film-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n"
+        . "      <span class=\"film-menu-panel\" data-film-menu-panel hidden>\n"
+        . $sLinks
+        . "      </span>\n"
+        . "    </span>\n";
+}
+
+function printPhpFileLinks($sBaseUrl) {
+    $aGroups = getFilmPhpFileLinkGroups();
+    foreach ($aGroups as $iGroup => $aGroup) {
+        foreach ($aGroup as $aItem) {
+            $sTitle = htmlspecialchars($aItem["title"], ENT_QUOTES, "UTF-8");
+            echo "          <p><a href=\"" . $sBaseUrl . $aItem["file_name"] . "\" target=\"_blank\" rel=\"noopener\" data-admin-link=\"1\" title=\"" . $sTitle . "\">" . $sTitle . "</a></p>\n";
+        }
+        if ($iGroup == 0) {
             echo "          <hr>\n";
         }
     }

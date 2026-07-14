@@ -62,6 +62,9 @@ $iTime = sendPageHeaders();
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
+  <p class="admin-controls">
+<?php renderFilmMenu(); ?>
+  </p>
   <p class="schema-unavailable-message"><strong>Database Schema: </strong>The database schema cannot be displayed on this device.</p>
   <div class="schema-diagram" id="schema-diagram">
     <div class="schema-canvas" id="schema-canvas">

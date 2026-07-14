@@ -245,6 +245,99 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
+    var aMenus = document.querySelectorAll("[data-film-menu]");
+
+    function closeFilmMenu(oMenu) {
+        var oButton = oMenu ? oMenu.querySelector("[data-film-menu-button]") : null;
+        var oPanel = oMenu ? oMenu.querySelector("[data-film-menu-panel]") : null;
+        if (oPanel) {
+            oPanel.hidden = true;
+        }
+        if (oButton) {
+            oButton.setAttribute("aria-expanded", "false");
+        }
+    }
+
+    function closeFilmMenus(oExcept) {
+        for (var iI = 0; iI < aMenus.length; iI += 1) {
+            if (aMenus[iI] !== oExcept) {
+                closeFilmMenu(aMenus[iI]);
+            }
+        }
+    }
+
+    function positionFilmMenu(oMenu) {
+        var oPanel = oMenu ? oMenu.querySelector("[data-film-menu-panel]") : null;
+        if (!oPanel || oPanel.hidden) {
+            return;
+        }
+        oPanel.style.left = "6px";
+        oPanel.style.top = "38px";
+        oPanel.style.maxHeight = "";
+    }
+
+    function positionOpenFilmMenus() {
+        var oPanel;
+        for (var iI = 0; iI < aMenus.length; iI += 1) {
+            oPanel = aMenus[iI].querySelector("[data-film-menu-panel]");
+            if (oPanel && !oPanel.hidden) {
+                positionFilmMenu(aMenus[iI]);
+            }
+        }
+    }
+
+    function openFilmMenu(oMenu) {
+        var oButton = oMenu ? oMenu.querySelector("[data-film-menu-button]") : null;
+        var oPanel = oMenu ? oMenu.querySelector("[data-film-menu-panel]") : null;
+        if (!oButton || !oPanel) {
+            return;
+        }
+        closeFilmMenus(oMenu);
+        oPanel.hidden = false;
+        oButton.setAttribute("aria-expanded", "true");
+        positionFilmMenu(oMenu);
+    }
+
+    if (aMenus.length === 0) {
+        return;
+    }
+    for (var iI = 0; iI < aMenus.length; iI += 1) {
+        (function (oMenu) {
+            var oButton = oMenu.querySelector("[data-film-menu-button]");
+            var oPanel = oMenu.querySelector("[data-film-menu-panel]");
+            if (!oButton || !oPanel) {
+                return;
+            }
+            oButton.addEventListener("click", function (oEvent) {
+                oEvent.preventDefault();
+                oEvent.stopPropagation();
+                if (oPanel.hidden) {
+                    openFilmMenu(oMenu);
+                } else {
+                    closeFilmMenu(oMenu);
+                }
+            })
+        })(aMenus[iI]);
+    }
+
+    document.addEventListener("click", function (oEvent) {
+        var oMenu = oEvent.target.closest ? oEvent.target.closest("[data-film-menu]") : null;
+        if (!oMenu) {
+            closeFilmMenus(null);
+        }
+    });
+
+    document.addEventListener("keydown", function (oEvent) {
+        if (oEvent.key == "Escape") {
+            closeFilmMenus(null);
+        }
+    });
+
+    window.addEventListener("resize", positionOpenFilmMenus);
+    window.addEventListener("scroll", positionOpenFilmMenus, true);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
     var aRows = document.querySelectorAll("table tbody tr");
     var oOrderDetail = document.getElementById("order-detail");
     var oMessageBox = document.getElementById("message-box");

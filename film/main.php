@@ -70,6 +70,7 @@ $blIsDesktop = isset($_SERVER["HTTP_USER_AGENT"]) && !preg_match("/Android|iPhon
 
 
 $sFilterFocusEmoji = "&#128269;";
+$sMenuEmoji = "&#9776;";
 
 
 $sDatabaseDownloadPrefix = getenv("EVED_DOWNLOAD_PREFIX");

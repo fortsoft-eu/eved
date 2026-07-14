@@ -58,6 +58,9 @@ $iTime = sendPageHeaders();
   <link href="<?php echo $sBaseUrl; ?>css/admin.css" rel="stylesheet" type="text/css">
 </head>
 <body>
+  <p class="admin-controls">
+<?php renderFilmMenu(); ?>
+  </p>
   <form action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="get" target="phpinfo-frame" id="phpinfo-select-form">
     <label for="select">Select:</label>
     <select name="select" id="select" class="js-submit-on-change">

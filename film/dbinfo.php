@@ -46,6 +46,7 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
+<?php renderFilmMenu(); ?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="database-info-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>

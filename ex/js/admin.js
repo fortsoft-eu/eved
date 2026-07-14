@@ -1407,7 +1407,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     closeExMenu(oMenu);
                 }
             })
-        })(aMenus[iI])
+        })(aMenus[iI]);
     }
 
     document.addEventListener("click", function (oEvent) {

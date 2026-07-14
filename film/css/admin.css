@@ -6,7 +6,7 @@ body {
 body {
     font-family: sans-serif;
     background: #F8F8F8;
-    margin: 12px;
+    margin: 6px;
     font-size: 14px;
 }
 
@@ -242,34 +242,52 @@ table {
 }
 
 .admin-controls {
+    margin: 0 0 5px;
     align-items: center;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
+.admin-controls .film-menu {
+    flex: 0 0 27px;
+    width: 27px;
+}
+
+.admin-controls .film-menu-button {
+    height: 27px;
+    width: 27px;
+}
+
 .admin-controls .button-link {
     box-sizing: border-box;
+    flex: 0 0 73px;
+    height: 27px;
     margin-left: 0;
-    padding: 4px 8px;
+    padding: 2px 2px 3px 2px;
+}
+
+.admin-controls label[for="table-filter"] {
+    flex: 0 0 38px;
+    width: 38px;
 }
 
 .admin-controls .js-table-filter {
     box-sizing: border-box;
     min-width: 0;
-    width: 164px;
+    width: 154px;
 }
 
 .admin-controls .js-filter-operator {
-    width: 76px;
+    width: 75px;
 }
 
 .admin-controls .js-filter-reset {
-    width: 76px;
+    width: 75px;
 }
 
 .admin-controls .database-action-button {
-    width: 130px;
+    flex: 0 0 130px;
 }
 
 .admin-controls .quick-filter-active {
@@ -283,6 +301,70 @@ table {
 
 .admin-controls input[type="checkbox"] {
     margin-left: 8px;
+}
+
+.film-menu {
+    display: inline-flex;
+    position: relative;
+}
+
+.film-menu-button {
+    background: #F0F0F0;
+    border: 1px solid #C0C0C0;
+    box-sizing: border-box;
+    cursor: default;
+    font-size: 14px;
+    height: 27px;
+    margin-top: 0;
+    padding: 0;
+    width: 27px;
+}
+
+.film-menu-button:hover {
+    background: #DCDCE4;
+}
+
+.film-menu-panel {
+    background: #F0F0F0;
+    border: 1px solid #C0C0C0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    box-sizing: border-box;
+    display: block;
+    left: 6px;
+    overflow-y: auto;
+    position: fixed;
+    top: 38px;
+    width: max-content;
+    z-index: 11;
+}
+
+.film-menu-panel[hidden] {
+    display: none;
+}
+
+.film-menu-link {
+    align-items: center;
+    color: #000;
+    cursor: default;
+    display: flex;
+    gap: 10px;
+    padding: 7px 40px 7px 10px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.film-menu-text {
+    display: inline-block;
+}
+
+.film-menu-separator {
+    border-top: 1px solid #E5E5E5;
+    display: block;
+    margin: 8px 0;
+}
+
+.film-menu-link:hover {
+    background: #DCDCE4;
 }
 
 .filter-focus-button {
@@ -621,6 +703,10 @@ tr:nth-child(even) {
 }
 
 @media (max-width: 600px) {
+    .film-menu-panel {
+        max-width: calc(100vw - 16px);
+    }
+
     .schema-diagram,
     .schema-relations {
         display: none;

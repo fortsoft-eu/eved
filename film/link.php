@@ -176,6 +176,9 @@ $iTime = sendPageHeaders();
 if ($sMessage) {
     echo "  <div class=\"message-box message-" . htmlspecialchars($sMessageType, ENT_QUOTES, "UTF-8") . "\" id=\"message-box\">" . $sMessage . "</div>\n";
 }
+echo "  <p class=\"admin-controls\">\n";
+renderFilmMenu();
+echo "  </p>\n";
 
 ?>
   <div class="admin-top">
