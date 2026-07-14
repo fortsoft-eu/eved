@@ -1221,11 +1221,9 @@ $iTime = sendPageHeaders();
 </head>
 <body class="ex-list-page" data-calendar-first-day="<?php echo nxHtml($iCalendarFirstDay); ?>" data-date-input-format="<?php echo nxHtml($sDateInputFormat); ?>" data-date-input-pattern="<?php echo nxHtml($sDateInputPattern); ?>">
   <p class="admin-controls">
-    <span class="table-filter-left">
 <?php nxRenderExMenu(); ?>
-      <label for="table-filter">Filter:</label>
-      <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-subjects-table" value="<?php echo nxHtml(getQuickTableFilterValue("table-filter")); ?>">
-    </span>
+    <label for="table-filter">Filter:</label>
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-subjects-table" value="<?php echo nxHtml(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
