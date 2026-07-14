@@ -266,26 +266,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function positionFilmMenu(oMenu) {
-        var oPanel = oMenu ? oMenu.querySelector("[data-film-menu-panel]") : null;
-        if (!oPanel || oPanel.hidden) {
-            return;
-        }
-        oPanel.style.left = "6px";
-        oPanel.style.top = "38px";
-        oPanel.style.maxHeight = "";
-    }
-
-    function positionOpenFilmMenus() {
-        var oPanel;
-        for (var iI = 0; iI < aMenus.length; iI += 1) {
-            oPanel = aMenus[iI].querySelector("[data-film-menu-panel]");
-            if (oPanel && !oPanel.hidden) {
-                positionFilmMenu(aMenus[iI]);
-            }
-        }
-    }
-
     function openFilmMenu(oMenu) {
         var oButton = oMenu ? oMenu.querySelector("[data-film-menu-button]") : null;
         var oPanel = oMenu ? oMenu.querySelector("[data-film-menu-panel]") : null;
@@ -295,7 +275,6 @@ document.addEventListener("DOMContentLoaded", function () {
         closeFilmMenus(oMenu);
         oPanel.hidden = false;
         oButton.setAttribute("aria-expanded", "true");
-        positionFilmMenu(oMenu);
     }
 
     if (aMenus.length === 0) {
@@ -332,9 +311,6 @@ document.addEventListener("DOMContentLoaded", function () {
             closeFilmMenus(null);
         }
     });
-
-    window.addEventListener("resize", positionOpenFilmMenus);
-    window.addEventListener("scroll", positionOpenFilmMenus, true);
 });
 
 document.addEventListener("DOMContentLoaded", function () {

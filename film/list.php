@@ -106,8 +106,8 @@ if ($sError) {
         $sScanDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", htmlspecialchars($sScanDateDisplay, ENT_QUOTES, "UTF-8"));
 
         $sOrderNumber = (string)($aRow["order_no"] ?? "");
-        echo "      <tr data-order-id=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\" data-order-no=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\">\n";
-        echo "      <td style=\"text-align: right;\">" . htmlspecialchars((string)$aRow["archive_no"], ENT_QUOTES, "UTF-8") . "</td>\n";
+        echo "      <tr data-order-id=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\" data-order-no=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\">\n"
+            . "      <td style=\"text-align: right;\">" . htmlspecialchars((string)$aRow["archive_no"], ENT_QUOTES, "UTF-8") . "</td>\n";
         renderCell($sFolderName, false);
         renderCell($aRow["film_stock"], !$blFilmStockOk);
         renderCell($aRow["cartridge"], !$blCartridgeOk);

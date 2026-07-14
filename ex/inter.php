@@ -1146,8 +1146,8 @@ foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . nxHtml($aGroup["name"]) . "\"></option>\n";
 }
 
-echo "  </datalist>\n";
-echo "  <select id=\"nx-contact-type-list\" hidden>\n";
+echo "  </datalist>\n"
+    . "  <select id=\"nx-contact-type-list\" hidden>\n";
 
 foreach ($aContactTypes as $aContactType) {
     echo "    <option value=\"" . nxHtml($aContactType["id"]) . "\" data-contact-type=\"" . nxHtml($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . nxHtml($aContactType["is_active"]) . "\">" . nxHtml($aContactType["name"]) . "</option>\n";
@@ -1187,12 +1187,12 @@ if (!$aBirthdayRows) {
         echo nxInterRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aBirthdaySettings);
     }
 
-    echo "    </tbody>\n";
-echo "  </table>\n";
+    echo "    </tbody>\n"
+        . "  </table>\n";
 }
 
-echo nxRenderFilterFocusButton();
-echo nxRenderAdminScript($sBaseUrl);
+echo nxRenderFilterFocusButton()
+    . nxRenderAdminScript($sBaseUrl);
 ?>
 </body>
 </html>

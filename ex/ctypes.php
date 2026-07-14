@@ -295,10 +295,10 @@ foreach ($aContactTypes as $aContactType) {
     echo nxRenderContactTypeAdminRow($aContactType, $blCanEdit);
 }
 
-echo "    </tbody>\n";
-echo "  </table>\n";
-echo nxRenderFilterFocusButton();
-echo nxRenderAdminScript($sBaseUrl);
+echo "    </tbody>\n"
+    . "  </table>\n"
+    . nxRenderFilterFocusButton()
+    . nxRenderAdminScript($sBaseUrl);
 ?>
 </body>
 </html>

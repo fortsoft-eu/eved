@@ -35,7 +35,7 @@ $iTime = sendPageHeaders();
   <dl class="portal-help-list">
     <dt>Menu and Page Titles</dt>
     <dd>
-      <p>The EX menu is rendered from active rows in <code>ex_menu</code>. Page names used in the browser title and in the page heading are resolved through the same menu metadata, so a missing active menu row is treated as a configuration error instead of being silently ignored.</p>
+      <p>The portal menu is rendered from active rows in <code>ex_menu</code>. Page names used in the browser title and in the page heading are resolved through the same menu metadata, so a missing active menu row is treated as a configuration error instead of being silently ignored.</p>
       <p>Most pages are opened in the current window. Pages that are configured with a menu target, such as Demo Subjects, keep that behavior in the help link as well. The help text describes the visible page behavior, not the database menu administration itself.</p>
       <ul>
         <li><strong>Source:</strong> Active menu rows from <code>ex_menu</code>.</li>
@@ -46,7 +46,7 @@ $iTime = sendPageHeaders();
     <dt>Access and Sign-in</dt>
     <dd>
       <p>Normal data pages require portal view access. Editing controls are displayed only to users with full access, and several diagnostic pages require full access because they expose database structure, SQL exports, PHP configuration, or filesystem metadata.</p>
-      <p>When a user is not signed in, EX requires sign-in before the requested menu page is rendered. Failed sign-in attempts are delayed, the form uses a security token, and Ajax requests receive JSON errors instead of a full HTML response.</p>
+      <p>When a user is not signed in, the portal requires sign-in before the requested menu page is rendered. Failed sign-in attempts are delayed, the form uses a security token, and Ajax requests receive JSON errors instead of a full HTML response.</p>
       <p>The page help intentionally describes which pages are read-only, which pages can edit data, and which pages are diagnostic. A page may still hide individual actions if the current account does not have the required access.</p>
       <ul>
         <li><strong>View access:</strong> Required for normal menu pages.</li>
@@ -78,7 +78,7 @@ $iTime = sendPageHeaders();
     <dt>Settings</dt>
     <dd>
       <p>Settings above the separator belong to the current listing. They usually control whether inactive subjects or inactive child records are displayed. The full Subjects page is intentionally more complete by default, while compact overview pages hide inactive rows more aggressively.</p>
-      <p>Country display settings below the separator are shared across EX pages that render postal addresses. These settings affect whether country names are printed and which country may be omitted in local postal output.</p>
+      <p>Country display settings below the separator are shared across portal pages that render postal addresses. These settings affect whether country names are printed and which country may be omitted in local postal output.</p>
       <p>Most settings are stored in the session. They change how the page is rendered the next time the table is produced, and they do not modify the stored subject, contact, address, group, or note data.</p>
       <ul>
         <li><strong>Local settings:</strong> Control the current listing, usually inactive records.</li>
@@ -112,10 +112,10 @@ $iTime = sendPageHeaders();
   <dl class="portal-help-list">
     <dt><a href="<?php echo $sBaseUrl; ?>index.php">Contacts</a></dt>
     <dd>
-      <p>Contacts is the compact read-only overview of EX subjects. It is optimized for scanning people and services, copying table values, and opening contact links without exposing the full editing surface. It uses the same subject rendering helpers as the editing pages, but it intentionally keeps the page lighter and hides less important columns on narrower screens.</p>
-      <p>The table contains the computed subject name, personal dates, nicknames, postal addresses, contacts, groups, and notes. Values are displayed in the form used by the rest of EX, so the compact overview is suitable for checking how a subject will appear outside the full editor.</p>
+      <p>Contacts is the compact read-only overview of portal subjects. It is optimized for scanning people and services, copying table values, and opening contact links without exposing the full editing surface. It uses the same subject rendering helpers as the editing pages, but it intentionally keeps the page lighter and hides less important columns on narrower screens.</p>
+      <p>The table contains the computed subject name, personal dates, nicknames, postal addresses, contacts, groups, and notes. Values are displayed in the form used by the rest of the portal, so the compact overview is suitable for checking how a subject will appear outside the full editor.</p>
       <p>The quick filter searches the visible table text, and the complex filter can narrow the subject set by subject, person, address, contact, group, note, date, datetime, boolean, empty, and per-contact-type fields. Its filter state is separate from the full Subjects page because the compact table has a different purpose.</p>
-      <p>Inactive subjects and inactive child items are hidden by default. Country display settings are shared globally with the other EX address pages. Full edit actions are not shown here; when editing is needed, use Subjects or one of the focused aggregate editors.</p>
+      <p>Inactive subjects and inactive child items are hidden by default. Country display settings are shared globally with the other portal address pages. Full edit actions are not shown here; when editing is needed, use Subjects or one of the focused aggregate editors.</p>
       <ul>
         <li><strong>Data:</strong> Subjects, computed names, birth data, nicknames, addresses, contacts, groups, and notes.</li>
         <li><strong>Filtering:</strong> Quick filter plus its own complex filter.</li>
@@ -138,10 +138,10 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>list.php">Subjects</a></dt>
     <dd>
-      <p>Subjects is the full EX editor and the main place for maintaining subject data. It shows person, organization, service, and other subject types in one table and exposes the editors for the subject itself and for the subject's dependent records.</p>
+      <p>Subjects is the full portal editor and the main place for maintaining subject data. It shows person, organization, service, and other subject types in one table and exposes the editors for the subject itself and for the subject's dependent records.</p>
       <p>For person subjects, the displayed name is computed from personal name fields and related person data. For non-person subjects, the displayed name comes from the subject-name record. The table also includes birth name, birth number, birth and death dates, nicknames, postal addresses, contacts, groups, notes, and portal account information where available.</p>
       <p>Full access can create subjects, edit the subject record, manage the portal user attached to a subject, and create, edit, or delete nicknames, postal addresses, contacts, group assignments, and notes. Actions next to the subject name belong to the subject; actions inside a child-value cell belong to that child record or relation.</p>
-      <p>The complex filter on this page is the broadest one in EX. It can combine subject fields, computed names, person fields, address fields, contact values, individual contact types, group membership, notes, dates, datetimes, booleans, empty values, and service timestamps. The full table shows inactive subjects and inactive child items by default so that maintenance work starts from the complete data set.</p>
+      <p>The complex filter on this page is the broadest one in the portal. It can combine subject fields, computed names, person fields, address fields, contact values, individual contact types, group membership, notes, dates, datetimes, booleans, empty values, and service timestamps. The full table shows inactive subjects and inactive child items by default so that maintenance work starts from the complete data set.</p>
       <p>Validation is shared with the focused editors. Dates use <code>YYYY-MM-DD</code>, datetimes use the database datetime format, birth numbers contain 9 or 10 digits, contact values are normalized per contact type, and postal codes are validated according to the selected country metadata when metadata is available.</p>
       <ul>
         <li><strong>Data:</strong> Subject type, computed name, person fields, nicknames, addresses, contacts, groups, notes, and portal account data.</li>
@@ -203,7 +203,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>ctypes.php">Contact Types</a></dt>
     <dd>
-      <p>Contact Types manages the visible names, active state, display order, and merging of EX contact types. Contact types control how contact values are labeled, validated, normalized, offered in dialogs, and ordered in subject tables.</p>
+      <p>Contact Types manages the visible names, active state, display order, and merging of portal contact types. Contact types control how contact values are labeled, validated, normalized, offered in dialogs, and ordered in subject tables.</p>
       <p>The internal <code>contact_type</code> key is generated from the visible name and is not normally edited directly. This keeps stored contact type identifiers predictable while allowing the displayed name to be managed from the administration page.</p>
       <p>Contact type order affects the New Contact and Edit Contact selectors and the order in which contact values appear inside subject cells. Inactive contact types can remain in the database for existing data while being removed from normal active choices.</p>
       <p>A contact type that already has contact rows must be merged before it can be deleted. During merge, source contact rows are moved to the target type. If a matching target contact already exists, subject links are moved to that existing target contact where possible so duplicate values are not needlessly created.</p>
@@ -216,7 +216,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
     <dd>
-      <p>Database Structure is the full-access SQL structure and export page for EX tables. It inspects the current database, lists <code>ex_*</code> tables in dependency-aware order, and shows normalized <code>SHOW CREATE TABLE</code> output for review.</p>
+      <p>Database Structure is the full-access SQL structure and export page for portal tables. It inspects the current database, lists <code>ex_*</code> tables in dependency-aware order, and shows normalized <code>SHOW CREATE TABLE</code> output for review.</p>
       <p>The schema download exports structure SQL. The backup download exports structure plus data and is the expected input for Database Difference. Copy schema link and Copy backup link copy direct download URLs so the same export can be retrieved without navigating the form again.</p>
       <p>The page does not modify the database. It intentionally exposes metadata and export data, so it is restricted to full access.</p>
       <ul>
@@ -228,7 +228,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
     <dd>
-      <p>Database Schema is the visual schema viewer for EX tables. It reads table, column, key, index, and relation metadata from <code>INFORMATION_SCHEMA</code> and renders a schema-oriented view of the current database.</p>
+      <p>Database Schema is the visual schema viewer for portal tables. It reads table, column, key, index, and relation metadata from <code>INFORMATION_SCHEMA</code> and renders a schema-oriented view of the current database.</p>
       <p>Table boxes show column key markers, column names, shortened data types, nullability, and extra attributes. Long enum definitions are shortened in the visible table but remain available through the title tooltip so the diagram stays readable.</p>
       <p>The relation section lists foreign-key constraints and renders relation lines between table columns where the device can display the diagram. The page is read-only and is intended for understanding table layout rather than checking data consistency.</p>
       <ul>
@@ -240,7 +240,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>check.php">Database Consistency</a></dt>
     <dd>
-      <p>Database Consistency is a full-access diagnostic page for broken or suspicious EX records. It does not repair records automatically; it reports what should be reviewed in the database or through the editors.</p>
+      <p>Database Consistency is a full-access diagnostic page for broken or suspicious portal records. It does not repair records automatically; it reports what should be reviewed in the database or through the editors.</p>
       <p>Error checks include subject-contact links with missing subjects or contacts, person rows without subjects, person rows assigned to non-person subjects, subject-name rows without subjects, subject-name rows assigned to person subjects, addresses with missing subjects, nicknames with missing subjects, notes with missing subjects, group links with missing subjects, and group links with missing groups.</p>
       <p>Warning checks include unassigned contacts kept for review. The top status distinguishes a clean database, warnings only, and required-link errors. Each section shows the number of affected rows and a table of the relevant database columns so the problem can be traced without guessing.</p>
       <ul>
@@ -252,8 +252,8 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>diff.php">Database Difference</a></dt>
     <dd>
-      <p>Database Difference compares an uploaded SQL backup generated by Database Structure with the current database. It is meant for checking what changed between a saved EX backup and the live EX tables, especially whether a person or subject disappeared, was added, or changed in important display fields.</p>
-      <p>The upload parser accepts EX <code>CREATE TABLE</code> and <code>INSERT</code> statements from the backup export. Before comparison, the current database is exported internally with the same backup generator, so both sides are compared in the same normalized representation.</p>
+      <p>Database Difference compares an uploaded SQL backup generated by Database Structure with the current database. It is meant for checking what changed between a saved portal backup and the live portal tables, especially whether a person or subject disappeared, was added, or changed in important display fields.</p>
+      <p>The upload parser accepts <code>CREATE TABLE</code> and <code>INSERT</code> statements from the portal backup export. Before comparison, the current database is exported internally with the same backup generator, so both sides are compared in the same normalized representation.</p>
       <p>Persons and subjects are compared first because those are the records most likely to matter during manual review. The page reports missing rows, added rows, and changed values such as subject type, active flag, legacy identifier, computed subject name, and person detail fields.</p>
       <p>The page also reports structure differences and a per-table row summary. Those sections are intentionally summarized so the result remains readable and does not turn into a full low-level diff of every relation. The uploaded backup is only read and compared; nothing is restored, deleted, or written to the database.</p>
       <ul>
@@ -265,7 +265,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>exlib.php">External Libraries</a></dt>
     <dd>
-      <p>External Libraries is a full-access filesystem inventory of files stored in <code>ex/lib</code>. It is used to verify bundled library files and metadata that belong to the EX subproject without fetching anything from the network.</p>
+      <p>External Libraries is a full-access filesystem inventory of files stored in <code>ex/lib</code>. It is used to verify bundled library files and metadata that belong to the portal without fetching anything from the network.</p>
       <p>The table shows permissions, owner, downloaded timestamp derived from the file modification time, and file name. The quick filter can narrow the visible inventory. The page does not modify files and does not download updates.</p>
       <ul>
         <li><strong>Directory:</strong> Reads files from <code>ex/lib</code>.</li>
@@ -288,12 +288,12 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>help.php">Portal Help</a></dt>
     <dd>
-      <p>Portal Help is this bilingual help page. It documents EX menu pages, shared controls, filters, settings, access expectations, edit scopes, diagnostic tools, exports, and the difference between shared aggregate actions and subject-specific actions.</p>
-      <p>The help page itself is read-only. Its links follow the same base URL and menu behavior as the rest of EX so that a user can move from documentation to the relevant page directly.</p>
+      <p>Portal Help is this bilingual help page. It documents portal menu pages, shared controls, filters, settings, access expectations, edit scopes, diagnostic tools, exports, and the difference between shared aggregate actions and subject-specific actions.</p>
+      <p>The help page itself is read-only. Its links follow the same base URL and menu behavior as the rest of the portal so that a user can move from documentation to the relevant page directly.</p>
       <ul>
         <li><strong>Scope:</strong> Menu pages and shared menu-page behavior.</li>
         <li><strong>Languages:</strong> US English and Czech.</li>
-        <li><strong>Links:</strong> Point to the same EX pages shown in the menu.</li>
+        <li><strong>Links:</strong> Point to the same portal pages shown in the menu.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>demo.php" target="_blank" rel="noopener noreferrer">Demo Subjects</a></dt>
@@ -314,7 +314,7 @@ $iTime = sendPageHeaders();
   <dl class="portal-help-list">
     <dt>Menu a názvy stránek</dt>
     <dd>
-      <p>Menu EX se vykresluje z aktivních řádků v tabulce <code>ex_menu</code>. Ze stejných metadat se odvozuje název stránky v titulku prohlížeče a v hlavičce stránky, takže chybějící aktivní položka menu je konfigurační chyba a stránka ji neschovává.</p>
+      <p>Menu portálu se vykresluje z aktivních řádků v tabulce <code>ex_menu</code>. Ze stejných metadat se odvozuje název stránky v titulku prohlížeče a v hlavičce stránky, takže chybějící aktivní položka menu je konfigurační chyba a stránka ji neschovává.</p>
       <p>Většina stránek se otevírá ve stejném okně. Stránky, které mají v menu nastavený samostatný target, například Demo Subjects, toto chování drží i v odkazu nápovědy. Nápověda popisuje viditelné chování stránek, nikoli administraci samotného menu.</p>
       <ul>
         <li><strong>Zdroj:</strong> Aktivní položky z tabulky <code>ex_menu</code>.</li>
@@ -325,7 +325,7 @@ $iTime = sendPageHeaders();
     <dt>Přístup a přihlášení</dt>
     <dd>
       <p>Běžné datové stránky vyžadují portálové právo pro zobrazení. Editační ovládací prvky se zobrazují pouze uživatelům s plným přístupem a několik diagnostických stránek vyžaduje plný přístup, protože ukazují strukturu databáze, SQL exporty, konfiguraci PHP nebo metadata souborového systému.</p>
-      <p>Pokud uživatel není přihlášený, EX vyžaduje přihlášení před vykreslením požadované stránky menu. Neúspěšné pokusy o přihlášení jsou zpomalované, formulář používá bezpečnostní token a Ajaxové požadavky dostávají JSON chybu místo celé HTML odpovědi.</p>
+      <p>Pokud uživatel není přihlášený, portál vyžaduje přihlášení před vykreslením požadované stránky menu. Neúspěšné pokusy o přihlášení jsou zpomalované, formulář používá bezpečnostní token a Ajaxové požadavky dostávají JSON chybu místo celé HTML odpovědi.</p>
       <p>Nápověda proto uvádí, které stránky jsou pouze pro čtení, které umí zapisovat a které jsou diagnostické. Jednotlivé akce se mohou dál skrýt, pokud aktuální účet nemá potřebné oprávnění.</p>
       <ul>
         <li><strong>Zobrazení:</strong> Běžné stránky menu vyžadují portálový přístup pro čtení.</li>
@@ -357,7 +357,7 @@ $iTime = sendPageHeaders();
     <dt>Nastavení</dt>
     <dd>
       <p>Nastavení nad oddělovačem patří aktuálnímu výpisu. Obvykle řídí, jestli se zobrazují neaktivní subjekty nebo neaktivní podřízené záznamy. Úplná stránka Subjects je ve výchozím stavu záměrně kompletnější, zatímco kompaktní přehledy skrývají neaktivní řádky důrazněji.</p>
-      <p>Nastavení zobrazení států pod oddělovačem je společné pro EX stránky, které vykreslují poštovní adresy. Ovlivňuje, zda se tiskne název státu a který stát se může v lokálním poštovním výstupu vynechat.</p>
+      <p>Nastavení zobrazení států pod oddělovačem je společné pro portálové stránky, které vykreslují poštovní adresy. Ovlivňuje, zda se tiskne název státu a který stát se může v lokálním poštovním výstupu vynechat.</p>
       <p>Většina nastavení se ukládá do session. Mění způsob, jak se stránka vykreslí při dalším sestavení tabulky, ale neupravuje uložené subjekty, kontakty, adresy, skupiny ani poznámky.</p>
       <ul>
         <li><strong>Lokální nastavení:</strong> Řídí aktuální výpis, obvykle neaktivní záznamy.</li>
@@ -391,10 +391,10 @@ $iTime = sendPageHeaders();
   <dl class="portal-help-list">
     <dt><a href="<?php echo $sBaseUrl; ?>index.php">Contacts</a></dt>
     <dd>
-      <p>Contacts je kompaktní pouze čtecí přehled EX subjektů. Je určený k rychlému procházení osob a služeb, kopírování hodnot z tabulky a otevírání kontaktních odkazů bez zobrazení celé editační vrstvy. Používá stejné pomocné vykreslování subjektů jako editační stránky, ale záměrně zůstává lehčí a na užších obrazovkách skrývá méně důležité sloupce.</p>
-      <p>Tabulka obsahuje vypočtené jméno subjektu, osobní data, přezdívky, poštovní adresy, kontakty, skupiny a poznámky. Hodnoty se zobrazují ve stejném tvaru jako ve zbytku EX, takže kompaktní přehled je vhodný i ke kontrole toho, jak bude subjekt vypadat mimo úplný editor.</p>
+      <p>Contacts je kompaktní pouze čtecí přehled portálových subjektů. Je určený k rychlému procházení osob a služeb, kopírování hodnot z tabulky a otevírání kontaktních odkazů bez zobrazení celé editační vrstvy. Používá stejné pomocné vykreslování subjektů jako editační stránky, ale záměrně zůstává lehčí a na užších obrazovkách skrývá méně důležité sloupce.</p>
+      <p>Tabulka obsahuje vypočtené jméno subjektu, osobní data, přezdívky, poštovní adresy, kontakty, skupiny a poznámky. Hodnoty se zobrazují ve stejném tvaru jako ve zbytku portálu, takže kompaktní přehled je vhodný i ke kontrole toho, jak bude subjekt vypadat mimo úplný editor.</p>
       <p>Rychlý filtr hledá ve viditelném textu tabulky a komplexní filtr umí zúžit sadu subjektů podle subjektu, osoby, adresy, kontaktu, skupiny, poznámky, data, času, logické hodnoty, prázdné hodnoty a konkrétních typů kontaktů. Stav tohoto filtru je oddělený od stránky Subjects, protože kompaktní tabulka má jiný účel.</p>
-      <p>Neaktivní subjekty a neaktivní podřízené položky jsou ve výchozím stavu skryté. Nastavení zobrazení států je společné s ostatními adresními stránkami EX. Plné editační akce se zde nezobrazují; pro úpravy slouží Subjects nebo některý zaměřený agregační editor.</p>
+      <p>Neaktivní subjekty a neaktivní podřízené položky jsou ve výchozím stavu skryté. Nastavení zobrazení států je společné s ostatními adresními stránkami portálu. Plné editační akce se zde nezobrazují; pro úpravy slouží Subjects nebo některý zaměřený agregační editor.</p>
       <ul>
         <li><strong>Data:</strong> Subjekty, vypočtená jména, narození, přezdívky, adresy, kontakty, skupiny a poznámky.</li>
         <li><strong>Filtrování:</strong> Rychlý filtr a vlastní komplexní filtr.</li>
@@ -417,10 +417,10 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>list.php">Subjects</a></dt>
     <dd>
-      <p>Subjects je úplný editor EX a hlavní místo pro údržbu dat subjektů. V jedné tabulce zobrazuje subjekty typu person, organization, service a other a zpřístupňuje editory samotného subjektu i závislých záznamů subjektu.</p>
+      <p>Subjects je úplný editor portálu a hlavní místo pro údržbu dat subjektů. V jedné tabulce zobrazuje subjekty typu person, organization, service a other a zpřístupňuje editory samotného subjektu i závislých záznamů subjektu.</p>
       <p>U osob se zobrazované jméno počítá z osobních jmenných polí a souvisejících osobních údajů. U neosobních subjektů vychází zobrazované jméno z řádku jména subjektu. Tabulka dále obsahuje rodné jméno, rodné číslo, data narození a úmrtí, přezdívky, poštovní adresy, kontakty, skupiny, poznámky a dostupné informace o portálovém účtu.</p>
       <p>Plný přístup může vytvářet subjekty, upravovat záznam subjektu, spravovat portálového uživatele připojeného k subjektu a vytvářet, upravovat nebo mazat přezdívky, poštovní adresy, kontakty, přiřazení do skupin a poznámky. Akce vedle jména subjektu patří subjektu; akce uvnitř buňky podřízené hodnoty patří danému podřízenému záznamu nebo vazbě.</p>
-      <p>Komplexní filtr na této stránce je nejširší v EX. Umí kombinovat pole subjektu, vypočtená jména, osobní pole, adresní pole, kontaktní hodnoty, jednotlivé typy kontaktů, členství ve skupinách, poznámky, data, časy, logické hodnoty, prázdné hodnoty a časy obsloužení. Úplná tabulka ve výchozím stavu zobrazuje neaktivní subjekty i neaktivní podřízené položky, aby údržba začínala nad kompletní sadou dat.</p>
+      <p>Komplexní filtr na této stránce je nejširší v portálu. Umí kombinovat pole subjektu, vypočtená jména, osobní pole, adresní pole, kontaktní hodnoty, jednotlivé typy kontaktů, členství ve skupinách, poznámky, data, časy, logické hodnoty, prázdné hodnoty a časy obsloužení. Úplná tabulka ve výchozím stavu zobrazuje neaktivní subjekty i neaktivní podřízené položky, aby údržba začínala nad kompletní sadou dat.</p>
       <p>Validace je společná se zaměřenými editory. Data používají <code>YYYY-MM-DD</code>, datum a čas používá databázový datetime formát, rodná čísla obsahují 9 nebo 10 číslic, kontakty se normalizují podle typu kontaktu a poštovní směrovací čísla se kontrolují podle metadat vybraného státu, pokud jsou metadata dostupná.</p>
       <ul>
         <li><strong>Data:</strong> Typ subjektu, vypočtené jméno, osobní pole, přezdívky, adresy, kontakty, skupiny, poznámky a portálový účet.</li>
@@ -482,7 +482,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>ctypes.php">Contact Types</a></dt>
     <dd>
-      <p>Contact Types spravuje viditelné názvy, aktivitu, pořadí zobrazení a slučování EX typů kontaktů. Typy kontaktů určují, jak se kontaktní hodnoty popisují, validují, normalizují, nabízejí v dialozích a řadí v tabulkách subjektů.</p>
+      <p>Contact Types spravuje viditelné názvy, aktivitu, pořadí zobrazení a slučování portálových typů kontaktů. Typy kontaktů určují, jak se kontaktní hodnoty popisují, validují, normalizují, nabízejí v dialozích a řadí v tabulkách subjektů.</p>
       <p>Interní klíč <code>contact_type</code> se generuje z viditelného názvu a běžně se needituje přímo. Uložené identifikátory typů kontaktů tak zůstávají předvídatelné a přitom lze viditelný název spravovat z administrační stránky.</p>
       <p>Pořadí typů kontaktů ovlivňuje selecty New Contact a Edit Contact a pořadí, ve kterém se kontaktní hodnoty objevují v buňkách subjektů. Neaktivní typy kontaktů mohou zůstat v databázi pro existující data, ale zmizet z běžných aktivních voleb.</p>
       <p>Typ kontaktu, který už má kontaktní řádky, je nutné před smazáním sloučit. Při sloučení se zdrojové kontaktní řádky přesunou do cílového typu. Pokud odpovídající cílový kontakt už existuje, vazby subjektů se podle možnosti přesunou na existující cílový kontakt, aby zbytečně nevznikaly duplicitní hodnoty.</p>
@@ -495,7 +495,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
     <dd>
-      <p>Database Structure je stránka s plným přístupem pro SQL strukturu a export EX tabulek. Kontroluje aktuální databázi, vypisuje tabulky <code>ex_*</code> v pořadí podle závislostí a ukazuje normalizovaný výstup <code>SHOW CREATE TABLE</code> pro revizi.</p>
+      <p>Database Structure je stránka s plným přístupem pro SQL strukturu a export portálových tabulek. Kontroluje aktuální databázi, vypisuje tabulky <code>ex_*</code> v pořadí podle závislostí a ukazuje normalizovaný výstup <code>SHOW CREATE TABLE</code> pro revizi.</p>
       <p>Download schema exportuje SQL struktury. Download backup exportuje strukturu i data a je očekávaným vstupem pro Database Difference. Copy schema link a Copy backup link kopírují přímé URL pro stažení, aby bylo možné stejný export získat znovu bez procházení formuláře.</p>
       <p>Stránka databázi neupravuje. Záměrně ale zpřístupňuje metadata a exportovaná data, proto vyžaduje plný přístup.</p>
       <ul>
@@ -507,7 +507,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
     <dd>
-      <p>Database Schema je vizuální prohlížeč schématu EX tabulek. Čte metadata tabulek, sloupců, klíčů, indexů a vazeb z <code>INFORMATION_SCHEMA</code> a vykresluje schématický pohled na aktuální databázi.</p>
+      <p>Database Schema je vizuální prohlížeč schématu portálových tabulek. Čte metadata tabulek, sloupců, klíčů, indexů a vazeb z <code>INFORMATION_SCHEMA</code> a vykresluje schématický pohled na aktuální databázi.</p>
       <p>Boxy tabulek ukazují značky klíčů, názvy sloupců, zkrácené datové typy, nullabilitu a extra atributy. Dlouhé enum definice se ve viditelné tabulce zkracují, ale zůstávají dostupné přes title tooltip, aby diagram zůstal čitelný.</p>
       <p>Sekce vazeb vypisuje cizí klíče a vykresluje spojnice mezi sloupci tabulek tam, kde zařízení zvládne diagram zobrazit. Stránka je pouze pro čtení a slouží k pochopení rozložení tabulek, ne ke kontrole datové konzistence.</p>
       <ul>
@@ -519,7 +519,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>check.php">Database Consistency</a></dt>
     <dd>
-      <p>Database Consistency je diagnostická stránka s plným přístupem pro porušené nebo podezřelé EX záznamy. Záznamy neopravuje automaticky; vypisuje, co je potřeba prověřit v databázi nebo přes editory.</p>
+      <p>Database Consistency je diagnostická stránka s plným přístupem pro porušené nebo podezřelé portálové záznamy. Záznamy neopravuje automaticky; vypisuje, co je potřeba prověřit v databázi nebo přes editory.</p>
       <p>Chybové kontroly zahrnují vazby subjekt-kontakt s chybějícím subjektem nebo kontaktem, řádky osob bez subjektů, řádky osob přiřazené neosobním subjektům, řádky jmen subjektů bez subjektů, řádky jmen subjektů přiřazené osobám, adresy s chybějícími subjekty, přezdívky s chybějícími subjekty, poznámky s chybějícími subjekty, skupinové vazby s chybějícími subjekty a skupinové vazby s chybějícími skupinami.</p>
       <p>Varovné kontroly zahrnují nepřiřazené kontakty ponechané ke kontrole. Horní stav rozlišuje čistou databázi, pouze varování a chyby povinných vazeb. Každá sekce ukazuje počet dotčených řádků a tabulku relevantních databázových sloupců, aby šlo problém dohledat bez hádání.</p>
       <ul>
@@ -531,8 +531,8 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>diff.php">Database Difference</a></dt>
     <dd>
-      <p>Database Difference porovnává nahranou SQL zálohu vygenerovanou stránkou Database Structure s aktuální databází. Slouží ke kontrole toho, co se změnilo mezi uloženou EX zálohou a živými EX tabulkami, zejména jestli osoba nebo subjekt nezmizel, nepřibyl nebo se nezměnil v důležitých zobrazovacích polích.</p>
-      <p>Upload parser přijímá EX příkazy <code>CREATE TABLE</code> a <code>INSERT</code> ze zálohového exportu. Před porovnáním se aktuální databáze interně vyexportuje stejným generátorem záloh, takže obě strany se porovnávají ve stejné normalizované podobě.</p>
+      <p>Database Difference porovnává nahranou SQL zálohu vygenerovanou stránkou Database Structure s aktuální databází. Slouží ke kontrole toho, co se změnilo mezi uloženou portálovou zálohou a živými portálovými tabulkami, zejména jestli osoba nebo subjekt nezmizel, nepřibyl nebo se nezměnil v důležitých zobrazovacích polích.</p>
+      <p>Upload parser přijímá příkazy <code>CREATE TABLE</code> a <code>INSERT</code> z portálového zálohového exportu. Před porovnáním se aktuální databáze interně vyexportuje stejným generátorem záloh, takže obě strany se porovnávají ve stejné normalizované podobě.</p>
       <p>Osoby a subjekty se porovnávají jako první, protože při ruční kontrole obvykle záleží právě na nich. Stránka vypisuje chybějící řádky, přidané řádky a změněné hodnoty, například typ subjektu, aktivitu, legacy identifikátor, vypočtené jméno subjektu a osobní detailní pole.</p>
       <p>Stránka dále vypisuje rozdíly struktury a souhrn řádků po tabulkách. Tyto sekce jsou záměrně souhrnné, aby výsledek zůstal čitelný a nezměnil se v úplný nízkoúrovňový diff každé vazby. Nahraná záloha se pouze čte a porovnává; nic se neobnovuje, nemaže ani nezapisuje do databáze.</p>
       <ul>
@@ -544,7 +544,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>exlib.php">External Libraries</a></dt>
     <dd>
-      <p>External Libraries je filesystemový inventář souborů uložených v <code>ex/lib</code> a vyžaduje plný přístup. Používá se ke kontrole přibalených knihovních souborů a metadat patřících k EX subprojektu bez toho, aby stránka cokoli stahovala ze sítě.</p>
+      <p>External Libraries je filesystemový inventář souborů uložených v <code>ex/lib</code> a vyžaduje plný přístup. Používá se ke kontrole přibalených knihovních souborů a metadat patřících k portálu bez toho, aby stránka cokoli stahovala ze sítě.</p>
       <p>Tabulka ukazuje práva, vlastníka, čas stažení odvozený z času modifikace souboru a název souboru. Rychlý filtr umí viditelný inventář zúžit. Stránka soubory neupravuje a nestahuje aktualizace.</p>
       <ul>
         <li><strong>Adresář:</strong> Čte soubory z <code>ex/lib</code>.</li>
@@ -567,22 +567,22 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>help.php">Portal Help</a></dt>
     <dd>
-      <p>Portal Help je tato dvojjazyčná nápověda. Dokumentuje stránky menu EX, společné ovládání, filtry, nastavení, očekávaný přístup, rozsahy editací, diagnostické nástroje, exporty a rozdíl mezi sdílenými agregačními akcemi a akcemi konkrétního subjektu.</p>
-      <p>Samotná nápověda je pouze pro čtení. Její odkazy používají stejnou základní URL a stejné chování menu jako zbytek EX, aby bylo možné z dokumentace přejít přímo na příslušnou stránku.</p>
+      <p>Portal Help je tato dvojjazyčná nápověda. Dokumentuje stránky menu portálu, společné ovládání, filtry, nastavení, očekávaný přístup, rozsahy editací, diagnostické nástroje, exporty a rozdíl mezi sdílenými agregačními akcemi a akcemi konkrétního subjektu.</p>
+      <p>Samotná nápověda je pouze pro čtení. Její odkazy používají stejnou základní URL a stejné chování menu jako zbytek portálu, aby bylo možné z dokumentace přejít přímo na příslušnou stránku.</p>
       <ul>
         <li><strong>Rozsah:</strong> Stránky menu a společné chování stránek menu.</li>
         <li><strong>Jazyky:</strong> US English a čeština.</li>
-        <li><strong>Odkazy:</strong> Směřují na stejné EX stránky, které jsou v menu.</li>
+        <li><strong>Odkazy:</strong> Směřují na stejné portálové stránky, které jsou v menu.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>demo.php" target="_blank" rel="noopener noreferrer">Demo Subjects</a></dt>
     <dd>
       <p>Demo Subjects otevírá samostatnou ukázkovou tabulku subjektů v novém okně z menu. Používá pevně zadaná demonstrační data místo skutečných databázových řádků, takže se dá použít k ověření vykreslování a filtrování bez změn produkčních záznamů.</p>
-      <p>Stránka testuje rozložení tabulky subjektů, responzivní skrývání sloupců, rychlý filtr, komplexní filtr, nastavení, modály, vykreslení akcí, formátování kontaktů, formátování adres, kopírovaný text a chování timestamp tooltipů. Záměrně zrcadlí dost z reálné tabulky subjektů, aby byly vidět regrese v UI.</p>
+      <p>Stránka testuje rozložení tabulky subjektů, responsivní skrývání sloupců, rychlý filtr, komplexní filtr, nastavení, modály, vykreslení akcí, formátování kontaktů, formátování adres, kopírovaný text a chování timestamp tooltipů. Záměrně zrcadlí dost z reálné tabulky subjektů, aby byly vidět regrese v UI.</p>
       <p>Demo filtrování používá vlastní session stav a zjednodušený model polí podle ukázkových dat. Demo nastavení může ovlivnit viditelnost neaktivních položek a sdílené volby zobrazení státu, ale samotná ukázková data se do databáze neukládají.</p>
       <ul>
         <li><strong>Data:</strong> Pevně zadané ukázkové subjekty, ne produkční řádky.</li>
-        <li><strong>Účel:</strong> Testuje tabulku, responzivitu, filtry, nastavení, modály, akce a formátování.</li>
+        <li><strong>Účel:</strong> Testuje tabulku, responsivitu, filtry, nastavení, modály, akce a formátování.</li>
         <li><strong>Stav:</strong> Demo filtr a nastavení mohou používat session.</li>
         <li><strong>Bezpečnost:</strong> Ukázková data subjektů se nezapisují do databáze.</li>
       </ul>

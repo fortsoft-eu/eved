@@ -709,12 +709,12 @@ if (!$aRows) {
         echo $sRowHtml;
     }
 
-    echo "    </tbody>\n";
-echo "  </table>\n";
+    echo "    </tbody>\n"
+        . "  </table>\n";
 }
 
-echo nxRenderFilterFocusButton();
-echo nxRenderAdminScript($sBaseUrl);
+echo nxRenderFilterFocusButton()
+    . nxRenderAdminScript($sBaseUrl);
 ?>
 </body>
 </html>

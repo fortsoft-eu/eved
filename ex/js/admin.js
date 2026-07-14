@@ -1356,26 +1356,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function positionExMenu(oMenu) {
-        var oPanel = oMenu ? oMenu.querySelector("[data-ex-menu-panel]") : null;
-        if (!oPanel || oPanel.hidden) {
-            return;
-        }
-        oPanel.style.left = "6px";
-        oPanel.style.top = "38px";
-        oPanel.style.maxHeight = "";
-    }
-
-    function positionOpenExMenus() {
-        var oPanel;
-        for (var iI = 0; iI < aMenus.length; iI += 1) {
-            oPanel = aMenus[iI].querySelector("[data-ex-menu-panel]");
-            if (oPanel && !oPanel.hidden) {
-                positionExMenu(aMenus[iI]);
-            }
-        }
-    }
-
     function openExMenu(oMenu) {
         var oButton = oMenu ? oMenu.querySelector("[data-ex-menu-button]") : null;
         var oPanel = oMenu ? oMenu.querySelector("[data-ex-menu-panel]") : null;
@@ -1385,7 +1365,6 @@ document.addEventListener("DOMContentLoaded", function () {
         closeExMenus(oMenu);
         oPanel.hidden = false;
         oButton.setAttribute("aria-expanded", "true");
-        positionExMenu(oMenu);
     }
 
     if (aMenus.length === 0) {
@@ -1422,9 +1401,6 @@ document.addEventListener("DOMContentLoaded", function () {
             closeExMenus(null);
         }
     });
-
-    window.addEventListener("resize", positionOpenExMenus);
-    window.addEventListener("scroll", positionOpenExMenus, true);
 });
 
 document.addEventListener("DOMContentLoaded", function () {

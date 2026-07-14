@@ -115,8 +115,8 @@ $iTime = sendPageHeaders();
 <?php
 
 nxRenderExMenu();
-echo "  </p>\n";
-echo "  <h1>Database Consistency</h1>\n";
+echo "  </p>\n"
+    . "  <h1>Database Consistency</h1>\n";
 
 if ($blHasErrors) {
     echo "  <p class=\"consistency-status consistency-status-error\">Database inconsistencies were found.</p>\n";
@@ -134,15 +134,15 @@ foreach ($aChecks as $aCheck) {
         continue;
     }
     $aColumns = array_keys($aRows[0]);
-    echo "  <table class=\"consistency-table\">\n";
-    echo "    <thead>\n";
-    echo "      <tr>\n";
+    echo "  <table class=\"consistency-table\">\n"
+        . "    <thead>\n"
+        . "      <tr>\n";
     foreach ($aColumns as $sColumn) {
         echo "        <th>" . nxHtml($sColumn) . "</th>\n";
     }
-    echo "      </tr>\n";
-    echo "    </thead>\n";
-    echo "    <tbody>\n";
+    echo "      </tr>\n"
+        . "    </thead>\n"
+        . "    <tbody>\n";
     foreach ($aRows as $aRow) {
         echo "      <tr>\n";
         foreach ($aColumns as $sColumn) {
@@ -150,8 +150,8 @@ foreach ($aChecks as $aCheck) {
         }
         echo "      </tr>\n";
     }
-    echo "    </tbody>\n";
-    echo "  </table>\n";
+    echo "    </tbody>\n"
+        . "  </table>\n";
 }
 
 echo nxRenderAdminScript($sBaseUrl);

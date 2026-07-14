@@ -186,8 +186,8 @@ if (!$aRows) {
             . "      </tr>\n";
     }
 
-    echo "    </tbody>\n";
-    echo "  </table>\n";
+    echo "    </tbody>\n"
+        . "  </table>\n";
 }
 
 ?>

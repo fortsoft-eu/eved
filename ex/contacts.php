@@ -461,8 +461,8 @@ if (!$aContactRows) {
         . "      </tr>\n";
 }
 
-echo "    </tbody>\n";
-echo "  </table>\n";
+echo "    </tbody>\n"
+    . "  </table>\n";
 
 ?>
   <div class="confirm-dialog" id="shared-contact-edit-dialog" hidden>
@@ -513,8 +513,8 @@ echo "      </select>\n";
   </div>
 <?php
 
-echo nxRenderFilterFocusButton();
-echo nxRenderAdminScript($sBaseUrl);
+echo nxRenderFilterFocusButton()
+    . nxRenderAdminScript($sBaseUrl);
 
 ?>
 </body>

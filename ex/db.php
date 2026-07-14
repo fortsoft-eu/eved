@@ -144,10 +144,10 @@ foreach ($aTables as $aTable) {
         . "      </tr>\n";
 }
 
-echo "    </tbody>\n";
-echo "  </table>\n";
-echo nxRenderFilterFocusButton();
-echo nxRenderAdminScript($sBaseUrl);
+echo "    </tbody>\n"
+    . "  </table>\n"
+    . nxRenderFilterFocusButton()
+    . nxRenderAdminScript($sBaseUrl);
 ?>
 </body>
 </html>

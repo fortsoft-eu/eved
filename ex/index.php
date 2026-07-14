@@ -358,12 +358,12 @@ echo nxRenderPageThrobber();
         echo nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aIndexSettings);
     }
 
-    echo "    </tbody>\n";
-    echo "  </table>\n";
+    echo "    </tbody>\n"
+        . "  </table>\n";
 }
 
-echo nxRenderFilterFocusButton();
-echo nxRenderAdminScript($sBaseUrl);
+echo nxRenderFilterFocusButton()
+    . nxRenderAdminScript($sBaseUrl);
 
 ?>
 </body>

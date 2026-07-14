@@ -467,10 +467,10 @@ table {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
     box-sizing: border-box;
     display: block;
-    left: 6px;
+    left: 0;
     overflow-y: auto;
-    position: fixed;
-    top: 38px;
+    position: absolute;
+    top: calc(100% + 4px);
     width: max-content;
     z-index: 7;
 }

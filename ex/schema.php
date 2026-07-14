@@ -3,8 +3,6 @@
 include "main.php";
 
 
-requireExViewAccess($aAllowedIps);
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
@@ -241,9 +239,9 @@ foreach ($aRelations as $aRelation) {
         . "      </tr>\n";
 }
 
-echo "    </tbody>\n";
-echo "  </table>\n";
-echo nxRenderAdminScript($sBaseUrl);
+echo "    </tbody>\n"
+    . "  </table>\n"
+    . nxRenderAdminScript($sBaseUrl);
 ?>
 </body>
 </html>

@@ -528,9 +528,9 @@ foreach (nxGetAddressTypes() as $sAddressType) {
   </div>
 <?php
 
-echo nxRenderCountryDatalist();
-echo nxRenderFilterFocusButton();
-echo nxRenderAdminScript($sBaseUrl);
+echo nxRenderCountryDatalist()
+    . nxRenderFilterFocusButton()
+    . nxRenderAdminScript($sBaseUrl);
 
 ?>
 </body>
