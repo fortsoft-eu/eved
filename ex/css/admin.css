@@ -634,6 +634,17 @@ table {
 
 .table-filter-target {
     margin-bottom: 52px;
+    table-layout: auto;
+}
+
+.table-filter-target td,
+.table-filter-target th,
+.consistency-table td,
+.consistency-table th {
+    height: auto;
+    overflow-wrap: normal;
+    vertical-align: top;
+    word-break: normal;
 }
 
 .database-table-name {
@@ -678,12 +689,7 @@ table {
 
 .consistency-table {
     margin-bottom: 16px;
-}
-
-.consistency-table td,
-.consistency-table th {
-    overflow-wrap: normal;
-    vertical-align: top;
+    table-layout: auto;
 }
 
 @media (max-width: 600px) {
@@ -913,8 +919,8 @@ body.phpinfo-page {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 24px);
-    height: calc(100dvh - 24px);
+    height: calc(100vh - 12px);
+    height: calc(100dvh - 12px);
     overflow: hidden;
 }
 
@@ -953,6 +959,7 @@ body.phpinfo-page .admin-controls {
 }
 
 #phpinfo-select-form fieldset {
+    border: 1px solid #C0C0C0;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -1011,17 +1018,9 @@ body.phpinfo-page .admin-controls {
     }
 }
 
-.nx-contacts-table {
-    table-layout: auto;
-}
-
 .nx-contacts-table td,
 .nx-contacts-table th {
-    height: auto;
-    overflow-wrap: normal;
-    vertical-align: top;
     white-space: normal;
-    word-break: normal;
 }
 
 .nx-invalid-birth-number {
@@ -1441,14 +1440,6 @@ body.phpinfo-page .admin-controls {
 
 #nx-contacts-table .nx-contact-cell {
     background: #FFF;
-}
-
-#nx-addresses-table {
-    table-layout: auto;
-}
-
-#nx-contacts-table {
-    table-layout: auto;
 }
 
 #nx-addresses-table tr:nth-child(even) > .nx-address-cell {

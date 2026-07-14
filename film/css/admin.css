@@ -315,6 +315,15 @@ table {
 
 .table-filter-target {
     margin-bottom: 52px;
+    table-layout: auto;
+}
+
+.table-filter-target td,
+.table-filter-target th {
+    height: auto;
+    overflow-wrap: normal;
+    vertical-align: top;
+    word-break: normal;
 }
 
 #extensions-table,

@@ -1165,7 +1165,7 @@ if (!$aBirthdayRows) {
     echo nxRenderPageThrobber();
 
 ?>
-  <table id="nx-interactions-table" class="nx-contacts-table table-filter-target" style="table-layout: auto;">
+  <table id="nx-interactions-table" class="nx-contacts-table table-filter-target">
     <thead>
       <tr>
         <th class="nx-column-hidden">Type</th>
