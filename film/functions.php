@@ -481,6 +481,13 @@ function getFilmPhpFileLinkGroups() {
                 "title" => $sTitle
             );
         }
+        usort($aGroup, function ($aFirst, $aSecond) {
+            $iResult = strcasecmp($aFirst["title"], $aSecond["title"]);
+            if ($iResult != 0) {
+                return $iResult;
+            }
+            return strcasecmp($aFirst["file_name"], $aSecond["file_name"]);
+        });
         $aGroups[] = $aGroup;
     }
     return $aGroups;
@@ -497,7 +504,7 @@ function renderFilmMenu() {
         }
         foreach ($aGroup as $aItem) {
             $sTitle = htmlspecialchars($aItem["title"], ENT_QUOTES, "UTF-8");
-            $sLinks .= "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl . $aItem["file_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n";
+            $sLinks .= "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl . $aItem["file_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-icon\" aria-hidden=\"true\">🎞️</span><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n";
         }
     }
     if ($sLinks == "") {
