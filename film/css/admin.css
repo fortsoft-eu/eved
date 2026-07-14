@@ -333,7 +333,7 @@ table {
     left: 0;
     overflow-y: auto;
     position: absolute;
-    top: calc(100% + 4px);
+    top: calc(100% + 5px);
     width: max-content;
     z-index: 11;
 }
