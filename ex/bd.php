@@ -1103,7 +1103,7 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="<?php echo nxHtml(nxGetLockedViewportContent()); ?>">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
@@ -1170,7 +1170,7 @@ if (!$aBirthdayRows) {
 } else {
 
 ?>
-  <table id="nx-birthdays-table" class="nx-contacts-table table-filter-target">
+  <table id="nx-birthdays-table" class="nx-contacts-table table-filter-target<?php echo nxGetCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th class="nx-column-hidden">Type</th>

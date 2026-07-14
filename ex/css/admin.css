@@ -351,6 +351,11 @@ table {
     background: #FFF;
 }
 
+.nx-condensed-table {
+    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+    font-stretch: condensed;
+}
+
 .admin-controls {
     margin: 0 0 5px;
     align-items: center;

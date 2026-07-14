@@ -1187,18 +1187,8 @@ foreach (nxGetAddressTypes() as $sAddressType) {
     );
 }
 
-$sViewportContent = "width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no";
-$sRenderThrobberViewportContent = $sViewportContent;
-$sRenderThrobberHtmlAttributes = "";
-$sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
-if (count($aRows) > 50) {
-    $blIsThrobberLockTarget = isThrobberLockTarget($sUserAgent);
-    $sRenderThrobberHtmlAttributes = " data-render-throbber-lock-target=\"" . nxHtml($blIsThrobberLockTarget ? "html" : "body") . "\" data-render-throbber-lock-active=\"1\"";
-    if ($blIsThrobberLockTarget) {
-        $sViewportContent = "width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no";
-        $sRenderThrobberHtmlAttributes .= " data-render-throbber-zoom-lock=\"1\" data-render-throbber-viewport-content=\"" . nxHtml($sRenderThrobberViewportContent) . "\"";
-    }
-}
+$sViewportContent = nxGetLockedViewportContent();
+$sRenderThrobberHtmlAttributes = nxGetRenderThrobberHtmlAttributes(count($aRows) > 0);
 
 $iTime = sendPageHeaders();
 
@@ -1350,7 +1340,7 @@ if (!$aRows) {
     echo nxRenderPageThrobber();
 
 ?>
-  <table id="nx-subjects-table" class="table-filter-target">
+  <table id="nx-subjects-table" class="table-filter-target<?php echo nxGetCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th class="nx-subject-type-column">Type</th>

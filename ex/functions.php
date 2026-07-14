@@ -418,7 +418,7 @@ function renderExLoginPageAndExit($sMessage = "") {
         . "<head>\n"
         . "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
         . "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n"
-        . "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+        . "  <meta name=\"viewport\" content=\"" . nxHtml(nxGetLockedViewportContent()) . "\">\n"
         . "  <meta name=\"theme-color\" content=\"#FFD8BB\">\n"
         . "  <link rel=\"icon\" href=\"" . htmlspecialchars($sBaseUrl . "favicon.ico", ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" type=\"image/x-icon\">\n"
         . "  <link rel=\"shortcut icon\" href=\"" . htmlspecialchars($sBaseUrl . "favicon.ico", ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" type=\"image/x-icon\">\n"
@@ -897,6 +897,28 @@ function nxRenderPageThrobber() {
         . "      <span class=\"render-throbber-icon\" aria-hidden=\"true\">" . $sThrobberEmoji . "</span>\n"
         . "    </div>\n"
         . "  </div>\n";
+}
+
+function nxGetLockedViewportContent() {
+    return "width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no";
+}
+
+function nxGetRenderThrobberHtmlAttributes($blUseRenderThrobberLock) {
+    $sAttributes = "";
+    $sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
+    if ($blUseRenderThrobberLock) {
+        $blIsThrobberLockTarget = isThrobberLockTarget($sUserAgent);
+        $sAttributes = " data-render-throbber-lock-target=\"" . nxHtml($blIsThrobberLockTarget ? "html" : "body") . "\" data-render-throbber-lock-active=\"1\"";
+        if ($blIsThrobberLockTarget) {
+            $sAttributes .= " data-render-throbber-zoom-lock=\"1\" data-render-throbber-viewport-content=\"" . nxHtml(nxGetLockedViewportContent()) . "\"";
+        }
+    }
+    return $sAttributes;
+}
+
+function nxGetCondensedTableClass() {
+    $sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
+    return isPmdLikeUserAgent($sUserAgent) ? " nx-condensed-table" : "";
 }
 
 function nxHtmlValue($mValue) {
@@ -3940,7 +3962,7 @@ function addPhpGeneratedViewportMeta($sHtml) {
     if (preg_match("#<meta\\b[^>]*\\bname\\s*=\\s*([\"'])viewport\\1#i", $sHtml) || stripos($sHtml, "</head>") === false) {
         return $sHtml;
     }
-    return preg_replace("#</head>#i", "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>", $sHtml, 1);
+    return preg_replace("#</head>#i", "  <meta name=\"viewport\" content=\"" . nxHtml(nxGetLockedViewportContent()) . "\">\n</head>", $sHtml, 1);
 }
 
 function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
@@ -3953,7 +3975,7 @@ function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
         . "<html lang=\"en-US\" dir=\"ltr\">\n"
         . "<head>\n"
         . "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
-        . "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+        . "  <meta name=\"viewport\" content=\"" . nxHtml(nxGetLockedViewportContent()) . "\">\n"
         . "  <title>" . htmlspecialchars($sTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</title>\n"
         . "</head>\n"
         . "<body><div class=\"center\">\n"
@@ -6635,6 +6657,10 @@ function nxSchemaColumnTypeDisplay($sColumnType, $bShorten = true) {
         return "enum(" . implode(", ", $aDisplayValues) . ")";
     }
     return $sColumnType;
+}
+
+function isPmdLikeUserAgent($sUserAgent) {
+    return preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent) == 1;
 }
 
 function isThrobberLockTarget($sUserAgent) {

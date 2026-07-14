@@ -306,17 +306,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 }
 
 $aAddressRows = nxAddressesFetchRows($oPdo, $aAddressSettings);
+$sViewportContent = nxGetLockedViewportContent();
+$sRenderThrobberHtmlAttributes = nxGetRenderThrobberHtmlAttributes(count($aAddressRows) > 0);
 $iTime = sendPageHeaders();
 
 ?>
 <!DOCTYPE html>
-<html lang="en-US" dir="ltr">
+<html lang="en-US" dir="ltr"<?php echo $sRenderThrobberHtmlAttributes; ?>>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="<?php echo nxHtml($sViewportContent); ?>">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
@@ -367,7 +369,7 @@ echo nxRenderPageThrobber();
 }
 
 ?>
-  <table id="nx-addresses-table" class="nx-contacts-table table-filter-target">
+  <table id="nx-addresses-table" class="nx-contacts-table table-filter-target<?php echo nxGetCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Address</th>
