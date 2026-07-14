@@ -833,6 +833,41 @@ function nxHtml($mValue) {
     return htmlspecialchars((string)$mValue, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
 }
 
+function nxFormatTimestampTooltipValue($mValue) {
+    $sValue = trim((string)$mValue);
+    if ($sValue == "") {
+        return "";
+    }
+    if (preg_match("/^([0-9]{4}-[0-9]{2}-[0-9]{2})[ T]([0-9]{2}:[0-9]{2}:[0-9]{2})/", $sValue, $aMatches)) {
+        return $aMatches[1] . " " . $aMatches[2];
+    }
+    return str_replace("T", " ", substr($sValue, 0, 19));
+}
+
+function nxTimestampTooltipText($aRow) {
+    if (!is_array($aRow) || !array_key_exists("created_at", $aRow) || !array_key_exists("updated_at", $aRow)) {
+        return "";
+    }
+    return "Created: " . nxFormatTimestampTooltipValue($aRow["created_at"]) . "\n"
+        . "Updated: " . nxFormatTimestampTooltipValue($aRow["updated_at"]);
+}
+
+function nxRenderTimestampTooltipAttribute($aRow) {
+    $sText = nxTimestampTooltipText($aRow);
+    if ($sText == "") {
+        return "";
+    }
+    return " title=\"" . str_replace("\n", "&#10;", nxHtml($sText)) . "\"";
+}
+
+function nxRenderTimestampTooltipDataAttribute($aRow) {
+    $sText = nxTimestampTooltipText($aRow);
+    if ($sText == "") {
+        return "";
+    }
+    return " data-timestamp-tooltip=\"" . str_replace("\n", "&#10;", nxHtml($sText)) . "\"";
+}
+
 function nxEmojiValue($sName) {
     return (string)$GLOBALS[$sName];
 }
@@ -2479,13 +2514,13 @@ function nxContactLinkTitle($sType) {
     return "";
 }
 
-function nxRenderContactValue($sType, $sValue, $blShowCopy = false, $blAllowExternalLinks = false) {
+function nxRenderContactValue($sType, $sValue, $blShowCopy = false, $blAllowExternalLinks = false, $sTooltipAttribute = "") {
     global $sCopyEmoji;
 
     $sDisplayValue = nxContactDisplayValue($sType, $sValue);
     $sHref = nxContactHref($sType, $sValue, $blAllowExternalLinks);
     $sClass = "nx-contact-value" . (nxContactValueIsInvalid($sType, $sValue) ? " nx-invalid-contact-value" : "");
-    $sHtml = "<span class=\"" . nxHtml($sClass) . "\">" . nxHtml($sDisplayValue) . "</span>";
+    $sHtml = "<span class=\"" . nxHtml($sClass) . "\"" . $sTooltipAttribute . ">" . nxHtml($sDisplayValue) . "</span>";
     $sLinkTitle = "";
     $blHasIcon = false;
     if ($blShowCopy && $sDisplayValue != "") {
@@ -2733,9 +2768,10 @@ function nxRenderContactList($aContacts, $blShowActions = true, $iSubjectId = 0,
             . " data-contact-value=\"" . nxHtml($sContactValue) . "\""
             . " data-contact-note=\"" . nxHtml($sNote) . "\""
             . " data-contact-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
-            . " data-contact-active=\"" . ($blIsActive ? "1" : "0") . "\">"
+            . " data-contact-active=\"" . ($blIsActive ? "1" : "0") . "\""
+            . nxRenderTimestampTooltipDataAttribute($aContact) . ">"
             . "<span class=\"nx-contact-type\">" . nxHtml($sContactTypeName) . "</span>: "
-            . nxRenderContactValue($sContactType, $aContact["contact_value"], $blShowCopy, $blAllowExternalLinks)
+            . nxRenderContactValue($sContactType, $aContact["contact_value"], $blShowCopy, $blAllowExternalLinks, nxRenderTimestampTooltipAttribute($aContact))
             . "<span class=\"nx-contact-note\">" . ($sNote != "" ? " (" . nxHtml($sNote) . ")" : "") . "</span>"
             . "<span class=\"nx-contact-flags\">"
             . "<span class=\"nx-contact-primary\" title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span>"
@@ -2784,7 +2820,7 @@ function nxRenderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 
             . " data-note=\"" . nxHtml($sNote) . "\""
             . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
             . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
-            . "<span class=\"nx-subject-item-value\">" . nxHtml($aNickname["nickname"]) . "</span>"
+            . "<span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aNickname) . ">" . nxHtml($aNickname["nickname"]) . "</span>"
             . "<span class=\"nx-subject-item-context\">" . ($sContext != "" ? " [" . nxHtml($sContext) . "]" : "") . "</span>"
             . "<span class=\"nx-subject-item-note\">" . ($sNote != "" ? " (" . nxHtml($sNote) . ")" : "") . "</span>"
             . nxRenderCopyAction($sCopyText)
@@ -2981,7 +3017,7 @@ function nxRenderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0
             . " data-note=\"" . nxHtml($sNote) . "\""
             . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
             . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
-            . "<span class=\"nx-subject-item-value" . $sValueClass . "\">" . ($sText != "" ? nxHtml($sText) : $sEmptyValueEmoji) . "</span>"
+            . "<span class=\"nx-subject-item-value" . $sValueClass . "\"" . nxRenderTimestampTooltipAttribute($aAddress) . ">" . ($sText != "" ? nxHtml($sText) : $sEmptyValueEmoji) . "</span>"
             . "<span class=\"nx-subject-item-note\">" . ($sNote != "" ? " (" . nxHtml($sNote) . ")" : "") . "</span>"
             . nxRenderCopyAction($sCopyText)
             . "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
@@ -3017,8 +3053,9 @@ function nxRenderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $bl
         $sHtml .= "<div class=\"nx-subject-item nx-list-item nx-subject-group-item\""
             . " data-subject-id=\"" . nxHtml($aGroup["subject_id"]) . "\""
             . " data-group-id=\"" . nxHtml($aGroup["group_id"]) . "\""
-            . " data-group-name=\"" . nxHtml($aGroup["name"]) . "\">"
-            . "<span class=\"nx-subject-item-value\">" . nxHtml($aGroup["name"]) . "</span>"
+            . " data-group-name=\"" . nxHtml($aGroup["name"]) . "\""
+            . nxRenderTimestampTooltipDataAttribute($aGroup) . ">"
+            . "<span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aGroup) . ">" . nxHtml($aGroup["name"]) . "</span>"
             . nxRenderCopyAction($aGroup["name"])
             . $sActions
             . "</div>";
@@ -3057,7 +3094,7 @@ function nxRenderNoteList($aNotes, $blShowActions = true, $iSubjectId = 0, $blHa
             . " data-subject-id=\"" . nxHtml($aNote["subject_id"]) . "\""
             . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
             . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
-            . "<span class=\"nx-subject-item-value\">" . nxHtmlMultiline($aNote["note_text"]) . "</span>"
+            . "<span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aNote) . ">" . nxHtmlMultiline($aNote["note_text"]) . "</span>"
             . nxRenderCopyAction($aNote["note_text"])
             . "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
             . "<span class=\"nx-subject-note-source\">" . nxHtml($aNote["note_text"]) . "</span>"
@@ -3363,7 +3400,7 @@ function nxFetchSubjectRows($oPdo, $iSubjectId = 0, $aFilterSql = null) {
     $sPersonSortName = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.last_name, ''), NULLIF(p.first_name, ''))), '')";
     $sContactTypeJoinSql = " LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id";
     $sContactTypeNameSql = "COALESCE(ct.name, '')";
-    $sSql = "SELECT s.id AS subject_id, s.subject_type, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_sort_name, s.is_active, s.created_at, p.title_before, p.first_name, p.middle_name, p.last_name, p.title_after, p.birth_name, p.birth_number, p.birth_date, p.death_date, p.birthday_served_at, p.inter_served_at, c.contacts, a.addresses, n.nicknames, g.group_names, sn.notes FROM ex_subjects AS s
+    $sSql = "SELECT s.id AS subject_id, s.subject_type, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_sort_name, s.is_active, s.created_at, s.updated_at, p.title_before, p.first_name, p.middle_name, p.last_name, p.title_after, p.birth_name, p.birth_number, p.birth_date, p.death_date, p.birthday_served_at, p.inter_served_at, c.contacts, a.addresses, n.nicknames, g.group_names, sn.notes FROM ex_subjects AS s
         LEFT JOIN ex_persons AS p ON p.subject_id = s.id
         LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id
         LEFT JOIN (SELECT sc.subject_id, GROUP_CONCAT(CONCAT(" . $sContactTypeNameSql . ", ': ', c.contact_value, IF(sc.note IS NULL OR sc.note = '', '', CONCAT(' (', sc.note, ')'))) ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n') AS contacts, SUBSTRING_INDEX(GROUP_CONCAT(c.contact_value ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id" . $sContactTypeJoinSql . " GROUP BY sc.subject_id) AS c ON c.subject_id = s.id
@@ -3393,7 +3430,7 @@ function nxFetchSubjectContacts($oPdo, $iSubjectId = 0) {
     $aContacts = array();
     $sContactTypeJoinSql = " LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id";
     $sContactTypeNameSql = "COALESCE(ct.name, '')";
-    $sSql = "SELECT sc.id AS subject_contact_id, sc.subject_id, sc.contact_id, sc.is_primary, sc.is_active, sc.note, c.contact_type_id, COALESCE(ct.contact_type, '') AS contact_type, " . $sContactTypeNameSql . " AS contact_type_name, c.contact_value FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id" . $sContactTypeJoinSql;
+    $sSql = "SELECT sc.id AS subject_contact_id, sc.subject_id, sc.contact_id, sc.is_primary, sc.is_active, sc.note, c.contact_type_id, COALESCE(ct.contact_type, '') AS contact_type, " . $sContactTypeNameSql . " AS contact_type_name, c.contact_value, c.created_at, c.updated_at FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id" . $sContactTypeJoinSql;
     if ($iSubjectId > 0) {
         $sSql .= " WHERE sc.subject_id = :subject_id";
     }
@@ -3416,7 +3453,7 @@ function nxFetchSubjectContacts($oPdo, $iSubjectId = 0) {
 
 function nxFetchSubjectNicknames($oPdo, $iSubjectId = 0) {
     $aNicknames = array();
-    $sSql = "SELECT id, subject_id, nickname, context, is_primary, is_active, note FROM ex_subject_nicknames";
+    $sSql = "SELECT id, subject_id, nickname, context, is_primary, is_active, note, created_at, updated_at FROM ex_subject_nicknames";
     if ($iSubjectId > 0) {
         $sSql .= " WHERE subject_id = :subject_id";
     }
@@ -3439,7 +3476,7 @@ function nxFetchSubjectNicknames($oPdo, $iSubjectId = 0) {
 
 function nxFetchSubjectAddresses($oPdo, $iSubjectId = 0) {
     $aAddresses = array();
-    $sSql = "SELECT id, subject_id, address_type, organization_name, department_name, care_of, street_name, house_number, evidence_number, orientation_number, orientation_suffix, address_line2, city, city_part, postal_code, region, country, is_primary, is_active, note FROM ex_subject_addresses";
+    $sSql = "SELECT id, subject_id, address_type, organization_name, department_name, care_of, street_name, house_number, evidence_number, orientation_number, orientation_suffix, address_line2, city, city_part, postal_code, region, country, is_primary, is_active, note, created_at, updated_at FROM ex_subject_addresses";
     if ($iSubjectId > 0) {
         $sSql .= " WHERE subject_id = :subject_id";
     }
@@ -3462,7 +3499,7 @@ function nxFetchSubjectAddresses($oPdo, $iSubjectId = 0) {
 
 function nxFetchSubjectGroups($oPdo, $iSubjectId = 0) {
     $aGroups = array();
-    $sSql = "SELECT sg.subject_id, sg.group_id, g.name FROM ex_subject_groups AS sg INNER JOIN ex_groups AS g ON g.id = sg.group_id";
+    $sSql = "SELECT sg.subject_id, sg.group_id, g.name, g.created_at, g.updated_at FROM ex_subject_groups AS sg INNER JOIN ex_groups AS g ON g.id = sg.group_id";
     if ($iSubjectId > 0) {
         $sSql .= " WHERE sg.subject_id = :subject_id";
     }
@@ -3483,17 +3520,34 @@ function nxFetchSubjectGroups($oPdo, $iSubjectId = 0) {
     return $aGroups;
 }
 
+function nxFetchGroupAjaxData($oPdo, $iGroupId, $sName = "") {
+    $oStatement = $oPdo->prepare("SELECT id AS group_id, name, created_at, updated_at FROM ex_groups WHERE id = :id");
+    $oStatement->execute(array("id" => $iGroupId));
+    $aGroup = $oStatement->fetch(PDO::FETCH_ASSOC);
+    if (!$aGroup) {
+        return array(
+            "group_id" => $iGroupId,
+            "name" => $sName
+        );
+    }
+    return array(
+        "group_id" => (int)$aGroup["group_id"],
+        "name" => (string)$aGroup["name"],
+        "timestamp_tooltip" => nxTimestampTooltipText($aGroup)
+    );
+}
+
 function nxFetchGroups($oPdo) {
     $oStatement = $oPdo->query("SELECT id, name, legacy_id, `order` FROM ex_groups ORDER BY `order` ASC, id ASC");
     return $oStatement->fetchAll(PDO::FETCH_ASSOC);
 }
 
 function nxFetchGroupAdminRows($oPdo, $iGroupId = 0) {
-    $sSql = "SELECT g.id, g.name, g.`order`, COUNT(DISTINCT sg.subject_id) AS subject_count, GROUP_CONCAT(DISTINCT p.permission_key ORDER BY p.permission_key ASC SEPARATOR ',') AS permission_keys, GROUP_CONCAT(DISTINCT p.name ORDER BY p.permission_key ASC SEPARATOR ',') AS permission_names FROM ex_groups AS g LEFT JOIN ex_subject_groups AS sg ON sg.group_id = g.id LEFT JOIN ex_group_permissions AS gp ON gp.group_id = g.id AND gp.is_allowed = 1 LEFT JOIN ex_permissions AS p ON p.id = gp.permission_id AND p.is_active = 1";
+    $sSql = "SELECT g.id, g.name, g.`order`, g.created_at, g.updated_at, COUNT(DISTINCT sg.subject_id) AS subject_count, GROUP_CONCAT(DISTINCT p.permission_key ORDER BY p.permission_key ASC SEPARATOR ',') AS permission_keys, GROUP_CONCAT(DISTINCT p.name ORDER BY p.permission_key ASC SEPARATOR ',') AS permission_names FROM ex_groups AS g LEFT JOIN ex_subject_groups AS sg ON sg.group_id = g.id LEFT JOIN ex_group_permissions AS gp ON gp.group_id = g.id AND gp.is_allowed = 1 LEFT JOIN ex_permissions AS p ON p.id = gp.permission_id AND p.is_active = 1";
     if ($iGroupId > 0) {
         $sSql .= " WHERE g.id = :id";
     }
-    $sSql .= " GROUP BY g.id, g.name, g.`order`";
+    $sSql .= " GROUP BY g.id, g.name, g.`order`, g.created_at, g.updated_at";
     if ($iGroupId < 1) {
         $sSql .= " ORDER BY g.`order` ASC, g.id ASC";
     }
@@ -3519,7 +3573,7 @@ function nxFetchSubjectPortalUser($oPdo, $iSubjectId) {
         "direct_permission_keys" => array(),
         "effective_permission_keys" => array()
     );
-    $oStatement = $oPdo->prepare("SELECT id, user_name, is_active FROM ex_users WHERE subject_id = :subject_id");
+    $oStatement = $oPdo->prepare("SELECT id, user_name, is_active, created_at, updated_at FROM ex_users WHERE subject_id = :subject_id");
     $oStatement->execute(array("subject_id" => $iSubjectId));
     $aUser = $oStatement->fetch(PDO::FETCH_ASSOC);
     if (!$aUser) {
@@ -3529,6 +3583,9 @@ function nxFetchSubjectPortalUser($oPdo, $iSubjectId) {
     $aPortalUser["has_user"] = 1;
     $aPortalUser["user_name"] = (string)$aUser["user_name"];
     $aPortalUser["is_active"] = (int)$aUser["is_active"];
+    $aPortalUser["created_at"] = (string)$aUser["created_at"];
+    $aPortalUser["updated_at"] = (string)$aUser["updated_at"];
+    $aPortalUser["timestamp_tooltip"] = nxTimestampTooltipText($aUser);
     $oStatement = $oPdo->prepare("SELECT p.permission_key FROM ex_user_permissions AS up INNER JOIN ex_permissions AS p ON p.id = up.permission_id WHERE up.user_id = :user_id AND up.is_allowed = 1 AND p.is_active = 1 ORDER BY p.permission_key ASC");
     $oStatement->execute(array("user_id" => (int)$aUser["id"]));
     while ($sPermissionKey = $oStatement->fetchColumn()) {
@@ -3712,7 +3769,7 @@ function nxRenderGroupAdminRow($aGroup, $blShowActions = true) {
     $sPermissionNames = isset($aGroup["permission_names"]) ? (string)$aGroup["permission_names"] : "";
 
     return "      <tr data-group-id=\"" . nxHtml($aGroup["id"]) . "\" data-group-name=\"" . nxHtml($aGroup["name"]) . "\" data-group-order=\"" . nxHtml($aGroup["order"]) . "\" data-permission-keys=\"" . nxHtml($sPermissionKeys) . "\">\n"
-        . "        <td>" . nxHtml($aGroup["name"]) . "</td>\n"
+        . "        <td><span" . nxRenderTimestampTooltipAttribute($aGroup) . ">" . nxHtml($aGroup["name"]) . "</span></td>\n"
         . "        <td>" . nxHtml($aGroup["subject_count"]) . "</td>\n"
         . "        <td>" . ($sPermissionNames != "" ? nl2br(nxHtml(str_replace(",", "\n", $sPermissionNames)), false) : $sEmptyValueEmoji) . "</td>\n"
         . "        <td class=\"nx-admin-action-column\">" . ($blShowActions ? "<a href=\"#\" class=\"nx-item-action js-move-group-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"nx-item-action js-move-group-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a>" : "") . "</td>\n"
@@ -3723,7 +3780,7 @@ function nxRenderGroupAdminRow($aGroup, $blShowActions = true) {
 
 function nxFetchSubjectNotes($oPdo, $iSubjectId = 0) {
     $aNotes = array();
-    $sSql = "SELECT id, subject_id, note_text, is_primary, is_active FROM ex_subject_notes";
+    $sSql = "SELECT id, subject_id, note_text, is_primary, is_active, created_at, updated_at FROM ex_subject_notes";
     if ($iSubjectId > 0) {
         $sSql .= " WHERE subject_id = :subject_id";
     }
@@ -3742,6 +3799,19 @@ function nxFetchSubjectNotes($oPdo, $iSubjectId = 0) {
         $aNotes[$iCurrentSubjectId][] = $aNote;
     }
     return $aNotes;
+}
+
+function nxAddContactTimestampTooltip($oPdo, $aContact) {
+    if (!is_array($aContact) || empty($aContact["contact_id"])) {
+        return $aContact;
+    }
+    $oStatement = $oPdo->prepare("SELECT created_at, updated_at FROM ex_contacts WHERE id = :id");
+    $oStatement->execute(array("id" => (int)$aContact["contact_id"]));
+    $aContactRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+    if ($aContactRow) {
+        $aContact["timestamp_tooltip"] = nxTimestampTooltipText($aContactRow);
+    }
+    return $aContact;
 }
 
 function nxCollectHiddenInactiveSubjectItems(&$aHiddenInactive, $aItems) {
@@ -3859,7 +3929,7 @@ function nxRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroup
     }
     return "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
         . "        <td class=\"nx-subject-type-column\" style=\"vertical-align: top;\">" . nxHtml($aRow["subject_type"]) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . nxHtmlValue($aRow["subject_name"])
+        . "        <td style=\"vertical-align: top;\"><span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aRow) . ">" . nxHtmlValue($aRow["subject_name"]) . "</span>"
         . nxRenderCopyAction($aRow["subject_name"])
         . $sActions . "</td>\n"
         . "        <td style=\"vertical-align: top;\">" . nxHtmlValue($aRow["first_name"]) . "</td>\n"
@@ -3874,6 +3944,60 @@ function nxRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroup
         . "        <td style=\"vertical-align: top;\">" . nxRenderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, true) . "</td>\n"
         . "        <td style=\"vertical-align: top;\">" . nxRenderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true, true, true) . "</td>\n"
         . "      </tr>\n";
+}
+
+function nxSubjectRowOption($aOptions, $sName, $mDefault) {
+    return is_array($aOptions) && array_key_exists($sName, $aOptions) ? $aOptions[$sName] : $mDefault;
+}
+
+function nxRenderSubjectTableCell($sHtml, $sClass = "", $sStyle = "") {
+    $sAttributes = "";
+    if ($sClass != "") {
+        $sAttributes .= " class=\"" . nxHtml($sClass) . "\"";
+    }
+    if ($sStyle != "") {
+        $sAttributes .= " style=\"" . nxHtml($sStyle) . "\"";
+    }
+    return "        <td" . $sAttributes . ">" . $sHtml . "</td>\n";
+}
+
+function nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive = array(), $aDisplaySettings = null, $aOptions = array()) {
+    $iSubjectId = (int)$aRow["subject_id"];
+    $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aRow["subject_type"]));
+    $blIsActive = (int)$aRow["is_active"] == 1;
+    $blShowActions = nxSubjectRowOption($aOptions, "show_actions", false);
+    $iItemSubjectId = (int)nxSubjectRowOption($aOptions, "item_subject_id", 0);
+    $sNoWrapStyle = "overflow-wrap: normal; white-space: nowrap; word-break: normal;";
+    $sBirthNumberClass = nxBirthNumberClass($aRow["birth_number"], nxSubjectRowOption($aOptions, "birth_number_class", "nx-column-hidden"));
+    $sBirthDateClass = nxBirthDateClass($aRow["birth_number"], $aRow["birth_date"], nxSubjectRowOption($aOptions, "birth_date_class", "nx-column-step-two"));
+    $aBeforeNameCells = nxSubjectRowOption($aOptions, "before_name_cells", array());
+    $sHtml = "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
+        . nxRenderSubjectTableCell(nxHtml($aRow["subject_type"]), nxSubjectRowOption($aOptions, "type_class", "nx-column-hidden"), nxSubjectRowOption($aOptions, "type_style", ""));
+    if (is_array($aBeforeNameCells)) {
+        foreach ($aBeforeNameCells as $sCellHtml) {
+            $sHtml .= $sCellHtml;
+        }
+    }
+    $sHtml .= nxRenderSubjectTableCell(
+            "<span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aRow) . ">" . nxHtmlValue($aRow["subject_name"]) . "</span>"
+            . nxRenderCopyAction($aRow["subject_name"])
+            . nxSubjectRowOption($aOptions, "name_actions", ""),
+            nxSubjectRowOption($aOptions, "name_class", ""),
+            nxSubjectRowOption($aOptions, "name_style", "")
+        )
+        . nxRenderSubjectTableCell(nxHtmlValue($aRow["first_name"]), nxSubjectRowOption($aOptions, "first_name_class", "nx-column-hidden"), nxSubjectRowOption($aOptions, "first_name_style", ""))
+        . nxRenderSubjectTableCell(nxHtmlValue($aRow["last_name"]), nxSubjectRowOption($aOptions, "last_name_class", "nx-column-hidden"), nxSubjectRowOption($aOptions, "last_name_style", ""))
+        . nxRenderSubjectTableCell(nxHtmlValue($aRow["birth_name"]), nxSubjectRowOption($aOptions, "birth_name_class", "nx-column-step-one"), nxSubjectRowOption($aOptions, "birth_name_style", ""))
+        . nxRenderSubjectTableCell(nxRenderBirthNumberValue($aRow["birth_number"]), $sBirthNumberClass, nxSubjectRowOption($aOptions, "birth_number_style", ""))
+        . nxRenderSubjectTableCell(nxHtmlValue($aRow["birth_date"]), $sBirthDateClass, nxSubjectRowOption($aOptions, "birth_date_style", $sNoWrapStyle))
+        . nxRenderSubjectTableCell(nxHtmlValue($aRow["death_date"]), nxSubjectRowOption($aOptions, "death_date_class", "nx-column-hidden"), nxSubjectRowOption($aOptions, "death_date_style", ""))
+        . nxRenderSubjectTableCell(nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), nxSubjectRowOption($aOptions, "nickname_show_add_action", false), nxSubjectRowOption($aOptions, "nickname_show_cell_copy_action", true), nxSubjectRowOption($aOptions, "nickname_cell_copy_before_add_action", true)), nxSubjectRowOption($aOptions, "nickname_class", "nx-column-step-one"), nxSubjectRowOption($aOptions, "nickname_style", ""))
+        . nxRenderSubjectTableCell(nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, nxSubjectRowOption($aOptions, "address_show_add_action", false), nxSubjectRowOption($aOptions, "address_show_cell_copy_action", true), nxSubjectRowOption($aOptions, "address_cell_copy_before_add_action", true)), nxSubjectRowOption($aOptions, "address_class", ""), nxSubjectRowOption($aOptions, "address_style", ""))
+        . nxRenderSubjectTableCell(nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), nxSubjectRowOption($aOptions, "contact_show_add_action", false), nxSubjectRowOption($aOptions, "contact_show_cell_copy_action", true), nxSubjectRowOption($aOptions, "contact_cell_copy_before_add_action", true)), nxSubjectRowOption($aOptions, "contact_class", ""), nxSubjectRowOption($aOptions, "contact_style", ""))
+        . nxRenderSubjectTableCell(nxRenderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, nxSubjectRowOption($aOptions, "group_show_add_action", false), nxSubjectRowOption($aOptions, "group_show_cell_copy_action", true), nxSubjectRowOption($aOptions, "group_cell_copy_before_add_action", true)), nxSubjectRowOption($aOptions, "group_class", "nx-column-step-three"), nxSubjectRowOption($aOptions, "group_style", ""))
+        . nxRenderSubjectTableCell(nxRenderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), nxSubjectRowOption($aOptions, "note_show_add_action", false), nxSubjectRowOption($aOptions, "note_show_cell_copy_action", true), nxSubjectRowOption($aOptions, "note_cell_copy_before_add_action", true)), nxSubjectRowOption($aOptions, "note_class", "nx-column-step-three"), nxSubjectRowOption($aOptions, "note_style", ""))
+        . "      </tr>\n";
+    return $sHtml;
 }
 
 function nxRenderUpdatedSubjectRow($oPdo, $iSubjectId, $aVisibilitySettings = null) {
@@ -4211,7 +4335,8 @@ function nxAddressesPostedSubjectAddressValues() {
 }
 
 function nxAddressesRenderDataAttributes($aAddressRow) {
-    $sHtml = " data-address-match=\"" . nxHtml($aAddressRow["address_match"]) . "\"";
+    $sHtml = " data-address-match=\"" . nxHtml($aAddressRow["address_match"]) . "\""
+        . nxRenderTimestampTooltipDataAttribute($aAddressRow);
     foreach (nxAddressesAddressFields() as $sField) {
         $sAttribute = str_replace("_", "-", $sField);
         $sValue = isset($aAddressRow["address_values"][$sField]) && $aAddressRow["address_values"][$sField] !== null ? (string)$aAddressRow["address_values"][$sField] : "";
@@ -4264,7 +4389,9 @@ function nxAddressesFetchRows($oPdo, $aAddressSettings) {
             "subject_id" => (int)$aSubjectRow["subject_id"],
             "subject_name" => (string)$aSubjectRow["subject_name"],
             "subject_type" => (string)$aSubjectRow["subject_type"],
-            "is_active" => (int)$aSubjectRow["is_active"] == 1
+            "is_active" => (int)$aSubjectRow["is_active"] == 1,
+            "created_at" => (string)$aSubjectRow["created_at"],
+            "updated_at" => (string)$aSubjectRow["updated_at"]
         );
     }
     $aSubjectAddresses = nxFetchSubjectAddresses($oPdo);
@@ -4317,11 +4444,17 @@ function nxAddressesFetchRows($oPdo, $aAddressSettings) {
                     "note" => $aAddress["note"]
                 ),
                 "is_primary" => (int)$aAddress["is_primary"],
-                "address_is_active" => (int)$aAddress["is_active"]
+                "address_is_active" => (int)$aAddress["is_active"],
+                "address_created_at" => (string)$aAddress["created_at"],
+                "address_updated_at" => (string)$aAddress["updated_at"]
             ));
         }
     }
     foreach ($aRows as $sKey => $aRow) {
+        if (count($aRows[$sKey]["subjects"]) == 1) {
+            $aRows[$sKey]["created_at"] = (string)$aRows[$sKey]["subjects"][0]["address_created_at"];
+            $aRows[$sKey]["updated_at"] = (string)$aRows[$sKey]["subjects"][0]["address_updated_at"];
+        }
         usort($aRows[$sKey]["subjects"], "nxAddressesCompareSubjects");
     }
     uasort($aRows, "nxAddressesCompareRows");
@@ -4418,29 +4551,34 @@ function nxBdRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGro
     global $sBirthdayServedEmoji;
 
     $iSubjectId = (int)$aRow["subject_id"];
-    $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aRow["subject_type"]));
-    $blIsActive = (int)$aRow["is_active"] == 1;
-    $sBirthNumberClass = nxBirthNumberClass($aRow["birth_number"], "nx-column-hidden");
-    $sBirthDateClass = nxBirthDateClass($aRow["birth_number"], $aRow["birth_date"]);
-    $sBirthDateClassAttribute = $sBirthDateClass != "" ? " class=\"" . nxHtml($sBirthDateClass) . "\"" : "";
     $sBirthdayServedAction = $blShowActions ? "<a class=\"nx-item-action nx-birthday-served-action js-birthday-served\" href=\"#\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" title=\"Mark birthday served\" aria-label=\"Mark birthday served\"><span class=\"nx-copy-action-box\">" . $sBirthdayServedEmoji . "</span></a>" : "";
     $sBirthdayInCell = nxHtmlValue($aRow["days_to_birthday"]) . ($sBirthdayServedAction != "" ? "&#8288;" . $sBirthdayServedAction : "");
-    return "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
-        . "        <td class=\"nx-column-hidden\">" . nxHtml($aRow["subject_type"]) . "</td>\n"
-        . "        <td class=\"nx-birthday-in-column\">" . $sBirthdayInCell . "</td>\n"
-        . "        <td>" . nxHtmlValue($aRow["subject_name"]) . nxRenderCopyAction($aRow["subject_name"]) . nxBdRenderSubjectActions($aRow, $blShowActions) . "</td>\n"
-        . "        <td class=\"nx-column-hidden\">" . nxHtmlValue($aRow["first_name"]) . "</td>\n"
-        . "        <td class=\"nx-column-hidden\">" . nxHtmlValue($aRow["last_name"]) . "</td>\n"
-        . "        <td class=\"nx-column-step-two\">" . nxHtmlValue($aRow["birth_name"]) . "</td>\n"
-        . "        <td class=\"" . nxHtml($sBirthNumberClass) . "\">" . nxRenderBirthNumberValue($aRow["birth_number"]) . "</td>\n"
-        . "        <td" . $sBirthDateClassAttribute . " style=\"overflow-wrap: normal; white-space: nowrap; word-break: normal;\">" . nxHtmlValue($aRow["birth_date"]) . "</td>\n"
-        . "        <td class=\"nx-column-step-two\" style=\"overflow-wrap: normal; white-space: nowrap; word-break: normal;\">" . nxHtmlValue($aRow["death_date"]) . "</td>\n"
-        . "        <td class=\"nx-column-step-one\">" . nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true, true, false) . "</td>\n"
-        . "        <td class=\"nx-column-step-one\">" . nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aBirthdaySettings, true, true, false) . "</td>\n"
-        . "        <td>" . nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true, true, false) . "</td>\n"
-        . "        <td class=\"nx-column-step-three\">" . nxRenderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, false) . "</td>\n"
-        . "        <td class=\"nx-column-step-three\">" . nxRenderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true, true, false) . "</td>\n"
-        . "      </tr>\n";
+    return nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aBirthdaySettings, array(
+        "show_actions" => $blShowActions,
+        "item_subject_id" => $iSubjectId,
+        "before_name_cells" => array(nxRenderSubjectTableCell($sBirthdayInCell, "nx-birthday-in-column")),
+        "name_actions" => nxBdRenderSubjectActions($aRow, $blShowActions),
+        "birth_name_class" => "nx-column-step-two",
+        "birth_date_class" => "",
+        "death_date_class" => "nx-column-step-two",
+        "death_date_style" => "overflow-wrap: normal; white-space: nowrap; word-break: normal;",
+        "nickname_show_add_action" => true,
+        "nickname_show_cell_copy_action" => true,
+        "nickname_cell_copy_before_add_action" => false,
+        "address_class" => "nx-column-step-one",
+        "address_show_add_action" => true,
+        "address_show_cell_copy_action" => true,
+        "address_cell_copy_before_add_action" => false,
+        "contact_show_add_action" => true,
+        "contact_show_cell_copy_action" => true,
+        "contact_cell_copy_before_add_action" => false,
+        "group_show_add_action" => true,
+        "group_show_cell_copy_action" => true,
+        "group_cell_copy_before_add_action" => false,
+        "note_show_add_action" => true,
+        "note_show_cell_copy_action" => true,
+        "note_cell_copy_before_add_action" => false
+    ));
 }
 
 function nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions) {
@@ -5290,7 +5428,8 @@ function nxContactsRenderContactDataAttributes($aContactRow) {
         . " data-contact-type-id=\"" . nxHtml($aContactRow["contact_type_id"]) . "\""
         . " data-contact-type=\"" . nxHtml($aContactRow["contact_type"]) . "\""
         . " data-contact-type-name=\"" . nxHtml($aContactRow["contact_type_name"]) . "\""
-        . " data-contact-value=\"" . nxHtml($aContactRow["contact_display_value"]) . "\"";
+        . " data-contact-value=\"" . nxHtml($aContactRow["contact_display_value"]) . "\""
+        . nxRenderTimestampTooltipDataAttribute($aContactRow);
 }
 
 function nxContactsRenderSubjectDataAttributes($aSubject) {
@@ -5319,10 +5458,12 @@ function nxContactsFetchRows($oPdo, $aContactSettings) {
             "subject_id" => (int)$aSubjectRow["subject_id"],
             "subject_name" => (string)$aSubjectRow["subject_name"],
             "subject_type" => (string)$aSubjectRow["subject_type"],
-            "is_active" => (int)$aSubjectRow["is_active"] == 1
+            "is_active" => (int)$aSubjectRow["is_active"] == 1,
+            "created_at" => (string)$aSubjectRow["created_at"],
+            "updated_at" => (string)$aSubjectRow["updated_at"]
         );
     }
-    $sSql = "SELECT c.id AS contact_id, c.contact_type_id, c.contact_value, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, sc.id AS subject_contact_id, sc.subject_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note FROM ex_contacts AS c LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id LEFT JOIN ex_subject_contacts AS sc ON sc.contact_id = c.id ORDER BY c.contact_value ASC, COALESCE(ct.`order`, 999999) ASC, COALESCE(ct.name, '') ASC, c.id ASC, sc.is_active DESC, sc.is_primary DESC, sc.id ASC";
+    $sSql = "SELECT c.id AS contact_id, c.contact_type_id, c.contact_value, c.created_at, c.updated_at, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, sc.id AS subject_contact_id, sc.subject_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note FROM ex_contacts AS c LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id LEFT JOIN ex_subject_contacts AS sc ON sc.contact_id = c.id ORDER BY c.contact_value ASC, COALESCE(ct.`order`, 999999) ASC, COALESCE(ct.name, '') ASC, c.id ASC, sc.is_active DESC, sc.is_primary DESC, sc.id ASC";
     $oStatement = $oPdo->prepare($sSql);
     $oStatement->execute();
     while ($aContact = $oStatement->fetch(PDO::FETCH_ASSOC)) {
@@ -5341,6 +5482,8 @@ function nxContactsFetchRows($oPdo, $aContactSettings) {
                 "contact_value" => (string)$aContact["contact_value"],
                 "contact_display_value" => $sContactDisplayValue,
                 "contact_sort" => nxContactsNormalizeKey($sContactDisplayValue),
+                "created_at" => (string)$aContact["created_at"],
+                "updated_at" => (string)$aContact["updated_at"],
                 "subject_link_count" => 0,
                 "subjects" => array()
             );
@@ -6585,29 +6728,24 @@ function nxInterRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $a
     global $sCommunicationServedEmoji;
 
     $iSubjectId = (int)$aRow["subject_id"];
-    $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aRow["subject_type"]));
-    $blIsActive = (int)$aRow["is_active"] == 1;
-    $sBirthNumberClass = nxBirthNumberClass($aRow["birth_number"], "nx-column-hidden");
-    $sBirthDateClass = nxBirthDateClass($aRow["birth_number"], $aRow["birth_date"]);
-    $sBirthDateClassAttribute = $sBirthDateClass != "" ? " class=\"" . nxHtml($sBirthDateClass) . "\"" : "";
     $sBirthdayServedAction = $blShowActions ? "<a class=\"nx-item-action nx-birthday-served-action js-communication-served\" href=\"#\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" title=\"Mark communication served\" aria-label=\"Mark communication served\"><span class=\"nx-copy-action-box\">" . $sCommunicationServedEmoji . "</span></a>" : "";
     $sBirthdayInCell = nxHtmlValue($aRow["days_to_birthday"]) . ($sBirthdayServedAction != "" ? "&#8288;" . $sBirthdayServedAction : "");
-    return "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
-        . "        <td class=\"nx-column-hidden\">" . nxHtml($aRow["subject_type"]) . "</td>\n"
-        . "        <td class=\"nx-birthday-in-column\">" . $sBirthdayInCell . "</td>\n"
-        . "        <td>" . nxHtmlValue($aRow["subject_name"]) . nxRenderCopyAction($aRow["subject_name"]) . nxBdRenderSubjectActions($aRow, $blShowActions) . "</td>\n"
-        . "        <td class=\"nx-column-hidden\">" . nxHtmlValue($aRow["first_name"]) . "</td>\n"
-        . "        <td class=\"nx-column-hidden\">" . nxHtmlValue($aRow["last_name"]) . "</td>\n"
-        . "        <td class=\"nx-column-step-two\">" . nxHtmlValue($aRow["birth_name"]) . "</td>\n"
-        . "        <td class=\"" . nxHtml($sBirthNumberClass) . "\">" . nxRenderBirthNumberValue($aRow["birth_number"]) . "</td>\n"
-        . "        <td" . $sBirthDateClassAttribute . " style=\"overflow-wrap: normal; white-space: nowrap; word-break: normal;\">" . nxHtmlValue($aRow["birth_date"]) . "</td>\n"
-        . "        <td class=\"nx-column-step-two\" style=\"overflow-wrap: normal; white-space: nowrap; word-break: normal;\">" . nxHtmlValue($aRow["death_date"]) . "</td>\n"
-        . "        <td class=\"nx-column-step-one\">" . nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true) . "</td>\n"
-        . "        <td class=\"nx-column-step-one\">" . nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aBirthdaySettings, true) . "</td>\n"
-        . "        <td>" . nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true) . "</td>\n"
-        . "        <td class=\"nx-column-step-three\">" . nxRenderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true) . "</td>\n"
-        . "        <td class=\"nx-column-step-three\">" . nxRenderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true) . "</td>\n"
-        . "      </tr>\n";
+    return nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aBirthdaySettings, array(
+        "show_actions" => $blShowActions,
+        "item_subject_id" => $iSubjectId,
+        "before_name_cells" => array(nxRenderSubjectTableCell($sBirthdayInCell, "nx-birthday-in-column")),
+        "name_actions" => nxBdRenderSubjectActions($aRow, $blShowActions),
+        "birth_name_class" => "nx-column-step-two",
+        "birth_date_class" => "",
+        "death_date_class" => "nx-column-step-two",
+        "death_date_style" => "overflow-wrap: normal; white-space: nowrap; word-break: normal;",
+        "nickname_show_add_action" => true,
+        "address_class" => "nx-column-step-one",
+        "address_show_add_action" => true,
+        "contact_show_add_action" => true,
+        "group_show_add_action" => true,
+        "note_show_add_action" => true
+    ));
 }
 
 function nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions) {

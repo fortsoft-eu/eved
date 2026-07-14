@@ -667,10 +667,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement->execute(array("name" => $sGroupName, "id" => $iGroupId));
         $oPdo->commit();
         $aResponse = nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings);
-        $aResponse["group"] = array(
-            "group_id" => $iGroupId,
-            "name" => $sGroupName
-        );
+        $aResponse["group"] = nxFetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
@@ -718,10 +715,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         $oPdo->commit();
         $aResponse = nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings);
-        $aResponse["group"] = array(
-            "group_id" => $iGroupId,
-            "name" => $sGroupName
-        );
+        $aResponse["group"] = nxFetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
@@ -1031,7 +1025,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
 
         $aResponse = nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings);
-        $aResponse["contact"] = array(
+        $aResponse["contact"] = nxAddContactTimestampTooltip($oPdo, array(
             "subject_contact_id" => $iSubjectContactId,
             "contact_id" => $iContactId,
             "contact_type_id" => $iContactTypeId,
@@ -1042,7 +1036,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "note" => $sNote,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive
-        );
+        ));
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
@@ -1107,7 +1101,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
 
         $aResponse = nxGetUpdatedSubjectResponse($oPdo, (int)$aSubjectContact["subject_id"], $aFullListSettings);
-        $aResponse["contact"] = array(
+        $aResponse["contact"] = nxAddContactTimestampTooltip($oPdo, array(
             "subject_contact_id" => $iSubjectContactId,
             "contact_id" => $iContactId,
             "contact_type_id" => $iContactTypeId,
@@ -1118,7 +1112,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "note" => $sNote,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive
-        );
+        ));
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {

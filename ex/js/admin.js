@@ -3593,18 +3593,12 @@ document.addEventListener("DOMContentLoaded", function () {
             if (window.nxBindAdminTableRow) {
                 window.nxBindAdminTableRow(oNewRow);
             }
-            if (window.nxEnhanceContactValues) {
-                window.nxEnhanceContactValues(oNewRow);
-            }
         } else if (!oCurrentRow && oNewRow) {
             oTableBody = document.querySelector("#nx-subjects-table tbody, #nx-birthdays-table tbody, #nx-interactions-table tbody");
             if (oTableBody) {
                 oTableBody.appendChild(oNewRow);
                 if (window.nxBindAdminTableRow) {
                     window.nxBindAdminTableRow(oNewRow);
-                }
-                if (window.nxEnhanceContactValues) {
-                    window.nxEnhanceContactValues(oNewRow);
                 }
             } else {
                 window.location.reload();
@@ -3630,15 +3624,23 @@ document.addEventListener("DOMContentLoaded", function () {
         var oValue;
         var oGroupList;
         var oOption;
+        var sTimestampTooltip;
         if (!aGroup || !aGroup.group_id) {
             return;
         }
+        sTimestampTooltip = aGroup.timestamp_tooltip || "";
         aItems = document.querySelectorAll(".nx-subject-group-item[data-group-id=\"" + aGroup.group_id + "\"]");
         for (iI = 0; iI < aItems.length; iI += 1) {
             aItems[iI].setAttribute("data-group-name", aGroup.name || "");
+            if (sTimestampTooltip) {
+                aItems[iI].setAttribute("data-timestamp-tooltip", sTimestampTooltip);
+            }
             oValue = aItems[iI].querySelector(".nx-subject-item-value");
             if (oValue) {
                 oValue.textContent = aGroup.name || "";
+                if (sTimestampTooltip) {
+                    oValue.title = sTimestampTooltip;
+                }
             }
         }
         oGroupList = document.getElementById("nx-group-list");
@@ -3970,6 +3972,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         oPortalEnabled = appendSubjectCheckbox(oDialogData.form, "Portal account", "portal_user_enabled", !!aPortalUser["has_user"]);
         oPortalUserName = appendSubjectTextField(oDialogData.form, "User Name", "portal_user_name", aPortalUser["user_name"] || "");
+        if (aPortalUser["timestamp_tooltip"]) {
+            oPortalUserName.title = aPortalUser["timestamp_tooltip"];
+        }
         oPortalPassword = appendSubjectTextField(oDialogData.form, "New Password", "portal_password", "", "password");
         oPortalActive = appendSubjectCheckbox(oDialogData.form, "Active", "portal_user_active", aPortalUser["is_active"] !== 0 && aPortalUser["is_active"] !== "0");
         if (aPortalPermissions.length > 0) {
@@ -4954,10 +4959,17 @@ document.addEventListener("DOMContentLoaded", function () {
         showContactCopyResult(oButton, copyAdminTextWithTextarea(sValue));
     }
 
-    function createContactValueElement(sType, sValue, blInvalid) {
+    function getItemTimestampTooltip(oItem) {
+        return oItem ? (oItem.getAttribute("data-timestamp-tooltip") || "") : "";
+    }
+
+    function createContactValueElement(sType, sValue, blInvalid, sTimestampTooltip) {
         var oValue = document.createElement("span");
         oValue.className = blInvalid ? "nx-contact-value nx-invalid-contact-value" : "nx-contact-value";
         oValue.textContent = getContactDisplayValue(sType, sValue);
+        if (sTimestampTooltip) {
+            oValue.title = sTimestampTooltip;
+        }
         return oValue;
     }
 
@@ -4976,11 +4988,6 @@ document.addEventListener("DOMContentLoaded", function () {
         oBox.className = "nx-copy-action-box";
         oBox.textContent = getAdminEmoji("copy");
         oCopy.appendChild(oBox);
-        oCopy.addEventListener("click", function (oEvent) {
-            oEvent.preventDefault();
-            oEvent.stopPropagation();
-            copyContactValue(oCopy);
-        });
         return oCopy;
     }
 
@@ -5029,10 +5036,11 @@ document.addEventListener("DOMContentLoaded", function () {
         var oValue = oItem.querySelector(".nx-contact-value");
         var aLinks = oItem.querySelectorAll(".nx-contact-copy, .nx-contact-link");
         var blInvalid = typeof blInvalidOverride == "boolean" ? blInvalidOverride : false;
+        var sTimestampTooltip = getItemTimestampTooltip(oItem);
         if (typeof blInvalidOverride != "boolean" && oValue && oValue.className.indexOf("nx-invalid-contact-value") !== -1) {
             blInvalid = true;
         }
-        var oNewValue = createContactValueElement(sType, sValue, blInvalid);
+        var oNewValue = createContactValueElement(sType, sValue, blInvalid, sTimestampTooltip);
         var oNewCopy = createContactCopyElement(sValue);
         var oNewLink = createContactLinkElement(sType, sValue, blInvalid);
         var oSeparator;
@@ -5055,15 +5063,20 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function enhanceContactValues(oRoot) {
-        var aItems = (oRoot || document).querySelectorAll ? (oRoot || document).querySelectorAll(".nx-contact-item") : [];
-        for (var iI = 0; iI < aItems.length; iI += 1) {
-            updateContactValueAndLink(aItems[iI], aItems[iI].getAttribute("data-contact-type") || "", aItems[iI].getAttribute("data-contact-value") || "");
+    document.addEventListener("click", function (oEvent) {
+        var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".nx-contact-copy") : null;
+        var oLink;
+        if (oButton) {
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+            copyContactValue(oButton);
+            return;
         }
-    }
-
-    window.nxEnhanceContactValues = enhanceContactValues;
-    enhanceContactValues(document);
+        oLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".nx-contact-link") : null;
+        if (oLink) {
+            oEvent.stopPropagation();
+        }
+    }, true);
     if (!blCanEditContacts) {
         return;
     }
@@ -5189,6 +5202,9 @@ document.addEventListener("DOMContentLoaded", function () {
         oItem.setAttribute("data-contact-note", aContact.note || "");
         oItem.setAttribute("data-contact-primary", blIsPrimary ? "1" : "0");
         oItem.setAttribute("data-contact-active", blIsActive ? "1" : "0");
+        if (aContact.timestamp_tooltip) {
+            oItem.setAttribute("data-timestamp-tooltip", aContact.timestamp_tooltip);
+        }
         oItem.className = blIsActive ? "nx-contact-item nx-list-item" : "nx-contact-item nx-list-item nx-contact-item-inactive";
         if (oType) {
             oType.textContent = sContactTypeLabel;
@@ -5215,6 +5231,9 @@ document.addEventListener("DOMContentLoaded", function () {
             aItems[iI].setAttribute("data-contact-type", aContact.contact_type || "");
             aItems[iI].setAttribute("data-contact-type-name", sContactTypeLabel);
             aItems[iI].setAttribute("data-contact-value", sContactValue);
+            if (aContact.timestamp_tooltip) {
+                aItems[iI].setAttribute("data-timestamp-tooltip", aContact.timestamp_tooltip);
+            }
             if (oType) {
                 oType.textContent = sContactTypeLabel;
             }
@@ -5753,7 +5772,37 @@ document.addEventListener("DOMContentLoaded", function () {
         oCurrentSubjectCell = null;
     }
 
-    function updateSubjectAddressCell(oCell, oForm) {
+    function getAddressCellForSubjectCell(oCell) {
+        var oRow = oCell ? oCell.parentNode : null;
+        var oAddressCell;
+        while (oRow) {
+            oAddressCell = oRow.querySelector ? oRow.querySelector(".nx-address-cell") : null;
+            if (oAddressCell) {
+                return oAddressCell;
+            }
+            oRow = oRow.previousElementSibling;
+        }
+        return null;
+    }
+
+    function updateAddressTimestampTooltip(oSubjectCell, sTimestampTooltip) {
+        var oAddressCell;
+        var oAddressValue;
+        if (!sTimestampTooltip) {
+            return;
+        }
+        oAddressCell = getAddressCellForSubjectCell(oSubjectCell);
+        if (!oAddressCell || !oAddressCell.getAttribute("data-timestamp-tooltip")) {
+            return;
+        }
+        oAddressCell.setAttribute("data-timestamp-tooltip", sTimestampTooltip);
+        oAddressValue = oAddressCell.querySelector(".nx-subject-item-value");
+        if (oAddressValue) {
+            oAddressValue.title = sTimestampTooltip;
+        }
+    }
+
+    function updateSubjectAddressCell(oCell, oForm, sTimestampTooltip) {
         var oPrimaryFlag;
         var oInactiveFlag;
         var oSubjectValue;
@@ -5790,6 +5839,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (oInactiveFlag) {
             oInactiveFlag.textContent = blIsActive ? "" : getAdminEmoji("inactive");
         }
+        updateAddressTimestampTooltip(oCell, sTimestampTooltip);
     }
 
     function submitSharedAddressForm(oForm, sAction, oError) {
@@ -5849,7 +5899,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 window.location.reload();
                 return;
             }
-            updateSubjectAddressCell(oCurrentSubjectCell, oForm);
+            updateSubjectAddressCell(oCurrentSubjectCell, oForm, aData.timestamp_tooltip || "");
             closeSubjectAddressDialog(true);
         }).catch(function (oException) {
             logAdminException(oException);

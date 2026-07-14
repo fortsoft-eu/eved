@@ -591,10 +591,7 @@ if ($sBdPostAction == "update_subject_group") {
         $oStatement->execute(array("name" => $sGroupName, "id" => $iGroupId));
         $oPdo->commit();
         $aResponse = nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
-        $aResponse["group"] = array(
-            "group_id" => $iGroupId,
-            "name" => $sGroupName
-        );
+        $aResponse["group"] = nxFetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
@@ -641,10 +638,7 @@ if ($sBdPostAction == "create_subject_group") {
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         $oPdo->commit();
         $aResponse = nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
-        $aResponse["group"] = array(
-            "group_id" => $iGroupId,
-            "name" => $sGroupName
-        );
+        $aResponse["group"] = nxFetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
@@ -945,7 +939,7 @@ if ($sBdPostAction == "create_contact") {
         $oPdo->commit();
 
         $aResponse = nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
-        $aResponse["contact"] = array(
+        $aResponse["contact"] = nxAddContactTimestampTooltip($oPdo, array(
             "subject_contact_id" => $iSubjectContactId,
             "contact_id" => $iContactId,
             "contact_type_id" => $iContactTypeId,
@@ -956,7 +950,7 @@ if ($sBdPostAction == "create_contact") {
             "note" => $sNote,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive
-        );
+        ));
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
@@ -1020,7 +1014,7 @@ if ($sBdPostAction == "update_contact") {
         $oPdo->commit();
 
         $aResponse = nxInterGetUpdatedSubjectResponse($oPdo, (int)$aSubjectContact["subject_id"], $aBirthdaySettings, $blCanEdit);
-        $aResponse["contact"] = array(
+        $aResponse["contact"] = nxAddContactTimestampTooltip($oPdo, array(
             "subject_contact_id" => $iSubjectContactId,
             "contact_id" => $iContactId,
             "contact_type_id" => $iContactTypeId,
@@ -1031,7 +1025,7 @@ if ($sBdPostAction == "update_contact") {
             "note" => $sNote,
             "is_primary" => $iIsPrimary,
             "is_active" => $iIsActive
-        );
+        ));
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {

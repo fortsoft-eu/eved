@@ -355,26 +355,7 @@ echo nxRenderPageThrobber();
 <?php
 
     foreach ($aRows as $aRow) {
-        $iSubjectId = (int)$aRow["subject_id"];
-        $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aRow["subject_type"]));
-        $blIsActive = (int)$aRow["is_active"] == 1;
-        $sBirthNumberClass = nxBirthNumberClass($aRow["birth_number"], "nx-column-hidden");
-        $sBirthDateClass = nxBirthDateClass($aRow["birth_number"], $aRow["birth_date"], "nx-column-step-two");
-        echo "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
-            . "        <td class=\"nx-column-hidden\">" . nxHtml($aRow["subject_type"]) . "</td>\n"
-            . "        <td>" . nxHtmlValue($aRow["subject_name"]) . nxRenderCopyAction($aRow["subject_name"]) . "</td>\n"
-            . "        <td class=\"nx-column-hidden\">" . nxHtmlValue($aRow["first_name"]) . "</td>\n"
-            . "        <td class=\"nx-column-hidden\">" . nxHtmlValue($aRow["last_name"]) . "</td>\n"
-            . "        <td class=\"nx-column-step-one\">" . nxHtmlValue($aRow["birth_name"]) . "</td>\n"
-            . "        <td class=\"" . nxHtml($sBirthNumberClass) . "\">" . nxRenderBirthNumberValue($aRow["birth_number"]) . "</td>\n"
-            . "        <td class=\"" . nxHtml($sBirthDateClass) . "\" style=\"overflow-wrap: normal; white-space: nowrap; word-break: normal;\">" . nxHtmlValue($aRow["birth_date"]) . "</td>\n"
-            . "        <td class=\"nx-column-hidden\">" . nxHtmlValue($aRow["death_date"]) . "</td>\n"
-            . "        <td class=\"nx-column-step-one\">" . nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), false, 0, !empty($aHiddenInactive["nicknames"][$iSubjectId]), false, true) . "</td>\n"
-            . "        <td>" . nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), false, 0, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aIndexSettings, false, true) . "</td>\n"
-            . "        <td>" . nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), false, 0, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), false, true) . "</td>\n"
-            . "        <td class=\"nx-column-step-three\">" . nxRenderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), false, 0, false, true) . "</td>\n"
-            . "        <td class=\"nx-column-step-three\">" . nxRenderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), false, 0, !empty($aHiddenInactive["notes"][$iSubjectId]), false, true) . "</td>\n"
-            . "      </tr>\n";
+        echo nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aIndexSettings);
     }
 
     echo "    </tbody>\n";

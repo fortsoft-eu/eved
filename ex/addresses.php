@@ -273,9 +273,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("UPDATE ex_subject_addresses SET " . implode(", ", $aSetSql) . " WHERE id = :id");
         $oStatement->execute($aParams);
         $oPdo->commit();
+        $oStatement = $oPdo->prepare("SELECT created_at, updated_at FROM ex_subject_addresses WHERE id = :id");
+        $oStatement->execute(array("id" => $iAddressId));
+        $aTimestampRow = $oStatement->fetch(PDO::FETCH_ASSOC);
         nxSendJsonAndExit(array(
             "success" => true,
-            "reload_required" => json_encode(nxAddressesBuildMatch($aOldAddress)) !== json_encode(nxAddressesBuildMatch($aNewAddress))
+            "reload_required" => json_encode(nxAddressesBuildMatch($aOldAddress)) !== json_encode(nxAddressesBuildMatch($aNewAddress)),
+            "timestamp_tooltip" => $aTimestampRow ? nxTimestampTooltipText($aTimestampRow) : ""
         ));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
@@ -396,14 +400,14 @@ foreach ($aAddressRows as $aAddressRow) {
         echo "      <tr data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\">\n";
         if ($blFirstSubject) {
             echo "        <td class=\"nx-address-cell\" rowspan=\"" . nxHtml($iSubjectCount) . "\"" . nxAddressesRenderDataAttributes($aAddressRow) . ">"
-                . "<span class=\"nx-subject-item-value\">" . nxHtmlValue($aAddressRow["address_text"]) . "</span>"
+                . "<span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aAddressRow) . ">" . nxHtmlValue($aAddressRow["address_text"]) . "</span>"
                 . nxRenderCopyAction($aAddressRow["address_copy_text"])
                 . $sAddressActions
                 . $sAddressCellCopyAction
                 . "</td>\n";
             $blFirstSubject = false;
         }
-        echo "        <td class=\"" . nxHtml(nxAddressesSubjectCellClass($aSubject)) . " nx-list-item nx-subject-address-item\"" . nxAddressesRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sAddressFilterText) . "</span><span class=\"" . nxHtml($sSubjectValueClass) . "\">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . $sSubjectPrimaryFlag . $sSubjectActions . "</td>\n"
+        echo "        <td class=\"" . nxHtml(nxAddressesSubjectCellClass($aSubject)) . " nx-list-item nx-subject-address-item\"" . nxAddressesRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sAddressFilterText) . "</span><span class=\"" . nxHtml($sSubjectValueClass) . "\"" . nxRenderTimestampTooltipAttribute($aSubject) . ">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . $sSubjectPrimaryFlag . $sSubjectActions . "</td>\n"
             . "      </tr>\n";
     }
 }
