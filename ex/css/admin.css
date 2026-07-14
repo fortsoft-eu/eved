@@ -352,45 +352,32 @@ table {
 }
 
 .admin-controls {
-    margin: 0px;
+    margin: 0 0 5px;
     align-items: center;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
-.ex-list-page .admin-controls {
-    margin-bottom: 5px;
-}
-
-.ex-list-page .admin-controls .ex-menu {
+.admin-controls .ex-menu {
     flex: 0 0 27px;
     width: 27px;
 }
 
-.ex-list-page .admin-controls .ex-menu-button {
+.admin-controls .ex-menu-button {
     height: 27px;
     width: 27px;
 }
 
 .admin-controls .button-link {
     box-sizing: border-box;
+    flex: 0 0 73px;
     height: 27px;
     margin-left: 0;
-    padding: 4px 8px;
-}
-
-.ex-list-page .admin-controls .button-link {
-    flex: 0 0 73px;
     padding: 2px 2px 3px 2px;
 }
 
 .admin-controls label[for="table-filter"] {
-    flex: 0 0 calc(54px - 1lh);
-    width: calc(54px - 1lh);
-}
-
-.ex-list-page .admin-controls label[for="table-filter"] {
     flex: 0 0 38px;
     width: 38px;
 }
@@ -398,10 +385,6 @@ table {
 .admin-controls .js-table-filter {
     box-sizing: border-box;
     min-width: 0;
-    width: 159px;
-}
-
-.ex-list-page .admin-controls .js-table-filter {
     width: 154px;
 }
 
@@ -440,7 +423,7 @@ table {
 }
 
 .admin-controls .database-action-button {
-    width: 130px;
+    flex: 0 0 130px;
 }
 
 .admin-controls input,
@@ -479,11 +462,10 @@ table {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
     box-sizing: border-box;
     display: block;
-    left: 8px;
-    max-height: calc(100vh - 16px);
+    left: 6px;
     overflow-y: auto;
     position: fixed;
-    top: 8px;
+    top: 38px;
     width: max-content;
     z-index: 7;
 }
@@ -753,6 +735,7 @@ tr:nth-child(even) {
 }
 
 .schema-diagram {
+    margin-top: 5px;
     overflow: auto;
     min-height: 300px;
 }
@@ -937,7 +920,6 @@ body.phpinfo-page {
 
 body.phpinfo-page .admin-controls {
     flex: 0 0 auto;
-    margin-top: 2px;
 }
 
 .phpinfo-frame {
@@ -1080,10 +1062,6 @@ body.phpinfo-page .admin-controls {
 .schema-table[data-table="ex_subject_names"] {
     grid-column: 1;
     grid-row: 1;
-}
-
-.schema-diagram {
-    overflow: auto;
 }
 
 .schema-canvas {

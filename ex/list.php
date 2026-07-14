@@ -1219,7 +1219,7 @@ $iTime = sendPageHeaders();
   <meta name="csrf-token" content="<?php echo nxHtml(getExCsrfToken()); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
-<body class="ex-list-page" data-calendar-first-day="<?php echo nxHtml($iCalendarFirstDay); ?>" data-date-input-format="<?php echo nxHtml($sDateInputFormat); ?>" data-date-input-pattern="<?php echo nxHtml($sDateInputPattern); ?>">
+<body data-calendar-first-day="<?php echo nxHtml($iCalendarFirstDay); ?>" data-date-input-format="<?php echo nxHtml($sDateInputFormat); ?>" data-date-input-pattern="<?php echo nxHtml($sDateInputPattern); ?>">
   <p class="admin-controls">
 <?php nxRenderExMenu(); ?>
     <label for="table-filter">Filter:</label>

@@ -1357,34 +1357,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function positionExMenu(oMenu) {
-        var oButton = oMenu ? oMenu.querySelector("[data-ex-menu-button]") : null;
         var oPanel = oMenu ? oMenu.querySelector("[data-ex-menu-panel]") : null;
-        var oButtonRect;
-        var oPanelRect;
-        var iLeft;
-        var iTop;
-        var iMaxLeft;
-        var iMaxHeight;
-        if (!oButton || !oPanel || oPanel.hidden) {
+        if (!oPanel || oPanel.hidden) {
             return;
         }
+        oPanel.style.left = "6px";
+        oPanel.style.top = "38px";
         oPanel.style.maxHeight = "";
-        oButtonRect = oButton.getBoundingClientRect();
-        iLeft = Math.max(8, Math.floor(oButtonRect.left));
-        iTop = Math.max(8, Math.floor(oButtonRect.bottom + 4));
-        oPanel.style.left = iLeft + "px";
-        oPanel.style.top = iTop + "px";
-        oPanelRect = oPanel.getBoundingClientRect();
-        iMaxLeft = window.innerWidth - oPanelRect.width - 8;
-        if (iLeft > iMaxLeft) {
-            iLeft = Math.max(8, Math.floor(iMaxLeft));
-            oPanel.style.left = iLeft + "px";
-        }
-        iMaxHeight = window.innerHeight - iTop - 8;
-        if (iMaxHeight < 80) {
-            iMaxHeight = 80;
-        }
-        oPanel.style.maxHeight = iMaxHeight + "px";
     }
 
     function positionOpenExMenus() {
