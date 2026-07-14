@@ -41,6 +41,10 @@ function getUrlWithoutScriptName() {
     return dirname($sPath) . "/";
 }
 
+function getAdminViewportContent() {
+    return "width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no";
+}
+
 function sendQuickTableFilterJsonAndExit($aData, $iStatusCode = 200) {
     http_response_code($iStatusCode);
     header("Content-Type: application/json; charset=utf-8", true);
@@ -1069,7 +1073,7 @@ function addPhpGeneratedViewportMeta($sHtml) {
     if (preg_match("#<meta\\b[^>]*\\bname\\s*=\\s*([\"'])viewport\\1#i", $sHtml) || stripos($sHtml, "</head>") === false) {
         return $sHtml;
     }
-    return preg_replace("#</head>#i", "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>", $sHtml, 1);
+    return preg_replace("#</head>#i", "  <meta name=\"viewport\" content=\"" . htmlspecialchars(getAdminViewportContent(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n</head>", $sHtml, 1);
 }
 
 function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
@@ -1084,7 +1088,7 @@ function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
         . "<html lang=\"en-US\" dir=\"ltr\">\n"
         . "<head>\n"
         . "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
-        . "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+        . "  <meta name=\"viewport\" content=\"" . htmlspecialchars(getAdminViewportContent(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n"
         . "  <title>" . htmlspecialchars($sTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</title>\n"
         . getPhpGeneratedStyleTag($sStyleNonce)
         . "</head>\n"
