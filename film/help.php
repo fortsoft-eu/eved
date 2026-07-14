@@ -31,9 +31,10 @@ $iTime = sendPageHeaders();
   <dl class="film-help-list">
     <dt>Menu</dt>
     <dd>
-      <p>The film menu is built from PHP files in the <code>film</code> directory. <code>index.php</code>, <code>main.php</code>, and <code>functions.php</code> are intentionally excluded, because they are the public gallery entry point and shared implementation files rather than menu pages.</p>
-      <p>The first menu group contains the photo and film work pages. The second group contains database, PHP, request, schema, and environment diagnostics. This help page is an ordinary menu page and is included by the same file-based menu rule.</p>
+      <p>The film menu is built from PHP files in the <code>film</code> directory. <code>index.php</code>, <code>main.php</code>, and <code>functions.php</code> are intentionally excluded from the automatic file scan, because they are the public gallery entry point and shared implementation files rather than menu pages.</p>
+      <p>The dropdown starts with a fixed <strong>Film Scans Gallery</strong> link to <code>index.php</code> and a separator. The first automatic menu group contains the photo and film work pages. The second automatic group contains database, PHP, request, schema, and environment diagnostics. This help page is an ordinary menu page and is included by the same file-based menu rule.</p>
       <ul>
+        <li><strong>Fixed entry:</strong> Film Scans Gallery opens the public gallery entry point.</li>
         <li><strong>Photo group:</strong> Photographic Equipment, Assign Film to Lab Bag, Film Scans Overview, Photo Lab Orders, and Film Access Log.</li>
         <li><strong>Diagnostic group:</strong> PHP, database, request, stream, schema, and help pages.</li>
         <li><strong>Behavior:</strong> The menu opens next to its button and scrolls away with the page.</li>
@@ -340,9 +341,10 @@ $iTime = sendPageHeaders();
   <dl class="film-help-list">
     <dt>Menu</dt>
     <dd>
-      <p>Menu filmu se skládá z PHP souborů v adresáři <code>film</code>. Soubory <code>index.php</code>, <code>main.php</code> a <code>functions.php</code> jsou záměrně vynechané, protože jde o veřejný vstup galerie a sdílené implementační soubory, ne o stránky menu.</p>
-      <p>První skupina menu obsahuje pracovní stránky pro fotografii a film. Druhá skupina obsahuje diagnostiku databáze, PHP, požadavku, schématu a prostředí. Tato nápověda je běžná stránka menu a do menu se dostává stejným souborovým pravidlem.</p>
+      <p>Menu filmu se skládá z PHP souborů v adresáři <code>film</code>. Soubory <code>index.php</code>, <code>main.php</code> a <code>functions.php</code> jsou z automatického skenu záměrně vynechané, protože jde o veřejný vstup galerie a sdílené implementační soubory, ne o stránky menu.</p>
+      <p>Dropdown začíná pevnou položkou <strong>Film Scans Gallery</strong> s odkazem na <code>index.php</code> a oddělovačem. První automatická skupina menu obsahuje pracovní stránky pro fotografii a film. Druhá automatická skupina obsahuje diagnostiku databáze, PHP, požadavku, schématu a prostředí. Tato nápověda je běžná stránka menu a do menu se dostává stejným souborovým pravidlem.</p>
       <ul>
+        <li><strong>Pevná položka:</strong> Film Scans Gallery otevírá veřejný vstup galerie.</li>
         <li><strong>Foto skupina:</strong> Photographic Equipment, Assign Film to Lab Bag, Film Scans Overview, Photo Lab Orders a Film Access Log.</li>
         <li><strong>Diagnostická skupina:</strong> PHP, databáze, request, streamy, schéma a nápověda.</li>
         <li><strong>Chování:</strong> Menu se otevře u svého tlačítka a odjede se stránkou při rolování.</li>
