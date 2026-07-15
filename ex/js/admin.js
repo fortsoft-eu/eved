@@ -1969,8 +1969,6 @@ document.addEventListener("DOMContentLoaded", function () {
         var aOperatorButtons = document.querySelectorAll(".js-filter-operator[data-filter-input=\"" + oFilter.id + "\"]");
         var aResetButtons = document.querySelectorAll(".js-filter-reset[data-filter-input=\"" + oFilter.id + "\"]");
         var iFilterTimer = null;
-        var iFilterJob = 0;
-        var iFilterChunkSize = 120;
 
         function isFilterActive() {
             return oFilter.value.replace(/^\s+|\s+$/g, "") !== "";
@@ -1981,16 +1979,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 return oTable.tBodies[0].rows;
             }
             return oTable ? oTable.querySelectorAll("tbody tr") : [];
-        }
-
-        function scheduleFilterChunk(oCallback) {
-            if (window.requestAnimationFrame) {
-                window.requestAnimationFrame(oCallback);
-            } else if (window.setTimeout) {
-                window.setTimeout(oCallback, 0);
-            } else {
-                oCallback();
-            }
         }
 
         function getRowFilterText(oRow) {
@@ -2011,34 +1999,17 @@ document.addEventListener("DOMContentLoaded", function () {
             var oTable = document.getElementById(oFilter.getAttribute("data-table-filter"));
             var aExpression = buildFilterExpression(oFilter.value);
             var aRows;
-            var iJob;
-            var iIndex = 0;
-            var filterChunk = function () {
-                var iEnd;
-                if (iJob != iFilterJob) {
-                    return;
-                }
-                iEnd = Math.min(iIndex + iFilterChunkSize, aRows.length);
-                for (var iJ = iIndex; iJ < iEnd; iJ += 1) {
-                    setRowFilterVisible(aRows[iJ], rowMatchesFilterExpression(getRowFilterText(aRows[iJ]), aExpression));
-                }
-                iIndex = iEnd;
-                if (iIndex < aRows.length) {
-                    scheduleFilterChunk(filterChunk);
-                }
-            };
             refreshFilterFocusButton(oFilter);
             if (!oTable) {
                 return;
             }
-            iFilterJob += 1;
-            iJob = iFilterJob;
             aRows = getTableRows(oTable);
-            filterChunk();
+            for (var iJ = 0; iJ < aRows.length; iJ += 1) {
+                setRowFilterVisible(aRows[iJ], rowMatchesFilterExpression(getRowFilterText(aRows[iJ]), aExpression));
+            }
         };
 
         function scheduleFilterTable() {
-            iFilterJob += 1;
             if (!window.setTimeout || !window.clearTimeout) {
                 filterTable();
                 return;
