@@ -75,8 +75,6 @@ foreach ($aInfoTypes as $sKey => $iValue) {
 echo "      </optgroup>\n"
     . "      <optgroup label=\"PHP CREDITS\">\n";
 
-?>
-
 foreach ($aCreditsTypes as $sKey => $iValue) {
     echo "        <option value=\"credits_" . $iValue . "\">"
         . htmlspecialchars($sKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</option>\n";
