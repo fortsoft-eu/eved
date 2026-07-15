@@ -364,6 +364,10 @@ table {
     gap: 6px;
 }
 
+.admin-controls:has(.js-table-filter) {
+    row-gap: 5px;
+}
+
 .admin-controls .ex-menu {
     flex: 0 0 27px;
     width: 27px;
