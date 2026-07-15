@@ -268,17 +268,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         foreach (nxAddressesSubjectAddressFields() as $sField) {
             $aParams["new_" . $sField] = array_key_exists($sField, $aNewAddress) ? $aNewAddress[$sField] : null;
         }
+        $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
         $aParams["is_primary"] = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
-        $aParams["is_active"] = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
+        $aParams["is_active"] = $iIsActive;
         $oStatement = $oPdo->prepare("UPDATE ex_subject_addresses SET " . implode(", ", $aSetSql) . " WHERE id = :id");
         $oStatement->execute($aParams);
         $oPdo->commit();
         $oStatement = $oPdo->prepare("SELECT created_at, updated_at FROM ex_subject_addresses WHERE id = :id");
         $oStatement->execute(array("id" => $iAddressId));
         $aTimestampRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+        $blAddressGroupChanged = json_encode(nxAddressesBuildMatch($aOldAddress)) !== json_encode(nxAddressesBuildMatch($aNewAddress));
+        $blAddressVisibilityChanged = empty($aAddressSettings["show_inactive_addresses"]) && (int)$aOldAddress["is_active"] != $iIsActive;
         nxSendJsonAndExit(array(
             "success" => true,
-            "reload_required" => json_encode(nxAddressesBuildMatch($aOldAddress)) !== json_encode(nxAddressesBuildMatch($aNewAddress)),
+            "reload_required" => $blAddressGroupChanged || $blAddressVisibilityChanged,
             "timestamp_tooltip" => $aTimestampRow ? nxTimestampTooltipText($aTimestampRow) : ""
         ));
     } catch (Exception $oException) {

@@ -51,6 +51,7 @@ if (isset($_SESSION["ex_full_list_complex_filter_draft"]) && is_array($_SESSION[
 } elseif (count($aFullListComplexFilter["conditions"]) > 0) {
     $aFullListComplexFilterDraft = nxNormalizeFullListComplexFilterDraft($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 }
+$aFullListComplexFilterSql = nxBuildFullListComplexFilterSql($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -166,7 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         );
         nxSaveSubjectPortalAccess($oPdo, $iSubjectId, (string)$aSubjectRow["subject_type"], $aPayload);
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -280,7 +281,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
         $oPdo->commit();
 
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -357,7 +358,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
         $oPdo->commit();
 
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -401,7 +402,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "id" => $iNicknameId
         ));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -444,7 +445,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "note" => $sNote != "" ? $sNote : null
         ));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -533,7 +534,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "id" => $iAddressId
         ));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -621,7 +622,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "note" => $sNote != "" ? $sNote : null
         ));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -649,7 +650,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+            nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
         }
         $oStatement = $oPdo->prepare("SELECT id FROM ex_groups WHERE id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iGroupId));
@@ -666,7 +667,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("UPDATE ex_groups SET name = :name WHERE id = :id");
         $oStatement->execute(array("name" => $sGroupName, "id" => $iGroupId));
         $oPdo->commit();
-        $aResponse = nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings);
+        $aResponse = nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql);
         $aResponse["group"] = nxFetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
@@ -714,7 +715,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("INSERT INTO ex_subject_groups (subject_id, group_id) VALUES (:subject_id, :group_id)");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         $oPdo->commit();
-        $aResponse = nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings);
+        $aResponse = nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql);
         $aResponse["group"] = nxFetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
@@ -754,7 +755,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("UPDATE ex_subject_notes SET note_text = :note_text, is_primary = :is_primary, is_active = :is_active WHERE id = :id");
         $oStatement->execute(array("note_text" => $sNoteText, "is_primary" => $iIsPrimary, "is_active" => $iIsActive, "id" => $iNoteId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -788,7 +789,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("INSERT INTO ex_subject_notes (subject_id, note_text, is_primary, is_active) VALUES (:subject_id, :note_text, :is_primary, :is_active)");
         $oStatement->execute(array("subject_id" => $iSubjectId, "note_text" => $sNoteText, "is_primary" => $iIsPrimary, "is_active" => $iIsActive));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -843,7 +844,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_contacts WHERE id = :id");
         $oStatement->execute(array("id" => $iSubjectContactId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -871,7 +872,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_nicknames WHERE id = :id");
         $oStatement->execute(array("id" => $iNicknameId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -899,7 +900,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_addresses WHERE id = :id");
         $oStatement->execute(array("id" => $iAddressId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -922,12 +923,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+            nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
         }
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -955,7 +956,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_notes WHERE id = :id");
         $oStatement->execute(array("id" => $iNoteId));
         $oPdo->commit();
-        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings));
+        nxSendJsonAndExit(nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -1024,7 +1025,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $iSubjectContactId = (int)$oPdo->lastInsertId();
         $oPdo->commit();
 
-        $aResponse = nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings);
+        $aResponse = nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql);
         $aResponse["contact"] = nxAddContactTimestampTooltip($oPdo, array(
             "subject_contact_id" => $iSubjectContactId,
             "contact_id" => $iContactId,
@@ -1075,7 +1076,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
     try {
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("SELECT sc.id, sc.subject_id, sc.contact_id FROM ex_subject_contacts AS sc WHERE sc.id = :id FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT sc.id, sc.subject_id, sc.contact_id, c.contact_type_id AS current_contact_type_id, c.contact_value AS current_contact_value FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id WHERE sc.id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iSubjectContactId));
         $aSubjectContact = $oStatement->fetch(PDO::FETCH_ASSOC);
         if (!$aSubjectContact) {
@@ -1084,12 +1085,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
 
         $iContactId = (int)$aSubjectContact["contact_id"];
-        $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
-        $oStatement->execute(array(
-            "contact_type_id" => $iContactTypeId,
-            "contact_value" => $sContactValue,
-            "id" => $iContactId
-        ));
+        $blContactIdentityChanged = (int)$aSubjectContact["current_contact_type_id"] != $iContactTypeId || (string)$aSubjectContact["current_contact_value"] != $sContactValue;
+        if ($blContactIdentityChanged) {
+            $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
+            $oStatement->execute(array(
+                "contact_type_id" => $iContactTypeId,
+                "contact_value" => $sContactValue,
+                "id" => $iContactId
+            ));
+        }
 
         $oStatement = $oPdo->prepare("UPDATE ex_subject_contacts SET is_primary = :is_primary, is_active = :is_active, note = :note WHERE id = :id");
         $oStatement->execute(array(
@@ -1100,7 +1104,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         ));
         $oPdo->commit();
 
-        $aResponse = nxGetUpdatedSubjectResponse($oPdo, (int)$aSubjectContact["subject_id"], $aFullListSettings);
+        $aResponse = nxGetUpdatedSubjectResponse($oPdo, (int)$aSubjectContact["subject_id"], $aFullListSettings, $aFullListComplexFilterSql);
+        $aResponse["reload_required"] = $blContactIdentityChanged;
         $aResponse["contact"] = nxAddContactTimestampTooltip($oPdo, array(
             "subject_contact_id" => $iSubjectContactId,
             "contact_id" => $iContactId,
@@ -1135,7 +1140,6 @@ $aGroups = array();
 $aAllGroups = array();
 $aNotes = array();
 $aHiddenInactive = array();
-$aFullListComplexFilterSql = nxBuildFullListComplexFilterSql($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 try {
     $oPdo->query("SET SESSION group_concat_max_len = 1048576");
     $aRows = nxFetchSubjectRows($oPdo, 0, $aFullListComplexFilterSql);

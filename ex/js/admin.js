@@ -370,6 +370,68 @@ function getAdminSubjectRow(oElement) {
     return oElement && oElement.closest ? oElement.closest("tr[data-subject-id]") : null;
 }
 
+function getAdminSubjectRowTableId(oRow) {
+    var oTable = oRow && oRow.closest ? oRow.closest("table") : null;
+    return oTable ? oTable.id : "";
+}
+
+function compareAdminSubjectRowStrings(sFirst, sSecond) {
+    if (sFirst < sSecond) {
+        return -1;
+    }
+    if (sFirst > sSecond) {
+        return 1;
+    }
+    return 0;
+}
+
+function compareAdminSubjectRows(oFirst, oSecond) {
+    var sTableId = getAdminSubjectRowTableId(oFirst);
+    var iFirstDays;
+    var iSecondDays;
+    var iResult;
+    if (!oFirst || !oSecond || sTableId != getAdminSubjectRowTableId(oSecond)) {
+        return 0;
+    }
+    if (sTableId == "nx-birthdays-table" || sTableId == "nx-interactions-table") {
+        iFirstDays = parseInt(oFirst.getAttribute("data-days-to-birthday") || "0", 10);
+        iSecondDays = parseInt(oSecond.getAttribute("data-days-to-birthday") || "0", 10);
+        if (iFirstDays !== iSecondDays) {
+            return iFirstDays < iSecondDays ? -1 : 1;
+        }
+    }
+    iResult = compareAdminSubjectRowStrings(oFirst.getAttribute("data-subject-sort-name") || "", oSecond.getAttribute("data-subject-sort-name") || "");
+    if (iResult !== 0) {
+        return iResult;
+    }
+    iResult = compareAdminSubjectRowStrings(oFirst.getAttribute("data-subject-type") || "", oSecond.getAttribute("data-subject-type") || "");
+    if (iResult !== 0) {
+        return iResult;
+    }
+    return parseInt(oFirst.getAttribute("data-subject-id") || "0", 10) - parseInt(oSecond.getAttribute("data-subject-id") || "0", 10);
+}
+
+function moveAdminSubjectRowToSortedPosition(oRow) {
+    var oBody = oRow ? oRow.parentNode : null;
+    var sTableId = getAdminSubjectRowTableId(oRow);
+    var aRows;
+    var iI;
+    if (!oBody || oRow.getAttribute("data-subject-sort-name") === null) {
+        return;
+    }
+    if (sTableId != "nx-subjects-table" && sTableId != "nx-birthdays-table" && sTableId != "nx-interactions-table" && sTableId != "nx-contacts-table") {
+        return;
+    }
+    aRows = oBody.rows;
+    for (iI = 0; iI < aRows.length; iI += 1) {
+        if (aRows[iI] !== oRow && compareAdminSubjectRows(oRow, aRows[iI]) < 0) {
+            oBody.insertBefore(oRow, aRows[iI]);
+            return;
+        }
+    }
+    oBody.appendChild(oRow);
+}
+
 function beginAdminSubjectRowEdit(oRow) {
     if (oRow) {
         removeAdminClass(oRow, "nx-admin-row-saved");
@@ -3602,13 +3664,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 oNewRow.setAttribute("data-hover", "1");
             }
             oCurrentRow.parentNode.replaceChild(oNewRow, oCurrentRow);
+            moveAdminSubjectRowToSortedPosition(oNewRow);
             if (window.nxBindAdminTableRow) {
                 window.nxBindAdminTableRow(oNewRow);
             }
         } else if (!oCurrentRow && oNewRow) {
-            oTableBody = document.querySelector("#nx-subjects-table tbody, #nx-birthdays-table tbody, #nx-interactions-table tbody");
+            oTableBody = document.querySelector("#nx-subjects-table tbody, #nx-birthdays-table tbody, #nx-interactions-table tbody, #nx-contacts-table tbody");
             if (oTableBody) {
                 oTableBody.appendChild(oNewRow);
+                moveAdminSubjectRowToSortedPosition(oNewRow);
                 if (window.nxBindAdminTableRow) {
                     window.nxBindAdminTableRow(oNewRow);
                 }

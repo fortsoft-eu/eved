@@ -3927,7 +3927,7 @@ function nxRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroup
             . "<a href=\"#\" class=\"nx-item-action js-delete-subject\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-name=\"" . nxHtml($aRow["subject_name"]) . "\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>"
             . "</span>";
     }
-    return "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
+    return "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\"" . nxRenderSubjectRowDataAttributes($aRow, $iSubjectId, $blIsActive) . ">\n"
         . "        <td class=\"nx-subject-type-column\" style=\"vertical-align: top;\">" . nxHtml($aRow["subject_type"]) . "</td>\n"
         . "        <td style=\"vertical-align: top;\"><span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aRow) . ">" . nxHtmlValue($aRow["subject_name"]) . "</span>"
         . nxRenderCopyAction($aRow["subject_name"])
@@ -3961,6 +3961,15 @@ function nxRenderSubjectTableCell($sHtml, $sClass = "", $sStyle = "") {
     return "        <td" . $sAttributes . ">" . $sHtml . "</td>\n";
 }
 
+function nxRenderSubjectRowDataAttributes($aRow, $iSubjectId, $blIsActive) {
+    $sSubjectSortName = isset($aRow["subject_sort_name"]) ? (string)$aRow["subject_sort_name"] : (string)$aRow["subject_name"];
+    return " data-subject-id=\"" . nxHtml($iSubjectId) . "\""
+        . " data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\""
+        . " data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\""
+        . " data-subject-sort-name=\"" . nxHtml($sSubjectSortName) . "\""
+        . (isset($aRow["days_to_birthday"]) ? " data-days-to-birthday=\"" . nxHtml((int)$aRow["days_to_birthday"]) . "\"" : "");
+}
+
 function nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive = array(), $aDisplaySettings = null, $aOptions = array()) {
     $iSubjectId = (int)$aRow["subject_id"];
     $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aRow["subject_type"]));
@@ -3971,7 +3980,7 @@ function nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresse
     $sBirthNumberClass = nxBirthNumberClass($aRow["birth_number"], nxSubjectRowOption($aOptions, "birth_number_class", "nx-column-hidden"));
     $sBirthDateClass = nxBirthDateClass($aRow["birth_number"], $aRow["birth_date"], nxSubjectRowOption($aOptions, "birth_date_class", "nx-column-step-two"));
     $aBeforeNameCells = nxSubjectRowOption($aOptions, "before_name_cells", array());
-    $sHtml = "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
+    $sHtml = "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\"" . nxRenderSubjectRowDataAttributes($aRow, $iSubjectId, $blIsActive) . ">\n"
         . nxRenderSubjectTableCell(nxHtml($aRow["subject_type"]), nxSubjectRowOption($aOptions, "type_class", "nx-column-hidden"), nxSubjectRowOption($aOptions, "type_style", ""));
     if (is_array($aBeforeNameCells)) {
         foreach ($aBeforeNameCells as $sCellHtml) {
@@ -4000,8 +4009,8 @@ function nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresse
     return $sHtml;
 }
 
-function nxRenderUpdatedSubjectRow($oPdo, $iSubjectId, $aVisibilitySettings = null) {
-    $aRows = nxFetchSubjectRows($oPdo, $iSubjectId);
+function nxRenderUpdatedSubjectRow($oPdo, $iSubjectId, $aVisibilitySettings = null, $aFilterSql = null) {
+    $aRows = nxFetchSubjectRows($oPdo, $iSubjectId, $aFilterSql);
     if (!$aRows) {
         return "";
     }
@@ -4031,8 +4040,8 @@ function nxRenderUpdatedSubjectRow($oPdo, $iSubjectId, $aVisibilitySettings = nu
     );
 }
 
-function nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aVisibilitySettings = null) {
-    $sRowHtml = nxRenderUpdatedSubjectRow($oPdo, $iSubjectId, $aVisibilitySettings);
+function nxGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aVisibilitySettings = null, $aFilterSql = null) {
+    $sRowHtml = nxRenderUpdatedSubjectRow($oPdo, $iSubjectId, $aVisibilitySettings, $aFilterSql);
     if ($sRowHtml == "") {
         return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
     }

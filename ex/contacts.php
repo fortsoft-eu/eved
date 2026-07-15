@@ -298,12 +298,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $blContactIdentityChanged = (int)$aSubjectContact["current_contact_type_id"] != $iContactTypeId || (string)$aSubjectContact["current_contact_value"] != $sContactValue;
         $blContactVisibilityChanged = empty($aContactSettings["show_inactive_contacts"]) && (int)$aSubjectContact["current_is_active"] != $iIsActive;
         $blReloadRequired = $blContactIdentityChanged || $blContactVisibilityChanged;
-        $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
-        $oStatement->execute(array(
-            "contact_type_id" => $iContactTypeId,
-            "contact_value" => $sContactValue,
-            "id" => $iContactId
-        ));
+        if ($blContactIdentityChanged) {
+            $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
+            $oStatement->execute(array(
+                "contact_type_id" => $iContactTypeId,
+                "contact_value" => $sContactValue,
+                "id" => $iContactId
+            ));
+        }
         $oStatement = $oPdo->prepare("UPDATE ex_subject_contacts SET is_primary = :is_primary, is_active = :is_active, note = :note WHERE id = :id");
         $oStatement->execute(array(
             "is_primary" => $iIsPrimary,
