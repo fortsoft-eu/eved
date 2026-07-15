@@ -1169,12 +1169,12 @@ if (!$aBirthdayRows) {
         <th>Name</th>
         <th class="nx-column-hidden">First Name</th>
         <th class="nx-column-hidden">Last Name</th>
-        <th class="nx-column-step-two">Birth Name</th>
+        <th class="nx-column-step-one">Birth Name</th>
         <th class="nx-column-hidden">Birth Number</th>
-        <th style="overflow-wrap: normal; white-space: nowrap; word-break: normal;">Birth Date</th>
-        <th class="nx-column-step-two" style="overflow-wrap: normal; white-space: nowrap; word-break: normal;">Death Date</th>
+        <th class="nx-column-step-two" style="overflow-wrap: normal; white-space: nowrap; word-break: normal;">Birth Date</th>
+        <th class="nx-column-hidden">Death Date</th>
         <th class="nx-column-step-one">Nicknames</th>
-        <th class="nx-column-step-one">Addresses</th>
+        <th>Addresses</th>
         <th>Contacts</th>
         <th class="nx-column-step-three">Groups</th>
         <th class="nx-column-step-three">Notes</th>

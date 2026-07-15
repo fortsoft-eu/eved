@@ -1982,8 +1982,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         function getRowFilterText(oRow) {
+            var aCells;
+            var aTexts;
+            var iJ;
             if (typeof oRow._quickTableFilterText != "string") {
-                oRow._quickTableFilterText = oRow.textContent || "";
+                aCells = oRow.cells ? oRow.cells : oRow.querySelectorAll("th, td");
+                aTexts = [];
+                for (iJ = 0; iJ < aCells.length; iJ += 1) {
+                    aTexts.push(aCells[iJ].textContent || "");
+                }
+                oRow._quickTableFilterText = aTexts.join(" ");
             }
             return oRow._quickTableFilterText;
         }

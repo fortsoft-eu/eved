@@ -4498,13 +4498,20 @@ function nxBdGetBirthdayInfo($sBirthDate) {
     return null;
 }
 
-function nxBdFetchBirthdayServedRows($oPdo) {
+function nxFetchPersonServedRows($oPdo, $sServedColumn) {
+    if (!in_array($sServedColumn, array("birthday_served_at", "inter_served_at"), true)) {
+        return array();
+    }
     $aServedRows = array();
-    $oStatement = $oPdo->query("SELECT subject_id, birthday_served_at FROM ex_persons");
+    $oStatement = $oPdo->query("SELECT subject_id, " . $sServedColumn . " FROM ex_persons");
     while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
         $aServedRows[(int)$aRow["subject_id"]] = $aRow;
     }
     return $aServedRows;
+}
+
+function nxBdFetchBirthdayServedRows($oPdo) {
+    return nxFetchPersonServedRows($oPdo, "birthday_served_at");
 }
 
 function nxBdIsBirthdayServed($aServedRows, $iSubjectId, $sBirthdayDate) {
@@ -4529,7 +4536,15 @@ function nxBdCompareRows($aFirst, $aSecond) {
     $iSecondCountdown = isset($aSecond["days_to_birthday"]) ? (int)$aSecond["days_to_birthday"] : 0;
 
     if ($iFirstCountdown === $iSecondCountdown) {
-        return strcmp((string)$aFirst["subject_name"], (string)$aSecond["subject_name"]);
+        $iResult = strcmp((string)(isset($aFirst["subject_sort_name"]) ? $aFirst["subject_sort_name"] : $aFirst["subject_name"]), (string)(isset($aSecond["subject_sort_name"]) ? $aSecond["subject_sort_name"] : $aSecond["subject_name"]));
+        if ($iResult !== 0) {
+            return $iResult;
+        }
+        $iResult = strcmp((string)$aFirst["subject_type"], (string)$aSecond["subject_type"]);
+        if ($iResult !== 0) {
+            return $iResult;
+        }
+        return (int)$aFirst["subject_id"] - (int)$aSecond["subject_id"];
     }
     return $iFirstCountdown < $iSecondCountdown ? -1 : 1;
 }
@@ -4547,25 +4562,25 @@ function nxBdRenderSubjectActions($aRow, $blShowActions) {
         . "</span>";
 }
 
+function nxRenderServedSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aDisplaySettings, $sServedActionClass, $sServedActionLabel, $sServedActionEmoji, $aOptions = array()) {
+    $iSubjectId = (int)$aRow["subject_id"];
+    $sServedAction = $blShowActions ? "<a class=\"nx-item-action nx-birthday-served-action " . nxHtml($sServedActionClass) . "\" href=\"#\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" title=\"" . nxHtml($sServedActionLabel) . "\" aria-label=\"" . nxHtml($sServedActionLabel) . "\"><span class=\"nx-copy-action-box\">" . $sServedActionEmoji . "</span></a>" : "";
+    $sServedInCell = nxHtmlValue($aRow["days_to_birthday"]) . ($sServedAction != "" ? "&#8288;" . $sServedAction : "");
+    return nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aDisplaySettings, array_merge(array(
+        "show_actions" => $blShowActions,
+        "item_subject_id" => $iSubjectId,
+        "before_name_cells" => array(nxRenderSubjectTableCell($sServedInCell, "nx-birthday-in-column")),
+        "name_actions" => nxBdRenderSubjectActions($aRow, $blShowActions)
+    ), $aOptions));
+}
+
 function nxBdRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings) {
     global $sBirthdayServedEmoji;
 
-    $iSubjectId = (int)$aRow["subject_id"];
-    $sBirthdayServedAction = $blShowActions ? "<a class=\"nx-item-action nx-birthday-served-action js-birthday-served\" href=\"#\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" title=\"Mark birthday served\" aria-label=\"Mark birthday served\"><span class=\"nx-copy-action-box\">" . $sBirthdayServedEmoji . "</span></a>" : "";
-    $sBirthdayInCell = nxHtmlValue($aRow["days_to_birthday"]) . ($sBirthdayServedAction != "" ? "&#8288;" . $sBirthdayServedAction : "");
-    return nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aBirthdaySettings, array(
-        "show_actions" => $blShowActions,
-        "item_subject_id" => $iSubjectId,
-        "before_name_cells" => array(nxRenderSubjectTableCell($sBirthdayInCell, "nx-birthday-in-column")),
-        "name_actions" => nxBdRenderSubjectActions($aRow, $blShowActions),
-        "birth_name_class" => "nx-column-step-two",
-        "birth_date_class" => "",
-        "death_date_class" => "nx-column-step-two",
-        "death_date_style" => "overflow-wrap: normal; white-space: nowrap; word-break: normal;",
+    return nxRenderServedSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings, "js-birthday-served", "Mark birthday served", $sBirthdayServedEmoji, array(
         "nickname_show_add_action" => true,
         "nickname_show_cell_copy_action" => true,
         "nickname_cell_copy_before_add_action" => false,
-        "address_class" => "nx-column-step-one",
         "address_show_add_action" => true,
         "address_show_cell_copy_action" => true,
         "address_cell_copy_before_add_action" => false,
@@ -4581,7 +4596,18 @@ function nxBdRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGro
     ));
 }
 
-function nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions) {
+function nxBdGetSubjectServedInfo($oPdo, $iSubjectId, $aRow) {
+    $aBirthdayInfo = nxBdGetBirthdayInfo(isset($aRow["birth_date"]) ? $aRow["birth_date"] : "");
+    if (!is_array($aBirthdayInfo)) {
+        return null;
+    }
+    if (nxBdIsBirthdayServed(nxBdFetchBirthdayServedRows($oPdo), $iSubjectId, $aBirthdayInfo["birthday_date"])) {
+        return null;
+    }
+    return $aBirthdayInfo;
+}
+
+function nxGetUpdatedServedSubjectResponse($oPdo, $iSubjectId, $aDisplaySettings, $blShowActions, $sInfoFunction, $sRenderFunction) {
     $aRows = nxFetchSubjectRows($oPdo, $iSubjectId);
     if (!$aRows) {
         return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
@@ -4591,16 +4617,13 @@ function nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $
     $aAddresses = nxFetchSubjectAddresses($oPdo, $iSubjectId);
     $aGroups = nxFetchSubjectGroups($oPdo, $iSubjectId);
     $aNotes = nxFetchSubjectNotes($oPdo, $iSubjectId);
-    $aHiddenInactive = nxGetHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aBirthdaySettings);
-    nxApplySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $aNotes, $aBirthdaySettings);
+    $aHiddenInactive = nxGetHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aDisplaySettings);
+    nxApplySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $aNotes, $aDisplaySettings);
     if (!$aRows || (string)$aRows[0]["subject_type"] != "person") {
         return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
     }
-    $aBirthdayInfo = nxBdGetBirthdayInfo(isset($aRows[0]["birth_date"]) ? $aRows[0]["birth_date"] : "");
+    $aBirthdayInfo = $sInfoFunction($oPdo, $iSubjectId, $aRows[0]);
     if (!is_array($aBirthdayInfo)) {
-        return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
-    }
-    if (nxBdIsBirthdayServed(nxBdFetchBirthdayServedRows($oPdo), $iSubjectId, $aBirthdayInfo["birthday_date"])) {
         return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
     }
     $aRows[0]["days_to_birthday"] = $aBirthdayInfo["days_to_birthday"];
@@ -4608,8 +4631,12 @@ function nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $
     return array(
         "success" => true,
         "subject_id" => $iSubjectId,
-        "row_html" => nxBdRenderSubjectRow($aRows[0], $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings)
+        "row_html" => $sRenderFunction($aRows[0], $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aDisplaySettings)
     );
+}
+
+function nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions) {
+    return nxGetUpdatedServedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions, "nxBdGetSubjectServedInfo", "nxBdRenderSubjectRow");
 }
 
 function nxCardDavRealm() {
@@ -6716,31 +6743,14 @@ function nxInterGetBirthdayInfo($sCommunicationServedAt) {
 }
 
 function nxInterFetchBirthdayServedRows($oPdo) {
-    $aServedRows = array();
-    $oStatement = $oPdo->query("SELECT subject_id, inter_served_at FROM ex_persons");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
-        $aServedRows[(int)$aRow["subject_id"]] = $aRow;
-    }
-    return $aServedRows;
+    return nxFetchPersonServedRows($oPdo, "inter_served_at");
 }
 
 function nxInterRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings) {
     global $sCommunicationServedEmoji;
 
-    $iSubjectId = (int)$aRow["subject_id"];
-    $sBirthdayServedAction = $blShowActions ? "<a class=\"nx-item-action nx-birthday-served-action js-communication-served\" href=\"#\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" title=\"Mark communication served\" aria-label=\"Mark communication served\"><span class=\"nx-copy-action-box\">" . $sCommunicationServedEmoji . "</span></a>" : "";
-    $sBirthdayInCell = nxHtmlValue($aRow["days_to_birthday"]) . ($sBirthdayServedAction != "" ? "&#8288;" . $sBirthdayServedAction : "");
-    return nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aBirthdaySettings, array(
-        "show_actions" => $blShowActions,
-        "item_subject_id" => $iSubjectId,
-        "before_name_cells" => array(nxRenderSubjectTableCell($sBirthdayInCell, "nx-birthday-in-column")),
-        "name_actions" => nxBdRenderSubjectActions($aRow, $blShowActions),
-        "birth_name_class" => "nx-column-step-two",
-        "birth_date_class" => "",
-        "death_date_class" => "nx-column-step-two",
-        "death_date_style" => "overflow-wrap: normal; white-space: nowrap; word-break: normal;",
+    return nxRenderServedSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings, "js-communication-served", "Mark communication served", $sCommunicationServedEmoji, array(
         "nickname_show_add_action" => true,
-        "address_class" => "nx-column-step-one",
         "address_show_add_action" => true,
         "contact_show_add_action" => true,
         "group_show_add_action" => true,
@@ -6748,34 +6758,14 @@ function nxInterRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $a
     ));
 }
 
-function nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions) {
-    $aRows = nxFetchSubjectRows($oPdo, $iSubjectId);
-    if (!$aRows) {
-        return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
-    }
-    $aContacts = nxFetchSubjectContacts($oPdo, $iSubjectId);
-    $aNicknames = nxFetchSubjectNicknames($oPdo, $iSubjectId);
-    $aAddresses = nxFetchSubjectAddresses($oPdo, $iSubjectId);
-    $aGroups = nxFetchSubjectGroups($oPdo, $iSubjectId);
-    $aNotes = nxFetchSubjectNotes($oPdo, $iSubjectId);
-    $aHiddenInactive = nxGetHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aBirthdaySettings);
-    nxApplySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $aNotes, $aBirthdaySettings);
-    if (!$aRows || (string)$aRows[0]["subject_type"] != "person") {
-        return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
-    }
+function nxInterGetSubjectServedInfo($oPdo, $iSubjectId, $aRow) {
     $aBirthdayServedRows = nxInterFetchBirthdayServedRows($oPdo);
     $sCommunicationServedAt = isset($aBirthdayServedRows[$iSubjectId]["inter_served_at"]) ? $aBirthdayServedRows[$iSubjectId]["inter_served_at"] : "";
-    $aBirthdayInfo = nxInterGetBirthdayInfo($sCommunicationServedAt);
-    if (!is_array($aBirthdayInfo)) {
-        return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
-    }
-    $aRows[0]["days_to_birthday"] = $aBirthdayInfo["days_to_birthday"];
-    $aRows[0]["birthday_date"] = $aBirthdayInfo["birthday_date"];
-    return array(
-        "success" => true,
-        "subject_id" => $iSubjectId,
-        "row_html" => nxInterRenderSubjectRow($aRows[0], $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings)
-    );
+    return nxInterGetBirthdayInfo($sCommunicationServedAt);
+}
+
+function nxInterGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions) {
+    return nxGetUpdatedServedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions, "nxInterGetSubjectServedInfo", "nxInterRenderSubjectRow");
 }
 
 function nxDiffEnsureDumpTable(&$aDump, $sTableName) {
