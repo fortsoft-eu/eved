@@ -287,7 +287,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
     try {
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("SELECT sc.id, sc.subject_id, sc.contact_id FROM ex_subject_contacts AS sc WHERE sc.id = :id FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT sc.id, sc.subject_id, sc.contact_id, sc.is_active AS current_is_active, c.contact_type_id AS current_contact_type_id, c.contact_value AS current_contact_value FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id WHERE sc.id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iSubjectContactId));
         $aSubjectContact = $oStatement->fetch(PDO::FETCH_ASSOC);
         if (!$aSubjectContact) {
@@ -295,6 +295,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             nxSendJsonAndExit(array("success" => false, "message" => "Contact link was not found."), 404);
         }
         $iContactId = (int)$aSubjectContact["contact_id"];
+        $blContactIdentityChanged = (int)$aSubjectContact["current_contact_type_id"] != $iContactTypeId || (string)$aSubjectContact["current_contact_value"] != $sContactValue;
+        $blContactVisibilityChanged = empty($aContactSettings["show_inactive_contacts"]) && (int)$aSubjectContact["current_is_active"] != $iIsActive;
+        $blReloadRequired = $blContactIdentityChanged || $blContactVisibilityChanged;
         $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
         $oStatement->execute(array(
             "contact_type_id" => $iContactTypeId,
@@ -312,7 +315,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         nxSendJsonAndExit(array(
             "success" => true,
             "subject_id" => (int)$aSubjectContact["subject_id"],
-            "reload_required" => true,
+            "reload_required" => $blReloadRequired,
             "contact" => nxAddContactTimestampTooltip($oPdo, array(
                 "subject_contact_id" => $iSubjectContactId,
                 "contact_id" => $iContactId,

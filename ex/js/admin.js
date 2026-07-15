@@ -3679,6 +3679,12 @@ document.addEventListener("DOMContentLoaded", function () {
         oDialogData.subjectRow = oSubjectRow || null;
         oDialogData.subjectId = oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : "";
         oDialogData.closed = false;
+        oDialogData.getCurrentSubjectRow = function () {
+            if (oDialogData.subjectRow && oDialogData.subjectRow.parentNode) {
+                return oDialogData.subjectRow;
+            }
+            return findAdminSubjectRowById(oDialogData.subjectId) || oDialogData.subjectRow;
+        };
         closeOnEscape = function (oEvent) {
             if (oEvent.key == "Escape") {
                 oDialogData.close();
@@ -3690,7 +3696,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             oDialogData.closed = true;
             document.removeEventListener("keydown", closeOnEscape);
-            finishAdminSubjectRowEdit(findAdminSubjectRowById(oDialogData.subjectId) || oDialogData.subjectRow, blSaved === true);
+            finishAdminSubjectRowEdit(oDialogData.getCurrentSubjectRow(), blSaved === true);
             closeSubjectDialog(oDialogData.dialog);
         };
         oDialogData.closeFromClick = function (oEvent) {
@@ -3760,7 +3766,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.body.appendChild(oDialogData.dialog);
         oDialogData.openedAt = new Date().getTime();
         lockAdminModalScroll();
-        beginAdminSubjectRowEdit(oDialogData.subjectRow || findAdminSubjectRowById(oDialogData.subjectId));
+        beginAdminSubjectRowEdit(oDialogData.getCurrentSubjectRow());
         if (oFocus) {
             focusAdminElement(oFocus, true);
         }
@@ -5189,6 +5195,33 @@ document.addEventListener("DOMContentLoaded", function () {
         appendAdminEncodedValue(oData, "contact_value", sValue);
     }
 
+    function clearContactRowFilterText(oItem) {
+        var oRow = oItem && oItem.closest ? oItem.closest("tr") : null;
+        if (oRow) {
+            oRow._quickTableFilterText = null;
+        }
+    }
+
+    function updateSubjectContactCell(oItem, aContact, blIsActive) {
+        var oCell = oItem && oItem.closest ? oItem.closest(".nx-contact-subject-cell") : null;
+        var blSubjectActive;
+        if (!oCell) {
+            return;
+        }
+        blSubjectActive = oCell.getAttribute("data-subject-active") != "0";
+        oCell.setAttribute("data-contact-type-id", aContact.contact_type_id || "");
+        oCell.setAttribute("data-contact-type", aContact.contact_type || "");
+        oCell.setAttribute("data-contact-type-name", aContact.contact_type_label || getContactTypeLabel(aContact.contact_type));
+        oCell.setAttribute("data-contact-value", aContact.contact_display_value || getContactDisplayValue(aContact.contact_type, aContact.contact_value));
+        oCell.setAttribute("data-contact-id", aContact.contact_id || "");
+        oCell.setAttribute("data-contact-note", aContact.note || "");
+        oCell.setAttribute("data-contact-primary", parseInt(aContact.is_primary, 10) === 1 ? "1" : "0");
+        oCell.setAttribute("data-contact-active", blIsActive ? "1" : "0");
+        removeAdminClass(oCell, "nx-contact-subject-active");
+        removeAdminClass(oCell, "nx-contact-subject-inactive");
+        addAdminClass(oCell, blSubjectActive && blIsActive ? "nx-contact-subject-active" : "nx-contact-subject-inactive");
+    }
+
     function updateContactElement(oItem, aContact) {
         var oType = oItem.querySelector(".nx-contact-type");
         var oNote = oItem.querySelector(".nx-contact-note");
@@ -5209,7 +5242,10 @@ document.addEventListener("DOMContentLoaded", function () {
         if (aContact.timestamp_tooltip) {
             oItem.setAttribute("data-timestamp-tooltip", aContact.timestamp_tooltip);
         }
-        oItem.className = blIsActive ? "nx-contact-item nx-list-item" : "nx-contact-item nx-list-item nx-contact-item-inactive";
+        removeAdminClass(oItem, "nx-contact-item-inactive");
+        if (!blIsActive) {
+            addAdminClass(oItem, "nx-contact-item-inactive");
+        }
         if (oType) {
             oType.textContent = sContactTypeLabel;
         }
@@ -5223,6 +5259,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (oInactive) {
             oInactive.textContent = blIsActive ? "" : getAdminEmoji("inactive");
         }
+        updateSubjectContactCell(oItem, aContact, blIsActive);
+        clearContactRowFilterText(oItem);
     }
 
     function updateSharedContactElements(aContact) {
@@ -5242,6 +5280,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 oType.textContent = sContactTypeLabel;
             }
             updateContactValueAndLink(aItems[iI], aContact.contact_type, sContactValue, false);
+            clearContactRowFilterText(aItems[iI]);
         }
     }
 
@@ -5263,13 +5302,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 closeDialog();
             }
         };
+        var getCurrentSubjectRow = function () {
+            if (oSubjectRow && oSubjectRow.parentNode) {
+                return oSubjectRow;
+            }
+            return findAdminSubjectRowById(sSubjectId) || oSubjectRow;
+        };
         var closeDialog = function (blSaved) {
             if (blClosed) {
                 return;
             }
             blClosed = true;
             document.removeEventListener("keydown", closeOnEscape);
-            finishAdminSubjectRowEdit(findAdminSubjectRowById(sSubjectId) || oSubjectRow, blSaved === true);
+            finishAdminSubjectRowEdit(getCurrentSubjectRow(), blSaved === true);
             closeAdminDialogElement(oDialog);
         };
         oDialog.className = "confirm-dialog";
@@ -5363,6 +5408,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     if (oItem) {
                         updateContactElement(oItem, aData.contact);
                     }
+                    refreshAdminTableFilter();
                 }
                 if (aData.subject_deleted && window.nxRemoveSubjectRow) {
                     window.nxRemoveSubjectRow(aData.subject_id);
