@@ -1534,39 +1534,60 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function getEventTableRow(oEvent) {
+        var oTarget = oEvent ? oEvent.target : null;
+        if (oTarget && oTarget.nodeType == 3) {
+            oTarget = oTarget.parentNode;
+        }
+        return oTarget && oTarget.closest ? oTarget.closest("table tbody tr") : null;
+    }
+
+    function isInsideTableRow(oRow, oTarget) {
+        if (!oRow || !oTarget) {
+            return false;
+        }
+        if (oTarget.nodeType == 3) {
+            oTarget = oTarget.parentNode;
+        }
+        return oTarget && oTarget.closest && oTarget.closest("table tbody tr") == oRow;
+    }
+
     function bindTableRow(oRow) {
-        if (!oRow || oRow.getAttribute("data-admin-row-bound") == "1") {
+        if (!oRow) {
             return;
         }
-        oRow.setAttribute("data-admin-row-bound", "1");
-        oRow.addEventListener("mouseenter", function () {
-            this.setAttribute("data-hover", "1");
-            applyRowColor(this);
-        });
-        oRow.addEventListener("mouseleave", function () {
-            this.setAttribute("data-hover", "0");
-            applyRowColor(this);
-        });
-        oRow.addEventListener("click", function (oEvent) {
-            if (isTableRowActionTarget(oEvent.target)) {
-                return;
-            }
-            this.setAttribute("data-selected", this.getAttribute("data-selected") == "1" ? "0" : "1");
-            applyRowColor(this);
-        });
         applyRowColor(oRow);
     }
 
-    function bindTableRows(oRoot) {
-        var aRows = oRoot ? oRoot.querySelectorAll("table tbody tr") : [];
-        for (var iI = 0; iI < aRows.length; iI += 1) {
-            bindTableRow(aRows[iI]);
+    document.addEventListener("mouseover", function (oEvent) {
+        var oRow = getEventTableRow(oEvent);
+        if (!oRow || isInsideTableRow(oRow, oEvent.relatedTarget)) {
+            return;
         }
-    }
+        oRow.setAttribute("data-hover", "1");
+        applyRowColor(oRow);
+    });
+
+    document.addEventListener("mouseout", function (oEvent) {
+        var oRow = getEventTableRow(oEvent);
+        if (!oRow || isInsideTableRow(oRow, oEvent.relatedTarget)) {
+            return;
+        }
+        oRow.setAttribute("data-hover", "0");
+        applyRowColor(oRow);
+    });
+
+    document.addEventListener("click", function (oEvent) {
+        var oRow = getEventTableRow(oEvent);
+        if (!oRow || isTableRowActionTarget(oEvent.target)) {
+            return;
+        }
+        oRow.setAttribute("data-selected", oRow.getAttribute("data-selected") == "1" ? "0" : "1");
+        applyRowColor(oRow);
+    });
 
     window.nxCopyAdminTableRowState = copyTableRowState;
     window.nxBindAdminTableRow = bindTableRow;
-    bindTableRows(document);
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1948,9 +1969,28 @@ document.addEventListener("DOMContentLoaded", function () {
         var aOperatorButtons = document.querySelectorAll(".js-filter-operator[data-filter-input=\"" + oFilter.id + "\"]");
         var aResetButtons = document.querySelectorAll(".js-filter-reset[data-filter-input=\"" + oFilter.id + "\"]");
         var iFilterTimer = null;
+        var iFilterJob = 0;
+        var iFilterChunkSize = 120;
 
         function isFilterActive() {
             return oFilter.value.replace(/^\s+|\s+$/g, "") !== "";
+        }
+
+        function getTableRows(oTable) {
+            if (oTable && oTable.tBodies && oTable.tBodies.length == 1) {
+                return oTable.tBodies[0].rows;
+            }
+            return oTable ? oTable.querySelectorAll("tbody tr") : [];
+        }
+
+        function scheduleFilterChunk(oCallback) {
+            if (window.requestAnimationFrame) {
+                window.requestAnimationFrame(oCallback);
+            } else if (window.setTimeout) {
+                window.setTimeout(oCallback, 0);
+            } else {
+                oCallback();
+            }
         }
 
         function getRowFilterText(oRow) {
@@ -1971,17 +2011,34 @@ document.addEventListener("DOMContentLoaded", function () {
             var oTable = document.getElementById(oFilter.getAttribute("data-table-filter"));
             var aExpression = buildFilterExpression(oFilter.value);
             var aRows;
+            var iJob;
+            var iIndex = 0;
+            var filterChunk = function () {
+                var iEnd;
+                if (iJob != iFilterJob) {
+                    return;
+                }
+                iEnd = Math.min(iIndex + iFilterChunkSize, aRows.length);
+                for (var iJ = iIndex; iJ < iEnd; iJ += 1) {
+                    setRowFilterVisible(aRows[iJ], rowMatchesFilterExpression(getRowFilterText(aRows[iJ]), aExpression));
+                }
+                iIndex = iEnd;
+                if (iIndex < aRows.length) {
+                    scheduleFilterChunk(filterChunk);
+                }
+            };
             refreshFilterFocusButton(oFilter);
             if (!oTable) {
                 return;
             }
-            aRows = oTable.querySelectorAll("tbody tr");
-            for (var iJ = 0; iJ < aRows.length; iJ += 1) {
-                setRowFilterVisible(aRows[iJ], rowMatchesFilterExpression(getRowFilterText(aRows[iJ]), aExpression));
-            }
+            iFilterJob += 1;
+            iJob = iFilterJob;
+            aRows = getTableRows(oTable);
+            filterChunk();
         };
 
         function scheduleFilterTable() {
+            iFilterJob += 1;
             if (!window.setTimeout || !window.clearTimeout) {
                 filterTable();
                 return;

@@ -314,10 +314,10 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-    var aRows = document.querySelectorAll("table tbody tr");
     var oOrderDetail = document.getElementById("order-detail");
     var oMessageBox = document.getElementById("message-box");
     var aSelectedOrderIds = [];
+    var aRelatedRowsCache = {};
     var sLockedOrderId = "";
     var sHoverColor = "#fff3cd";
     var sSelectedColor = "#cfe2ff";
@@ -368,10 +368,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function getRelatedRows(oRow) {
         var sOrderId = oRow.getAttribute("data-order-id");
+        var sCacheKey;
         if (!sOrderId) {
             return [oRow];
         }
-        return document.querySelectorAll("table tbody tr[data-order-id=\"" + sOrderId + "\"]");
+        sCacheKey = "order:" + sOrderId;
+        if (!aRelatedRowsCache[sCacheKey]) {
+            aRelatedRowsCache[sCacheKey] = document.querySelectorAll("table tbody tr[data-order-id=\"" + sOrderId + "\"]");
+        }
+        return aRelatedRowsCache[sCacheKey];
     }
 
     function getFirstRowByOrderId(sOrderId) {
@@ -390,7 +395,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function setOrderDetailText(sName, sValue) {
-        var oElement = document.querySelector('[data-detail="' + sName + '"]');
+        var oElement;
+        if (!oOrderDetail) {
+            return;
+        }
+        oElement = document.querySelector('[data-detail="' + sName + '"]');
         if (oElement) {
             oElement.textContent = sValue || "\u2014";
         }
@@ -438,9 +447,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var oRow = null;
         sLockedOrderId = aSelectedOrderIds.length ? aSelectedOrderIds[aSelectedOrderIds.length - 1] : "";
         oRow = getFirstRowByOrderId(sLockedOrderId);
-        if (oRow) {
+        if (oRow && oOrderDetail) {
             updateOrderDetail(oRow);
-        } else {
+        } else if (oOrderDetail) {
             clearOrderDetail();
         }
     }
@@ -571,38 +580,70 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }, true);
 
-    for (var iI = 0; iI < aRows.length; iI += 1) {
-        aRows[iI].addEventListener("mouseenter", function () {
-            setRelatedRowsAttribute(this, "data-hover", "1");
-            if (!sLockedOrderId && hasGroupBehavior(this)) {
-                updateOrderDetail(this);
-            }
-        });
-        aRows[iI].addEventListener("mouseleave", function () {
-            setRelatedRowsAttribute(this, "data-hover", "0");
-            if (!sLockedOrderId && hasGroupBehavior(this)) {
-                if (this.getAttribute("data-selected") == "1") {
-                    updateOrderDetail(this);
-                } else {
-                    clearOrderDetail();
-                }
-            }
-        });
-        aRows[iI].addEventListener("click", function () {
-            var sSelected = this.getAttribute("data-selected") == "1" ? "0" : "1";
-            var sOrderId = this.getAttribute("data-order-id");
-            setRelatedRowsAttribute(this, "data-selected", sSelected);
-            if (sOrderId) {
-                removeSelectedOrderId(sOrderId);
-                if (sSelected == "1") {
-                    aSelectedOrderIds.push(sOrderId);
-                }
-                setLockedOrderFromLastSelected();
+    function getEventTableRow(oEvent) {
+        var oTarget = oEvent ? oEvent.target : null;
+        if (oTarget && oTarget.nodeType == 3) {
+            oTarget = oTarget.parentNode;
+        }
+        return oTarget && oTarget.closest ? oTarget.closest("table tbody tr") : null;
+    }
+
+    function isInsideTableRow(oRow, oTarget) {
+        if (!oRow || !oTarget) {
+            return false;
+        }
+        if (oTarget.nodeType == 3) {
+            oTarget = oTarget.parentNode;
+        }
+        return oTarget && oTarget.closest && oTarget.closest("table tbody tr") == oRow;
+    }
+
+    document.addEventListener("mouseover", function (oEvent) {
+        var oRow = getEventTableRow(oEvent);
+        if (!oRow || isInsideTableRow(oRow, oEvent.relatedTarget)) {
+            return;
+        }
+        setRelatedRowsAttribute(oRow, "data-hover", "1");
+        if (!sLockedOrderId && hasGroupBehavior(oRow) && oOrderDetail) {
+            updateOrderDetail(oRow);
+        }
+    });
+
+    document.addEventListener("mouseout", function (oEvent) {
+        var oRow = getEventTableRow(oEvent);
+        if (!oRow || isInsideTableRow(oRow, oEvent.relatedTarget)) {
+            return;
+        }
+        setRelatedRowsAttribute(oRow, "data-hover", "0");
+        if (!sLockedOrderId && hasGroupBehavior(oRow) && oOrderDetail) {
+            if (oRow.getAttribute("data-selected") == "1") {
+                updateOrderDetail(oRow);
             } else {
                 clearOrderDetail();
             }
-        })
-    }
+        }
+    });
+
+    document.addEventListener("click", function (oEvent) {
+        var oRow = getEventTableRow(oEvent);
+        var sSelected;
+        var sOrderId;
+        if (!oRow) {
+            return;
+        }
+        sSelected = oRow.getAttribute("data-selected") == "1" ? "0" : "1";
+        sOrderId = oRow.getAttribute("data-order-id");
+        setRelatedRowsAttribute(oRow, "data-selected", sSelected);
+        if (sOrderId) {
+            removeSelectedOrderId(sOrderId);
+            if (sSelected == "1") {
+                aSelectedOrderIds.push(sOrderId);
+            }
+            setLockedOrderFromLastSelected();
+        } else if (oOrderDetail) {
+            clearOrderDetail();
+        }
+    })
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -982,9 +1023,28 @@ document.addEventListener("DOMContentLoaded", function () {
         var aOperatorButtons = document.querySelectorAll(".js-filter-operator[data-filter-input=\"" + oFilter.id + "\"]");
         var aResetButtons = document.querySelectorAll(".js-filter-reset[data-filter-input=\"" + oFilter.id + "\"]");
         var iFilterTimer = null;
+        var iFilterJob = 0;
+        var iFilterChunkSize = 120;
 
         function isFilterActive() {
             return oFilter.value.replace(/^\s+|\s+$/g, "") !== "";
+        }
+
+        function getTableRows(oTable) {
+            if (oTable && oTable.tBodies && oTable.tBodies.length == 1) {
+                return oTable.tBodies[0].rows;
+            }
+            return oTable ? oTable.querySelectorAll("tbody tr") : [];
+        }
+
+        function scheduleFilterChunk(oCallback) {
+            if (window.requestAnimationFrame) {
+                window.requestAnimationFrame(oCallback);
+            } else if (window.setTimeout) {
+                window.setTimeout(oCallback, 0);
+            } else {
+                oCallback();
+            }
         }
 
         function getRowFilterText(oRow) {
@@ -1005,17 +1065,34 @@ document.addEventListener("DOMContentLoaded", function () {
             var oTable = document.getElementById(oFilter.getAttribute("data-table-filter"));
             var aExpression = buildFilterExpression(oFilter.value);
             var aRows;
+            var iJob;
+            var iIndex = 0;
+            var filterChunk = function () {
+                var iEnd;
+                if (iJob != iFilterJob) {
+                    return;
+                }
+                iEnd = Math.min(iIndex + iFilterChunkSize, aRows.length);
+                for (var iJ = iIndex; iJ < iEnd; iJ += 1) {
+                    setRowFilterVisible(aRows[iJ], rowMatchesFilterExpression(getRowFilterText(aRows[iJ]), aExpression));
+                }
+                iIndex = iEnd;
+                if (iIndex < aRows.length) {
+                    scheduleFilterChunk(filterChunk);
+                }
+            };
             refreshFilterFocusButton(oFilter);
             if (!oTable) {
                 return;
             }
-            aRows = oTable.querySelectorAll("tbody tr");
-            for (var iJ = 0; iJ < aRows.length; iJ += 1) {
-                setRowFilterVisible(aRows[iJ], rowMatchesFilterExpression(getRowFilterText(aRows[iJ]), aExpression));
-            }
+            iFilterJob += 1;
+            iJob = iFilterJob;
+            aRows = getTableRows(oTable);
+            filterChunk();
         };
 
         function scheduleFilterTable() {
+            iFilterJob += 1;
             if (!window.setTimeout || !window.clearTimeout) {
                 filterTable();
                 return;
@@ -1223,14 +1300,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
     var aUserAgents = document.querySelectorAll(".js-user-agent");
-    var iI;
+    var iUserAgentIndex = 0;
+    var iUserAgentChunkSize = 40;
     if (!window.bowser || typeof window.bowser.parse != "function") {
         return;
     }
 
+    function scheduleUserAgentChunk(oCallback) {
+        if (window.requestAnimationFrame) {
+            window.requestAnimationFrame(oCallback);
+        } else if (window.setTimeout) {
+            window.setTimeout(oCallback, 0);
+        } else {
+            oCallback();
+        }
+    }
+
     function formatUserAgent(oElement) {
         var sUserAgent = oElement.getAttribute("data-user-agent") || "";
-        var oResult;
+        var oResult = null;
         var aParts = [];
         var sBrowserName = oElement.getAttribute("data-browser-name") || "";
         var sBrowserVersion = oElement.getAttribute("data-browser-version") || "";
@@ -1242,31 +1330,33 @@ document.addEventListener("DOMContentLoaded", function () {
         var sBrowser;
         var sOperatingSystem;
         var sDevice;
-        try {
-            oResult = window.bowser.parse(sUserAgent);
-        } catch (oException) {
-            logFilmException(oException);
-            return sUserAgent;
+        if (!sBrowserName || !sOsName || !sPlatform) {
+            try {
+                oResult = window.bowser.parse(sUserAgent);
+            } catch (oException) {
+                logFilmException(oException);
+                return sUserAgent;
+            }
         }
-        if (!sBrowserName && oResult.browser && oResult.browser.name) {
+        if (!sBrowserName && oResult && oResult.browser && oResult.browser.name) {
             sBrowserName = oResult.browser.name;
         }
-        if (!sBrowserVersion && oResult.browser && oResult.browser.version) {
+        if (!sBrowserVersion && oResult && oResult.browser && oResult.browser.version) {
             sBrowserVersion = oResult.browser.version;
         }
-        if (!sOsName && oResult.os && oResult.os.name) {
+        if (!sOsName && oResult && oResult.os && oResult.os.name) {
             sOsName = oResult.os.name;
         }
-        if (!sOsVersion && oResult.os) {
+        if (!sOsVersion && oResult && oResult.os) {
             sOsVersion = oResult.os.versionName || oResult.os.version || "";
         }
-        if (!sPlatform && oResult.platform && oResult.platform.type) {
+        if (!sPlatform && oResult && oResult.platform && oResult.platform.type) {
             sPlatform = oResult.platform.type;
         }
-        if (!sDeviceVendor && oResult.platform && oResult.platform.vendor) {
+        if (!sDeviceVendor && oResult && oResult.platform && oResult.platform.vendor) {
             sDeviceVendor = oResult.platform.vendor;
         }
-        if (!sDeviceModel && oResult.platform && oResult.platform.model) {
+        if (!sDeviceModel && oResult && oResult.platform && oResult.platform.model) {
             sDeviceModel = oResult.platform.model;
         }
         sBrowser = (sBrowserName + " " + sBrowserVersion).trim();
@@ -1290,9 +1380,21 @@ document.addEventListener("DOMContentLoaded", function () {
         return aParts.length ? aParts.join(" / ") : sUserAgent;
     }
 
-    for (iI = 0; iI < aUserAgents.length; iI += 1) {
-        aUserAgents[iI].textContent = formatUserAgent(aUserAgents[iI]);
+    function processUserAgentChunk() {
+        var iEnd = Math.min(iUserAgentIndex + iUserAgentChunkSize, aUserAgents.length);
+        var sValue;
+        for (; iUserAgentIndex < iEnd; iUserAgentIndex += 1) {
+            sValue = formatUserAgent(aUserAgents[iUserAgentIndex]);
+            if (aUserAgents[iUserAgentIndex].textContent != sValue) {
+                aUserAgents[iUserAgentIndex].textContent = sValue;
+            }
+        }
+        if (iUserAgentIndex < aUserAgents.length) {
+            scheduleUserAgentChunk(processUserAgentChunk);
+        }
     }
+
+    processUserAgentChunk();
 });
 
 document.addEventListener("DOMContentLoaded", function () {
