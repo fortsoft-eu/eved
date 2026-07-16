@@ -102,6 +102,28 @@ function refreshAdminTableFilter() {
     dispatchAdminInputEvent(document.querySelector(".js-table-filter"));
 }
 
+function replaceAdminTableCellHtml(oCurrentCell, sCellHtml) {
+    var oBody;
+    var oRow;
+    var oNewCell;
+    if (!oCurrentCell || !oCurrentCell.parentNode || !sCellHtml) {
+        return null;
+    }
+    oBody = document.createElement("tbody");
+    oBody.innerHTML = "<tr>" + sCellHtml + "</tr>";
+    oRow = oBody.querySelector("tr");
+    oNewCell = oRow ? oRow.querySelector("td, th") : null;
+    if (!oNewCell) {
+        return null;
+    }
+    oCurrentCell.parentNode.replaceChild(oNewCell, oCurrentCell);
+    oNewCell.parentNode._quickTableFilterText = null;
+    if (window.nxBindAdminTableRow) {
+        window.nxBindAdminTableRow(oNewCell.parentNode);
+    }
+    return oNewCell;
+}
+
 function closeAdminDialogElement(oDialog) {
     if (oDialog && oDialog.parentNode) {
         oDialog.parentNode.removeChild(oDialog);
@@ -4374,548 +4396,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var aContactButtons = document.querySelectorAll(".js-add-subject-contact, .js-edit-subject-contact");
     var blCanEditContacts = aContactButtons.length > 0 && window.fetch && window.FormData;
 
-
-    function getContactTypeLabel(sType) {
-        if (sType == "landline") {
-            return "Landline";
-        }
-        if (sType == "cell") {
-            return "Cell";
-        }
-        if (sType == "fax") {
-            return "Fax";
-        }
-        if (sType == "pager") {
-            return "Pager";
-        }
-        if (sType == "email") {
-            return "E-mail";
-        }
-        if (sType == "jabber") {
-            return "Jabber";
-        }
-        if (sType == "icq") {
-            return "ICQ";
-        }
-        if (sType == "skype") {
-            return "Skype";
-        }
-        if (sType == "web") {
-            return "Web";
-        }
-        if (sType == "signal") {
-            return "Signal";
-        }
-        if (sType == "whatsapp") {
-            return "WhatsApp";
-        }
-        if (sType == "telegram") {
-            return "Telegram";
-        }
-        if (sType == "messenger") {
-            return "Messenger";
-        }
-        if (sType == "viber") {
-            return "Viber";
-        }
-        if (sType == "discord") {
-            return "Discord";
-        }
-        if (sType == "matrix") {
-            return "Matrix";
-        }
-        if (sType == "session") {
-            return "Session";
-        }
-        if (sType == "twitter") {
-            return "Twitter";
-        }
-        if (sType == "mastodon") {
-            return "Mastodon";
-        }
-        if (sType == "bluesky") {
-            return "Bluesky";
-        }
-        if (sType == "threads") {
-            return "Threads";
-        }
-        if (sType == "facebook") {
-            return "Facebook";
-        }
-        if (sType == "instagram") {
-            return "Instagram";
-        }
-        if (sType == "tiktok") {
-            return "TikTok";
-        }
-        if (sType == "linkedin") {
-            return "LinkedIn";
-        }
-        if (sType == "github") {
-            return "GitHub";
-        }
-        if (sType == "gitlab") {
-            return "GitLab";
-        }
-        if (sType == "bitbucket") {
-            return "Bitbucket";
-        }
-        if (sType == "stackoverflow") {
-            return "Stack Overflow";
-        }
-        if (sType == "deviantart") {
-            return "DeviantArt";
-        }
-        if (sType == "furaffinity") {
-            return "Fur Affinity";
-        }
-        if (sType == "wikifur") {
-            return "WikiFur";
-        }
-        if (sType == "furryamino") {
-            return "Furry Amino";
-        }
-        if (sType == "sofurry") {
-            return "SoFurry";
-        }
-        if (sType == "artstation") {
-            return "ArtStation";
-        }
-        if (sType == "behance") {
-            return "Behance";
-        }
-        if (sType == "dribbble") {
-            return "Dribbble";
-        }
-        if (sType == "youtube") {
-            return "YouTube";
-        }
-        if (sType == "twitch") {
-            return "Twitch";
-        }
-        if (sType == "kick") {
-            return "Kick";
-        }
-        if (sType == "vimeo") {
-            return "Vimeo";
-        }
-        if (sType == "reddit") {
-            return "Reddit";
-        }
-        if (sType == "lemmy") {
-            return "Lemmy";
-        }
-        if (sType == "steam") {
-            return "Steam";
-        }
-        if (sType == "xbox") {
-            return "Xbox";
-        }
-        if (sType == "playstation") {
-            return "PlayStation";
-        }
-        if (sType == "nintendo") {
-            return "Nintendo";
-        }
-        if (sType == "npm") {
-            return "npm";
-        }
-        if (sType == "pypi") {
-            return "PyPI";
-        }
-        if (sType == "docker") {
-            return "Docker";
-        }
-        if (sType == "codeberg") {
-            return "Codeberg";
-        }
-        if (sType == "paypal") {
-            return "PayPal";
-        }
-        if (sType == "revolut") {
-            return "Revolut";
-        }
-        if (sType == "wise") {
-            return "Wise";
-        }
-        if (sType == "bankaccount") {
-            return "Bank Account";
-        }
-        if (sType == "orcid") {
-            return "ORCID";
-        }
-        if (sType == "goodreads") {
-            return "Goodreads";
-        }
-        if (sType == "lastfm") {
-            return "Last.fm";
-        }
-        if (sType == "signaly") {
-            return "Signaly";
-        }
-        return "Other";
-    }
-
-    function decodeContactUriPart(sValue) {
-        try {
-            return decodeURIComponent(sValue);
-        } catch (oException) {
-            logAdminException(oException);
-            return sValue;
-        }
-    }
-
-    function getYouTubeContactHref(sValue) {
-        var sText = (sValue || "").replace(/^\s+|\s+$/g, "");
-        var aMatch;
-        var oUrl;
-        var sPath;
-        var blLooksLikeUrl = false;
-        if (!sText) {
-            return "";
-        }
-        if (/^\/\//.test(sText)) {
-            sText = "https:" + sText;
-        }
-        blLooksLikeUrl = /^https?:\/\//i.test(sText) || /^www\./i.test(sText) || /^(youtube\.com|www\.youtube\.com)(?:[\/:?#].*)?$/i.test(sText) || /^[A-Za-z0-9.-]+\.[A-Za-z]{2,}[\/:?#].*$/i.test(sText);
-        if (blLooksLikeUrl) {
-            try {
-                oUrl = new URL(/^https?:\/\//i.test(sText) ? sText : "https://" + sText);
-                if (oUrl.hostname.toLowerCase() != "youtube.com" && oUrl.hostname.toLowerCase() != "www.youtube.com") {
-                    return "";
-                }
-                sPath = oUrl.pathname.replace(/^\/+|\/+$/g, "");
-                aMatch = sPath.match(/^(user|channel)\/([^\/]+)$/i);
-                if (aMatch) {
-                    return "https://www.youtube.com/" + aMatch[1].toLowerCase() + "/" + encodeURIComponent(decodeContactUriPart(aMatch[2]));
-                }
-                aMatch = sPath.match(/^@([^\/]+)$/);
-                if (aMatch) {
-                    return "https://www.youtube.com/@" + encodeURIComponent(decodeContactUriPart(aMatch[1]).replace(/^@+/, ""));
-                }
-                return sPath ? "https://www.youtube.com/" + sPath : "";
-            } catch (oException) {
-                logAdminException(oException);
-                return "";
-            }
-        }
-        aMatch = sText.match(/^(user|channel)\/([^\/?#]+)\/?$/i);
-        if (aMatch) {
-            return "https://www.youtube.com/" + aMatch[1].toLowerCase() + "/" + encodeURIComponent(decodeContactUriPart(aMatch[2]));
-        }
-        aMatch = sText.match(/^@([^\/?#]+)\/?$/);
-        if (aMatch) {
-            return "https://www.youtube.com/@" + encodeURIComponent(decodeContactUriPart(aMatch[1]));
-        }
-        if (/[\/:?#]/.test(sText)) {
-            return "";
-        }
-        return "https://www.youtube.com/@" + encodeURIComponent(sText.replace(/^@+/, ""));
-    }
-
-    function getTelegramContactHost(sHost) {
-        sHost = (sHost || "").toLowerCase().replace(/^www\./, "");
-        if (sHost == "t.me" || sHost == "telegram.me" || sHost == "telegram.dog") {
-            return sHost;
-        }
-        return "";
-    }
-
-    function getTelegramInviteToken(sValue, blRequireMarker) {
-        var sText = decodeContactUriPart(sValue || "");
-        var blMarked = false;
-        if (sText.charAt(0) == "+") {
-            sText = sText.substring(1);
-            blMarked = true;
-        } else if (sText.charAt(0) == " ") {
-            sText = sText.substring(1);
-            blMarked = true;
-        }
-        sText = sText.replace(/^\s+|\s+$/g, "");
-        if (blRequireMarker && !blMarked) {
-            return "";
-        }
-        return /^[A-Za-z0-9_-]{6,128}$/.test(sText) ? sText : "";
-    }
-
-    function getTelegramContactHrefFromPath(sHost, sPath) {
-        var aSegments;
-        var sHandle;
-        var sKind;
-        var sToken;
-        sHost = getTelegramContactHost(sHost);
-        sPath = (sPath || "").replace(/^\/+|\/+$/g, "");
-        aSegments = sPath ? sPath.split("/") : [];
-        if (!sHost || aSegments.length < 1 || aSegments.length > 2) {
-            return "";
-        }
-        if (aSegments.length == 1) {
-            sToken = getTelegramInviteToken(aSegments[0], true);
-            if (sToken) {
-                return "https://" + sHost + "/joinchat/" + encodeURIComponent(sToken);
-            }
-            sHandle = decodeContactUriPart(aSegments[0]).replace(/^@+/, "");
-            return /^[A-Za-z0-9_]{5,32}$/.test(sHandle) ? "https://" + sHost + "/" + encodeURIComponent(sHandle) : "";
-        }
-        sKind = decodeContactUriPart(aSegments[0]).toLowerCase();
-        if (sKind == "joinchat") {
-            sToken = getTelegramInviteToken(aSegments[1], false);
-            return sToken ? "https://" + sHost + "/joinchat/" + encodeURIComponent(sToken) : "";
-        }
-        if (sKind == "addstickers" || sKind == "setlanguage") {
-            sToken = decodeContactUriPart(aSegments[1] || "").replace(/^\s+|\s+$/g, "");
-            sToken = /^[A-Za-z0-9_]{1,128}$/.test(sToken) ? sToken : "";
-            return sToken ? "https://" + sHost + "/" + sKind + "/" + encodeURIComponent(sToken) : "";
-        }
-        return "";
-    }
-
-    function getTelegramContactHref(sValue) {
-        var sRawText = sValue || "";
-        var sText = sRawText.replace(/^\s+|\s+$/g, "");
-        var aMatch;
-        var oUrl;
-        var sHost;
-        var sToken;
-        var sHandle;
-        if (!sText) {
-            return "";
-        }
-        if (/^\/\//.test(sText)) {
-            sText = "https:" + sText;
-        }
-        if (/^https?:\/\//i.test(sText) || /^(www\.)?(t\.me|telegram\.me|telegram\.dog)(?:[\/:?#].*)?$/i.test(sText)) {
-            try {
-                oUrl = new URL(/^https?:\/\//i.test(sText) ? sText : "https://" + sText);
-                sHost = getTelegramContactHost(oUrl.hostname);
-                return sHost ? getTelegramContactHrefFromPath(sHost, oUrl.pathname) : "";
-            } catch (oException) {
-                logAdminException(oException);
-                return "";
-            }
-        }
-        aMatch = sText.match(/^(joinchat|addstickers|setlanguage)\/(.+)$/i);
-        if (aMatch) {
-            return getTelegramContactHrefFromPath("t.me", aMatch[1] + "/" + aMatch[2]);
-        }
-        if (sRawText.charAt(0) == " " || sText.charAt(0) == "+" || /^%20/i.test(sText)) {
-            sToken = getTelegramInviteToken(sRawText.charAt(0) == " " ? sRawText : sText, true);
-            return sToken ? "https://t.me/joinchat/" + encodeURIComponent(sToken) : "";
-        }
-        sHandle = sText.replace(/^@+/, "");
-        return /^[A-Za-z0-9_]{5,32}$/.test(sHandle) ? "https://t.me/" + encodeURIComponent(sHandle) : "";
-    }
-
-    function getIcqContactDisplayValue(sValue) {
-        var sText = (sValue || "").replace(/^\s+|\s+$/g, "");
-        var sDigits = "";
-        var sResult;
-        if (!sText) {
-            return "";
-        }
-        if (/^[0-9]{5,9}$/.test(sText)) {
-            sDigits = sText;
-        } else if (/^[0-9]{1,3}(?:-[0-9]{3}){1,2}$/.test(sText)) {
-            sDigits = sText.replace(/-/g, "");
-        } else {
-            return sValue || "";
-        }
-        if (sDigits.length < 5 || sDigits.length > 9) {
-            return sValue || "";
-        }
-        if (sDigits.length < 7) {
-            sResult = sDigits.slice(0, -3) + "-" + sDigits.slice(-3);
-        } else {
-            sResult = sDigits.slice(0, -6) + "-" + sDigits.slice(-6, -3) + "-" + sDigits.slice(-3);
-        }
-        return sText.indexOf("-") == -1 || sText == sResult ? sResult : (sValue || "");
-    }
-
-    function getSkypeContactDisplayValue(sValue) {
-        var sText = (sValue || "").replace(/^\s+|\s+$/g, "");
-        if (!sText) {
-            return "";
-        }
-        if (/^[A-Za-z][A-Za-z0-9._,-]{5,31}$/.test(sText)) {
-            return sText;
-        }
-        if (/^live:[A-Za-z0-9._-]{1,64}$/i.test(sText)) {
-            return sText;
-        }
-        return sValue || "";
-    }
-
-    function isPhoneContactType(sType) {
-        sType = getContactTypeKey(sType);
-        return sType == "landline" || sType == "cell" || sType == "fax" || sType == "pager";
-    }
-
-    function getContactTypeKey(sType) {
-        return (sType || "").replace(/^\s+|\s+$/g, "").toLowerCase();
-    }
-
-    function isKnownExternalContactType(sType) {
-        sType = getContactTypeKey(sType);
-        return sType == "wikifur" || sType == "web" || sType == "telegram" || sType == "messenger" || sType == "twitter" || sType == "mastodon" || sType == "bluesky" || sType == "threads" || sType == "facebook" || sType == "instagram" || sType == "tiktok" || sType == "linkedin" || sType == "github" || sType == "gitlab" || sType == "bitbucket" || sType == "stackoverflow" || sType == "deviantart" || sType == "furaffinity" || sType == "sofurry" || sType == "artstation" || sType == "behance" || sType == "dribbble" || sType == "youtube" || sType == "twitch" || sType == "kick" || sType == "vimeo" || sType == "reddit" || sType == "lemmy" || sType == "steam" || sType == "npm" || sType == "pypi" || sType == "docker" || sType == "codeberg" || sType == "paypal" || sType == "revolut" || sType == "orcid" || sType == "goodreads" || sType == "lastfm" || sType == "signaly";
-    }
-
-    function getWebContactHref(sValue) {
-        var sText = (sValue || "").replace(/^\s+|\s+$/g, "");
-        if (!sText) {
-            return "";
-        }
-        if (/^https?:\/\//i.test(sText)) {
-            return sText;
-        }
-        if (/^\/\//.test(sText)) {
-            return "https:" + sText;
-        }
-        return "https://" + sText;
-    }
-
-    function getContactHref(sType, sValue) {
-        var sText = (sValue || "").replace(/^\s+|\s+$/g, "");
-        var sPhone;
-        sType = getContactTypeKey(sType);
-        if (isPhoneContactType(sType)) {
-            sPhone = (sValue || "").replace(/[^0-9+]/g, "");
-            return sPhone ? "tel:" + sPhone : "";
-        }
-        if (sType == "email") {
-            return "mailto:" + (sValue || "");
-        }
-        if (sType == "jabber") {
-            return sText ? "xmpp:" + sText : "";
-        }
-        if (sType == "matrix") {
-            return sText ? "https://matrix.to/#/" + encodeURIComponent(sText) : "";
-        }
-        if (sType == "whatsapp") {
-            sPhone = (sValue || "").replace(/[^0-9+]/g, "");
-            return sPhone ? "https://wa.me/" + sPhone.replace(/^\+/, "") : "";
-        }
-        if (sType == "viber") {
-            sPhone = (sValue || "").replace(/[^0-9+]/g, "");
-            return sPhone ? "viber://chat?number=%2B" + sPhone.replace(/^\+/, "") : "";
-        }
-        if (sType == "telegram") {
-            return getTelegramContactHref(sValue);
-        }
-        if (sType == "web") {
-            return getWebContactHref(sValue);
-        }
-        if (sType == "youtube") {
-            return getYouTubeContactHref(sValue);
-        }
-        if (isKnownExternalContactType(sType) && /^https?:\/\//i.test(sText)) {
-            return sText;
-        }
-        return "";
-    }
-
-    function getContactDisplayValue(sType, sValue) {
-        sType = getContactTypeKey(sType);
-        if (isPhoneContactType(sType)) {
-            return sValue || "";
-        }
-        if (sType == "web") {
-            return getContactHref(sType, sValue) || (sValue || "");
-        }
-        if (sType == "youtube") {
-            return getYouTubeContactHref(sValue) || (sValue || "");
-        }
-        if (sType == "telegram") {
-            return getTelegramContactHref(sValue) || (sValue || "");
-        }
-        if (sType == "icq") {
-            return getIcqContactDisplayValue(sValue);
-        }
-        if (sType == "skype") {
-            return getSkypeContactDisplayValue(sValue);
-        }
-        return sValue || "";
-    }
-
-    function getContactLinkEmoji(sType) {
-        sType = getContactTypeKey(sType);
-        if (sType == "email") {
-            return getAdminEmoji("contact-email");
-        }
-        if (sType == "landline") {
-            return getAdminEmoji("contact-landline");
-        }
-        if (sType == "cell") {
-            return getAdminEmoji("contact-cell");
-        }
-        if (sType == "fax") {
-            return getAdminEmoji("contact-fax");
-        }
-        if (sType == "pager") {
-            return getAdminEmoji("contact-pager");
-        }
-        if (sType == "web") {
-            return getAdminEmoji("contact-web");
-        }
-        if (sType == "telegram") {
-            return getAdminEmoji("contact-telegram");
-        }
-        if (sType == "whatsapp" || sType == "viber" || sType == "jabber" || sType == "matrix") {
-            return getAdminEmoji("contact-message");
-        }
-        if (sType == "youtube") {
-            return getAdminEmoji("contact-youtube");
-        }
-        if (isKnownExternalContactType(sType)) {
-            return getAdminEmoji("contact-web");
-        }
-        return "";
-    }
-
-    function getContactLinkLabel(sType) {
-        sType = getContactTypeKey(sType);
-        if (sType == "email") {
-            return "Send e-mail";
-        }
-        if (sType == "landline") {
-            return "Call landline";
-        }
-        if (sType == "cell") {
-            return "Call cell phone";
-        }
-        if (sType == "fax") {
-            return "Call fax";
-        }
-        if (sType == "pager") {
-            return "Call pager";
-        }
-        if (sType == "web") {
-            return "Open web";
-        }
-        if (sType == "telegram") {
-            return "Open Telegram";
-        }
-        if (sType == "whatsapp") {
-            return "Open WhatsApp";
-        }
-        if (sType == "viber") {
-            return "Open Viber";
-        }
-        if (sType == "jabber") {
-            return "Open Jabber";
-        }
-        if (sType == "matrix") {
-            return "Open Matrix";
-        }
-        if (sType == "youtube") {
-            return "Open YouTube";
-        }
-        if (isKnownExternalContactType(sType)) {
-            return "Open web";
-        }
-        return "";
-    }
-
-
     function showContactCopyResult(oButton, blSuccess) {
         var oBox = oButton.querySelector ? oButton.querySelector(".nx-copy-action-box") : null;
         var sText = oButton.getAttribute("data-copy-text") || (oBox ? oBox.textContent : oButton.textContent);
@@ -4948,106 +4428,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         showContactCopyResult(oButton, copyAdminTextWithTextarea(sValue));
-    }
-
-    function updateContactValueGroupTooltip(oItem) {
-        var oGroup = oItem ? oItem.querySelector(".nx-contact-db-values") : null;
-        var sTooltip = oItem ? (oItem.getAttribute("data-timestamp-tooltip") || "") : "";
-        if (!oGroup) {
-            return;
-        }
-        if (sTooltip) {
-            oGroup.title = sTooltip;
-        } else {
-            oGroup.removeAttribute("title");
-        }
-    }
-
-    function createContactCopyElement(sValue) {
-        var oCopy;
-        var oBox;
-        if (!sValue) {
-            return null;
-        }
-        oCopy = document.createElement("a");
-        oCopy.className = "nx-contact-copy";
-        oCopy.href = "#";
-        oCopy.title = "Copy";
-        oCopy.setAttribute("aria-label", "Copy");
-        oBox = document.createElement("span");
-        oBox.className = "nx-copy-action-box";
-        oBox.textContent = getAdminEmoji("copy");
-        oCopy.appendChild(oBox);
-        return oCopy;
-    }
-
-    function createContactLinkElement(sType, sValue, blInvalid) {
-        var sHref = getContactHref(sType, sValue);
-        var sLabel = getContactLinkLabel(sType);
-        var oLink;
-        if (blInvalid) {
-            return null;
-        }
-        if (!sHref) {
-            return null;
-        }
-        oLink = document.createElement("a");
-        oLink.className = "nx-contact-link";
-        oLink.href = sHref;
-        oLink.title = sLabel;
-        oLink.setAttribute("aria-label", sLabel);
-        oLink.textContent = getContactLinkEmoji(sType);
-        if (/^https?:\/\//i.test(sHref)) {
-            oLink.target = "_blank";
-            oLink.rel = "noopener noreferrer";
-        }
-        oLink.addEventListener("click", function (oEvent) {
-            oEvent.stopPropagation();
-        });
-        return oLink;
-    }
-
-    function updateContactValueAndLink(oItem, sType, sValue, blInvalidOverride) {
-        var oValue = oItem.querySelector(".nx-contact-value");
-        var aLinks = oItem.querySelectorAll(".nx-contact-copy, .nx-contact-link");
-        var blInvalid = typeof blInvalidOverride == "boolean" ? blInvalidOverride : false;
-        var oGroup;
-        var oActionAnchor;
-        var oParent;
-        var oReference;
-        var oNext;
-        if (typeof blInvalidOverride != "boolean" && oValue && oValue.className.indexOf("nx-invalid-contact-value") !== -1) {
-            blInvalid = true;
-        }
-        var oNewValue = document.createElement("span");
-        var oNewCopy = createContactCopyElement(sValue);
-        var oNewLink = createContactLinkElement(sType, sValue, blInvalid);
-        oNewValue.className = blInvalid ? "nx-contact-value nx-invalid-contact-value" : "nx-contact-value";
-        oNewValue.textContent = getContactDisplayValue(sType, sValue);
-        for (var iI = 0; iI < aLinks.length; iI += 1) {
-            aLinks[iI].parentNode.removeChild(aLinks[iI]);
-        }
-        if (oValue) {
-            oValue.parentNode.replaceChild(oNewValue, oValue);
-            oGroup = oNewValue.closest ? oNewValue.closest(".nx-contact-db-values") : null;
-            oActionAnchor = oGroup || oNewValue;
-            oParent = oActionAnchor.parentNode;
-            oNext = oActionAnchor.nextSibling;
-            if (oNext && oNext.nodeType === 3 && /^\s*$/.test(oNext.nodeValue)) {
-                oNext.parentNode.removeChild(oNext);
-            }
-            oReference = oActionAnchor.nextSibling;
-            if (oNewCopy) {
-                oParent.insertBefore(oNewCopy, oReference);
-            }
-            if (oNewLink) {
-                if (!oNewCopy) {
-                    oParent.insertBefore(document.createTextNode(" "), oReference);
-                }
-                oParent.insertBefore(oNewLink, oReference);
-            }
-        }
-        updateContactValueGroupTooltip(oItem);
     }
 
     document.addEventListener("click", function (oEvent) {
@@ -5168,104 +4548,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    function clearContactRowFilterText(oItem) {
-        var oRow = oItem && oItem.closest ? oItem.closest("tr") : null;
-        if (oRow) {
-            oRow._quickTableFilterText = null;
-        }
-    }
-
-    function updateSubjectContactCell(oItem, aContact, blIsActive) {
-        var oCell = oItem && oItem.closest ? oItem.closest(".nx-contact-subject-cell") : null;
-        var blSubjectActive;
-        if (!oCell) {
-            return;
-        }
-        blSubjectActive = oCell.getAttribute("data-subject-active") != "0";
-        oCell.setAttribute("data-contact-type-id", aContact.contact_type_id || "");
-        oCell.setAttribute("data-contact-type", aContact.contact_type || "");
-        oCell.setAttribute("data-contact-type-name", aContact.contact_type_label || getContactTypeLabel(aContact.contact_type));
-        oCell.setAttribute("data-contact-value", aContact.contact_display_value || getContactDisplayValue(aContact.contact_type, aContact.contact_value));
-        oCell.setAttribute("data-contact-id", aContact.contact_id || "");
-        oCell.setAttribute("data-contact-note", aContact.note || "");
-        oCell.setAttribute("data-contact-primary", parseInt(aContact.is_primary, 10) === 1 ? "1" : "0");
-        oCell.setAttribute("data-contact-active", blIsActive ? "1" : "0");
-        removeAdminClass(oCell, "nx-contact-subject-active");
-        removeAdminClass(oCell, "nx-contact-subject-inactive");
-        addAdminClass(oCell, blSubjectActive && blIsActive ? "nx-contact-subject-active" : "nx-contact-subject-inactive");
-    }
-
-    function updateContactElement(oItem, aContact) {
-        var oType = oItem.querySelector(".nx-contact-type");
-        var oNote = oItem.querySelector(".nx-contact-note");
-        var oPrimary = oItem.querySelector(".nx-contact-primary");
-        var oInactive = oItem.querySelector(".nx-contact-inactive-label");
-        var blIsPrimary = parseInt(aContact.is_primary, 10) === 1;
-        var blIsActive = parseInt(aContact.is_active, 10) === 1;
-        var sContactTypeLabel = aContact.contact_type_label || getContactTypeLabel(aContact.contact_type);
-        var sContactValue = aContact.contact_display_value || getContactDisplayValue(aContact.contact_type, aContact.contact_value);
-        oItem.setAttribute("data-contact-type-id", aContact.contact_type_id || "");
-        oItem.setAttribute("data-contact-type", aContact.contact_type || "");
-        oItem.setAttribute("data-contact-type-name", sContactTypeLabel);
-        oItem.setAttribute("data-contact-value", sContactValue);
-        oItem.setAttribute("data-contact-id", aContact.contact_id || "");
-        oItem.setAttribute("data-contact-note", aContact.note || "");
-        oItem.setAttribute("data-contact-primary", blIsPrimary ? "1" : "0");
-        oItem.setAttribute("data-contact-active", blIsActive ? "1" : "0");
-        if (aContact.timestamp_tooltip) {
-            oItem.setAttribute("data-timestamp-tooltip", aContact.timestamp_tooltip);
-        } else {
-            oItem.removeAttribute("data-timestamp-tooltip");
-        }
-        oItem.removeAttribute("title");
-        removeAdminClass(oItem, "nx-contact-item-inactive");
-        if (!blIsActive) {
-            addAdminClass(oItem, "nx-contact-item-inactive");
-        }
-        if (oType) {
-            oType.textContent = sContactTypeLabel;
-            oType.removeAttribute("title");
-        }
-        updateContactValueAndLink(oItem, aContact.contact_type, sContactValue, false);
-        if (oNote) {
-            oNote.textContent = aContact.note ? " (" + aContact.note + ")" : "";
-        }
-        if (oPrimary) {
-            oPrimary.textContent = blIsPrimary ? getAdminEmoji("primary") : "";
-        }
-        if (oInactive) {
-            oInactive.textContent = blIsActive ? "" : getAdminEmoji("inactive");
-        }
-        updateSubjectContactCell(oItem, aContact, blIsActive);
-        clearContactRowFilterText(oItem);
-    }
-
-    function updateSharedContactElements(aContact) {
-        var aItems = document.querySelectorAll(".nx-contact-item[data-contact-id=\"" + aContact.contact_id + "\"]");
-        var sContactTypeLabel = aContact.contact_type_label || getContactTypeLabel(aContact.contact_type);
-        var sContactValue = aContact.contact_display_value || getContactDisplayValue(aContact.contact_type, aContact.contact_value);
-        for (var iI = 0; iI < aItems.length; iI += 1) {
-            var oType = aItems[iI].querySelector(".nx-contact-type");
-            aItems[iI].setAttribute("data-contact-type-id", aContact.contact_type_id || "");
-            aItems[iI].setAttribute("data-contact-type", aContact.contact_type || "");
-            aItems[iI].setAttribute("data-contact-type-name", sContactTypeLabel);
-            aItems[iI].setAttribute("data-contact-value", sContactValue);
-            if (aContact.timestamp_tooltip) {
-                aItems[iI].setAttribute("data-timestamp-tooltip", aContact.timestamp_tooltip);
-            } else {
-                aItems[iI].removeAttribute("data-timestamp-tooltip");
-            }
-            aItems[iI].removeAttribute("title");
-            if (oType) {
-                oType.textContent = sContactTypeLabel;
-                oType.removeAttribute("title");
-            }
-            updateContactValueAndLink(aItems[iI], aContact.contact_type, sContactValue, false);
-            clearContactRowFilterText(aItems[iI]);
-        }
-    }
-    window.nxUpdateSharedContactElements = updateSharedContactElements;
-
     function openContactDialog(oItem, oSubjectRowParam, blNewContact) {
         var oDialog = document.createElement("div");
         var oForm = document.createElement("form");
@@ -5385,17 +4667,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     window.location.reload();
                     return;
                 }
-                if (aData.contact) {
-                    updateSharedContactElements(aData.contact);
-                    if (oItem) {
-                        updateContactElement(oItem, aData.contact);
-                    }
-                    refreshAdminTableFilter();
-                }
                 if (aData.subject_deleted && window.nxRemoveSubjectRow) {
                     window.nxRemoveSubjectRow(aData.subject_id);
                     closeDialog(true);
                     return;
+                }
+                if (aData.subject_cell_html && oItem) {
+                    replaceAdminTableCellHtml(oItem.closest(".nx-contact-subject-cell"), aData.subject_cell_html);
+                    refreshAdminTableFilter();
                 }
                 if (aData.row_html && window.nxReplaceSubjectRow) {
                     window.nxReplaceSubjectRow(aData.subject_id, aData.row_html);
@@ -5556,12 +4835,6 @@ document.addEventListener("DOMContentLoaded", function () {
             if (aData.reload_required) {
                 window.location.reload();
                 return;
-            }
-            if (aData.contact) {
-                if (window.nxUpdateSharedContactElements) {
-                    window.nxUpdateSharedContactElements(aData.contact);
-                }
-                refreshAdminTableFilter();
             }
             closeSharedContactDialog(true);
         }).catch(function (oException) {
@@ -5814,76 +5087,6 @@ document.addEventListener("DOMContentLoaded", function () {
         oCurrentSubjectCell = null;
     }
 
-    function getAddressCellForSubjectCell(oCell) {
-        var oRow = oCell ? oCell.parentNode : null;
-        var oAddressCell;
-        while (oRow) {
-            oAddressCell = oRow.querySelector ? oRow.querySelector(".nx-address-cell") : null;
-            if (oAddressCell) {
-                return oAddressCell;
-            }
-            oRow = oRow.previousElementSibling;
-        }
-        return null;
-    }
-
-    function updateAddressTimestampTooltip(oSubjectCell, sTimestampTooltip) {
-        var oAddressCell;
-        var oAddressValue;
-        if (!sTimestampTooltip) {
-            return;
-        }
-        oAddressCell = getAddressCellForSubjectCell(oSubjectCell);
-        if (!oAddressCell || !oAddressCell.getAttribute("data-timestamp-tooltip")) {
-            return;
-        }
-        oAddressCell.setAttribute("data-timestamp-tooltip", sTimestampTooltip);
-        oAddressValue = oAddressCell.querySelector(".nx-subject-item-value");
-        if (oAddressValue) {
-            oAddressValue.title = sTimestampTooltip;
-        }
-    }
-
-    function updateSubjectAddressCell(oCell, oForm, sTimestampTooltip) {
-        var oPrimaryFlag;
-        var oInactiveFlag;
-        var oSubjectValue;
-        var sAddressType;
-        var blIsPrimary;
-        var blIsActive;
-        var blSubjectActive;
-        if (!oCell || !oForm) {
-            return;
-        }
-        sAddressType = getField(oForm, "address_type").value;
-        blIsPrimary = getField(oForm, "is_primary").checked;
-        blIsActive = getField(oForm, "is_active").checked;
-        blSubjectActive = oCell.getAttribute("data-subject-active") != "0";
-        oCell.setAttribute("data-address-type", sAddressType);
-        oCell.setAttribute("data-note", getField(oForm, "note").value);
-        oCell.setAttribute("data-primary", blIsPrimary ? "1" : "0");
-        oCell.setAttribute("data-active", blIsActive ? "1" : "0");
-        removeAdminClass(oCell, "nx-address-subject-active");
-        removeAdminClass(oCell, "nx-address-subject-inactive");
-        addAdminClass(oCell, blSubjectActive && blIsActive ? "nx-address-subject-active" : "nx-address-subject-inactive");
-        oSubjectValue = oCell.querySelector(".nx-subject-item-value");
-        if (oSubjectValue) {
-            removeAdminClass(oSubjectValue, "nx-subject-address-main-value");
-            if (sAddressType == "main") {
-                addAdminClass(oSubjectValue, "nx-subject-address-main-value");
-            }
-        }
-        oPrimaryFlag = oCell.querySelector(".nx-subject-item-flags span[title=\"Primary\"]");
-        if (oPrimaryFlag) {
-            oPrimaryFlag.textContent = blIsPrimary ? getAdminEmoji("primary") : "";
-        }
-        oInactiveFlag = oCell.querySelector(".nx-subject-item-flags span[title=\"Inactive\"]");
-        if (oInactiveFlag) {
-            oInactiveFlag.textContent = blIsActive ? "" : getAdminEmoji("inactive");
-        }
-        updateAddressTimestampTooltip(oCell, sTimestampTooltip);
-    }
-
     function submitSharedAddressForm(oForm, sAction, oError) {
         var oData = new FormData();
         var iI;
@@ -5915,6 +5118,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function submitSubjectAddressForm(oForm, sAction, oError) {
         var oData = new FormData();
+        var oAddressCell;
+        var oAddressRow;
+        var oNewCell;
         var iI;
         oData.append("action", sAction);
         appendAdminCsrfToken(oData);
@@ -5941,7 +5147,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 window.location.reload();
                 return;
             }
-            updateSubjectAddressCell(oCurrentSubjectCell, oForm, aData.timestamp_tooltip || "");
+            if (aData.address_cell_html && oCurrentSubjectCell) {
+                oAddressRow = oCurrentSubjectCell.parentNode;
+                while (oAddressRow && !oAddressCell) {
+                    oAddressCell = oAddressRow.querySelector ? oAddressRow.querySelector(".nx-address-cell") : null;
+                    oAddressRow = oAddressRow.previousElementSibling;
+                }
+                replaceAdminTableCellHtml(oAddressCell, aData.address_cell_html);
+            }
+            if (aData.subject_cell_html) {
+                oNewCell = replaceAdminTableCellHtml(oCurrentSubjectCell, aData.subject_cell_html);
+                if (oNewCell) {
+                    oCurrentSubjectCell = oNewCell;
+                }
+            }
+            refreshAdminTableFilter();
             closeSubjectAddressDialog(true);
         }).catch(function (oException) {
             logAdminException(oException);

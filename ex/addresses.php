@@ -274,16 +274,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("UPDATE ex_subject_addresses SET " . implode(", ", $aSetSql) . " WHERE id = :id");
         $oStatement->execute($aParams);
         $oPdo->commit();
-        $oStatement = $oPdo->prepare("SELECT created_at, updated_at FROM ex_subject_addresses WHERE id = :id");
-        $oStatement->execute(array("id" => $iAddressId));
-        $aTimestampRow = $oStatement->fetch(PDO::FETCH_ASSOC);
         $blAddressGroupChanged = json_encode(nxAddressesBuildMatch($aOldAddress)) !== json_encode(nxAddressesBuildMatch($aNewAddress));
         $blAddressVisibilityChanged = empty($aAddressSettings["show_inactive_addresses"]) && (int)$aOldAddress["is_active"] != $iIsActive;
-        nxSendJsonAndExit(array(
+        $aResponse = array(
             "success" => true,
-            "reload_required" => $blAddressGroupChanged || $blAddressVisibilityChanged,
-            "timestamp_tooltip" => $aTimestampRow ? nxTimestampTooltipText($aTimestampRow) : ""
-        ));
+            "reload_required" => $blAddressGroupChanged || $blAddressVisibilityChanged
+        );
+        if (!$aResponse["reload_required"]) {
+            $aUpdatedRows = nxAddressesFetchRows($oPdo, $aAddressSettings);
+            foreach ($aUpdatedRows as $aUpdatedRow) {
+                $sUpdatedAddressFilterText = nxAddressesFilterText($aUpdatedRow);
+                foreach ($aUpdatedRow["subjects"] as $aUpdatedSubject) {
+                    if ((int)$aUpdatedSubject["address_id"] == $iAddressId) {
+                        $aResponse["address_cell_html"] = nxAddressesRenderAddressCell($aUpdatedRow, count($aUpdatedRow["subjects"]), $blCanEdit);
+                        $aResponse["subject_cell_html"] = nxAddressesRenderSubjectCell($aUpdatedSubject, $sUpdatedAddressFilterText, $blCanEdit);
+                        break 2;
+                    }
+                }
+            }
+            if (empty($aResponse["subject_cell_html"])) {
+                $aResponse["reload_required"] = true;
+            }
+        }
+        nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -389,32 +402,14 @@ echo nxRenderPageThrobber();
 foreach ($aAddressRows as $aAddressRow) {
     $iSubjectCount = count($aAddressRow["subjects"]);
     $blFirstSubject = true;
-    $sAddressFilterText = (string)$aAddressRow["address_text"];
-    $sAddressActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-shared-address\" title=\"Edit shared address\" aria-label=\"Edit shared address\">" . $sEditEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-shared-address\" title=\"Delete shared address\" aria-label=\"Delete shared address\">" . $sDeleteEmoji . "</a></span>" : "";
-    $sAddressCellCopyAction = nxRenderSubjectCellCopyAction(array($aAddressRow["address_text"]), true);
-    foreach ($aAddressRow["subjects"] as $aFilterSubject) {
-        $sAddressFilterText .= " " . (string)$aFilterSubject["subject_name"];
-    }
+    $sAddressFilterText = nxAddressesFilterText($aAddressRow);
     foreach ($aAddressRow["subjects"] as $aSubject) {
-        $sAddressTimestampTooltipText = nxTimestampTooltipText($aAddressRow);
-        $sAddressTimestampTooltipAttribute = $sAddressTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sAddressTimestampTooltipText)) . "\"" : "";
-        $sSubjectTimestampTooltipText = nxTimestampTooltipText($aSubject);
-        $sSubjectTimestampTooltipAttribute = $sSubjectTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sSubjectTimestampTooltipText)) . "\"" : "";
-        $sSubjectActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject-address-local\" title=\"Edit subject address\" aria-label=\"Edit subject address\">" . $sEditEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-subject-address-local\" title=\"Delete subject address\" aria-label=\"Delete subject address\">" . $sDeleteEmoji . "</a></span>" : "";
-        $sSubjectEditAction = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a></span>" : "";
-        $sSubjectValueClass = "nx-subject-item-value" . ((string)$aSubject["address_values"]["address_type"] == "main" ? " nx-subject-address-main-value" : "");
-        $sSubjectPrimaryFlag = "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ((int)$aSubject["is_primary"] == 1 ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ((int)$aSubject["address_is_active"] == 1 ? "" : $sInactiveEmoji) . "</span></span>";
         echo "      <tr data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\">\n";
         if ($blFirstSubject) {
-            echo "        <td class=\"nx-address-cell\" rowspan=\"" . nxHtml($iSubjectCount) . "\"" . nxAddressesRenderDataAttributes($aAddressRow) . ">"
-                . "<span class=\"nx-subject-item-value\"" . $sAddressTimestampTooltipAttribute . ">" . nxHtmlValue($aAddressRow["address_text"]) . "</span>"
-                . nxRenderCopyAction($aAddressRow["address_copy_text"])
-                . $sAddressActions
-                . $sAddressCellCopyAction
-                . "</td>\n";
+            echo nxAddressesRenderAddressCell($aAddressRow, $iSubjectCount, $blCanEdit);
             $blFirstSubject = false;
         }
-        echo "        <td class=\"" . nxHtml(nxAddressesSubjectCellClass($aSubject)) . " nx-list-item nx-subject-address-item\"" . nxAddressesRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sAddressFilterText) . "</span><span class=\"" . nxHtml($sSubjectValueClass) . "\"" . $sSubjectTimestampTooltipAttribute . ">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . $sSubjectPrimaryFlag . $sSubjectActions . "</td>\n"
+        echo nxAddressesRenderSubjectCell($aSubject, $sAddressFilterText, $blCanEdit)
             . "      </tr>\n";
     }
 }

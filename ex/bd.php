@@ -938,22 +938,9 @@ if ($sBdPostAction == "create_contact") {
             "is_active" => $iIsActive,
             "note" => $sNote != "" ? $sNote : null
         ));
-        $iSubjectContactId = (int)$oPdo->lastInsertId();
         $oPdo->commit();
 
         $aResponse = nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
-        $aResponse["contact"] = nxAddContactTimestampTooltip($oPdo, array(
-            "subject_contact_id" => $iSubjectContactId,
-            "contact_id" => $iContactId,
-            "contact_type_id" => $iContactTypeId,
-            "contact_type" => (string)$aContactType["contact_type"],
-            "contact_type_label" => (string)$aContactType["name"],
-            "contact_value" => $sContactValue,
-            "contact_display_value" => nxContactDisplayValue((string)$aContactType["contact_type"], $sContactValue),
-            "note" => $sNote,
-            "is_primary" => $iIsPrimary,
-            "is_active" => $iIsActive
-        ));
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
@@ -1007,11 +994,6 @@ if ($sBdPostAction == "update_contact") {
         $oPdo->commit();
 
         $aResponse = nxBdGetUpdatedSubjectResponse($oPdo, (int)$aUpdatedContact["subject_id"], $aBirthdaySettings, $blCanEdit);
-        $aResponse["reload_required"] = !empty($aUpdatedContact["contact_type_changed"]);
-        $aUpdatedContact["note"] = $sNote;
-        $aUpdatedContact["is_primary"] = $iIsPrimary;
-        $aUpdatedContact["is_active"] = $iIsActive;
-        $aResponse["contact"] = $aUpdatedContact;
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {

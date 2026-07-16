@@ -2742,7 +2742,7 @@ function nxRenderContactList($aContacts, $blShowActions = true, $iSubjectId = 0,
             . "<span class=\"nx-contact-db-values\"" . $sTimestampTooltipAttribute . "><span class=\"nx-contact-type\">" . nxHtml($sContactTypeName) . "</span>: "
             . nxRenderContactValueText($sContactType, $aContact["contact_value"]) . "</span>"
             . nxRenderContactValueActions($sContactType, $aContact["contact_value"], $blShowCopy, $blAllowExternalLinks)
-            . "<span class=\"nx-contact-note\">" . ($sNote != "" ? " (" . nxHtml($sNote) . ")" : "") . "</span>"
+            . "<span class=\"nx-contact-note\">" . ($sNote != "" ? "(" . nxHtml($sNote) . ")" : "") . "</span>"
             . "<span class=\"nx-contact-flags\">"
             . "<span class=\"nx-contact-primary\" title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span>"
             . "<span class=\"nx-contact-inactive-label\" title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span>"
@@ -2796,8 +2796,8 @@ function nxRenderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 
             . "<span class=\"nx-subject-item-value\">" . nxHtml($aNickname["nickname"]) . "</span>"
             . "<span class=\"nx-subject-item-context\">" . ($sContext != "" ? " [" . nxHtml($sContext) . "]" : "") . "</span>"
             . "</span>"
-            . nxRenderCopyAction($sCopyText)
             . "<span class=\"nx-subject-item-note\">" . ($sNote != "" ? " (" . nxHtml($sNote) . ")" : "") . "</span>"
+            . nxRenderCopyAction($sCopyText)
             . "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
             . $sActions
             . "</div>";
@@ -2942,7 +2942,6 @@ function nxRenderAddressText($aAddress, $aSettings = null) {
 
 function nxRenderAddressCopyText($aAddress, $sSubjectName = "", $aSettings = null) {
     $aLines = nxBuildAddressLines($aAddress, $sSubjectName, $aSettings, true);
-    nxAppendAddressCopyLine($aLines, $aAddress["note"]);
     return implode("\n", $aLines);
 }
 
@@ -2994,8 +2993,8 @@ function nxRenderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0
             . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
             . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
             . "<span class=\"nx-subject-item-value" . $sValueClass . "\"" . $sTimestampTooltipAttribute . ">" . ($sText != "" ? nxHtml($sText) : $sEmptyValueEmoji) . "</span>"
-            . "<span class=\"nx-subject-item-note\">" . ($sNote != "" ? " (" . nxHtml($sNote) . ")" : "") . "</span>"
             . nxRenderCopyAction($sCopyText)
+            . "<span class=\"nx-subject-item-note\">" . ($sNote != "" ? "(" . nxHtml($sNote) . ")" : "") . "</span>"
             . "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
             . $sActions
             . "</div>";
@@ -3820,19 +3819,6 @@ function nxFetchSubjectNotes($oPdo, $iSubjectId = 0) {
     return $aNotes;
 }
 
-function nxAddContactTimestampTooltip($oPdo, $aContact) {
-    if (!is_array($aContact) || empty($aContact["contact_id"])) {
-        return $aContact;
-    }
-    $oStatement = $oPdo->prepare("SELECT created_at, updated_at FROM ex_contacts WHERE id = :id");
-    $oStatement->execute(array("id" => (int)$aContact["contact_id"]));
-    $aContactRow = $oStatement->fetch(PDO::FETCH_ASSOC);
-    if ($aContactRow) {
-        $aContact["timestamp_tooltip"] = nxTimestampTooltipText($aContactRow);
-    }
-    return $aContact;
-}
-
 function nxUpdateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId, $sContactValue, $aContactType) {
     $oStatement = $oPdo->prepare("SELECT sc.id, sc.subject_id, sc.contact_id, sc.is_active AS current_is_active, c.contact_type_id AS current_contact_type_id, c.contact_value AS current_contact_value FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id WHERE sc.id = :id FOR UPDATE");
     $oStatement->execute(array("id" => $iSubjectContactId));
@@ -3841,12 +3827,10 @@ function nxUpdateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId
         return null;
     }
 
-    $iContactId = (int)$aSubjectContact["contact_id"];
-    $iOriginalContactId = $iContactId;
+    $iOriginalContactId = (int)$aSubjectContact["contact_id"];
     $blContactTypeChanged = (int)$aSubjectContact["current_contact_type_id"] != $iContactTypeId;
     $blContactValueChanged = (string)$aSubjectContact["current_contact_value"] != $sContactValue;
     $blContactIdentityChanged = $blContactTypeChanged || $blContactValueChanged;
-    $blContactReassigned = false;
     if ($blContactIdentityChanged) {
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subject_contacts WHERE contact_id = :contact_id FOR UPDATE");
         $oStatement->execute(array("contact_id" => $iOriginalContactId));
@@ -3869,21 +3853,18 @@ function nxUpdateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId
                 $oStatement = $oPdo->prepare("DELETE FROM ex_contacts WHERE id = :id");
                 $oStatement->execute(array("id" => $iOriginalContactId));
             }
-            $iContactId = $iTargetContactId;
-            $blContactReassigned = true;
         } elseif ($blCurrentContactShared) {
             $oStatement = $oPdo->prepare("INSERT INTO ex_contacts (contact_type_id, contact_value) VALUES (:contact_type_id, :contact_value)");
             $oStatement->execute(array(
                 "contact_type_id" => $iContactTypeId,
                 "contact_value" => $sContactValue
             ));
-            $iContactId = (int)$oPdo->lastInsertId();
+            $iNewContactId = (int)$oPdo->lastInsertId();
             $oStatement = $oPdo->prepare("UPDATE ex_subject_contacts SET contact_id = :contact_id WHERE id = :id");
             $oStatement->execute(array(
-                "contact_id" => $iContactId,
+                "contact_id" => $iNewContactId,
                 "id" => $iSubjectContactId
             ));
-            $blContactReassigned = true;
         } else {
             $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
             $oStatement->execute(array(
@@ -3895,22 +3876,11 @@ function nxUpdateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId
     }
 
     $aContact = array(
-        "subject_contact_id" => $iSubjectContactId,
         "subject_id" => (int)$aSubjectContact["subject_id"],
-        "contact_id" => $iContactId,
-        "previous_contact_id" => $iOriginalContactId,
-        "contact_type_id" => $iContactTypeId,
-        "contact_type" => (string)$aContactType["contact_type"],
-        "contact_type_label" => (string)$aContactType["name"],
-        "contact_value" => $sContactValue,
-        "contact_display_value" => nxContactDisplayValue((string)$aContactType["contact_type"], $sContactValue),
         "current_is_active" => (int)$aSubjectContact["current_is_active"],
-        "contact_type_changed" => $blContactTypeChanged ? 1 : 0,
-        "contact_value_changed" => $blContactValueChanged ? 1 : 0,
-        "contact_identity_changed" => $blContactIdentityChanged ? 1 : 0,
-        "contact_reassigned" => $blContactReassigned ? 1 : 0
+        "contact_identity_changed" => $blContactIdentityChanged ? 1 : 0
     );
-    return nxAddContactTimestampTooltip($oPdo, $aContact);
+    return $aContact;
 }
 
 function nxCollectHiddenInactiveSubjectItems(&$aHiddenInactive, $aItems) {
@@ -4482,6 +4452,36 @@ function nxAddressesSubjectCellClass($aSubject) {
     return "nx-address-subject-cell nx-address-subject-type-" . $sSubjectType . (!empty($aSubject["is_active"]) && (int)$aSubject["address_is_active"] == 1 ? " nx-address-subject-active" : " nx-address-subject-inactive");
 }
 
+function nxAddressesFilterText($aAddressRow) {
+    $sAddressFilterText = (string)$aAddressRow["address_text"];
+    foreach ($aAddressRow["subjects"] as $aFilterSubject) {
+        $sAddressFilterText .= " " . (string)$aFilterSubject["subject_name"];
+    }
+    return $sAddressFilterText;
+}
+
+function nxAddressesRenderAddressCell($aAddressRow, $iSubjectCount, $blCanEdit) {
+    $sAddressTimestampTooltipText = nxTimestampTooltipText($aAddressRow);
+    $sAddressTimestampTooltipAttribute = $sAddressTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sAddressTimestampTooltipText)) . "\"" : "";
+    $sAddressActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-shared-address\" title=\"Edit shared address\" aria-label=\"Edit shared address\">" . $GLOBALS["sEditEmoji"] . "</a><a href=\"#\" class=\"nx-item-action js-delete-shared-address\" title=\"Delete shared address\" aria-label=\"Delete shared address\">" . $GLOBALS["sDeleteEmoji"] . "</a></span>" : "";
+    return "        <td class=\"nx-address-cell\" rowspan=\"" . nxHtml($iSubjectCount) . "\"" . nxAddressesRenderDataAttributes($aAddressRow) . ">"
+        . "<span class=\"nx-subject-item-value\"" . $sAddressTimestampTooltipAttribute . ">" . nxHtmlValue($aAddressRow["address_text"]) . "</span>"
+        . nxRenderCopyAction($aAddressRow["address_copy_text"])
+        . $sAddressActions
+        . nxRenderSubjectCellCopyAction(array($aAddressRow["address_text"]), true)
+        . "</td>\n";
+}
+
+function nxAddressesRenderSubjectCell($aSubject, $sAddressFilterText, $blCanEdit) {
+    $sSubjectTimestampTooltipText = nxTimestampTooltipText($aSubject);
+    $sSubjectTimestampTooltipAttribute = $sSubjectTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sSubjectTimestampTooltipText)) . "\"" : "";
+    $sSubjectActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject-address-local\" title=\"Edit subject address\" aria-label=\"Edit subject address\">" . $GLOBALS["sEditEmoji"] . "</a><a href=\"#\" class=\"nx-item-action js-delete-subject-address-local\" title=\"Delete subject address\" aria-label=\"Delete subject address\">" . $GLOBALS["sDeleteEmoji"] . "</a></span>" : "";
+    $sSubjectEditAction = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $GLOBALS["sEditEmoji"] . "</a></span>" : "";
+    $sSubjectValueClass = "nx-subject-item-value" . ((string)$aSubject["address_values"]["address_type"] == "main" ? " nx-subject-address-main-value" : "");
+    $sSubjectPrimaryFlag = "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ((int)$aSubject["is_primary"] == 1 ? $GLOBALS["sPrimaryEmoji"] : "") . "</span><span title=\"Inactive\">" . ((int)$aSubject["address_is_active"] == 1 ? "" : $GLOBALS["sInactiveEmoji"]) . "</span></span>";
+    return "        <td class=\"" . nxHtml(nxAddressesSubjectCellClass($aSubject)) . " nx-list-item nx-subject-address-item\"" . nxAddressesRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sAddressFilterText) . "</span><span class=\"" . nxHtml($sSubjectValueClass) . "\"" . $sSubjectTimestampTooltipAttribute . ">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . $sSubjectPrimaryFlag . $sSubjectActions . "</td>\n";
+}
+
 function nxAddressesTypeLabel($sAddressType) {
     return ucwords(str_replace("_", " ", (string)$sAddressType));
 }
@@ -4515,9 +4515,7 @@ function nxAddressesFetchRows($oPdo, $aAddressSettings) {
             }
             $aAddressMatch = nxAddressesBuildMatch($aAddress);
             $sAddressKey = json_encode($aAddressMatch);
-            $aCopyAddress = $aAddress;
-            $aCopyAddress["note"] = "";
-            $sAddressCopyText = nxRenderAddressCopyText($aCopyAddress, "", $aAddressSettings);
+            $sAddressCopyText = nxRenderAddressCopyText($aAddress, "", $aAddressSettings);
             $sAddressText = nxRenderAddressText($aAddress, $aAddressSettings);
             if (trim($sAddressText) == "") {
                 continue;
@@ -5580,6 +5578,23 @@ function nxContactsRenderSubjectDataAttributes($aSubject) {
         . " data-contact-primary=\"" . ((int)$aSubject["is_primary"] == 1 ? "1" : "0") . "\""
         . " data-contact-active=\"" . ((int)$aSubject["contact_is_active"] == 1 ? "1" : "0") . "\""
         . " data-subject-active=\"" . (!empty($aSubject["is_active"]) ? "1" : "0") . "\"";
+}
+
+function nxContactsFilterText($aContactRow) {
+    $sContactFilterText = (string)$aContactRow["contact_type_name"] . " " . (string)$aContactRow["contact_display_value"];
+    foreach ($aContactRow["subjects"] as $aFilterSubject) {
+        $sContactFilterText .= " " . (string)$aFilterSubject["subject_name"];
+    }
+    return $sContactFilterText;
+}
+
+function nxContactsRenderSubjectCell($aSubject, $sContactFilterText, $blCanEdit) {
+    $sSubjectTimestampTooltipText = nxTimestampTooltipText($aSubject);
+    $sSubjectTimestampTooltipAttribute = $sSubjectTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sSubjectTimestampTooltipText)) . "\"" : "";
+    $sSubjectActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject-contact\" title=\"Edit subject contact\" aria-label=\"Edit subject contact\">" . $GLOBALS["sEditEmoji"] . "</a><a href=\"#\" class=\"nx-item-action js-delete-subject-contact\" title=\"Delete subject contact\" aria-label=\"Delete subject contact\">" . $GLOBALS["sDeleteEmoji"] . "</a></span>" : "";
+    $sSubjectEditAction = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $GLOBALS["sEditEmoji"] . "</a></span>" : "";
+    $sSubjectPrimaryFlag = "<span class=\"nx-contact-flags\"><span class=\"nx-contact-primary\" title=\"Primary\">" . ((int)$aSubject["is_primary"] == 1 ? $GLOBALS["sPrimaryEmoji"] : "") . "</span><span class=\"nx-contact-inactive-label\" title=\"Inactive\">" . ((int)$aSubject["contact_is_active"] == 1 ? "" : $GLOBALS["sInactiveEmoji"]) . "</span></span>";
+    return "        <td class=\"" . nxHtml(nxContactsSubjectCellClass($aSubject)) . " nx-list-item\"" . nxContactsRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sContactFilterText) . "</span><span class=\"nx-subject-item-value\"" . $sSubjectTimestampTooltipAttribute . ">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . "<span class=\"nx-contact-item nx-contact-subject-item\"" . nxContactsRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-contact-note\">" . ($aSubject["note"] != "" ? "(" . nxHtml($aSubject["note"]) . ")" : "") . "</span>" . $sSubjectPrimaryFlag . $sSubjectActions . "</span></td>\n";
 }
 
 function nxContactsFetchRows($oPdo, $aContactSettings) {
