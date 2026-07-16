@@ -147,10 +147,9 @@ CREATE TABLE `fs_photo_equip` (
   `acquired_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `retired_at` datetime(6) DEFAULT NULL,
   `disposition_note` varchar(768) NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `acquired_at` (`acquired_at`),
-  KEY `retired_at` (`retired_at`),
-  CONSTRAINT `chk_retire_time` CHECK (`retired_at` is null or `retired_at` >= `acquired_at`)
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `acquired_at` (`acquired_at`) USING BTREE,
+  KEY `retired_at` (`retired_at`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_czech_ci;
 
 CREATE TABLE `fs_photo_tags` (

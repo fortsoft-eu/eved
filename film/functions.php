@@ -4,6 +4,11 @@ function isAllowedIp($aAllowedIps) {
     return isset($_SERVER["REMOTE_ADDR"]) && in_array($_SERVER["REMOTE_ADDR"], $aAllowedIps, true);
 }
 
+function isDesktop() {
+    $sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
+    return !preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent);
+}
+
 function sendQuickTableFilterJsonAndExit($aData, $iStatusCode = 200) {
     http_response_code($iStatusCode);
     header("Content-Type: application/json; charset=utf-8", true);
@@ -85,15 +90,12 @@ function handleQuickTableFilterRequest() {
 }
 
 function getContentSecurityPolicySource() {
+    global $sScheme;
+
     if (!isset($_SERVER["HTTP_HOST"]) || !isset($_SERVER["REQUEST_URI"])) {
         return "'self'";
     }
-    $sRequestScheme = "http";
-    if (isset($GLOBALS["sScheme"]) && ($GLOBALS["sScheme"] == "http" || $GLOBALS["sScheme"] == "https")) {
-        $sRequestScheme = $GLOBALS["sScheme"];
-    } elseif ((isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] != "" && $_SERVER["HTTPS"] != "off") || (isset($_SERVER["HTTP_X_FORWARDED_PROTO"]) && $_SERVER["HTTP_X_FORWARDED_PROTO"] == "https")) {
-        $sRequestScheme = "https";
-    }
+    $sRequestScheme = $sScheme;
     $sHost = preg_replace("/[^A-Za-z0-9\\.\\-\\:\\[\\]]/", "", $_SERVER["HTTP_HOST"]);
     $sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
     if ($sPath === false || $sPath === null || $sPath == "") {
@@ -268,10 +270,7 @@ function getFilmUaFingerprintText($aData, $sName) {
         }
         return implode(",", $aValues);
     }
-    if (!is_scalar($aData[$sName])) {
-        return "";
-    }
-    return (string)$aData[$sName];
+    return is_scalar($aData[$sName]) ? (string)$aData[$sName] : "";
 }
 
 function getFilmUaFingerprintNullableText($aData, $sName, $iMaxLength = 0) {
@@ -435,11 +434,11 @@ function getFilmPhpFileLinkGroups() {
 }
 
 function renderFilmMenu() {
-    global $sBaseUrl, $sMenuEmoji;
+    global $sBaseUrl, $sMenuEmoji, $sFilmMenuEmoji;
 
     $aGroups = getFilmPhpFileLinkGroups();
     $sTitle = htmlspecialchars("Film Scans Gallery", ENT_QUOTES, "UTF-8");
-    $sLinks = "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl . "index.php", ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-icon\" aria-hidden=\"true\">🎞️</span><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n"
+    $sLinks = "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl . "index.php", ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-icon\" aria-hidden=\"true\">" . $sFilmMenuEmoji . "</span><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n"
         . "        <span class=\"film-menu-separator\"></span>\n";
     foreach ($aGroups as $iGroup => $aGroup) {
         if ($iGroup > 0 && $sLinks != "" && count($aGroup) > 0) {
@@ -447,7 +446,7 @@ function renderFilmMenu() {
         }
         foreach ($aGroup as $aItem) {
             $sTitle = htmlspecialchars($aItem["title"], ENT_QUOTES, "UTF-8");
-            $sLinks .= "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl . $aItem["file_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-icon\" aria-hidden=\"true\">🎞️</span><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n";
+            $sLinks .= "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl . $aItem["file_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-icon\" aria-hidden=\"true\">" . $sFilmMenuEmoji . "</span><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n";
         }
     }
     if ($sLinks == "") {
@@ -850,7 +849,6 @@ function formatFilmUaUserAgent($sUserAgent) {
     } elseif (preg_match("#i[3-6]86|Win32#i", $sUserAgent)) {
         $sArchitecture = " (32-bit)";
     }
-
     return $sBrowser . " on " . $sOperatingSystem . $sArchitecture;
 }
 
@@ -893,7 +891,6 @@ function send403AndExit() {
     header("Pragma: no-cache", true);
     header("X-Robots-Tag: noindex, nofollow", true);
     sendSecurityHeaders();
-
     echo $sHtml;
     exit;
 }
@@ -1028,7 +1025,6 @@ function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
 function sendPhpGeneratedHeaders($sStyleNonce) {
     $iTime = time();
     $sDate = gmdate("D, d M Y H:i:s", $iTime);
-
     header("Content-Type: text/html; charset=utf-8", true);
     header("Content-Language: en-US", true);
     header("Last-Modified: " . $sDate . " GMT", true);

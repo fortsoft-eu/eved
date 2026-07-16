@@ -4,11 +4,7 @@ include "config.php";
 
 
 function getContentSecurityPolicySource() {
-    $sScheme = "http";
-    if ((isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] != "" && $_SERVER["HTTPS"] != "off")
-        || (isset($_SERVER["HTTP_X_FORWARDED_PROTO"]) && $_SERVER["HTTP_X_FORWARDED_PROTO"] == "https")) {
-        $sScheme = "https";
-    }
+    global $sScheme;
 
     $sHost = preg_replace("/[^A-Za-z0-9\\.\\-\\:\\[\\]]/", "", $_SERVER["HTTP_HOST"]);
     $sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);

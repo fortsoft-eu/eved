@@ -23,10 +23,10 @@ ini_set("session.use_strict_mode", 1);
 ini_set("session.use_only_cookies", 1);
 ini_set("session.use_trans_sid", 0);
 ini_set("session.gc_maxlifetime", 31536000);
-session_name("EVEDSID");
+session_name("EVEDEXSID");
 session_set_cookie_params(array(
     "lifetime" => 31536000,
-    "path" => "/",
+    "path" => "/ex/",
     "domain" => "",
     "secure" => true,
     "httponly" => true,
@@ -36,14 +36,6 @@ session_start();
 
 
 handleQuickTableFilterRequest();
-
-
-if (!isset($sExTrustedUserAgent)) {
-    $sExTrustedUserAgent = "";
-}
-if (!isset($sExTrustedAcceptLanguage)) {
-    $sExTrustedAcceptLanguage = "";
-}
 
 
 $sHost = $_SERVER["HTTP_HOST"];
@@ -66,54 +58,39 @@ if (substr($sPath, -1) != "/") {
     $sPath = dirname($sPath) . "/";
 }
 $sBaseUrl = $sScheme . "://" . $sHost . $sPath;
-$blIsDesktop = isset($_SERVER["HTTP_USER_AGENT"]) && !preg_match("/Android|iPhone|iPad|iPod|Windows Phone/i", $_SERVER["HTTP_USER_AGENT"]);
 
 
-$sDatabaseDownloadPrefix = getenv("EVED_DOWNLOAD_PREFIX");
-if ($sDatabaseDownloadPrefix === false || $sDatabaseDownloadPrefix == "") {
-    $sDatabaseDownloadPrefix = "eved";
-}
-$sDatabaseDownloadPrefix = trim(strtolower(preg_replace("/[^A-Za-z0-9]+/", "_", $sDatabaseDownloadPrefix)), "_");
-if ($sDatabaseDownloadPrefix == "") {
-    $sDatabaseDownloadPrefix = "eved";
-}
-$sDatabaseDownloadProject = trim(strtolower(preg_replace("/[^A-Za-z0-9]+/", "_", basename(__DIR__))), "_");
-if ($sDatabaseDownloadProject == "") {
-    $sDatabaseDownloadProject = "project";
-}
-
-
-$sMenuEmoji = "&#9776;";
-$sEditEmoji = "&#128221;";
-$sDeleteEmoji = "&#128465;&#65039;";
-$sAddEmoji = "&#10133;";
-$sHiddenInactiveEmoji = "&#128451;&#65039;";
-$sPortalEmoji = "&#128272;";
-$sEmptyValueEmoji = "&#10134;";
-$sThrobberEmoji = "&#8987;";
-$sFilterFocusEmoji = "&#128269;";
-$sCopyEmoji = "&#128203;";
-$sCopySuccessEmoji = "&#10004;&#65039;";
-$sCopyFailureEmoji = "&#10060;&#65039;";
-$sPrimaryEmoji = "&#11088;";
-$sInactiveEmoji = "&#9940;";
-$sMergeEmoji = "&#128260;";
-$sMoveUpEmoji = "&#9650;";
-$sMoveDownEmoji = "&#9660;";
-$sBirthdayServedEmoji = "&#9745;&#65039;";
-$sCommunicationServedEmoji = "&#128232;";
-$sContactEmailEmoji = "&#128231;";
-$sContactLandlineEmoji = "&#128222;";
-$sContactCellEmoji = "&#128241;";
-$sContactFaxEmoji = "&#128224;";
-$sContactPagerEmoji = "&#128223;";
-$sContactWebEmoji = "&#127760;";
-$sContactTelegramEmoji = "&#9992;&#65039;";
-$sContactMessageEmoji = "&#128172;";
-$sContactYouTubeEmoji = "&#9654;&#65039;";
-$iCalendarFirstDay = 1;
-$sDateInputFormat = "YYYY-MM-DD";
-$sDateInputPattern = "\\d{4}-\\d{2}-\\d{2}";
+$sMenuEmoji                 = "&#9776;";
+$sEditEmoji                 = "&#128221;";
+$sDeleteEmoji               = "&#128465;&#65039;";
+$sAddEmoji                  = "&#10133;";
+$sHiddenInactiveEmoji       = "&#128451;&#65039;";
+$sPortalEmoji               = "&#128272;";
+$sEmptyValueEmoji           = "&#10134;";
+$sThrobberEmoji             = "&#8987;";
+$sFilterFocusEmoji          = "&#128269;";
+$sCopyEmoji                 = "&#128203;";
+$sCopySuccessEmoji          = "&#10004;&#65039;";
+$sCopyFailureEmoji          = "&#10060;&#65039;";
+$sPrimaryEmoji              = "&#11088;";
+$sInactiveEmoji             = "&#9940;";
+$sMergeEmoji                = "&#128260;";
+$sMoveUpEmoji               = "&#9650;";
+$sMoveDownEmoji             = "&#9660;";
+$sBirthdayServedEmoji       = "&#9745;&#65039;";
+$sCommunicationServedEmoji  = "&#128232;";
+$sContactEmailEmoji         = "&#128231;";
+$sContactLandlineEmoji      = "&#128222;";
+$sContactCellEmoji          = "&#128241;";
+$sContactFaxEmoji           = "&#128224;";
+$sContactPagerEmoji         = "&#128223;";
+$sContactWebEmoji           = "&#127760;";
+$sContactTelegramEmoji      = "&#9992;&#65039;";
+$sContactMessageEmoji       = "&#128172;";
+$sContactYouTubeEmoji       = "&#9654;&#65039;";
+$iCalendarFirstDay          = 1;
+$sDateInputFormat           = "YYYY-MM-DD";
+$sDateInputPattern          = "\\d{4}-\\d{2}-\\d{2}";
 
 
 $sError = "";

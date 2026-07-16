@@ -391,7 +391,7 @@ if ($oPdo) {
             </form>
 <?php
 
-        if ($blIsDesktop) {
+        if (isDesktop()) {
             $sFileName = $sSubDirectory . "_" . ($_SESSION["film"]["gallery"]["cover"] ? "cover" : "contain");
             if ($sVisibility == "all") {
                 $sFileName .= "_" . strtolower($aModes[$_SESSION["film"]["gallery"]["mode"]]);

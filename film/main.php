@@ -69,28 +69,14 @@ if (substr($sPath, -1) != "/") {
     $sPath = dirname($sPath) . "/";
 }
 $sBaseUrl = $sScheme . "://" . $sHost . $sPath;
-$blIsDesktop = isset($_SERVER["HTTP_USER_AGENT"]) && !preg_match("/Android|iPhone|iPad|iPod|Windows Phone/i", $_SERVER["HTTP_USER_AGENT"]);
 
 
-$sFilterFocusEmoji = "&#128269;";
-$sMenuEmoji = "&#9776;";
-
-
-$sDatabaseDownloadPrefix = getenv("EVED_DOWNLOAD_PREFIX");
-if ($sDatabaseDownloadPrefix === false || $sDatabaseDownloadPrefix == "") {
-    $sDatabaseDownloadPrefix = "eved";
-}
-$sDatabaseDownloadPrefix = trim(strtolower(preg_replace("/[^A-Za-z0-9]+/", "_", $sDatabaseDownloadPrefix)), "_");
-if ($sDatabaseDownloadPrefix == "") {
-    $sDatabaseDownloadPrefix = "eved";
-}
-$sDatabaseDownloadProject = trim(strtolower(preg_replace("/[^A-Za-z0-9]+/", "_", basename(__DIR__))), "_");
-if ($sDatabaseDownloadProject == "") {
-    $sDatabaseDownloadProject = "project";
-}
-
-
-$iVisitTimeout = 1200;
+$sDirectory         = "./img";
+$sExtension         = ".avif";
+$iVisitTimeout      = 1200;
+$sFilterFocusEmoji  = "&#128269;";
+$sMenuEmoji         = "&#9776;";
+$sFilmMenuEmoji     = "&#127902;&#65039;";
 
 
 $sError = "";

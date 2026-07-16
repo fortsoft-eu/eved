@@ -5,8 +5,8 @@ function isAllowedIp($aAllowedIps) {
 }
 
 function isExTrustedClient($aAllowedIps) {
-    $sTrustedUserAgent = isset($GLOBALS["sExTrustedUserAgent"]) ? (string)$GLOBALS["sExTrustedUserAgent"] : "";
-    $sTrustedAcceptLanguage = isset($GLOBALS["sExTrustedAcceptLanguage"]) ? (string)$GLOBALS["sExTrustedAcceptLanguage"] : "";
+    global $sTrustedUserAgent, $sTrustedAcceptLanguage;
+
     if (!isAllowedIp($aAllowedIps) || $sTrustedUserAgent == "" || $sTrustedAcceptLanguage == "") {
         return false;
     }
@@ -235,8 +235,7 @@ function nxGetCurrentExMenuName($oPdo) {
 
     $sPath = nxGetExMenuPathPrefix() . getQuickTableFilterScriptName();
     if (!$oPdo) {
-        $sMessage = isset($sError) && $sError != "" ? (string)$sError : "Database connection is not available.";
-        send500AndExit("Database error: " . $sMessage);
+        send500AndExit("Database error: " . $sError);
     }
     try {
         $oStatement = $oPdo->prepare("SELECT name FROM ex_menu WHERE is_active = 1 AND path = :path LIMIT 1");
@@ -256,7 +255,6 @@ function nxRenderExMenu() {
 
     $aItems = nxGetExMenuItems($oPdo);
     $sCurrentPath = nxGetExMenuPathPrefix() . getQuickTableFilterScriptName();
-    $sBase = isset($sBaseUrl) ? (string)$sBaseUrl : "";
     if (!$aItems) {
         return;
     }
@@ -276,7 +274,7 @@ function nxRenderExMenu() {
             $sClass .= " ex-menu-link-active";
             $sCurrent = " aria-current=\"page\"";
         }
-        echo "        <a class=\"" . nxHtml($sClass) . "\" href=\"" . nxHtml($sBase . nxEncodeFsMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"ex-menu-icon\" aria-hidden=\"true\">" . nxHtml($sIcon) . "</span><span class=\"ex-menu-text\">" . nxHtml($aItem["name"]) . "</span></a>\n";
+        echo "        <a class=\"" . nxHtml($sClass) . "\" href=\"" . nxHtml($sBaseUrl . nxEncodeFsMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"ex-menu-icon\" aria-hidden=\"true\">" . nxHtml($sIcon) . "</span><span class=\"ex-menu-text\">" . nxHtml($aItem["name"]) . "</span></a>\n";
     }
     echo "      </span>\n"
         . "    </span>\n";
@@ -338,6 +336,8 @@ function exUpdateLastLogin($oPdo, $iUserId) {
 }
 
 function refreshExAuthSession() {
+    global $oPdo;
+
     static $blRefreshed = false;
     static $blAuthenticated = false;
 
@@ -353,7 +353,6 @@ function refreshExAuthSession() {
         return false;
     }
 
-    $oPdo = isset($GLOBALS["oPdo"]) ? $GLOBALS["oPdo"] : null;
     if (!$oPdo) {
         clearExAuthSession();
         return false;
@@ -400,8 +399,9 @@ function clearExAuthSession() {
 }
 
 function renderExLoginPageAndExit($sMessage = "") {
+    global $sBaseUrl;
+
     $iTime = sendPageHeaders();
-    $sBaseUrl = isset($GLOBALS["sBaseUrl"]) ? $GLOBALS["sBaseUrl"] : "";
     $sAction = htmlspecialchars(getExCurrentUrlWithoutAuthAction(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     $sToken = htmlspecialchars(getExLoginToken(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     $sMessageHtml = $sMessage != "" ? "    <p class=\"message-error ex-login-message\">" . htmlspecialchars($sMessage, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</p>\n" : "";
@@ -445,7 +445,8 @@ function renderExLoginPageAndExit($sMessage = "") {
 }
 
 function handleExLoginPost() {
-    $oPdo = isset($GLOBALS["oPdo"]) ? $GLOBALS["oPdo"] : null;
+    global $oPdo;
+
     $sToken = isset($_POST["ex_login_token"]) ? (string)$_POST["ex_login_token"] : "";
     $sSessionToken = isset($_SESSION["ex_login_token"]) ? (string)$_SESSION["ex_login_token"] : "";
     $sUserName = isset($_POST["user_name"]) ? trim((string)$_POST["user_name"]) : "";
@@ -570,16 +571,12 @@ function requireExFullAccess($aAllowedIps) {
 }
 
 function getContentSecurityPolicySource() {
+    global $sScheme;
+
     if (!isset($_SERVER["HTTP_HOST"]) || !isset($_SERVER["REQUEST_URI"])) {
         return "'self'";
     }
-    $sRequestScheme = "http";
-    if (isset($GLOBALS["sScheme"]) && ($GLOBALS["sScheme"] == "http" || $GLOBALS["sScheme"] == "https")) {
-        $sRequestScheme = $GLOBALS["sScheme"];
-    } elseif ((isset($_SERVER["HTTPS"]) && $_SERVER["HTTPS"] != "" && $_SERVER["HTTPS"] != "off")
-        || (isset($_SERVER["HTTP_X_FORWARDED_PROTO"]) && $_SERVER["HTTP_X_FORWARDED_PROTO"] == "https")) {
-        $sRequestScheme = "https";
-    }
+    $sRequestScheme = $sScheme;
     $sHost = preg_replace("/[^A-Za-z0-9\\.\\-\\:\\[\\]]/", "", $_SERVER["HTTP_HOST"]);
     $sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
     if ($sPath === false || $sPath === null || $sPath == "") {
@@ -834,34 +831,41 @@ function nxRenderTimestampTooltipDataAttribute($aRow) {
 }
 
 function nxRenderEmojiData() {
+    global $sEditEmoji, $sDeleteEmoji, $sAddEmoji, $sHiddenInactiveEmoji, $sPortalEmoji, $sEmptyValueEmoji;
+    global $sThrobberEmoji, $sFilterFocusEmoji, $sCopyEmoji, $sCopySuccessEmoji, $sCopyFailureEmoji;
+    global $sPrimaryEmoji, $sInactiveEmoji, $sMergeEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
+    global $sBirthdayServedEmoji, $sCommunicationServedEmoji, $sContactEmailEmoji, $sContactLandlineEmoji;
+    global $sContactCellEmoji, $sContactFaxEmoji, $sContactPagerEmoji, $sContactWebEmoji;
+    global $sContactTelegramEmoji, $sContactMessageEmoji, $sContactYouTubeEmoji;
+
     $aValues = array(
-        "edit" => $GLOBALS["sEditEmoji"],
-        "delete" => $GLOBALS["sDeleteEmoji"],
-        "add" => $GLOBALS["sAddEmoji"],
-        "hidden-inactive" => $GLOBALS["sHiddenInactiveEmoji"],
-        "portal" => $GLOBALS["sPortalEmoji"],
-        "empty-value" => $GLOBALS["sEmptyValueEmoji"],
-        "throbber" => $GLOBALS["sThrobberEmoji"],
-        "filter-focus" => $GLOBALS["sFilterFocusEmoji"],
-        "copy" => $GLOBALS["sCopyEmoji"],
-        "copy-success" => $GLOBALS["sCopySuccessEmoji"],
-        "copy-failure" => $GLOBALS["sCopyFailureEmoji"],
-        "primary" => $GLOBALS["sPrimaryEmoji"],
-        "inactive" => $GLOBALS["sInactiveEmoji"],
-        "merge" => $GLOBALS["sMergeEmoji"],
-        "move-up" => $GLOBALS["sMoveUpEmoji"],
-        "move-down" => $GLOBALS["sMoveDownEmoji"],
-        "birthday-served" => $GLOBALS["sBirthdayServedEmoji"],
-        "communication-served" => $GLOBALS["sCommunicationServedEmoji"],
-        "contact-email" => $GLOBALS["sContactEmailEmoji"],
-        "contact-landline" => $GLOBALS["sContactLandlineEmoji"],
-        "contact-cell" => $GLOBALS["sContactCellEmoji"],
-        "contact-fax" => $GLOBALS["sContactFaxEmoji"],
-        "contact-pager" => $GLOBALS["sContactPagerEmoji"],
-        "contact-web" => $GLOBALS["sContactWebEmoji"],
-        "contact-telegram" => $GLOBALS["sContactTelegramEmoji"],
-        "contact-message" => $GLOBALS["sContactMessageEmoji"],
-        "contact-youtube" => $GLOBALS["sContactYouTubeEmoji"]
+        "edit" => $sEditEmoji,
+        "delete" => $sDeleteEmoji,
+        "add" => $sAddEmoji,
+        "hidden-inactive" => $sHiddenInactiveEmoji,
+        "portal" => $sPortalEmoji,
+        "empty-value" => $sEmptyValueEmoji,
+        "throbber" => $sThrobberEmoji,
+        "filter-focus" => $sFilterFocusEmoji,
+        "copy" => $sCopyEmoji,
+        "copy-success" => $sCopySuccessEmoji,
+        "copy-failure" => $sCopyFailureEmoji,
+        "primary" => $sPrimaryEmoji,
+        "inactive" => $sInactiveEmoji,
+        "merge" => $sMergeEmoji,
+        "move-up" => $sMoveUpEmoji,
+        "move-down" => $sMoveDownEmoji,
+        "birthday-served" => $sBirthdayServedEmoji,
+        "communication-served" => $sCommunicationServedEmoji,
+        "contact-email" => $sContactEmailEmoji,
+        "contact-landline" => $sContactLandlineEmoji,
+        "contact-cell" => $sContactCellEmoji,
+        "contact-fax" => $sContactFaxEmoji,
+        "contact-pager" => $sContactPagerEmoji,
+        "contact-web" => $sContactWebEmoji,
+        "contact-telegram" => $sContactTelegramEmoji,
+        "contact-message" => $sContactMessageEmoji,
+        "contact-youtube" => $sContactYouTubeEmoji
     );
     $sHtml = "  <span id=\"nx-emoji-data\" hidden";
     foreach ($aValues as $sKey => $sValue) {
@@ -910,7 +914,7 @@ function nxGetRenderThrobberHtmlAttributes($blUseRenderThrobberLock) {
 
 function nxGetCondensedTableClass() {
     $sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
-    return preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent) == 1 ? " nx-condensed-table" : "";
+    return preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent) ? " nx-condensed-table" : "";
 }
 
 function nxHtmlValue($mValue) {
@@ -1166,7 +1170,6 @@ function nxRenderContactTypeAdminRow($aContactType, $blShowActions = true) {
     global $sDeleteEmoji, $sEditEmoji, $sMergeEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
 
     $blIsActive = (int)$aContactType["is_active"] == 1;
-
     return "      <tr data-contact-type-id=\"" . nxHtml($aContactType["id"]) . "\" data-contact-type-name=\"" . nxHtml($aContactType["name"]) . "\" data-contact-type-active=\"" . ($blIsActive ? "1" : "0") . "\" data-contact-type-order=\"" . nxHtml($aContactType["order"]) . "\">\n"
         . "        <td>" . nxHtml($aContactType["name"]) . "</td>\n"
         . "        <td>" . nxHtml($aContactType["contact_count"]) . "</td>\n"
@@ -1266,10 +1269,7 @@ function nxNormalizeYouTubeContactValue($sValue, $blRejectNonYouTubeLink = false
     if (preg_match("#^//#", $sText)) {
         $sText = "https:" . $sText;
     }
-    $blLooksLikeUrl = preg_match("#^https?://#i", $sText) === 1
-        || preg_match("#^www\\.#i", $sText) === 1
-        || preg_match("#^(?:youtube\\.com|www\\.youtube\\.com)(?:[/:?\\#].*)?$#i", $sText) === 1
-        || preg_match("#^[A-Za-z0-9.-]+\\.[A-Za-z]{2,}[/:?\\#].*$#", $sText) === 1;
+    $blLooksLikeUrl = preg_match("#^https?://#i", $sText) || preg_match("#^www\\.#i", $sText) || preg_match("#^(?:youtube\\.com|www\\.youtube\\.com)(?:[/:?\\#].*)?$#i", $sText) || preg_match("#^[A-Za-z0-9.-]+\\.[A-Za-z]{2,}[/:?\\#].*$#", $sText);
     if ($blLooksLikeUrl) {
         $aParts = parse_url(preg_match("#^https?://#i", $sText) ? $sText : "https://" . $sText);
         $sHost = isset($aParts["host"]) ? strtolower((string)$aParts["host"]) : "";
@@ -1477,7 +1477,7 @@ function nxPhonePatternMatches($sPattern, $sValue, $blFullMatch = true, &$aMatch
         return false;
     }
     $sRegex = $blFullMatch ? "~^(?:" . str_replace("~", "\\~", $sPattern) . ")$~" : "~^(?:" . str_replace("~", "\\~", $sPattern) . ")~";
-    return @preg_match($sRegex, (string)$sValue, $aMatches) === 1;
+    return @preg_match($sRegex, (string)$sValue, $aMatches);
 }
 
 function nxPhoneMetadata() {
@@ -1898,9 +1898,7 @@ function nxNormalizeProfileContactValue($sContactType, $sValue) {
     if (preg_match("#^//#", $sText)) {
         $sText = "https:" . $sText;
     }
-    $blLooksLikeUrl = preg_match("#^https?://#i", $sText) === 1
-        || preg_match("#^www\\.#i", $sText) === 1
-        || preg_match("#^[A-Za-z0-9.-]+\\.[A-Za-z]{2,}[/:?\\#].*$#", $sText) === 1;
+    $blLooksLikeUrl = preg_match("#^https?://#i", $sText) || preg_match("#^www\\.#i", $sText) || preg_match("#^[A-Za-z0-9.-]+\\.[A-Za-z]{2,}[/:?\\#].*$#", $sText);
     foreach ($aRule["hosts"] as $sAllowedHost) {
         if ($sText == $sAllowedHost || strpos($sText, $sAllowedHost . "/") === 0 || $sText == "www." . $sAllowedHost || strpos($sText, "www." . $sAllowedHost . "/") === 0) {
             $blLooksLikeUrl = true;
@@ -1936,10 +1934,7 @@ function nxNormalizeProfileContactValue($sContactType, $sValue) {
     if (!empty($aRule["strip_at"])) {
         $sHandle = preg_replace("/^@+/", "", $sHandle);
     }
-    if (!preg_match($aRule["pattern"], $sHandle)) {
-        return false;
-    }
-    return (string)$aRule["base"] . rawurlencode($sHandle);
+    return preg_match($aRule["pattern"], $sHandle) ? (string)$aRule["base"] . rawurlencode($sHandle) : false;
 }
 
 function nxNormalizeLinkedInContactValue($sValue) {
@@ -1975,10 +1970,7 @@ function nxNormalizeLinkedInContactValue($sValue) {
             $sHandle = $sText;
         }
     }
-    if (!preg_match("/^[A-Za-z0-9_-]{2,100}$/", $sHandle)) {
-        return false;
-    }
-    return "https://www.linkedin.com/" . $sKind . "/" . rawurlencode($sHandle);
+    return preg_match("/^[A-Za-z0-9_-]{2,100}$/", $sHandle) ? "https://www.linkedin.com/" . $sKind . "/" . rawurlencode($sHandle) : false;
 }
 
 function nxNormalizeStackOverflowContactValue($sValue) {
@@ -2004,10 +1996,7 @@ function nxNormalizeStackOverflowContactValue($sValue) {
     } else {
         $sUserId = $sText;
     }
-    if (!preg_match("/^[0-9]+$/", $sUserId)) {
-        return false;
-    }
-    return "https://stackoverflow.com/users/" . $sUserId;
+    return preg_match("/^[0-9]+$/", $sUserId) ? "https://stackoverflow.com/users/" . $sUserId : false;
 }
 
 function nxNormalizeSteamContactValue($sValue) {
@@ -2039,10 +2028,7 @@ function nxNormalizeSteamContactValue($sValue) {
     if ($sKind == "profiles" && !preg_match("/^[0-9]{17}$/", $sValuePart)) {
         return false;
     }
-    if ($sKind == "id" && !preg_match("/^[A-Za-z0-9_-]{2,64}$/", $sValuePart)) {
-        return false;
-    }
-    return "https://steamcommunity.com/" . $sKind . "/" . rawurlencode($sValuePart);
+    return $sKind == "id" && !preg_match("/^[A-Za-z0-9_-]{2,64}$/", $sValuePart) ? false : "https://steamcommunity.com/" . $sKind . "/" . rawurlencode($sValuePart);
 }
 
 function nxNormalizeGoodreadsContactValue($sValue) {
@@ -2065,10 +2051,7 @@ function nxNormalizeGoodreadsContactValue($sValue) {
         }
         return "https://www.goodreads.com/user/show/" . $aMatches[1];
     }
-    if (!preg_match("/^[0-9]+$/", $sText)) {
-        return false;
-    }
-    return "https://www.goodreads.com/user/show/" . $sText;
+    return preg_match("/^[0-9]+$/", $sText) ? "https://www.goodreads.com/user/show/" . $sText : false;
 }
 
 function nxNormalizeFederatedContactValue($sValue, $sPathPrefix) {
@@ -2109,7 +2092,7 @@ function nxNormalizeFederatedContactValue($sValue, $sPathPrefix) {
 }
 
 function nxIsAtprotoHandle($sHandle) {
-    return preg_match("/^([A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/", (string)$sHandle) === 1;
+    return preg_match("/^([A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/", (string)$sHandle);
 }
 
 function nxNormalizeBlueskyContactValue($sValue) {
@@ -2135,10 +2118,7 @@ function nxNormalizeBlueskyContactValue($sValue) {
     } else {
         $sHandle = strtolower(preg_replace("/^@+/", "", $sText));
     }
-    if (!nxIsAtprotoHandle($sHandle)) {
-        return false;
-    }
-    return "https://bsky.app/profile/" . rawurlencode($sHandle);
+    return nxIsAtprotoHandle($sHandle) ? "https://bsky.app/profile/" . rawurlencode($sHandle) : false;
 }
 
 function nxNormalizeMatrixContactValue($sValue) {
@@ -2149,10 +2129,7 @@ function nxNormalizeMatrixContactValue($sValue) {
     if (preg_match("#^https?://matrix\\.to/\\#/(@[^?\\#]+)#i", $sText, $aMatches)) {
         $sText = rawurldecode($aMatches[1]);
     }
-    if (!preg_match("/^@[a-z0-9._=\\-\\/+]+:[A-Za-z0-9.-]+(?::[0-9]+)?$/", $sText)) {
-        return false;
-    }
-    return $sText;
+    return preg_match("/^@[a-z0-9._=\\-\\/+]+:[A-Za-z0-9.-]+(?::[0-9]+)?$/", $sText) ? $sText : false;
 }
 
 function nxNormalizeJabberContactValue($sValue) {
@@ -2161,10 +2138,7 @@ function nxNormalizeJabberContactValue($sValue) {
         return "";
     }
     $sText = preg_replace("#^xmpp:#i", "", $sText);
-    if (!preg_match("#^[^@\\s/]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}(?:/[^\\s]+)?$#", $sText)) {
-        return false;
-    }
-    return $sText;
+    return preg_match("#^[^@\\s/]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}(?:/[^\\s]+)?$#", $sText) ? $sText : false;
 }
 
 function nxOrcidCheckDigit($sDigits) {
@@ -2328,7 +2302,6 @@ function nxContactTypeHasKnownLink($sType) {
 function nxContactDisplayValue($sType, $sValue) {
     $sType = nxContactTypeKey($sType);
     $sCanonicalValue = nxContactCanonicalValue($sType, $sValue);
-
     if (nxIsPhoneContactType($sType) || (string)$sType == "whatsapp" || (string)$sType == "viber") {
         return nxPhoneContactDisplayValue($sCanonicalValue);
     }
@@ -2386,7 +2359,6 @@ function nxContactLinkEmoji($sType) {
     global $sContactEmailEmoji, $sContactLandlineEmoji, $sContactCellEmoji, $sContactFaxEmoji, $sContactPagerEmoji, $sContactWebEmoji, $sContactTelegramEmoji, $sContactMessageEmoji, $sContactYouTubeEmoji;
 
     $sType = nxContactTypeKey($sType);
-
     if ($sType == "email") {
         return $sContactEmailEmoji;
     }
@@ -2428,7 +2400,6 @@ function nxContactLinkEmoji($sType) {
 
 function nxContactLinkTitle($sType) {
     $sType = nxContactTypeKey($sType);
-
     if ($sType == "email") {
         return "Send e-mail";
     }
@@ -2472,8 +2443,7 @@ function nxContactLinkTitle($sType) {
 }
 
 function nxRenderContactValue($sType, $sValue, $blShowCopy = false, $blAllowExternalLinks = false, $sTooltipAttribute = "") {
-    return nxRenderContactValueText($sType, $sValue, $sTooltipAttribute)
-        . nxRenderContactValueActions($sType, $sValue, $blShowCopy, $blAllowExternalLinks);
+    return nxRenderContactValueText($sType, $sValue, $sTooltipAttribute) . nxRenderContactValueActions($sType, $sValue, $blShowCopy, $blAllowExternalLinks);
 }
 
 function nxRenderContactValueText($sType, $sValue, $sTooltipAttribute = "") {
@@ -2537,7 +2507,6 @@ function nxPostalCodeMetadata() {
     if ($aMetadata !== null) {
         return $aMetadata;
     }
-
     $sFile = __DIR__ . "/lib/postal_code_metadata.json";
     $aMetadata = array();
     if (is_file($sFile)) {
@@ -2556,7 +2525,7 @@ function nxPostalCodePatternMatches($sPattern, $sPostalCode) {
     if ($sPattern == "") {
         return true;
     }
-    return @preg_match("~^(?:" . str_replace("~", "\\~", $sPattern) . ")$~i", (string)$sPostalCode) === 1;
+    return @preg_match("~^(?:" . str_replace("~", "\\~", $sPattern) . ")$~i", (string)$sPostalCode);
 }
 
 function nxPostalCodeAlnum($sPostalCode) {
@@ -3633,7 +3602,6 @@ function nxNormalizePortalPermissionKeys($oPdo, $aPermissionKeys) {
     if (!$aKeys) {
         return $aNormalizedKeys;
     }
-
     $aPlaceholders = array();
     $aParams = array();
     $iIndex = 0;
@@ -3722,7 +3690,6 @@ function nxSaveSubjectPortalAccess($oPdo, $iSubjectId, $sSubjectType, $aPayload)
     $oStatement = $oPdo->prepare("SELECT id, password_hash FROM ex_users WHERE subject_id = :subject_id FOR UPDATE");
     $oStatement->execute(array("subject_id" => $iSubjectId));
     $aUser = $oStatement->fetch(PDO::FETCH_ASSOC);
-
     if (!$iEnabled) {
         if ($aUser) {
             $oStatement = $oPdo->prepare("DELETE FROM ex_user_permissions WHERE user_id = :user_id");
@@ -3744,7 +3711,6 @@ function nxSaveSubjectPortalAccess($oPdo, $iSubjectId, $sSubjectType, $aPayload)
     if (!$aUser && $sPassword == "") {
         throw new Exception("Password is required for a new portal user.");
     }
-
     if ($aUser) {
         if ($sPassword != "") {
             $oStatement = $oPdo->prepare("UPDATE ex_users SET user_name = :user_name, password_hash = :password_hash, is_active = :is_active WHERE id = :id");
@@ -3773,7 +3739,6 @@ function nxSaveSubjectPortalAccess($oPdo, $iSubjectId, $sSubjectType, $aPayload)
         ));
         $iUserId = (int)$oPdo->lastInsertId();
     }
-
     $aPermissionKeys = isset($aPayload["portal_permission_keys"]) && is_array($aPayload["portal_permission_keys"]) ? $aPayload["portal_permission_keys"] : array();
     nxSavePortalUserPermissions($oPdo, $iUserId, $aPermissionKeys);
 }
@@ -3785,7 +3750,6 @@ function nxRenderGroupAdminRow($aGroup, $blShowActions = true) {
     $sPermissionNames = isset($aGroup["permission_names"]) ? (string)$aGroup["permission_names"] : "";
     $sTimestampTooltipText = nxTimestampTooltipText($aGroup);
     $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sTimestampTooltipText)) . "\"" : "";
-
     return "      <tr data-group-id=\"" . nxHtml($aGroup["id"]) . "\" data-group-name=\"" . nxHtml($aGroup["name"]) . "\" data-group-order=\"" . nxHtml($aGroup["order"]) . "\" data-permission-keys=\"" . nxHtml($sPermissionKeys) . "\">\n"
         . "        <td><span" . $sTimestampTooltipAttribute . ">" . nxHtml($aGroup["name"]) . "</span></td>\n"
         . "        <td>" . nxHtml($aGroup["subject_count"]) . "</td>\n"
@@ -3826,7 +3790,6 @@ function nxUpdateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId
     if (!$aSubjectContact) {
         return null;
     }
-
     $iOriginalContactId = (int)$aSubjectContact["contact_id"];
     $blContactTypeChanged = (int)$aSubjectContact["current_contact_type_id"] != $iContactTypeId;
     $blContactValueChanged = (string)$aSubjectContact["current_contact_value"] != $sContactValue;
@@ -3874,7 +3837,6 @@ function nxUpdateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId
             ));
         }
     }
-
     $aContact = array(
         "subject_id" => (int)$aSubjectContact["subject_id"],
         "current_is_active" => (int)$aSubjectContact["current_is_active"],
@@ -3901,7 +3863,6 @@ function nxGetHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $
         "addresses" => array(),
         "notes" => array()
     );
-
     if (empty($aSettings["show_inactive_contacts"])) {
         nxCollectHiddenInactiveSubjectItems($aHiddenInactive["contacts"], $aContacts);
     }
@@ -3927,7 +3888,6 @@ function nxApplySubjectVisibilitySettings(&$aRows, &$aContacts, &$aNicknames, &$
         }
         $aRows = $aActiveRows;
     }
-
     if (empty($aSettings["show_inactive_nicknames"])) {
         foreach ($aNicknames as $iSubjectId => $aSubjectNicknames) {
             $aActiveNicknames = array();
@@ -3939,7 +3899,6 @@ function nxApplySubjectVisibilitySettings(&$aRows, &$aContacts, &$aNicknames, &$
             $aNicknames[$iSubjectId] = $aActiveNicknames;
         }
     }
-
     if (empty($aSettings["show_inactive_addresses"])) {
         foreach ($aAddresses as $iSubjectId => $aSubjectAddresses) {
             $aActiveAddresses = array();
@@ -3951,7 +3910,6 @@ function nxApplySubjectVisibilitySettings(&$aRows, &$aContacts, &$aNicknames, &$
             $aAddresses[$iSubjectId] = $aActiveAddresses;
         }
     }
-
     if (empty($aSettings["show_inactive_contacts"])) {
         foreach ($aContacts as $iSubjectId => $aSubjectContacts) {
             $aActiveContacts = array();
@@ -3963,7 +3921,6 @@ function nxApplySubjectVisibilitySettings(&$aRows, &$aContacts, &$aNicknames, &$
             $aContacts[$iSubjectId] = $aActiveContacts;
         }
     }
-
     if (empty($aSettings["show_inactive_notes"])) {
         foreach ($aNotes as $iSubjectId => $aSubjectNotes) {
             $aActiveNotes = array();
@@ -4122,11 +4079,7 @@ function nxFetchSubjectEditorData($oPdo, $iSubjectId) {
     $oStatement = $oPdo->prepare("SELECT s.id AS subject_id, s.subject_type, s.is_active, subn.name AS subject_name_value, p.title_before, p.first_name, p.middle_name, p.last_name, p.title_after, p.birth_name, p.birth_number, p.birth_date, p.death_date FROM ex_subjects AS s LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id WHERE s.id = :subject_id");
     $oStatement->execute(array("subject_id" => $iSubjectId));
     $aSubject = $oStatement->fetch(PDO::FETCH_ASSOC);
-    if (!$aSubject) {
-        return null;
-    }
-
-    return $aSubject;
+    return $aSubject ? $aSubject : null;
 }
 
 function nxFetchSubjectPortalEditorData($oPdo, $iSubjectId) {
@@ -4134,7 +4087,6 @@ function nxFetchSubjectPortalEditorData($oPdo, $iSubjectId) {
     if (!$aRows) {
         return null;
     }
-
     return array(
         "subject_id" => (int)$aRows[0]["subject_id"],
         "subject_name" => (string)$aRows[0]["subject_name"],
@@ -4145,7 +4097,8 @@ function nxFetchSubjectPortalEditorData($oPdo, $iSubjectId) {
 }
 
 function getPhpGeneratedStyleTag($sStyleNonce) {
-    $sBaseUrl = isset($GLOBALS["sBaseUrl"]) ? $GLOBALS["sBaseUrl"] : "";
+    global $sBaseUrl;
+
     return "  <link href=\"" . htmlspecialchars($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" rel=\"stylesheet\" type=\"text/css\">\n";
 }
 
@@ -4172,7 +4125,6 @@ function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
     if (stripos($sHtml, "<html") !== false) {
         return addPhpGeneratedViewportMeta($sHtml);
     }
-
     $sHtml = addPhpGeneratedStyleAttributes($sHtml, $sStyleNonce);
     return "<!DOCTYPE html>\n"
         . "<html lang=\"en-US\" dir=\"ltr\">\n"
@@ -4222,6 +4174,8 @@ function getPhpGeneratedSelectedFlags($sName, $aTypes, $iDefaultValue) {
 }
 
 function sendPhpGeneratedOutputAndExit($sType, $iSelect) {
+    global $aAllowedIps;
+
     ob_start();
     if ($sType == "credits") {
         phpcredits($iSelect | CREDITS_FULLPAGE);
@@ -4229,9 +4183,7 @@ function sendPhpGeneratedOutputAndExit($sType, $iSelect) {
         phpinfo($iSelect);
     }
     $sTitle = $sType == "credits" ? "PHP Credits" : "PHP Info";
-    if (isset($GLOBALS["aAllowedIps"]) && is_array($GLOBALS["aAllowedIps"])) {
-        $sTitle = getExPageTitleText($sTitle, $GLOBALS["aAllowedIps"]);
-    }
+    $sTitle = getExPageTitleText($sTitle, $aAllowedIps);
     $sHtml = ob_get_clean();
     $sStyleNonce = stripos($sHtml, "<html") !== false ? "" : base64_encode(random_bytes(16));
     $sHtml = formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle);
@@ -4312,7 +4264,6 @@ function nxAddressesDecodeMatch($sMatch) {
     $sJson = base64_decode((string)$sMatch, true);
     $aMatch = $sJson !== false ? json_decode($sJson, true) : null;
     $aFields = nxAddressesAddressFields();
-
     if (!is_array($aMatch)) {
         return null;
     }
@@ -4362,7 +4313,6 @@ function nxAddressesPostedAddressValues() {
     $sPostalCode = nxGetPostedTrimmedValue("postal_code");
     $sRegion = nxGetPostedTrimmedValue("region");
     $sCountry = nxCountryNameToCode(nxGetPostedTrimmedValue("country"));
-
     if ($sCountry != "") {
         $sCountry = strtoupper($sCountry);
     }
@@ -4401,7 +4351,6 @@ function nxAddressesPostedSubjectAddressValues() {
     $sAddressType = nxGetPostedTrimmedValue("address_type");
     $sNote = nxGetPostedTrimmedValue("note");
     $aAddress = nxAddressesPostedAddressValues();
-
     if ($sAddressType == "") {
         $sAddressType = "main";
     }
@@ -4461,9 +4410,11 @@ function nxAddressesFilterText($aAddressRow) {
 }
 
 function nxAddressesRenderAddressCell($aAddressRow, $iSubjectCount, $blCanEdit) {
+    global $sEditEmoji, $sDeleteEmoji;
+
     $sAddressTimestampTooltipText = nxTimestampTooltipText($aAddressRow);
     $sAddressTimestampTooltipAttribute = $sAddressTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sAddressTimestampTooltipText)) . "\"" : "";
-    $sAddressActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-shared-address\" title=\"Edit shared address\" aria-label=\"Edit shared address\">" . $GLOBALS["sEditEmoji"] . "</a><a href=\"#\" class=\"nx-item-action js-delete-shared-address\" title=\"Delete shared address\" aria-label=\"Delete shared address\">" . $GLOBALS["sDeleteEmoji"] . "</a></span>" : "";
+    $sAddressActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-shared-address\" title=\"Edit shared address\" aria-label=\"Edit shared address\">" . $sEditEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-shared-address\" title=\"Delete shared address\" aria-label=\"Delete shared address\">" . $sDeleteEmoji . "</a></span>" : "";
     return "        <td class=\"nx-address-cell\" rowspan=\"" . nxHtml($iSubjectCount) . "\"" . nxAddressesRenderDataAttributes($aAddressRow) . ">"
         . "<span class=\"nx-subject-item-value\"" . $sAddressTimestampTooltipAttribute . ">" . nxHtmlValue($aAddressRow["address_text"]) . "</span>"
         . nxRenderCopyAction($aAddressRow["address_copy_text"])
@@ -4473,12 +4424,14 @@ function nxAddressesRenderAddressCell($aAddressRow, $iSubjectCount, $blCanEdit) 
 }
 
 function nxAddressesRenderSubjectCell($aSubject, $sAddressFilterText, $blCanEdit) {
+    global $sEditEmoji, $sDeleteEmoji, $sPrimaryEmoji, $sInactiveEmoji;
+
     $sSubjectTimestampTooltipText = nxTimestampTooltipText($aSubject);
     $sSubjectTimestampTooltipAttribute = $sSubjectTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sSubjectTimestampTooltipText)) . "\"" : "";
-    $sSubjectActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject-address-local\" title=\"Edit subject address\" aria-label=\"Edit subject address\">" . $GLOBALS["sEditEmoji"] . "</a><a href=\"#\" class=\"nx-item-action js-delete-subject-address-local\" title=\"Delete subject address\" aria-label=\"Delete subject address\">" . $GLOBALS["sDeleteEmoji"] . "</a></span>" : "";
-    $sSubjectEditAction = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $GLOBALS["sEditEmoji"] . "</a></span>" : "";
+    $sSubjectActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject-address-local\" title=\"Edit subject address\" aria-label=\"Edit subject address\">" . $sEditEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-subject-address-local\" title=\"Delete subject address\" aria-label=\"Delete subject address\">" . $sDeleteEmoji . "</a></span>" : "";
+    $sSubjectEditAction = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a></span>" : "";
     $sSubjectValueClass = "nx-subject-item-value" . ((string)$aSubject["address_values"]["address_type"] == "main" ? " nx-subject-address-main-value" : "");
-    $sSubjectPrimaryFlag = "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ((int)$aSubject["is_primary"] == 1 ? $GLOBALS["sPrimaryEmoji"] : "") . "</span><span title=\"Inactive\">" . ((int)$aSubject["address_is_active"] == 1 ? "" : $GLOBALS["sInactiveEmoji"]) . "</span></span>";
+    $sSubjectPrimaryFlag = "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ((int)$aSubject["is_primary"] == 1 ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ((int)$aSubject["address_is_active"] == 1 ? "" : $sInactiveEmoji) . "</span></span>";
     return "        <td class=\"" . nxHtml(nxAddressesSubjectCellClass($aSubject)) . " nx-list-item nx-subject-address-item\"" . nxAddressesRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sAddressFilterText) . "</span><span class=\"" . nxHtml($sSubjectValueClass) . "\"" . $sSubjectTimestampTooltipAttribute . ">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . $sSubjectPrimaryFlag . $sSubjectActions . "</td>\n";
 }
 
@@ -4641,7 +4594,6 @@ function nxBdIsBirthdayServed($aServedRows, $iSubjectId, $sBirthdayDate) {
 function nxBdCompareRows($aFirst, $aSecond) {
     $iFirstCountdown = isset($aFirst["days_to_birthday"]) ? (int)$aFirst["days_to_birthday"] : 0;
     $iSecondCountdown = isset($aSecond["days_to_birthday"]) ? (int)$aSecond["days_to_birthday"] : 0;
-
     if ($iFirstCountdown === $iSecondCountdown) {
         $iResult = strcmp((string)(isset($aFirst["subject_sort_name"]) ? $aFirst["subject_sort_name"] : $aFirst["subject_name"]), (string)(isset($aSecond["subject_sort_name"]) ? $aSecond["subject_sort_name"] : $aSecond["subject_name"]));
         if ($iResult !== 0) {
@@ -4746,10 +4698,6 @@ function nxBdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $
     return nxGetUpdatedServedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions, "nxBdGetSubjectServedInfo", "nxBdRenderSubjectRow");
 }
 
-function nxCardDavRealm() {
-    return "EVED CardDAV";
-}
-
 function nxCardDavSendCommonHeaders() {
     header("DAV: 1, 3, addressbook", true);
     header("MS-Author-Via: DAV", true);
@@ -4772,7 +4720,7 @@ function nxCardDavSendTextAndExit($iStatusCode, $sText) {
 function nxCardDavSendAuthChallengeAndExit() {
     $sBody = "Authentication required.\r\n";
     http_response_code(401);
-    header("WWW-Authenticate: Basic realm=\"" . str_replace("\"", "", nxCardDavRealm()) . "\", charset=\"UTF-8\"", true);
+    header("WWW-Authenticate: Basic realm=\"" . str_replace("\"", "", "EVED CardDAV") . "\", charset=\"UTF-8\"", true);
     header("Content-Type: text/plain; charset=utf-8", true);
     header("Content-Length: " . strlen($sBody), true);
     header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0", true);
@@ -4817,11 +4765,9 @@ function nxCardDavBasicCredentials() {
     $sAuthorization = "";
     $sDecoded = "";
     $iColon = 0;
-
     if ($sUserName != "" || $sPassword != "") {
         return array($sUserName, $sPassword);
     }
-
     $sAuthorization = trim(nxCardDavHeaderValue("Authorization"));
     if (!preg_match("/^Basic\\s+(.+)$/i", $sAuthorization, $aMatches)) {
         return array("", "");
@@ -4909,10 +4855,6 @@ function nxCardDavHref($aQuery) {
         $sHref .= "?" . http_build_query($aQuery, "", "&");
     }
     return $sHref;
-}
-
-function nxCardDavIsHomePath($sPath) {
-    return (string)$sPath == "/";
 }
 
 function nxCardDavIsAddressBookPath($sPath) {
@@ -5325,8 +5267,7 @@ function nxCardDavCardPropsXml($aCard, $blIncludeAddressData) {
 function nxCardDavMultistatusAndExit($sInnerXml) {
     $sBody = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n"
         . "<d:multistatus xmlns:d=\"DAV:\" xmlns:card=\"urn:ietf:params:xml:ns:carddav\" xmlns:cs=\"http://calendarserver.org/ns/\">\r\n"
-        . $sInnerXml
-        . "</d:multistatus>\r\n";
+        . $sInnerXml . "</d:multistatus>\r\n";
     http_response_code(207);
     header("Content-Type: application/xml; charset=utf-8", true);
     header("Content-Length: " . strlen($sBody), true);
@@ -5337,15 +5278,8 @@ function nxCardDavMultistatusAndExit($sInnerXml) {
     exit;
 }
 
-function nxCardDavIsPrincipalPath($sPath) {
-    return preg_match("#^/principals/[^/]+/?$#", $sPath) === 1;
-}
-
 function nxCardDavSubjectIdFromPath($sPath) {
-    if (preg_match("#^/(?:addressbook/)?ex-subject-([0-9]+)\\.vcf$#", $sPath, $aMatches)) {
-        return (int)$aMatches[1];
-    }
-    return 0;
+    return preg_match("#^/(?:addressbook/)?ex-subject-([0-9]+)\\.vcf$#", $sPath, $aMatches) ? (int)$aMatches[1] : 0;
 }
 
 function nxCardDavSubjectIdFromHref($sHref) {
@@ -5400,7 +5334,7 @@ function nxCardDavRequestHrefs($sBody) {
 function nxCardDavSendPropfindAndExit($aCards, $aUser, $sPath) {
     $sDepth = isset($_SERVER["HTTP_DEPTH"]) ? (string)$_SERVER["HTTP_DEPTH"] : "infinity";
     $sXml = "";
-    if (nxCardDavIsHomePath($sPath)) {
+    if ((string)$sPath == "/") {
         $sXml .= nxCardDavResponseStart(nxCardDavHref(array()))
             . nxCardDavCollectionPropsXml($aCards, $aUser)
             . nxCardDavResponseEnd();
@@ -5437,7 +5371,7 @@ function nxCardDavSendPropfindAndExit($aCards, $aUser, $sPath) {
         }
         nxCardDavMultistatusAndExit($sXml);
     }
-    if (nxCardDavIsPrincipalPath($sPath)) {
+    if (preg_match("#^/principals/[^/]+/?$#", $sPath)) {
         $sXml .= nxCardDavResponseStart(nxCardDavHref(array("principal" => (string)$aUser["user_name"])))
             . nxCardDavPrincipalPropsXml($aUser)
             . nxCardDavResponseEnd();
@@ -5459,7 +5393,7 @@ function nxCardDavSendReportAndExit($aCards, $sPath) {
     $aWantedIds = array();
     $sXml = "";
     $blIncludeAddressData = stripos($sBody, "address-data") !== false;
-    if (!nxCardDavIsHomePath($sPath) && !nxCardDavIsAddressBookPath($sPath)) {
+    if ((string)$sPath != "/" && !nxCardDavIsAddressBookPath($sPath)) {
         nxCardDavSendTextAndExit(404, "Not found.");
     }
     foreach ($aHrefs as $sHref) {
@@ -5482,7 +5416,7 @@ function nxCardDavSendReportAndExit($aCards, $sPath) {
 function nxCardDavSendGetAndExit($aCards, $sPath, $blHeadOnly) {
     $iSubjectId = nxCardDavSubjectIdFromPath($sPath);
     $aCard = null;
-    if (nxCardDavIsHomePath($sPath) || nxCardDavIsAddressBookPath($sPath)) {
+    if ((string)$sPath == "/" || nxCardDavIsAddressBookPath($sPath)) {
         nxCardDavSendCollectionGetAndExit($aCards, $sPath, $blHeadOnly);
     }
     if ($iSubjectId < 1 || !isset($aCards[$iSubjectId])) {
@@ -5589,11 +5523,13 @@ function nxContactsFilterText($aContactRow) {
 }
 
 function nxContactsRenderSubjectCell($aSubject, $sContactFilterText, $blCanEdit) {
+    global $sEditEmoji, $sDeleteEmoji, $sPrimaryEmoji, $sInactiveEmoji;
+
     $sSubjectTimestampTooltipText = nxTimestampTooltipText($aSubject);
     $sSubjectTimestampTooltipAttribute = $sSubjectTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sSubjectTimestampTooltipText)) . "\"" : "";
-    $sSubjectActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject-contact\" title=\"Edit subject contact\" aria-label=\"Edit subject contact\">" . $GLOBALS["sEditEmoji"] . "</a><a href=\"#\" class=\"nx-item-action js-delete-subject-contact\" title=\"Delete subject contact\" aria-label=\"Delete subject contact\">" . $GLOBALS["sDeleteEmoji"] . "</a></span>" : "";
-    $sSubjectEditAction = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $GLOBALS["sEditEmoji"] . "</a></span>" : "";
-    $sSubjectPrimaryFlag = "<span class=\"nx-contact-flags\"><span class=\"nx-contact-primary\" title=\"Primary\">" . ((int)$aSubject["is_primary"] == 1 ? $GLOBALS["sPrimaryEmoji"] : "") . "</span><span class=\"nx-contact-inactive-label\" title=\"Inactive\">" . ((int)$aSubject["contact_is_active"] == 1 ? "" : $GLOBALS["sInactiveEmoji"]) . "</span></span>";
+    $sSubjectActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject-contact\" title=\"Edit subject contact\" aria-label=\"Edit subject contact\">" . $sEditEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-subject-contact\" title=\"Delete subject contact\" aria-label=\"Delete subject contact\">" . $sDeleteEmoji . "</a></span>" : "";
+    $sSubjectEditAction = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a></span>" : "";
+    $sSubjectPrimaryFlag = "<span class=\"nx-contact-flags\"><span class=\"nx-contact-primary\" title=\"Primary\">" . ((int)$aSubject["is_primary"] == 1 ? $sPrimaryEmoji : "") . "</span><span class=\"nx-contact-inactive-label\" title=\"Inactive\">" . ((int)$aSubject["contact_is_active"] == 1 ? "" : $sInactiveEmoji) . "</span></span>";
     return "        <td class=\"" . nxHtml(nxContactsSubjectCellClass($aSubject)) . " nx-list-item\"" . nxContactsRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sContactFilterText) . "</span><span class=\"nx-subject-item-value\"" . $sSubjectTimestampTooltipAttribute . ">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . "<span class=\"nx-contact-item nx-contact-subject-item\"" . nxContactsRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-contact-note\">" . ($aSubject["note"] != "" ? "(" . nxHtml($aSubject["note"]) . ")" : "") . "</span>" . $sSubjectPrimaryFlag . $sSubjectActions . "</span></td>\n";
 }
 
@@ -6302,7 +6238,6 @@ function nxGetFullListComplexFilterFields($aContactTypes) {
     return $aFields;
 }
 
-
 function nxGetFullListComplexFilterOperators() {
     return array(
         "equals" => array("label" => "is equal to", "needs_value" => 1),
@@ -6322,14 +6257,12 @@ function nxGetFullListComplexFilterOperators() {
     );
 }
 
-
 function nxGetDefaultFullListComplexFilter() {
     return array(
         "match" => "all",
         "conditions" => array()
     );
 }
-
 
 function nxGetDefaultFullListComplexFilterDraft() {
     return array(
@@ -6925,10 +6858,7 @@ function nxDiffNormalizeCreateSql($sSql) {
 }
 
 function nxDiffGetPrimaryKeyColumns($sCreateSql) {
-    if (!preg_match("/PRIMARY\s+KEY\s+\(([^)]*)\)/is", $sCreateSql, $aMatches)) {
-        return array();
-    }
-    return nxDiffParseSqlIdentifierList($aMatches[1]);
+    return preg_match("/PRIMARY\s+KEY\s+\(([^)]*)\)/is", $sCreateSql, $aMatches) ? nxDiffParseSqlIdentifierList($aMatches[1]) : array();
 }
 
 function nxDiffSplitSqlStatements($sSql) {

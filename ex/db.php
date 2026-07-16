@@ -83,8 +83,9 @@ if (isset($_GET["download"])) {
         } catch (Exception $oException) {
             send500AndExit("Database error: " . $oException->getMessage());
         }
-        $sPrefix = isset($GLOBALS["sDatabaseDownloadPrefix"]) ? $GLOBALS["sDatabaseDownloadPrefix"] : "eved";
-        $sProject = isset($GLOBALS["sDatabaseDownloadProject"]) ? $GLOBALS["sDatabaseDownloadProject"] : basename(__DIR__);
+        $aScriptNameParts = explode("/", $_SERVER["SCRIPT_NAME"]);
+        $sPrefix = $aScriptNameParts[1];
+        $sProject = $aScriptNameParts[2];
         $sFileName = $sPrefix . "_" . $sProject . "_" . $sDownload . "_" . date("Y-m-d_His", time()) . ".sql";
         sendDatabaseSqlAndExit($sFileName, $sBody);
     }
