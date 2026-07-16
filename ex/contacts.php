@@ -196,20 +196,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
     try {
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("SELECT id FROM ex_contacts WHERE id = :id FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT id, contact_type_id AS current_contact_type_id, contact_value AS current_contact_value FROM ex_contacts WHERE id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iContactId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        $aContact = $oStatement->fetch(PDO::FETCH_ASSOC);
+        if (!$aContact) {
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Contact was not found."), 404);
         }
-        $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
-        $oStatement->execute(array(
-            "contact_type_id" => $iContactTypeId,
-            "contact_value" => $sContactValue,
-            "id" => $iContactId
-        ));
+        $blContactTypeChanged = (int)$aContact["current_contact_type_id"] != $iContactTypeId;
+        $blContactValueChanged = (string)$aContact["current_contact_value"] != $sContactValue;
+        if ($blContactTypeChanged || $blContactValueChanged) {
+            $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
+            $oStatement->execute(array(
+                "contact_type_id" => $iContactTypeId,
+                "contact_value" => $sContactValue,
+                "id" => $iContactId
+            ));
+        }
         $oPdo->commit();
-        nxSendJsonAndExit(array("success" => true, "reload_required" => true));
+        nxSendJsonAndExit(array(
+            "success" => true,
+            "reload_required" => $blContactTypeChanged,
+            "contact" => nxAddContactTimestampTooltip($oPdo, array(
+                "contact_id" => $iContactId,
+                "contact_type_id" => $iContactTypeId,
+                "contact_type" => (string)$aContactType["contact_type"],
+                "contact_type_label" => (string)$aContactType["name"],
+                "contact_value" => $sContactValue,
+                "contact_display_value" => nxContactDisplayValue((string)$aContactType["contact_type"], $sContactValue)
+            ))
+        ));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
@@ -287,25 +303,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
     try {
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("SELECT sc.id, sc.subject_id, sc.contact_id, sc.is_active AS current_is_active, c.contact_type_id AS current_contact_type_id, c.contact_value AS current_contact_value FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id WHERE sc.id = :id FOR UPDATE");
-        $oStatement->execute(array("id" => $iSubjectContactId));
-        $aSubjectContact = $oStatement->fetch(PDO::FETCH_ASSOC);
-        if (!$aSubjectContact) {
+        $aUpdatedContact = nxUpdateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId, $sContactValue, $aContactType);
+        if (!$aUpdatedContact) {
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Contact link was not found."), 404);
         }
-        $iContactId = (int)$aSubjectContact["contact_id"];
-        $blContactIdentityChanged = (int)$aSubjectContact["current_contact_type_id"] != $iContactTypeId || (string)$aSubjectContact["current_contact_value"] != $sContactValue;
-        $blContactVisibilityChanged = empty($aContactSettings["show_inactive_contacts"]) && (int)$aSubjectContact["current_is_active"] != $iIsActive;
-        $blReloadRequired = $blContactIdentityChanged || $blContactVisibilityChanged;
-        if ($blContactIdentityChanged) {
-            $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
-            $oStatement->execute(array(
-                "contact_type_id" => $iContactTypeId,
-                "contact_value" => $sContactValue,
-                "id" => $iContactId
-            ));
-        }
+        $blContactVisibilityChanged = empty($aContactSettings["show_inactive_contacts"]) && (int)$aUpdatedContact["current_is_active"] != $iIsActive;
+        $blReloadRequired = !empty($aUpdatedContact["contact_identity_changed"]) || $blContactVisibilityChanged;
         $oStatement = $oPdo->prepare("UPDATE ex_subject_contacts SET is_primary = :is_primary, is_active = :is_active, note = :note WHERE id = :id");
         $oStatement->execute(array(
             "is_primary" => $iIsPrimary,
@@ -316,16 +320,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         nxSendJsonAndExit(array(
             "success" => true,
-            "subject_id" => (int)$aSubjectContact["subject_id"],
+            "subject_id" => (int)$aUpdatedContact["subject_id"],
             "reload_required" => $blReloadRequired,
-            "contact" => nxAddContactTimestampTooltip($oPdo, array(
-                "subject_contact_id" => $iSubjectContactId,
-                "contact_id" => $iContactId,
-                "contact_type_id" => $iContactTypeId,
-                "contact_type" => (string)$aContactType["contact_type"],
-                "contact_type_label" => (string)$aContactType["name"],
-                "contact_value" => $sContactValue,
-                "contact_display_value" => nxContactDisplayValue((string)$aContactType["contact_type"], $sContactValue),
+            "contact" => array_merge($aUpdatedContact, array(
                 "note" => $sNote,
                 "is_primary" => $iIsPrimary,
                 "is_active" => $iIsActive
@@ -427,7 +424,8 @@ foreach ($aContactRows as $aContactRow) {
     $iSubjectCount = max(1, count($aContactRow["subjects"]));
     $blFirstSubject = true;
     $sContactFilterText = (string)$aContactRow["contact_type_name"] . " " . (string)$aContactRow["contact_display_value"];
-    $sContactTimestampTooltipAttribute = nxRenderTimestampTooltipAttribute($aContactRow);
+    $sContactTimestampTooltipText = nxTimestampTooltipText($aContactRow);
+    $sContactTimestampTooltipAttribute = $sContactTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sContactTimestampTooltipText)) . "\"" : "";
     $sContactActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-shared-contact\" title=\"Edit shared contact\" aria-label=\"Edit shared contact\">" . $sEditEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-shared-contact\" title=\"Delete shared contact\" aria-label=\"Delete shared contact\">" . $sDeleteEmoji . "</a></span>" : "";
     foreach ($aContactRow["subjects"] as $aFilterSubject) {
         $sContactFilterText .= " " . (string)$aFilterSubject["subject_name"];
@@ -435,8 +433,9 @@ foreach ($aContactRows as $aContactRow) {
     if (!$aContactRow["subjects"]) {
         echo "      <tr>\n"
             . "        <td class=\"nx-contact-cell nx-contact-item\"" . nxContactsRenderContactDataAttributes($aContactRow) . ">"
-            . "<span class=\"nx-contact-type\">" . nxHtml($aContactRow["contact_type_name"]) . "</span>: "
-            . nxRenderContactValue($aContactRow["contact_type"], $aContactRow["contact_value"], true, true, $sContactTimestampTooltipAttribute)
+            . "<span class=\"nx-contact-db-values\"" . $sContactTimestampTooltipAttribute . "><span class=\"nx-contact-type\">" . nxHtml($aContactRow["contact_type_name"]) . "</span>: "
+            . nxRenderContactValueText($aContactRow["contact_type"], $aContactRow["contact_value"]) . "</span>"
+            . nxRenderContactValueActions($aContactRow["contact_type"], $aContactRow["contact_value"], true, true)
             . $sContactActions
             . "</td>\n"
             . "        <td class=\"nx-contact-subject-cell nx-contact-subject-inactive\">" . nxHtmlValue("") . "</td>\n"
@@ -444,19 +443,22 @@ foreach ($aContactRows as $aContactRow) {
         continue;
     }
     foreach ($aContactRow["subjects"] as $aSubject) {
+        $sSubjectTimestampTooltipText = nxTimestampTooltipText($aSubject);
+        $sSubjectTimestampTooltipAttribute = $sSubjectTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sSubjectTimestampTooltipText)) . "\"" : "";
         $sSubjectActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject-contact\" title=\"Edit subject contact\" aria-label=\"Edit subject contact\">" . $sEditEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-subject-contact\" title=\"Delete subject contact\" aria-label=\"Delete subject contact\">" . $sDeleteEmoji . "</a></span>" : "";
         $sSubjectEditAction = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a></span>" : "";
         $sSubjectPrimaryFlag = "<span class=\"nx-contact-flags\"><span class=\"nx-contact-primary\" title=\"Primary\">" . ((int)$aSubject["is_primary"] == 1 ? $sPrimaryEmoji : "") . "</span><span class=\"nx-contact-inactive-label\" title=\"Inactive\">" . ((int)$aSubject["contact_is_active"] == 1 ? "" : $sInactiveEmoji) . "</span></span>";
         echo "      <tr data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\">\n";
         if ($blFirstSubject) {
             echo "        <td class=\"nx-contact-cell nx-contact-item\" rowspan=\"" . nxHtml($iSubjectCount) . "\"" . nxContactsRenderContactDataAttributes($aContactRow) . ">"
-                . "<span class=\"nx-contact-type\">" . nxHtml($aContactRow["contact_type_name"]) . "</span>: "
-                . nxRenderContactValue($aContactRow["contact_type"], $aContactRow["contact_value"], true, true, $sContactTimestampTooltipAttribute)
+                . "<span class=\"nx-contact-db-values\"" . $sContactTimestampTooltipAttribute . "><span class=\"nx-contact-type\">" . nxHtml($aContactRow["contact_type_name"]) . "</span>: "
+                . nxRenderContactValueText($aContactRow["contact_type"], $aContactRow["contact_value"]) . "</span>"
+                . nxRenderContactValueActions($aContactRow["contact_type"], $aContactRow["contact_value"], true, true)
                 . $sContactActions
                 . "</td>\n";
             $blFirstSubject = false;
         }
-        echo "        <td class=\"" . nxHtml(nxContactsSubjectCellClass($aSubject)) . " nx-list-item\"" . nxContactsRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sContactFilterText) . "</span><span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aSubject) . ">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . "<span class=\"nx-contact-item nx-contact-subject-item\"" . nxContactsRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-contact-note\">" . ($aSubject["note"] != "" ? " (" . nxHtml($aSubject["note"]) . ")" : "") . "</span>" . $sSubjectPrimaryFlag . $sSubjectActions . "</span></td>\n"
+        echo "        <td class=\"" . nxHtml(nxContactsSubjectCellClass($aSubject)) . " nx-list-item\"" . nxContactsRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sContactFilterText) . "</span><span class=\"nx-subject-item-value\"" . $sSubjectTimestampTooltipAttribute . ">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . "<span class=\"nx-contact-item nx-contact-subject-item\"" . nxContactsRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-contact-note\">" . ($aSubject["note"] != "" ? " (" . nxHtml($aSubject["note"]) . ")" : "") . "</span>" . $sSubjectPrimaryFlag . $sSubjectActions . "</span></td>\n"
             . "      </tr>\n";
     }
 }

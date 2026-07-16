@@ -911,10 +911,6 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("DOMContentLoaded", function () {
     var aFilters = document.querySelectorAll(".js-table-filter");
 
-    function escapeFilterRegex(sValue) {
-        return sValue.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    }
-
     function buildFilterExpression(sFilter) {
         var aOrParts = sFilter.trim().split(/\s+OR\s+/i);
         var aExpression = [];
@@ -930,7 +926,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 if (sTerm !== "") {
                     aTerms.push({
-                        "regex": new RegExp(escapeFilterRegex(sTerm).replace(/\s+/g, "\\s+"), "i"),
+                        "regex": new RegExp(sTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"), "i"),
                         "negated": blNegated
                     })
                 }
@@ -1024,42 +1020,30 @@ document.addEventListener("DOMContentLoaded", function () {
         var aResetButtons = document.querySelectorAll(".js-filter-reset[data-filter-input=\"" + oFilter.id + "\"]");
         var iFilterTimer = null;
 
-        function isFilterActive() {
-            return oFilter.value.replace(/^\s+|\s+$/g, "") !== "";
-        }
-
-        function getTableRows(oTable) {
-            if (oTable && oTable.tBodies && oTable.tBodies.length == 1) {
-                return oTable.tBodies[0].rows;
-            }
-            return oTable ? oTable.querySelectorAll("tbody tr") : [];
-        }
-
-        function getRowFilterText(oRow) {
-            if (typeof oRow._quickTableFilterText != "string") {
-                oRow._quickTableFilterText = oRow.textContent || "";
-            }
-            return oRow._quickTableFilterText;
-        }
-
-        function setRowFilterVisible(oRow, blVisible) {
-            var sDisplay = blVisible ? "" : "none";
-            if (oRow.style.display != sDisplay) {
-                oRow.style.display = sDisplay;
-            }
-        }
-
         var filterTable = function () {
             var oTable = document.getElementById(oFilter.getAttribute("data-table-filter"));
             var aExpression = buildFilterExpression(oFilter.value);
             var aRows;
+            var sDisplay;
+            var sRowText;
             refreshFilterFocusButton(oFilter);
             if (!oTable) {
                 return;
             }
-            aRows = getTableRows(oTable);
+            if (oTable && oTable.tBodies && oTable.tBodies.length == 1) {
+                aRows = oTable.tBodies[0].rows;
+            } else {
+                aRows = oTable ? oTable.querySelectorAll("tbody tr") : [];
+            }
             for (var iJ = 0; iJ < aRows.length; iJ += 1) {
-                setRowFilterVisible(aRows[iJ], rowMatchesFilterExpression(getRowFilterText(aRows[iJ]), aExpression));
+                if (typeof aRows[iJ]._quickTableFilterText != "string") {
+                    aRows[iJ]._quickTableFilterText = aRows[iJ].textContent || "";
+                }
+                sRowText = aRows[iJ]._quickTableFilterText;
+                sDisplay = rowMatchesFilterExpression(sRowText, aExpression) ? "" : "none";
+                if (aRows[iJ].style.display != sDisplay) {
+                    aRows[iJ].style.display = sDisplay;
+                }
             }
         };
 
@@ -1085,48 +1069,41 @@ document.addEventListener("DOMContentLoaded", function () {
             filterTable();
         }
 
-        function insertFilterOperator(sOperator) {
-            var iStart = typeof oFilter.selectionStart == "number" ? oFilter.selectionStart : oFilter.value.length;
-            var iEnd = typeof oFilter.selectionEnd == "number" ? oFilter.selectionEnd : oFilter.value.length;
-            var sBefore = oFilter.value.substring(0, iStart).replace(/\s+$/, "");
-            var sAfter = oFilter.value.substring(iEnd).replace(/^\s+/, "");
-            var sPrefix = sBefore !== "" ? sBefore + " " : "";
-            oFilter.value = sPrefix + sOperator + " " + sAfter;
-            oFilter.focus();
-            if (typeof oFilter.setSelectionRange == "function") {
-                oFilter.setSelectionRange((sPrefix + sOperator + " ").length, (sPrefix + sOperator + " ").length);
-            }
-            runFilterTable();
-            scheduleQuickTableFilterSave(oFilter);
-        }
-
-        function resetFilter() {
-            oFilter.value = "";
-            runFilterTable();
-            if (oFilter._quickTableFilterTimer) {
-                window.clearTimeout(oFilter._quickTableFilterTimer);
-                oFilter._quickTableFilterTimer = null;
-            }
-            sendQuickTableFilterValue(oFilter, "reset");
-            oFilter.focus();
-        }
-
         oFilter.addEventListener("input", function () {
             scheduleFilterTable();
             scheduleQuickTableFilterSave(oFilter);
         });
         for (var iI = 0; iI < aOperatorButtons.length; iI += 1) {
             aOperatorButtons[iI].addEventListener("click", function () {
-                insertFilterOperator(this.getAttribute("data-filter-operator") || "");
+                var sOperator = this.getAttribute("data-filter-operator") || "";
+                var iStart = typeof oFilter.selectionStart == "number" ? oFilter.selectionStart : oFilter.value.length;
+                var iEnd = typeof oFilter.selectionEnd == "number" ? oFilter.selectionEnd : oFilter.value.length;
+                var sBefore = oFilter.value.substring(0, iStart).replace(/\s+$/, "");
+                var sAfter = oFilter.value.substring(iEnd).replace(/^\s+/, "");
+                var sPrefix = sBefore !== "" ? sBefore + " " : "";
+                oFilter.value = sPrefix + sOperator + " " + sAfter;
+                oFilter.focus();
+                if (typeof oFilter.setSelectionRange == "function") {
+                    oFilter.setSelectionRange((sPrefix + sOperator + " ").length, (sPrefix + sOperator + " ").length);
+                }
+                runFilterTable();
+                scheduleQuickTableFilterSave(oFilter);
             })
         }
         for (var iI = 0; iI < aResetButtons.length; iI += 1) {
             aResetButtons[iI].addEventListener("click", function () {
-                resetFilter();
+                oFilter.value = "";
+                runFilterTable();
+                if (oFilter._quickTableFilterTimer) {
+                    window.clearTimeout(oFilter._quickTableFilterTimer);
+                    oFilter._quickTableFilterTimer = null;
+                }
+                sendQuickTableFilterValue(oFilter, "reset");
+                oFilter.focus();
             })
         }
         refreshFilterFocusButton(oFilter);
-        if (isFilterActive()) {
+        if (oFilter.value.replace(/^\s+|\s+$/g, "") !== "") {
             scheduleFilterTable();
         }
         window.setTimeout(function () {

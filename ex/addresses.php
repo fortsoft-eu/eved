@@ -396,6 +396,10 @@ foreach ($aAddressRows as $aAddressRow) {
         $sAddressFilterText .= " " . (string)$aFilterSubject["subject_name"];
     }
     foreach ($aAddressRow["subjects"] as $aSubject) {
+        $sAddressTimestampTooltipText = nxTimestampTooltipText($aAddressRow);
+        $sAddressTimestampTooltipAttribute = $sAddressTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sAddressTimestampTooltipText)) . "\"" : "";
+        $sSubjectTimestampTooltipText = nxTimestampTooltipText($aSubject);
+        $sSubjectTimestampTooltipAttribute = $sSubjectTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sSubjectTimestampTooltipText)) . "\"" : "";
         $sSubjectActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject-address-local\" title=\"Edit subject address\" aria-label=\"Edit subject address\">" . $sEditEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-subject-address-local\" title=\"Delete subject address\" aria-label=\"Delete subject address\">" . $sDeleteEmoji . "</a></span>" : "";
         $sSubjectEditAction = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a></span>" : "";
         $sSubjectValueClass = "nx-subject-item-value" . ((string)$aSubject["address_values"]["address_type"] == "main" ? " nx-subject-address-main-value" : "");
@@ -403,14 +407,14 @@ foreach ($aAddressRows as $aAddressRow) {
         echo "      <tr data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\">\n";
         if ($blFirstSubject) {
             echo "        <td class=\"nx-address-cell\" rowspan=\"" . nxHtml($iSubjectCount) . "\"" . nxAddressesRenderDataAttributes($aAddressRow) . ">"
-                . "<span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aAddressRow) . ">" . nxHtmlValue($aAddressRow["address_text"]) . "</span>"
+                . "<span class=\"nx-subject-item-value\"" . $sAddressTimestampTooltipAttribute . ">" . nxHtmlValue($aAddressRow["address_text"]) . "</span>"
                 . nxRenderCopyAction($aAddressRow["address_copy_text"])
                 . $sAddressActions
                 . $sAddressCellCopyAction
                 . "</td>\n";
             $blFirstSubject = false;
         }
-        echo "        <td class=\"" . nxHtml(nxAddressesSubjectCellClass($aSubject)) . " nx-list-item nx-subject-address-item\"" . nxAddressesRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sAddressFilterText) . "</span><span class=\"" . nxHtml($sSubjectValueClass) . "\"" . nxRenderTimestampTooltipAttribute($aSubject) . ">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . $sSubjectPrimaryFlag . $sSubjectActions . "</td>\n"
+        echo "        <td class=\"" . nxHtml(nxAddressesSubjectCellClass($aSubject)) . " nx-list-item nx-subject-address-item\"" . nxAddressesRenderSubjectDataAttributes($aSubject) . "><span class=\"nx-column-hidden\">" . nxHtmlValue($sAddressFilterText) . "</span><span class=\"" . nxHtml($sSubjectValueClass) . "\"" . $sSubjectTimestampTooltipAttribute . ">" . nxHtmlValue($aSubject["subject_name"]) . "</span>" . nxRenderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . $sSubjectPrimaryFlag . $sSubjectActions . "</td>\n"
             . "      </tr>\n";
     }
 }

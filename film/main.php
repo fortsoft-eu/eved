@@ -64,8 +64,11 @@ if (preg_match($sPattern, $_SERVER["REQUEST_URI"])) {
     exit;
 }
 
-
-$sBaseUrl = $sScheme . "://" . $sHost . getUrlWithoutScriptName();
+$sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
+if (substr($sPath, -1) != "/") {
+    $sPath = dirname($sPath) . "/";
+}
+$sBaseUrl = $sScheme . "://" . $sHost . $sPath;
 $blIsDesktop = isset($_SERVER["HTTP_USER_AGENT"]) && !preg_match("/Android|iPhone|iPad|iPod|Windows Phone/i", $_SERVER["HTTP_USER_AGENT"]);
 
 

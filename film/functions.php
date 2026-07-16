@@ -1,48 +1,7 @@
 <?php
 
-function isFirefoxBrowser() {
-    if (!isset($_SERVER["HTTP_USER_AGENT"])) {
-        return false;
-    }
-    $sUserAgent = $_SERVER["HTTP_USER_AGENT"];
-    return stripos($sUserAgent, "Firefox/") && !stripos($sUserAgent, "Seamonkey/");
-}
-
-function isEnglishLanguage() {
-    if (!isset($_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
-        return false;
-    }
-    $aLanguages = explode(",", $_SERVER["HTTP_ACCEPT_LANGUAGE"]);
-    if (!$aLanguages) {
-        return false;
-    }
-    $sPrimaryLanguage = trim($aLanguages[0]);
-    $iSemicolonPosition = strpos($sPrimaryLanguage, ";");
-    if ($iSemicolonPosition) {
-        $sPrimaryLanguage = substr($sPrimaryLanguage, 0, $iSemicolonPosition);
-    }
-    $sPrimaryLanguage = strtolower(trim($sPrimaryLanguage));
-    return strpos($sPrimaryLanguage, "en") === 0;
-}
-
-function isFirefoxWithEnglishLanguage() {
-    return isFirefoxBrowser() && isEnglishLanguage();
-}
-
 function isAllowedIp($aAllowedIps) {
     return isset($_SERVER["REMOTE_ADDR"]) && in_array($_SERVER["REMOTE_ADDR"], $aAllowedIps, true);
-}
-
-function getUrlWithoutScriptName() {
-    $sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
-    if (substr($sPath, -1) == "/") {
-        return $sPath;
-    }
-    return dirname($sPath) . "/";
-}
-
-function getAdminViewportContent() {
-    return "width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no";
 }
 
 function sendQuickTableFilterJsonAndExit($aData, $iStatusCode = 200) {
@@ -52,10 +11,6 @@ function sendQuickTableFilterJsonAndExit($aData, $iStatusCode = 200) {
     sendSecurityHeaders();
     echo json_encode($aData);
     exit;
-}
-
-function isQuickTableFilterAjaxRequest() {
-    return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
 }
 
 function getQuickTableFilterScriptName() {
@@ -92,45 +47,37 @@ function getQuickTableFilterValue($sFilterId = "table-filter") {
     return $_SESSION["quick_table_filters"][$sScriptName][$sFilterId];
 }
 
-function setQuickTableFilterValue($sFilterId, $sValue) {
-    $sScriptName = getQuickTableFilterScriptName();
-    $sFilterId = getQuickTableFilterId($sFilterId);
-    if (!isset($_SESSION["quick_table_filters"]) || !is_array($_SESSION["quick_table_filters"])) {
-        $_SESSION["quick_table_filters"] = array();
-    }
-    if (!isset($_SESSION["quick_table_filters"][$sScriptName]) || !is_array($_SESSION["quick_table_filters"][$sScriptName])) {
-        $_SESSION["quick_table_filters"][$sScriptName] = array();
-    }
-    $_SESSION["quick_table_filters"][$sScriptName][$sFilterId] = (string)$sValue;
-}
-
-function resetQuickTableFilterValue($sFilterId) {
-    $sScriptName = getQuickTableFilterScriptName();
-    $sFilterId = getQuickTableFilterId($sFilterId);
-    if (isset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId])) {
-        unset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId]);
-    }
-    if (isset($_SESSION["quick_table_filters"][$sScriptName]) && is_array($_SESSION["quick_table_filters"][$sScriptName]) && !$_SESSION["quick_table_filters"][$sScriptName]) {
-        unset($_SESSION["quick_table_filters"][$sScriptName]);
-    }
-}
-
 function handleQuickTableFilterRequest() {
     if ($_SERVER["REQUEST_METHOD"] != "POST" || !isset($_POST["quick_table_filter_action"])) {
         return;
     }
-    if (!isQuickTableFilterAjaxRequest()) {
+    if (!isset($_SERVER["HTTP_X_REQUESTED_WITH"]) || $_SERVER["HTTP_X_REQUESTED_WITH"] != "XMLHttpRequest") {
         send403AndExit();
     }
     $sAction = (string)$_POST["quick_table_filter_action"];
     $sFilterId = isset($_POST["filter_id"]) ? (string)$_POST["filter_id"] : "table-filter";
     if ($sAction == "save") {
         $sValue = isset($_POST["filter_value"]) ? (string)$_POST["filter_value"] : "";
-        setQuickTableFilterValue($sFilterId, $sValue);
+        $sScriptName = getQuickTableFilterScriptName();
+        $sFilterId = getQuickTableFilterId($sFilterId);
+        if (!isset($_SESSION["quick_table_filters"]) || !is_array($_SESSION["quick_table_filters"])) {
+            $_SESSION["quick_table_filters"] = array();
+        }
+        if (!isset($_SESSION["quick_table_filters"][$sScriptName]) || !is_array($_SESSION["quick_table_filters"][$sScriptName])) {
+            $_SESSION["quick_table_filters"][$sScriptName] = array();
+        }
+        $_SESSION["quick_table_filters"][$sScriptName][$sFilterId] = (string)$sValue;
         session_write_close();
         sendQuickTableFilterJsonAndExit(array("success" => true));
     } elseif ($sAction == "reset") {
-        resetQuickTableFilterValue($sFilterId);
+        $sScriptName = getQuickTableFilterScriptName();
+        $sFilterId = getQuickTableFilterId($sFilterId);
+        if (isset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId])) {
+            unset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId]);
+        }
+        if (isset($_SESSION["quick_table_filters"][$sScriptName]) && is_array($_SESSION["quick_table_filters"][$sScriptName]) && !$_SESSION["quick_table_filters"][$sScriptName]) {
+            unset($_SESSION["quick_table_filters"][$sScriptName]);
+        }
         session_write_close();
         sendQuickTableFilterJsonAndExit(array("success" => true));
     }
@@ -211,10 +158,6 @@ function sendPageHeaders() {
     header("X-Robots-Tag: noindex, nofollow", true);
     sendSecurityHeaders();
     return $iTime;
-}
-
-function isFilmUaFingerprintRequest() {
-    return $_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET["fingerprint"]) && $_GET["fingerprint"] == "1";
 }
 
 function startFilmUaPageRequest($iRequestedFilmScanId) {
@@ -312,12 +255,6 @@ function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension, $aAllowedIps) {
     ), $aData);
 }
 
-function getFilmUaPostData() {
-    $sInput = file_get_contents("php://input");
-    $aData = json_decode($sInput, true);
-    return is_array($aData) ? $aData : array();
-}
-
 function getFilmUaFingerprintText($aData, $sName) {
     if (!isset($aData[$sName])) {
         return "";
@@ -348,18 +285,15 @@ function getFilmUaFingerprintNullableText($aData, $sName, $iMaxLength = 0) {
     return $sValue;
 }
 
-function getFilmUaFingerprintBoolean($aData, $sName) {
-    if (!array_key_exists($sName, $aData) || !is_scalar($aData[$sName]) || $aData[$sName] == "") {
-        return null;
-    }
-    return $aData[$sName] ? 1 : 0;
-}
-
 function insertFilmUaRequest($oPdo, $aRequest, $aData) {
     if (!$oPdo) {
         return false;
     }
     try {
+        $mIsMobile = null;
+        if (array_key_exists("is_mobile", $aData) && is_scalar($aData["is_mobile"]) && $aData["is_mobile"] != "") {
+            $mIsMobile = $aData["is_mobile"] ? 1 : 0;
+        }
         $oPdoStatement = $oPdo->prepare("INSERT INTO fs_film_ua (ip_address, x_real_ip, x_forwarded_for, x_web_id, x_geo_provider, x_geo_continent_code, x_geo_country_code, user_agent, browser_name, browser_version, os_name, os_version, platform_type, device_vendor, device_model, architecture, bitness, is_mobile, ua_brands, request_uri, requested_film_scan_id, requested_img, referer, gpu_info, fonts, screen_resolution, screen_physical, color_depth, timezone, language, platform, plugins, mime_types, `timestamp`) VALUES (:ip_address, :x_real_ip, :x_forwarded_for, :x_web_id, :x_geo_provider, :x_geo_continent_code, :x_geo_country_code, :user_agent, :browser_name, :browser_version, :os_name, :os_version, :platform_type, :device_vendor, :device_model, :architecture, :bitness, :is_mobile, :ua_brands, :request_uri, :requested_film_scan_id, :requested_img, :referer, :gpu_info, :fonts, :screen_resolution, :screen_physical, :color_depth, :timezone, :language, :platform, :plugins, :mime_types, CURRENT_TIMESTAMP(6))");
         $oPdoStatement->execute(array(
             "ip_address"             => isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : "",
@@ -379,7 +313,7 @@ function insertFilmUaRequest($oPdo, $aRequest, $aData) {
             "device_model"           => getFilmUaFingerprintNullableText($aData, "device_model", 191),
             "architecture"           => getFilmUaFingerprintNullableText($aData, "architecture", 32),
             "bitness"                => getFilmUaFingerprintNullableText($aData, "bitness", 16),
-            "is_mobile"              => getFilmUaFingerprintBoolean($aData, "is_mobile"),
+            "is_mobile"              => $mIsMobile,
             "ua_brands"              => getFilmUaFingerprintNullableText($aData, "ua_brands"),
             "request_uri"            => isset($aRequest["request_uri"]) && is_scalar($aRequest["request_uri"]) ? (string)$aRequest["request_uri"] : "",
             "requested_film_scan_id" => isset($aRequest["requested_film_scan_id"]) && is_int($aRequest["requested_film_scan_id"]) ? $aRequest["requested_film_scan_id"] : null,
@@ -426,7 +360,11 @@ function sendFilmUaFingerprintResponse($oPdo, $aAllowedIps) {
         unset($_SESSION["film"]["ua"]["request"]);
         sendFilmUaJsonAndExit(array("status" => "ignored"));
     }
-    $aData = getFilmUaPostData();
+    $sInput = file_get_contents("php://input");
+    $aData = json_decode($sInput, true);
+    if (!is_array($aData)) {
+        $aData = array();
+    }
     $_SESSION["film"]["ua"]["fingerprint"] = $aData;
     if (!insertFilmUaRequest($oPdo, $_SESSION["film"]["ua"]["request"], $aData)) {
         sendFilmUaJsonAndExit(array("status" => "error"), 500);
@@ -475,7 +413,10 @@ function getFilmPhpFileLinkGroups() {
                     }
                 }
             }
-            $sTitle = preg_replace("/\bphp\b/iu", "PHP", mbUcfirst($sName));
+            $sTitle = "";
+            if ($sName) {
+                $sTitle = preg_replace("/\bphp\b/iu", "PHP", mb_strtoupper(mb_substr($sName, 0, 1, "UTF-8"), "UTF-8") . mb_strtolower(mb_substr($sName, 1, null, "UTF-8"), "UTF-8"));
+            }
             $aGroup[] = array(
                 "file_name" => $sFileName,
                 "title" => $sTitle
@@ -531,13 +472,6 @@ function printPhpFileLinks($sBaseUrl) {
             echo "          <hr>\n";
         }
     }
-}
-
-function mbUcfirst($sText): string {
-    if (!$sText) {
-        return "";
-    }
-    return mb_strtoupper(mb_substr($sText, 0, 1, "UTF-8"), "UTF-8") . mb_strtolower(mb_substr($sText, 1, null, "UTF-8"), "UTF-8");
 }
 
 function getRequestPlainTextInfo() {
@@ -599,27 +533,6 @@ function redirectIndexPhpToRoot() {
     exit;
 }
 
-function getDatabaseDownloadFileName($sType) {
-    $sPrefix = isset($GLOBALS["sDatabaseDownloadPrefix"]) ? $GLOBALS["sDatabaseDownloadPrefix"] : "eved";
-    $sProject = isset($GLOBALS["sDatabaseDownloadProject"]) ? $GLOBALS["sDatabaseDownloadProject"] : basename(__DIR__);
-    return $sPrefix . "_" . $sProject . "_" . $sType . "_" . date("Y-m-d_His", time()) . ".sql";
-}
-
-function quoteDatabaseIdentifier($sIdentifier) {
-    return "`" . str_replace("`", "``", $sIdentifier) . "`";
-}
-
-function quoteDatabaseValue($oPdo, $mValue) {
-    if ($mValue === null) {
-        return "NULL";
-    }
-    $sQuoted = $oPdo->quote((string)$mValue);
-    if ($sQuoted === false) {
-        return "'" . str_replace("'", "''", (string)$mValue) . "'";
-    }
-    return $sQuoted;
-}
-
 function getDatabaseSchemaSql($aTables) {
     $sBody = "";
     foreach ($aTables as $aTable) {
@@ -633,7 +546,7 @@ function getDatabaseBackupSql($oPdo, $aTables) {
     $sBody = "SET NAMES utf8mb4;\r\n\r\n" . getDatabaseSchemaSql($aTables) . "\r\n";
     foreach ($aTables as $aTable) {
         $sTableName = $aTable[0];
-        $sQuotedTableName = quoteDatabaseIdentifier($sTableName);
+        $sQuotedTableName = "`" . str_replace("`", "``", $sTableName) . "`";
         $oStatement = $oPdo->query("SELECT * FROM " . $sQuotedTableName);
         $sColumns = "";
         $blHasRows = false;
@@ -641,13 +554,18 @@ function getDatabaseBackupSql($oPdo, $aTables) {
             if ($sColumns == "") {
                 $aColumns = array();
                 foreach (array_keys($aRow) as $sColumnName) {
-                    $aColumns[] = quoteDatabaseIdentifier($sColumnName);
+                    $aColumns[] = "`" . str_replace("`", "``", $sColumnName) . "`";
                 }
                 $sColumns = implode(", ", $aColumns);
             }
             $aValues = array();
             foreach ($aRow as $mValue) {
-                $aValues[] = quoteDatabaseValue($oPdo, $mValue);
+                if ($mValue === null) {
+                    $aValues[] = "NULL";
+                } else {
+                    $sQuoted = $oPdo->quote((string)$mValue);
+                    $aValues[] = $sQuoted === false ? "'" . str_replace("'", "''", (string)$mValue) . "'" : $sQuoted;
+                }
             }
             $sBody .= "INSERT INTO " . $sQuotedTableName . " (" . $sColumns . ") VALUES (" . implode(", ", $aValues) . ");\r\n";
             $blHasRows = true;
@@ -867,7 +785,7 @@ function renderCell($mValue, $blError) {
 }
 
 function formatFilmOptionLabel($aFilm) {
-    return (string)$aFilm["archive_no"] . " – " . $aFilm["folder_name"];
+    return htmlspecialchars((string)$aFilm["archive_no"] . " – " . $aFilm["folder_name"], ENT_QUOTES, "UTF-8");
 }
 
 function formatOrderOptionLabel($aOrder) {
@@ -878,7 +796,7 @@ function formatOrderOptionLabel($aOrder) {
     if ($aOrder["order_no"] !== null && $aOrder["order_no"] != "") {
         $sLabel .= " (" . $aOrder["order_no"] . ")";
     }
-    return $sLabel;
+    return htmlspecialchars($sLabel, ENT_QUOTES, "UTF-8");
 }
 
 function formatFilmUaCountryFlag($sCountryCode) {
@@ -1082,7 +1000,7 @@ function addPhpGeneratedViewportMeta($sHtml) {
     if (preg_match("#<meta\\b[^>]*\\bname\\s*=\\s*([\"'])viewport\\1#i", $sHtml) || stripos($sHtml, "</head>") === false) {
         return $sHtml;
     }
-    return preg_replace("#</head>#i", "  <meta name=\"viewport\" content=\"" . htmlspecialchars(getAdminViewportContent(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n</head>", $sHtml, 1);
+    return preg_replace("#</head>#i", "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n</head>", $sHtml, 1);
 }
 
 function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
@@ -1097,7 +1015,7 @@ function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
         . "<html lang=\"en-US\" dir=\"ltr\">\n"
         . "<head>\n"
         . "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
-        . "  <meta name=\"viewport\" content=\"" . htmlspecialchars(getAdminViewportContent(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n"
+        . "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n"
         . "  <title>" . htmlspecialchars($sTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</title>\n"
         . getPhpGeneratedStyleTag($sStyleNonce)
         . "</head>\n"

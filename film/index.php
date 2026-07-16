@@ -51,7 +51,7 @@ if (isset($_GET["mode"])) {
     }
 }
 
-if (isFilmUaFingerprintRequest()) {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET["fingerprint"]) && $_GET["fingerprint"] == "1") {
     sendFilmUaFingerprintResponse($oPdo, $aAllowedIps);
 }
 
@@ -213,7 +213,7 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo htmlspecialchars(getAdminViewportContent(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
@@ -544,15 +544,35 @@ if ($oPdo) {
                 . "            </figure>\n";
         }
         echo "          </section>\n";
-    } elseif (isFirefoxWithEnglishLanguage() && isAllowedIp($aAllowedIps)) {
-        printPhpFileLinks($sBaseUrl);
-        echo "          <pre>"
-           . rtrim(getRequestPlainTextInfo())
-           . "</pre>\n";
     } else {
-        echo "          <div id=\"camera-image\">\n"
+        $blFirefoxBrowser = false;
+        if (isset($_SERVER["HTTP_USER_AGENT"])) {
+            $sUserAgent = $_SERVER["HTTP_USER_AGENT"];
+            $blFirefoxBrowser = stripos($sUserAgent, "Firefox/") && !stripos($sUserAgent, "Seamonkey/");
+        }
+        $blEnglishLanguage = false;
+        if (isset($_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
+            $aLanguages = explode(",", $_SERVER["HTTP_ACCEPT_LANGUAGE"]);
+            if ($aLanguages) {
+                $sPrimaryLanguage = trim($aLanguages[0]);
+                $iSemicolonPosition = strpos($sPrimaryLanguage, ";");
+                if ($iSemicolonPosition) {
+                    $sPrimaryLanguage = substr($sPrimaryLanguage, 0, $iSemicolonPosition);
+                }
+                $sPrimaryLanguage = strtolower(trim($sPrimaryLanguage));
+                $blEnglishLanguage = strpos($sPrimaryLanguage, "en") === 0;
+            }
+        }
+        if ($blFirefoxBrowser && $blEnglishLanguage && isAllowedIp($aAllowedIps)) {
+            printPhpFileLinks($sBaseUrl);
+            echo "          <pre>"
+               . rtrim(getRequestPlainTextInfo())
+               . "</pre>\n";
+        } else {
+            echo "          <div id=\"camera-image\">\n"
            . "            <img src=\"" . $sBaseUrl . "gfx/camera.png\" width=\"1535\" height=\"1025\" alt=\"Praktica MTL 3 — 35 mm single-lens reflex (SLR) film camera by VEB Pentacon Dresden\">\n"
            . "          </div>\n";
+        }
     }
 }
 

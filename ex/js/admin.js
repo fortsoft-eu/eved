@@ -370,68 +370,6 @@ function getAdminSubjectRow(oElement) {
     return oElement && oElement.closest ? oElement.closest("tr[data-subject-id]") : null;
 }
 
-function getAdminSubjectRowTableId(oRow) {
-    var oTable = oRow && oRow.closest ? oRow.closest("table") : null;
-    return oTable ? oTable.id : "";
-}
-
-function compareAdminSubjectRowStrings(sFirst, sSecond) {
-    if (sFirst < sSecond) {
-        return -1;
-    }
-    if (sFirst > sSecond) {
-        return 1;
-    }
-    return 0;
-}
-
-function compareAdminSubjectRows(oFirst, oSecond) {
-    var sTableId = getAdminSubjectRowTableId(oFirst);
-    var iFirstDays;
-    var iSecondDays;
-    var iResult;
-    if (!oFirst || !oSecond || sTableId != getAdminSubjectRowTableId(oSecond)) {
-        return 0;
-    }
-    if (sTableId == "nx-birthdays-table" || sTableId == "nx-interactions-table") {
-        iFirstDays = parseInt(oFirst.getAttribute("data-days-to-birthday") || "0", 10);
-        iSecondDays = parseInt(oSecond.getAttribute("data-days-to-birthday") || "0", 10);
-        if (iFirstDays !== iSecondDays) {
-            return iFirstDays < iSecondDays ? -1 : 1;
-        }
-    }
-    iResult = compareAdminSubjectRowStrings(oFirst.getAttribute("data-subject-sort-name") || "", oSecond.getAttribute("data-subject-sort-name") || "");
-    if (iResult !== 0) {
-        return iResult;
-    }
-    iResult = compareAdminSubjectRowStrings(oFirst.getAttribute("data-subject-type") || "", oSecond.getAttribute("data-subject-type") || "");
-    if (iResult !== 0) {
-        return iResult;
-    }
-    return parseInt(oFirst.getAttribute("data-subject-id") || "0", 10) - parseInt(oSecond.getAttribute("data-subject-id") || "0", 10);
-}
-
-function moveAdminSubjectRowToSortedPosition(oRow) {
-    var oBody = oRow ? oRow.parentNode : null;
-    var sTableId = getAdminSubjectRowTableId(oRow);
-    var aRows;
-    var iI;
-    if (!oBody || oRow.getAttribute("data-subject-sort-name") === null) {
-        return;
-    }
-    if (sTableId != "nx-subjects-table" && sTableId != "nx-birthdays-table" && sTableId != "nx-interactions-table" && sTableId != "nx-contacts-table") {
-        return;
-    }
-    aRows = oBody.rows;
-    for (iI = 0; iI < aRows.length; iI += 1) {
-        if (aRows[iI] !== oRow && compareAdminSubjectRows(oRow, aRows[iI]) < 0) {
-            oBody.insertBefore(oRow, aRows[iI]);
-            return;
-        }
-    }
-    oBody.appendChild(oRow);
-}
-
 function beginAdminSubjectRowEdit(oRow) {
     if (oRow) {
         removeAdminClass(oRow, "nx-admin-row-saved");
@@ -1919,10 +1857,6 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("DOMContentLoaded", function () {
     var aFilters = document.querySelectorAll(".js-table-filter");
 
-    function escapeFilterRegex(sValue) {
-        return sValue.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    }
-
     function buildFilterExpression(sFilter) {
         var aOrParts = sFilter.trim().split(/\s+OR\s+/i);
         var aExpression = [];
@@ -1938,7 +1872,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 if (sTerm !== "") {
                     aTerms.push({
-                        "regex": new RegExp(escapeFilterRegex(sTerm).replace(/\s+/g, "\\s+"), "i"),
+                        "regex": new RegExp(sTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"), "i"),
                         "negated": blNegated
                     })
                 }
@@ -2032,50 +1966,38 @@ document.addEventListener("DOMContentLoaded", function () {
         var aResetButtons = document.querySelectorAll(".js-filter-reset[data-filter-input=\"" + oFilter.id + "\"]");
         var iFilterTimer = null;
 
-        function isFilterActive() {
-            return oFilter.value.replace(/^\s+|\s+$/g, "") !== "";
-        }
-
-        function getTableRows(oTable) {
-            if (oTable && oTable.tBodies && oTable.tBodies.length == 1) {
-                return oTable.tBodies[0].rows;
-            }
-            return oTable ? oTable.querySelectorAll("tbody tr") : [];
-        }
-
-        function getRowFilterText(oRow) {
-            var aCells;
-            var aTexts;
-            var iJ;
-            if (typeof oRow._quickTableFilterText != "string") {
-                aCells = oRow.cells ? oRow.cells : oRow.querySelectorAll("th, td");
-                aTexts = [];
-                for (iJ = 0; iJ < aCells.length; iJ += 1) {
-                    aTexts.push(aCells[iJ].textContent || "");
-                }
-                oRow._quickTableFilterText = aTexts.join(" ");
-            }
-            return oRow._quickTableFilterText;
-        }
-
-        function setRowFilterVisible(oRow, blVisible) {
-            var sDisplay = blVisible ? "" : "none";
-            if (oRow.style.display != sDisplay) {
-                oRow.style.display = sDisplay;
-            }
-        }
-
         var filterTable = function () {
             var oTable = document.getElementById(oFilter.getAttribute("data-table-filter"));
             var aExpression = buildFilterExpression(oFilter.value);
             var aRows;
+            var aCells;
+            var aTexts;
+            var sDisplay;
+            var sRowText;
+            var iK;
             refreshFilterFocusButton(oFilter);
             if (!oTable) {
                 return;
             }
-            aRows = getTableRows(oTable);
+            if (oTable && oTable.tBodies && oTable.tBodies.length == 1) {
+                aRows = oTable.tBodies[0].rows;
+            } else {
+                aRows = oTable ? oTable.querySelectorAll("tbody tr") : [];
+            }
             for (var iJ = 0; iJ < aRows.length; iJ += 1) {
-                setRowFilterVisible(aRows[iJ], rowMatchesFilterExpression(getRowFilterText(aRows[iJ]), aExpression));
+                if (typeof aRows[iJ]._quickTableFilterText != "string") {
+                    aCells = aRows[iJ].cells ? aRows[iJ].cells : aRows[iJ].querySelectorAll("th, td");
+                    aTexts = [];
+                    for (iK = 0; iK < aCells.length; iK += 1) {
+                        aTexts.push(aCells[iK].textContent || "");
+                    }
+                    aRows[iJ]._quickTableFilterText = aTexts.join(" ");
+                }
+                sRowText = aRows[iJ]._quickTableFilterText;
+                sDisplay = rowMatchesFilterExpression(sRowText, aExpression) ? "" : "none";
+                if (aRows[iJ].style.display != sDisplay) {
+                    aRows[iJ].style.display = sDisplay;
+                }
             }
         };
 
@@ -2101,48 +2023,41 @@ document.addEventListener("DOMContentLoaded", function () {
             filterTable();
         }
 
-        function insertFilterOperator(sOperator) {
-            var iStart = typeof oFilter.selectionStart == "number" ? oFilter.selectionStart : oFilter.value.length;
-            var iEnd = typeof oFilter.selectionEnd == "number" ? oFilter.selectionEnd : oFilter.value.length;
-            var sBefore = oFilter.value.substring(0, iStart).replace(/\s+$/, "");
-            var sAfter = oFilter.value.substring(iEnd).replace(/^\s+/, "");
-            var sPrefix = sBefore !== "" ? sBefore + " " : "";
-            oFilter.value = sPrefix + sOperator + " " + sAfter;
-            oFilter.focus();
-            if (typeof oFilter.setSelectionRange == "function") {
-                oFilter.setSelectionRange((sPrefix + sOperator + " ").length, (sPrefix + sOperator + " ").length);
-            }
-            runFilterTable();
-            scheduleQuickTableFilterSave(oFilter);
-        }
-
-        function resetFilter() {
-            oFilter.value = "";
-            runFilterTable();
-            if (oFilter._quickTableFilterTimer) {
-                window.clearTimeout(oFilter._quickTableFilterTimer);
-                oFilter._quickTableFilterTimer = null;
-            }
-            sendQuickTableFilterValue(oFilter, "reset");
-            oFilter.focus();
-        }
-
         oFilter.addEventListener("input", function () {
             scheduleFilterTable();
             scheduleQuickTableFilterSave(oFilter);
         });
         for (var iI = 0; iI < aOperatorButtons.length; iI += 1) {
             aOperatorButtons[iI].addEventListener("click", function () {
-                insertFilterOperator(this.getAttribute("data-filter-operator") || "");
+                var sOperator = this.getAttribute("data-filter-operator") || "";
+                var iStart = typeof oFilter.selectionStart == "number" ? oFilter.selectionStart : oFilter.value.length;
+                var iEnd = typeof oFilter.selectionEnd == "number" ? oFilter.selectionEnd : oFilter.value.length;
+                var sBefore = oFilter.value.substring(0, iStart).replace(/\s+$/, "");
+                var sAfter = oFilter.value.substring(iEnd).replace(/^\s+/, "");
+                var sPrefix = sBefore !== "" ? sBefore + " " : "";
+                oFilter.value = sPrefix + sOperator + " " + sAfter;
+                oFilter.focus();
+                if (typeof oFilter.setSelectionRange == "function") {
+                    oFilter.setSelectionRange((sPrefix + sOperator + " ").length, (sPrefix + sOperator + " ").length);
+                }
+                runFilterTable();
+                scheduleQuickTableFilterSave(oFilter);
             })
         }
         for (var iI = 0; iI < aResetButtons.length; iI += 1) {
             aResetButtons[iI].addEventListener("click", function () {
-                resetFilter();
+                oFilter.value = "";
+                runFilterTable();
+                if (oFilter._quickTableFilterTimer) {
+                    window.clearTimeout(oFilter._quickTableFilterTimer);
+                    oFilter._quickTableFilterTimer = null;
+                }
+                sendQuickTableFilterValue(oFilter, "reset");
+                oFilter.focus();
             })
         }
         refreshFilterFocusButton(oFilter);
-        if (isFilterActive()) {
+        if (oFilter.value.replace(/^\s+|\s+$/g, "") !== "") {
             scheduleFilterTable();
         }
         window.setTimeout(function () {
@@ -3664,7 +3579,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 oNewRow.setAttribute("data-hover", "1");
             }
             oCurrentRow.parentNode.replaceChild(oNewRow, oCurrentRow);
-            moveAdminSubjectRowToSortedPosition(oNewRow);
             if (window.nxBindAdminTableRow) {
                 window.nxBindAdminTableRow(oNewRow);
             }
@@ -3672,7 +3586,6 @@ document.addEventListener("DOMContentLoaded", function () {
             oTableBody = document.querySelector("#nx-subjects-table tbody, #nx-birthdays-table tbody, #nx-interactions-table tbody, #nx-contacts-table tbody");
             if (oTableBody) {
                 oTableBody.appendChild(oNewRow);
-                moveAdminSubjectRowToSortedPosition(oNewRow);
                 if (window.nxBindAdminTableRow) {
                     window.nxBindAdminTableRow(oNewRow);
                 }
@@ -4725,11 +4638,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return /^[A-Za-z0-9_-]{6,128}$/.test(sText) ? sText : "";
     }
 
-    function getTelegramSlug(sValue) {
-        var sText = decodeContactUriPart(sValue || "").replace(/^\s+|\s+$/g, "");
-        return /^[A-Za-z0-9_]{1,128}$/.test(sText) ? sText : "";
-    }
-
     function getTelegramContactHrefFromPath(sHost, sPath) {
         var aSegments;
         var sHandle;
@@ -4755,7 +4663,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return sToken ? "https://" + sHost + "/joinchat/" + encodeURIComponent(sToken) : "";
         }
         if (sKind == "addstickers" || sKind == "setlanguage") {
-            sToken = getTelegramSlug(aSegments[1]);
+            sToken = decodeContactUriPart(aSegments[1] || "").replace(/^\s+|\s+$/g, "");
+            sToken = /^[A-Za-z0-9_]{1,128}$/.test(sToken) ? sToken : "";
             return sToken ? "https://" + sHost + "/" + sKind + "/" + encodeURIComponent(sToken) : "";
         }
         return "";
@@ -5041,18 +4950,17 @@ document.addEventListener("DOMContentLoaded", function () {
         showContactCopyResult(oButton, copyAdminTextWithTextarea(sValue));
     }
 
-    function getItemTimestampTooltip(oItem) {
-        return oItem ? (oItem.getAttribute("data-timestamp-tooltip") || "") : "";
-    }
-
-    function createContactValueElement(sType, sValue, blInvalid, sTimestampTooltip) {
-        var oValue = document.createElement("span");
-        oValue.className = blInvalid ? "nx-contact-value nx-invalid-contact-value" : "nx-contact-value";
-        oValue.textContent = getContactDisplayValue(sType, sValue);
-        if (sTimestampTooltip) {
-            oValue.title = sTimestampTooltip;
+    function updateContactValueGroupTooltip(oItem) {
+        var oGroup = oItem ? oItem.querySelector(".nx-contact-db-values") : null;
+        var sTooltip = oItem ? (oItem.getAttribute("data-timestamp-tooltip") || "") : "";
+        if (!oGroup) {
+            return;
         }
-        return oValue;
+        if (sTooltip) {
+            oGroup.title = sTooltip;
+        } else {
+            oGroup.removeAttribute("title");
+        }
     }
 
     function createContactCopyElement(sValue) {
@@ -5099,50 +5007,47 @@ document.addEventListener("DOMContentLoaded", function () {
         return oLink;
     }
 
-    function ensureContactIconSeparator(oValue) {
-        var oNext = oValue.nextSibling;
-        if (oNext && oNext.nodeType === 3) {
-            oNext.parentNode.removeChild(oNext);
-        }
-        return oValue;
-    }
-
-    function removeContactIconSeparator(oValue) {
-        var oNext = oValue.nextSibling;
-        if (oNext && oNext.nodeType === 3 && /^\s*$/.test(oNext.nodeValue)) {
-            oNext.parentNode.removeChild(oNext);
-        }
-    }
-
     function updateContactValueAndLink(oItem, sType, sValue, blInvalidOverride) {
         var oValue = oItem.querySelector(".nx-contact-value");
         var aLinks = oItem.querySelectorAll(".nx-contact-copy, .nx-contact-link");
         var blInvalid = typeof blInvalidOverride == "boolean" ? blInvalidOverride : false;
-        var sTimestampTooltip = getItemTimestampTooltip(oItem);
+        var oGroup;
+        var oActionAnchor;
+        var oParent;
+        var oReference;
+        var oNext;
         if (typeof blInvalidOverride != "boolean" && oValue && oValue.className.indexOf("nx-invalid-contact-value") !== -1) {
             blInvalid = true;
         }
-        var oNewValue = createContactValueElement(sType, sValue, blInvalid, sTimestampTooltip);
+        var oNewValue = document.createElement("span");
         var oNewCopy = createContactCopyElement(sValue);
         var oNewLink = createContactLinkElement(sType, sValue, blInvalid);
-        var oSeparator;
+        oNewValue.className = blInvalid ? "nx-contact-value nx-invalid-contact-value" : "nx-contact-value";
+        oNewValue.textContent = getContactDisplayValue(sType, sValue);
         for (var iI = 0; iI < aLinks.length; iI += 1) {
             aLinks[iI].parentNode.removeChild(aLinks[iI]);
         }
         if (oValue) {
             oValue.parentNode.replaceChild(oNewValue, oValue);
-            if (oNewCopy || oNewLink) {
-                oSeparator = ensureContactIconSeparator(oNewValue);
-            } else {
-                removeContactIconSeparator(oNewValue);
+            oGroup = oNewValue.closest ? oNewValue.closest(".nx-contact-db-values") : null;
+            oActionAnchor = oGroup || oNewValue;
+            oParent = oActionAnchor.parentNode;
+            oNext = oActionAnchor.nextSibling;
+            if (oNext && oNext.nodeType === 3 && /^\s*$/.test(oNext.nodeValue)) {
+                oNext.parentNode.removeChild(oNext);
             }
+            oReference = oActionAnchor.nextSibling;
             if (oNewCopy) {
-                oNewValue.parentNode.insertBefore(oNewCopy, oSeparator.nextSibling);
+                oParent.insertBefore(oNewCopy, oReference);
             }
             if (oNewLink) {
-                oNewValue.parentNode.insertBefore(oNewLink, oNewCopy ? oNewCopy.nextSibling : oSeparator.nextSibling);
+                if (!oNewCopy) {
+                    oParent.insertBefore(document.createTextNode(" "), oReference);
+                }
+                oParent.insertBefore(oNewLink, oReference);
             }
         }
+        updateContactValueGroupTooltip(oItem);
     }
 
     document.addEventListener("click", function (oEvent) {
@@ -5263,10 +5168,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    function appendContactValue(oData, sValue) {
-        appendAdminEncodedValue(oData, "contact_value", sValue);
-    }
-
     function clearContactRowFilterText(oItem) {
         var oRow = oItem && oItem.closest ? oItem.closest("tr") : null;
         if (oRow) {
@@ -5313,13 +5214,17 @@ document.addEventListener("DOMContentLoaded", function () {
         oItem.setAttribute("data-contact-active", blIsActive ? "1" : "0");
         if (aContact.timestamp_tooltip) {
             oItem.setAttribute("data-timestamp-tooltip", aContact.timestamp_tooltip);
+        } else {
+            oItem.removeAttribute("data-timestamp-tooltip");
         }
+        oItem.removeAttribute("title");
         removeAdminClass(oItem, "nx-contact-item-inactive");
         if (!blIsActive) {
             addAdminClass(oItem, "nx-contact-item-inactive");
         }
         if (oType) {
             oType.textContent = sContactTypeLabel;
+            oType.removeAttribute("title");
         }
         updateContactValueAndLink(oItem, aContact.contact_type, sContactValue, false);
         if (oNote) {
@@ -5347,14 +5252,19 @@ document.addEventListener("DOMContentLoaded", function () {
             aItems[iI].setAttribute("data-contact-value", sContactValue);
             if (aContact.timestamp_tooltip) {
                 aItems[iI].setAttribute("data-timestamp-tooltip", aContact.timestamp_tooltip);
+            } else {
+                aItems[iI].removeAttribute("data-timestamp-tooltip");
             }
+            aItems[iI].removeAttribute("title");
             if (oType) {
                 oType.textContent = sContactTypeLabel;
+                oType.removeAttribute("title");
             }
             updateContactValueAndLink(aItems[iI], aContact.contact_type, sContactValue, false);
             clearContactRowFilterText(aItems[iI]);
         }
     }
+    window.nxUpdateSharedContactElements = updateSharedContactElements;
 
     function openContactDialog(oItem, oSubjectRowParam, blNewContact) {
         var oDialog = document.createElement("div");
@@ -5413,7 +5323,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oForm.appendChild(oHeader);
         enableAdminDialogDrag(oDialog, oForm, oHeader);
         var oSharedNote = document.createElement("p");
-        oSharedNote.textContent = "Type and value are shared by all subjects using this contact.";
+        oSharedNote.textContent = "Shared contact values used by other subjects are preserved.";
         oForm.appendChild(oSharedNote);
         var oType = appendContactTypeSelect(oForm, blNewContact ? "" : (oItem.getAttribute("data-contact-type-id") || ""), blNewContact ? "cell" : (oItem.getAttribute("data-contact-type") || ""));
         var oValue = appendTextField(oForm, "Value", "contact_value", blNewContact ? "" : (oItem.getAttribute("data-contact-value") || ""));
@@ -5453,7 +5363,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 oData.append("subject_contact_id", oItem.getAttribute("data-subject-contact-id") || "");
             }
             oData.append("contact_type_id", oType.value);
-            appendContactValue(oData, oValue.value);
+            appendAdminEncodedValue(oData, "contact_value", oValue.value);
             appendAdminEncodedValue(oData, "note", oNote.value);
             oData.append("is_primary", oPrimary.checked ? "1" : "0");
             oData.append("is_active", oActive.checked ? "1" : "0");
@@ -5643,7 +5553,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 setDialogError(oError, aData && aData.message ? aData.message : "Contact could not be saved.");
                 return;
             }
-            window.location.reload();
+            if (aData.reload_required) {
+                window.location.reload();
+                return;
+            }
+            if (aData.contact) {
+                if (window.nxUpdateSharedContactElements) {
+                    window.nxUpdateSharedContactElements(aData.contact);
+                }
+                refreshAdminTableFilter();
+            }
+            closeSharedContactDialog(true);
         }).catch(function (oException) {
             logAdminException(oException);
             setDialogError(oError, "Contact could not be saved.");

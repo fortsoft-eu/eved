@@ -50,17 +50,17 @@ try {
                     ":film_id" => $iFilmId
                 ));
                 if ($oStmt->rowCount() > 0) {
-                    $sMessage = "The film roll <strong>" . htmlspecialchars(formatFilmOptionLabel($aUnassign), ENT_QUOTES, "UTF-8") . "</strong> has been unassigned from the lab bag <strong>" . htmlspecialchars(formatOrderOptionLabel($aUnassign), ENT_QUOTES, "UTF-8") . "</strong>.";
+                    $sMessage = "The film roll <strong>" . formatFilmOptionLabel($aUnassign) . "</strong> has been unassigned from the lab bag <strong>" . formatOrderOptionLabel($aUnassign) . "</strong>.";
                     $sMessageType = "success";
                 } else {
-                    $sMessage = "The film roll <strong>" . htmlspecialchars(formatFilmOptionLabel($aUnassign), ENT_QUOTES, "UTF-8") . "</strong> could not be unassigned from the lab bag <strong>" . htmlspecialchars(formatOrderOptionLabel($aUnassign), ENT_QUOTES, "UTF-8") . "</strong>.";
+                    $sMessage = "The film roll <strong>" . formatFilmOptionLabel($aUnassign) . "</strong> could not be unassigned from the lab bag <strong>" . formatOrderOptionLabel($aUnassign) . "</strong>.";
                     $sMessageType = "error";
                 }
             } elseif ($aUnassign && $aUnassign["lab_order_id"] !== null) {
-                $sMessage = "The film roll <strong>" . htmlspecialchars(formatFilmOptionLabel($aUnassign), ENT_QUOTES, "UTF-8") . "</strong> can no longer be unassigned because the lab order is older than one year.";
+                $sMessage = "The film roll <strong>" . formatFilmOptionLabel($aUnassign) . "</strong> can no longer be unassigned because the lab order is older than one year.";
                 $sMessageType = "warning";
             } elseif ($aUnassign) {
-                $sMessage = "The film roll <strong>" . htmlspecialchars(formatFilmOptionLabel($aUnassign), ENT_QUOTES, "UTF-8") . "</strong> is already unassigned.";
+                $sMessage = "The film roll <strong>" . formatFilmOptionLabel($aUnassign) . "</strong> is already unassigned.";
                 $sMessageType = "warning";
             } else {
                 $sMessage = "The film roll could not be unassigned from the lab bag.";
@@ -110,7 +110,7 @@ try {
             }
             if ($aSelectedFilm && $aSelectedOrder) {
                 if ((int)$aSelectedFilm["lab_order_id"] == $iOrderId) {
-                    $sMessage = "The film roll <strong>" . htmlspecialchars(formatFilmOptionLabel($aSelectedFilm), ENT_QUOTES, "UTF-8") . "</strong> is already assigned to the lab bag <strong>" . htmlspecialchars(formatOrderOptionLabel($aSelectedOrder), ENT_QUOTES, "UTF-8") . "</strong>.";
+                    $sMessage = "The film roll <strong>" . formatFilmOptionLabel($aSelectedFilm) . "</strong> is already assigned to the lab bag <strong>" . formatOrderOptionLabel($aSelectedOrder) . "</strong>.";
                     $sMessageType = "warning";
                 } else {
                     $oStmt = $oPdo->prepare("UPDATE fs_film_scans SET lab_order_id = :order_id, updated_at = NOW(6) WHERE id = :film_id");
@@ -118,10 +118,10 @@ try {
                     $iLastBagId = $iOrderId;
                     if ($oStmt->rowCount() > 0) {
                         $_SESSION["film"]["link"]["bag"] = $iOrderId;
-                        $sMessage = "The film roll <strong>" . htmlspecialchars(formatFilmOptionLabel($aSelectedFilm), ENT_QUOTES, "UTF-8") . "</strong> has been assigned to the lab bag <strong>" . htmlspecialchars(formatOrderOptionLabel($aSelectedOrder), ENT_QUOTES, "UTF-8") . "</strong>.";
+                        $sMessage = "The film roll <strong>" . formatFilmOptionLabel($aSelectedFilm) . "</strong> has been assigned to the lab bag <strong>" . formatOrderOptionLabel($aSelectedOrder) . "</strong>.";
                         $sMessageType = "success";
                     } else {
-                        $sMessage = "The film roll <strong>" . htmlspecialchars(formatFilmOptionLabel($aSelectedFilm), ENT_QUOTES, "UTF-8") . "</strong> could not be assigned to the lab bag <strong>" . htmlspecialchars(formatOrderOptionLabel($aSelectedOrder), ENT_QUOTES, "UTF-8") . "</strong>.";
+                        $sMessage = "The film roll <strong>" . formatFilmOptionLabel($aSelectedFilm) . "</strong> could not be assigned to the lab bag <strong>" . formatOrderOptionLabel($aSelectedOrder) . "</strong>.";
                         $sMessageType = "error";
                     }
                 }
@@ -162,7 +162,7 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo htmlspecialchars(getAdminViewportContent(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
@@ -190,7 +190,7 @@ echo "  </p>\n";
 
 foreach ($aFilms as $aFilm) {
     echo "        <option value=\"" . htmlspecialchars((string)$aFilm["id"], ENT_QUOTES, "UTF-8") . "\">"
-        . htmlspecialchars(formatFilmOptionLabel($aFilm), ENT_QUOTES, "UTF-8") . "</option>\n";
+        . formatFilmOptionLabel($aFilm) . "</option>\n";
 
 }
 
@@ -207,7 +207,7 @@ foreach ($aOrders as $aOrder) {
     $sLabel = formatOrderOptionLabel($aOrder);
     $blSelected = $iLastBagId !== null && $aOrder["id"] === $iLastBagId;
     echo "        <option value=\"" . htmlspecialchars((string)$aOrder["id"], ENT_QUOTES, "UTF-8") . "\"" . ($blSelected ? " selected" : "") . ">"
-        . htmlspecialchars((string)$sLabel, ENT_QUOTES, "UTF-8") . "</option>\n";
+        . $sLabel . "</option>\n";
 
 }
 
@@ -285,7 +285,7 @@ foreach ($aLinks as $aLink) {
         <td><?php echo $sOrderDateDisplay; ?></td>
         <td><?php echo $sScanDateDisplay; ?></td>
         <td><?php echo htmlspecialchars($sReturnDate, ENT_QUOTES, "UTF-8"); ?></td>
-        <td><?php echo $aLink["lab_order_id"] === null ? "No" : (((int)$aLink["can_unassign"] == 1) ? "Yes <button type=\"button\" class=\"button-link js-confirm-unassign\" data-confirm-action=\"" . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]) . "\" data-unassign-id=\"" . (int)$aLink["film_id"] . "\" data-film-roll=\"" . htmlspecialchars($sFilmLabel, ENT_QUOTES, "UTF-8") . "\" data-lab-bag=\"" . htmlspecialchars($sOrderLabel, ENT_QUOTES, "UTF-8") . "\">Unassign</button>" : "Yes"); ?></td>
+        <td><?php echo $aLink["lab_order_id"] === null ? "No" : (((int)$aLink["can_unassign"] == 1) ? "Yes <button type=\"button\" class=\"button-link js-confirm-unassign\" data-confirm-action=\"" . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]) . "\" data-unassign-id=\"" . (int)$aLink["film_id"] . "\" data-film-roll=\"" . $sFilmLabel . "\" data-lab-bag=\"" . $sOrderLabel . "\">Unassign</button>" : "Yes"); ?></td>
       </tr>
 <?php
 

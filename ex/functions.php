@@ -131,29 +131,6 @@ function getQuickTableFilterValue($sFilterId = "table-filter") {
     return $_SESSION["quick_table_filters"][$sScriptName][$sFilterId];
 }
 
-function setQuickTableFilterValue($sFilterId, $sValue) {
-    $sScriptName = getQuickTableFilterScriptName();
-    $sFilterId = getQuickTableFilterId($sFilterId);
-    if (!isset($_SESSION["quick_table_filters"]) || !is_array($_SESSION["quick_table_filters"])) {
-        $_SESSION["quick_table_filters"] = array();
-    }
-    if (!isset($_SESSION["quick_table_filters"][$sScriptName]) || !is_array($_SESSION["quick_table_filters"][$sScriptName])) {
-        $_SESSION["quick_table_filters"][$sScriptName] = array();
-    }
-    $_SESSION["quick_table_filters"][$sScriptName][$sFilterId] = (string)$sValue;
-}
-
-function resetQuickTableFilterValue($sFilterId) {
-    $sScriptName = getQuickTableFilterScriptName();
-    $sFilterId = getQuickTableFilterId($sFilterId);
-    if (isset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId])) {
-        unset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId]);
-    }
-    if (isset($_SESSION["quick_table_filters"][$sScriptName]) && is_array($_SESSION["quick_table_filters"][$sScriptName]) && !$_SESSION["quick_table_filters"][$sScriptName]) {
-        unset($_SESSION["quick_table_filters"][$sScriptName]);
-    }
-}
-
 function handleQuickTableFilterRequest() {
     if ($_SERVER["REQUEST_METHOD"] != "POST" || !isset($_POST["quick_table_filter_action"])) {
         return;
@@ -165,11 +142,26 @@ function handleQuickTableFilterRequest() {
     $sFilterId = isset($_POST["filter_id"]) ? (string)$_POST["filter_id"] : "table-filter";
     if ($sAction == "save") {
         $sValue = nxGetPostedValue("filter_value");
-        setQuickTableFilterValue($sFilterId, $sValue);
+        $sScriptName = getQuickTableFilterScriptName();
+        $sFilterId = getQuickTableFilterId($sFilterId);
+        if (!isset($_SESSION["quick_table_filters"]) || !is_array($_SESSION["quick_table_filters"])) {
+            $_SESSION["quick_table_filters"] = array();
+        }
+        if (!isset($_SESSION["quick_table_filters"][$sScriptName]) || !is_array($_SESSION["quick_table_filters"][$sScriptName])) {
+            $_SESSION["quick_table_filters"][$sScriptName] = array();
+        }
+        $_SESSION["quick_table_filters"][$sScriptName][$sFilterId] = (string)$sValue;
         session_write_close();
         nxSendJsonAndExit(array("success" => true));
     } elseif ($sAction == "reset") {
-        resetQuickTableFilterValue($sFilterId);
+        $sScriptName = getQuickTableFilterScriptName();
+        $sFilterId = getQuickTableFilterId($sFilterId);
+        if (isset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId])) {
+            unset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId]);
+        }
+        if (isset($_SESSION["quick_table_filters"][$sScriptName]) && is_array($_SESSION["quick_table_filters"][$sScriptName]) && !$_SESSION["quick_table_filters"][$sScriptName]) {
+            unset($_SESSION["quick_table_filters"][$sScriptName]);
+        }
         session_write_close();
         nxSendJsonAndExit(array("success" => true));
     }
@@ -577,14 +569,6 @@ function requireExFullAccess($aAllowedIps) {
     send403AndExit();
 }
 
-function getUrlWithoutScriptName() {
-    $sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
-    if (substr($sPath, -1) == "/") {
-        return $sPath;
-    }
-    return dirname($sPath) . "/";
-}
-
 function getContentSecurityPolicySource() {
     if (!isset($_SERVER["HTTP_HOST"]) || !isset($_SERVER["REQUEST_URI"])) {
         return "'self'";
@@ -681,27 +665,6 @@ function redirectIndexPhpToRoot() {
     exit;
 }
 
-function getDatabaseDownloadFileName($sType) {
-    $sPrefix = isset($GLOBALS["sDatabaseDownloadPrefix"]) ? $GLOBALS["sDatabaseDownloadPrefix"] : "eved";
-    $sProject = isset($GLOBALS["sDatabaseDownloadProject"]) ? $GLOBALS["sDatabaseDownloadProject"] : basename(__DIR__);
-    return $sPrefix . "_" . $sProject . "_" . $sType . "_" . date("Y-m-d_His", time()) . ".sql";
-}
-
-function quoteDatabaseIdentifier($sIdentifier) {
-    return "`" . str_replace("`", "``", $sIdentifier) . "`";
-}
-
-function quoteDatabaseValue($oPdo, $mValue) {
-    if ($mValue === null) {
-        return "NULL";
-    }
-    $sQuoted = $oPdo->quote((string)$mValue);
-    if ($sQuoted === false) {
-        return "'" . str_replace("'", "''", (string)$mValue) . "'";
-    }
-    return $sQuoted;
-}
-
 function getDatabaseSchemaSql($aTables) {
     $sBody = "";
     foreach ($aTables as $aTable) {
@@ -715,7 +678,7 @@ function getDatabaseBackupSql($oPdo, $aTables) {
     $sBody = "SET NAMES utf8mb4;\r\n\r\n" . getDatabaseSchemaSql($aTables) . "\r\n";
     foreach ($aTables as $aTable) {
         $sTableName = $aTable[0];
-        $sQuotedTableName = quoteDatabaseIdentifier($sTableName);
+        $sQuotedTableName = "`" . str_replace("`", "``", $sTableName) . "`";
         $oStatement = $oPdo->query("SELECT * FROM " . $sQuotedTableName);
         $sColumns = "";
         $blHasRows = false;
@@ -723,13 +686,18 @@ function getDatabaseBackupSql($oPdo, $aTables) {
             if ($sColumns == "") {
                 $aColumns = array();
                 foreach (array_keys($aRow) as $sColumnName) {
-                    $aColumns[] = quoteDatabaseIdentifier($sColumnName);
+                    $aColumns[] = "`" . str_replace("`", "``", $sColumnName) . "`";
                 }
                 $sColumns = implode(", ", $aColumns);
             }
             $aValues = array();
             foreach ($aRow as $mValue) {
-                $aValues[] = quoteDatabaseValue($oPdo, $mValue);
+                if ($mValue === null) {
+                    $aValues[] = "NULL";
+                } else {
+                    $sQuoted = $oPdo->quote((string)$mValue);
+                    $aValues[] = $sQuoted === false ? "'" . str_replace("'", "''", (string)$mValue) . "'" : $sQuoted;
+                }
             }
             $sBody .= "INSERT INTO " . $sQuotedTableName . " (" . $sColumns . ") VALUES (" . implode(", ", $aValues) . ");\r\n";
             $blHasRows = true;
@@ -848,16 +816,13 @@ function nxTimestampTooltipText($aRow) {
     if (!is_array($aRow) || !array_key_exists("created_at", $aRow) || !array_key_exists("updated_at", $aRow)) {
         return "";
     }
-    return "Created: " . nxFormatTimestampTooltipValue($aRow["created_at"]) . "\n"
-        . "Updated: " . nxFormatTimestampTooltipValue($aRow["updated_at"]);
-}
-
-function nxRenderTimestampTooltipAttribute($aRow) {
-    $sText = nxTimestampTooltipText($aRow);
-    if ($sText == "") {
-        return "";
+    $sCreated = nxFormatTimestampTooltipValue($aRow["created_at"]);
+    $sUpdated = nxFormatTimestampTooltipValue($aRow["updated_at"]);
+    if ($sCreated == $sUpdated) {
+        return "Created: " . $sCreated;
     }
-    return " title=\"" . str_replace("\n", "&#10;", nxHtml($sText)) . "\"";
+    return "Created: " . $sCreated . "\n"
+        . "Updated: " . $sUpdated;
 }
 
 function nxRenderTimestampTooltipDataAttribute($aRow) {
@@ -868,47 +833,39 @@ function nxRenderTimestampTooltipDataAttribute($aRow) {
     return " data-timestamp-tooltip=\"" . str_replace("\n", "&#10;", nxHtml($sText)) . "\"";
 }
 
-function nxEmojiValue($sName) {
-    return (string)$GLOBALS[$sName];
-}
-
-function nxEmojiDataValue($sName) {
-    return html_entity_decode(nxEmojiValue($sName), ENT_QUOTES | ENT_HTML5, "UTF-8");
-}
-
 function nxRenderEmojiData() {
     $aValues = array(
-        "edit" => nxEmojiDataValue("sEditEmoji"),
-        "delete" => nxEmojiDataValue("sDeleteEmoji"),
-        "add" => nxEmojiDataValue("sAddEmoji"),
-        "hidden-inactive" => nxEmojiDataValue("sHiddenInactiveEmoji"),
-        "portal" => nxEmojiDataValue("sPortalEmoji"),
-        "empty-value" => nxEmojiDataValue("sEmptyValueEmoji"),
-        "throbber" => nxEmojiDataValue("sThrobberEmoji"),
-        "filter-focus" => nxEmojiDataValue("sFilterFocusEmoji"),
-        "copy" => nxEmojiDataValue("sCopyEmoji"),
-        "copy-success" => nxEmojiDataValue("sCopySuccessEmoji"),
-        "copy-failure" => nxEmojiDataValue("sCopyFailureEmoji"),
-        "primary" => nxEmojiDataValue("sPrimaryEmoji"),
-        "inactive" => nxEmojiDataValue("sInactiveEmoji"),
-        "merge" => nxEmojiDataValue("sMergeEmoji"),
-        "move-up" => nxEmojiDataValue("sMoveUpEmoji"),
-        "move-down" => nxEmojiDataValue("sMoveDownEmoji"),
-        "birthday-served" => nxEmojiDataValue("sBirthdayServedEmoji"),
-        "communication-served" => nxEmojiDataValue("sCommunicationServedEmoji"),
-        "contact-email" => nxEmojiDataValue("sContactEmailEmoji"),
-        "contact-landline" => nxEmojiDataValue("sContactLandlineEmoji"),
-        "contact-cell" => nxEmojiDataValue("sContactCellEmoji"),
-        "contact-fax" => nxEmojiDataValue("sContactFaxEmoji"),
-        "contact-pager" => nxEmojiDataValue("sContactPagerEmoji"),
-        "contact-web" => nxEmojiDataValue("sContactWebEmoji"),
-        "contact-telegram" => nxEmojiDataValue("sContactTelegramEmoji"),
-        "contact-message" => nxEmojiDataValue("sContactMessageEmoji"),
-        "contact-youtube" => nxEmojiDataValue("sContactYouTubeEmoji")
+        "edit" => $GLOBALS["sEditEmoji"],
+        "delete" => $GLOBALS["sDeleteEmoji"],
+        "add" => $GLOBALS["sAddEmoji"],
+        "hidden-inactive" => $GLOBALS["sHiddenInactiveEmoji"],
+        "portal" => $GLOBALS["sPortalEmoji"],
+        "empty-value" => $GLOBALS["sEmptyValueEmoji"],
+        "throbber" => $GLOBALS["sThrobberEmoji"],
+        "filter-focus" => $GLOBALS["sFilterFocusEmoji"],
+        "copy" => $GLOBALS["sCopyEmoji"],
+        "copy-success" => $GLOBALS["sCopySuccessEmoji"],
+        "copy-failure" => $GLOBALS["sCopyFailureEmoji"],
+        "primary" => $GLOBALS["sPrimaryEmoji"],
+        "inactive" => $GLOBALS["sInactiveEmoji"],
+        "merge" => $GLOBALS["sMergeEmoji"],
+        "move-up" => $GLOBALS["sMoveUpEmoji"],
+        "move-down" => $GLOBALS["sMoveDownEmoji"],
+        "birthday-served" => $GLOBALS["sBirthdayServedEmoji"],
+        "communication-served" => $GLOBALS["sCommunicationServedEmoji"],
+        "contact-email" => $GLOBALS["sContactEmailEmoji"],
+        "contact-landline" => $GLOBALS["sContactLandlineEmoji"],
+        "contact-cell" => $GLOBALS["sContactCellEmoji"],
+        "contact-fax" => $GLOBALS["sContactFaxEmoji"],
+        "contact-pager" => $GLOBALS["sContactPagerEmoji"],
+        "contact-web" => $GLOBALS["sContactWebEmoji"],
+        "contact-telegram" => $GLOBALS["sContactTelegramEmoji"],
+        "contact-message" => $GLOBALS["sContactMessageEmoji"],
+        "contact-youtube" => $GLOBALS["sContactYouTubeEmoji"]
     );
     $sHtml = "  <span id=\"nx-emoji-data\" hidden";
     foreach ($aValues as $sKey => $sValue) {
-        $sHtml .= " data-" . $sKey . "=\"" . nxHtml($sValue) . "\"";
+        $sHtml .= " data-" . $sKey . "=\"" . nxHtml(html_entity_decode((string)$sValue, ENT_QUOTES | ENT_HTML5, "UTF-8")) . "\"";
     }
     return $sHtml . "></span>\n";
 }
@@ -953,7 +910,7 @@ function nxGetRenderThrobberHtmlAttributes($blUseRenderThrobberLock) {
 
 function nxGetCondensedTableClass() {
     $sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
-    return isPmdLikeUserAgent($sUserAgent) ? " nx-condensed-table" : "";
+    return preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent) == 1 ? " nx-condensed-table" : "";
 }
 
 function nxHtmlValue($mValue) {
@@ -2515,12 +2472,22 @@ function nxContactLinkTitle($sType) {
 }
 
 function nxRenderContactValue($sType, $sValue, $blShowCopy = false, $blAllowExternalLinks = false, $sTooltipAttribute = "") {
+    return nxRenderContactValueText($sType, $sValue, $sTooltipAttribute)
+        . nxRenderContactValueActions($sType, $sValue, $blShowCopy, $blAllowExternalLinks);
+}
+
+function nxRenderContactValueText($sType, $sValue, $sTooltipAttribute = "") {
+    $sDisplayValue = nxContactDisplayValue($sType, $sValue);
+    $sClass = "nx-contact-value" . (nxContactValueIsInvalid($sType, $sValue) ? " nx-invalid-contact-value" : "");
+    return "<span class=\"" . nxHtml($sClass) . "\"" . $sTooltipAttribute . ">" . nxHtml($sDisplayValue) . "</span>";
+}
+
+function nxRenderContactValueActions($sType, $sValue, $blShowCopy = false, $blAllowExternalLinks = false) {
     global $sCopyEmoji;
 
     $sDisplayValue = nxContactDisplayValue($sType, $sValue);
     $sHref = nxContactHref($sType, $sValue, $blAllowExternalLinks);
-    $sClass = "nx-contact-value" . (nxContactValueIsInvalid($sType, $sValue) ? " nx-invalid-contact-value" : "");
-    $sHtml = "<span class=\"" . nxHtml($sClass) . "\"" . $sTooltipAttribute . ">" . nxHtml($sDisplayValue) . "</span>";
+    $sHtml = "";
     $sLinkTitle = "";
     $blHasIcon = false;
     if ($blShowCopy && $sDisplayValue != "") {
@@ -2751,6 +2718,8 @@ function nxRenderContactList($aContacts, $blShowActions = true, $iSubjectId = 0,
         $sContactType = isset($aContact["contact_type"]) ? (string)$aContact["contact_type"] : "";
         $sContactTypeName = isset($aContact["contact_type_name"]) && trim((string)$aContact["contact_type_name"]) != "" ? (string)$aContact["contact_type_name"] : nxContactTypeLabel($sContactType);
         $sContactValue = nxContactDisplayValue($sContactType, $aContact["contact_value"]);
+        $sTimestampTooltipText = nxTimestampTooltipText($aContact);
+        $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sTimestampTooltipText)) . "\"" : "";
         $aCellCopyValues[] = $sContactTypeName . ": " . $sContactValue . ($sNote != "" ? " (" . $sNote . ")" : "");
         $sActions = "";
         if ($blShowActions) {
@@ -2770,8 +2739,9 @@ function nxRenderContactList($aContacts, $blShowActions = true, $iSubjectId = 0,
             . " data-contact-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
             . " data-contact-active=\"" . ($blIsActive ? "1" : "0") . "\""
             . nxRenderTimestampTooltipDataAttribute($aContact) . ">"
-            . "<span class=\"nx-contact-type\">" . nxHtml($sContactTypeName) . "</span>: "
-            . nxRenderContactValue($sContactType, $aContact["contact_value"], $blShowCopy, $blAllowExternalLinks, nxRenderTimestampTooltipAttribute($aContact))
+            . "<span class=\"nx-contact-db-values\"" . $sTimestampTooltipAttribute . "><span class=\"nx-contact-type\">" . nxHtml($sContactTypeName) . "</span>: "
+            . nxRenderContactValueText($sContactType, $aContact["contact_value"]) . "</span>"
+            . nxRenderContactValueActions($sContactType, $aContact["contact_value"], $blShowCopy, $blAllowExternalLinks)
             . "<span class=\"nx-contact-note\">" . ($sNote != "" ? " (" . nxHtml($sNote) . ")" : "") . "</span>"
             . "<span class=\"nx-contact-flags\">"
             . "<span class=\"nx-contact-primary\" title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span>"
@@ -2805,6 +2775,8 @@ function nxRenderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 
         $aCellCopyValues[] = $sCopyText;
         $blIsPrimary = (int)$aNickname["is_primary"] == 1;
         $blIsActive = (int)$aNickname["is_active"] == 1;
+        $sTimestampTooltipText = nxTimestampTooltipText($aNickname);
+        $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sTimestampTooltipText)) . "\"" : "";
         $sActions = "";
         if ($blShowActions) {
             $sActions = "<span class=\"nx-list-item-actions\">"
@@ -2820,10 +2792,12 @@ function nxRenderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 
             . " data-note=\"" . nxHtml($sNote) . "\""
             . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
             . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
-            . "<span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aNickname) . ">" . nxHtml($aNickname["nickname"]) . "</span>"
+            . "<span class=\"nx-subject-nickname-values\"" . $sTimestampTooltipAttribute . ">"
+            . "<span class=\"nx-subject-item-value\">" . nxHtml($aNickname["nickname"]) . "</span>"
             . "<span class=\"nx-subject-item-context\">" . ($sContext != "" ? " [" . nxHtml($sContext) . "]" : "") . "</span>"
-            . "<span class=\"nx-subject-item-note\">" . ($sNote != "" ? " (" . nxHtml($sNote) . ")" : "") . "</span>"
+            . "</span>"
             . nxRenderCopyAction($sCopyText)
+            . "<span class=\"nx-subject-item-note\">" . ($sNote != "" ? " (" . nxHtml($sNote) . ")" : "") . "</span>"
             . "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
             . $sActions
             . "</div>";
@@ -2989,6 +2963,8 @@ function nxRenderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0
         $blIsPrimary = (int)$aAddress["is_primary"] == 1;
         $blIsActive = (int)$aAddress["is_active"] == 1;
         $sValueClass = (string)$aAddress["address_type"] == "main" ? " nx-subject-address-main-value" : "";
+        $sTimestampTooltipText = nxTimestampTooltipText($aAddress);
+        $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sTimestampTooltipText)) . "\"" : "";
         $sActions = "";
         if ($blShowActions) {
             $sActions = "<span class=\"nx-list-item-actions\">"
@@ -3017,7 +2993,7 @@ function nxRenderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0
             . " data-note=\"" . nxHtml($sNote) . "\""
             . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
             . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
-            . "<span class=\"nx-subject-item-value" . $sValueClass . "\"" . nxRenderTimestampTooltipAttribute($aAddress) . ">" . ($sText != "" ? nxHtml($sText) : $sEmptyValueEmoji) . "</span>"
+            . "<span class=\"nx-subject-item-value" . $sValueClass . "\"" . $sTimestampTooltipAttribute . ">" . ($sText != "" ? nxHtml($sText) : $sEmptyValueEmoji) . "</span>"
             . "<span class=\"nx-subject-item-note\">" . ($sNote != "" ? " (" . nxHtml($sNote) . ")" : "") . "</span>"
             . nxRenderCopyAction($sCopyText)
             . "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
@@ -3043,6 +3019,8 @@ function nxRenderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $bl
     $aCellCopyValues = array();
     foreach ($aGroups as $aGroup) {
         $aCellCopyValues[] = $aGroup["name"];
+        $sTimestampTooltipText = nxTimestampTooltipText($aGroup);
+        $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sTimestampTooltipText)) . "\"" : "";
         $sActions = "";
         if ($blShowActions) {
             $sActions = "<span class=\"nx-list-item-actions\">"
@@ -3055,7 +3033,7 @@ function nxRenderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $bl
             . " data-group-id=\"" . nxHtml($aGroup["group_id"]) . "\""
             . " data-group-name=\"" . nxHtml($aGroup["name"]) . "\""
             . nxRenderTimestampTooltipDataAttribute($aGroup) . ">"
-            . "<span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aGroup) . ">" . nxHtml($aGroup["name"]) . "</span>"
+            . "<span class=\"nx-subject-item-value\"" . $sTimestampTooltipAttribute . ">" . nxHtml($aGroup["name"]) . "</span>"
             . nxRenderCopyAction($aGroup["name"])
             . $sActions
             . "</div>";
@@ -3082,6 +3060,8 @@ function nxRenderNoteList($aNotes, $blShowActions = true, $iSubjectId = 0, $blHa
         $aCellCopyValues[] = $aNote["note_text"];
         $blIsActive = (int)$aNote["is_active"] == 1;
         $blIsPrimary = (int)$aNote["is_primary"] == 1;
+        $sTimestampTooltipText = nxTimestampTooltipText($aNote);
+        $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sTimestampTooltipText)) . "\"" : "";
         $sActions = "";
         if ($blShowActions) {
             $sActions = "<span class=\"nx-list-item-actions\">"
@@ -3094,7 +3074,7 @@ function nxRenderNoteList($aNotes, $blShowActions = true, $iSubjectId = 0, $blHa
             . " data-subject-id=\"" . nxHtml($aNote["subject_id"]) . "\""
             . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
             . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
-            . "<span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aNote) . ">" . nxHtmlMultiline($aNote["note_text"]) . "</span>"
+            . "<span class=\"nx-subject-item-value\"" . $sTimestampTooltipAttribute . ">" . nxHtmlMultiline($aNote["note_text"]) . "</span>"
             . nxRenderCopyAction($aNote["note_text"])
             . "<span class=\"nx-subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
             . "<span class=\"nx-subject-note-source\">" . nxHtml($aNote["note_text"]) . "</span>"
@@ -3383,6 +3363,43 @@ function nxBirthDateClass($mBirthNumber, $mBirthDate, $sClass = "") {
         $sClass = trim($sClass . " nx-invalid-birth-number");
     }
     return $sClass;
+}
+
+function nxDateFromIsoDate($mValue) {
+    $sValue = trim((string)$mValue);
+    $oDate = false;
+    if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sValue) || $sValue == "0000-00-00") {
+        return false;
+    }
+    $oDate = DateTimeImmutable::createFromFormat("!Y-m-d", $sValue);
+    if (!$oDate || $oDate->format("Y-m-d") != $sValue) {
+        return false;
+    }
+    return $oDate;
+}
+
+function nxAgeInYears($mStartDate, $mEndDate = null) {
+    $oStartDate = nxDateFromIsoDate($mStartDate);
+    $oEndDate = $mEndDate === null ? new DateTimeImmutable("today") : nxDateFromIsoDate($mEndDate);
+    if (!$oStartDate || !$oEndDate || $oEndDate < $oStartDate) {
+        return null;
+    }
+    return (int)$oStartDate->diff($oEndDate)->y;
+}
+
+function nxSubjectAgeLabel($iAge, $sPrefix = "") {
+    if ($iAge === null) {
+        return "";
+    }
+    return ($sPrefix != "" ? $sPrefix . " " : "") . ((int)$iAge == 1 ? "1 year" : (string)(int)$iAge . " years");
+}
+
+function nxRenderSubjectDateValue($mDate, $sAgeLabel = "") {
+    $sHtml = nxHtmlValue($mDate);
+    if ($sAgeLabel != "") {
+        $sHtml .= "<span class=\"nx-subject-date-age\">" . nxHtml($sAgeLabel) . "</span>";
+    }
+    return $sHtml;
 }
 
 function nxRenderBirthNumberValue($mValue) {
@@ -3767,9 +3784,11 @@ function nxRenderGroupAdminRow($aGroup, $blShowActions = true) {
 
     $sPermissionKeys = isset($aGroup["permission_keys"]) ? (string)$aGroup["permission_keys"] : "";
     $sPermissionNames = isset($aGroup["permission_names"]) ? (string)$aGroup["permission_names"] : "";
+    $sTimestampTooltipText = nxTimestampTooltipText($aGroup);
+    $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sTimestampTooltipText)) . "\"" : "";
 
     return "      <tr data-group-id=\"" . nxHtml($aGroup["id"]) . "\" data-group-name=\"" . nxHtml($aGroup["name"]) . "\" data-group-order=\"" . nxHtml($aGroup["order"]) . "\" data-permission-keys=\"" . nxHtml($sPermissionKeys) . "\">\n"
-        . "        <td><span" . nxRenderTimestampTooltipAttribute($aGroup) . ">" . nxHtml($aGroup["name"]) . "</span></td>\n"
+        . "        <td><span" . $sTimestampTooltipAttribute . ">" . nxHtml($aGroup["name"]) . "</span></td>\n"
         . "        <td>" . nxHtml($aGroup["subject_count"]) . "</td>\n"
         . "        <td>" . ($sPermissionNames != "" ? nl2br(nxHtml(str_replace(",", "\n", $sPermissionNames)), false) : $sEmptyValueEmoji) . "</td>\n"
         . "        <td class=\"nx-admin-action-column\">" . ($blShowActions ? "<a href=\"#\" class=\"nx-item-action js-move-group-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"nx-item-action js-move-group-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a>" : "") . "</td>\n"
@@ -3812,6 +3831,86 @@ function nxAddContactTimestampTooltip($oPdo, $aContact) {
         $aContact["timestamp_tooltip"] = nxTimestampTooltipText($aContactRow);
     }
     return $aContact;
+}
+
+function nxUpdateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId, $sContactValue, $aContactType) {
+    $oStatement = $oPdo->prepare("SELECT sc.id, sc.subject_id, sc.contact_id, sc.is_active AS current_is_active, c.contact_type_id AS current_contact_type_id, c.contact_value AS current_contact_value FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id WHERE sc.id = :id FOR UPDATE");
+    $oStatement->execute(array("id" => $iSubjectContactId));
+    $aSubjectContact = $oStatement->fetch(PDO::FETCH_ASSOC);
+    if (!$aSubjectContact) {
+        return null;
+    }
+
+    $iContactId = (int)$aSubjectContact["contact_id"];
+    $iOriginalContactId = $iContactId;
+    $blContactTypeChanged = (int)$aSubjectContact["current_contact_type_id"] != $iContactTypeId;
+    $blContactValueChanged = (string)$aSubjectContact["current_contact_value"] != $sContactValue;
+    $blContactIdentityChanged = $blContactTypeChanged || $blContactValueChanged;
+    $blContactReassigned = false;
+    if ($blContactIdentityChanged) {
+        $oStatement = $oPdo->prepare("SELECT id FROM ex_subject_contacts WHERE contact_id = :contact_id FOR UPDATE");
+        $oStatement->execute(array("contact_id" => $iOriginalContactId));
+        $aContactLinkIds = $oStatement->fetchAll(PDO::FETCH_COLUMN, 0);
+        $blCurrentContactShared = count($aContactLinkIds) > 1;
+
+        $oStatement = $oPdo->prepare("SELECT id FROM ex_contacts WHERE contact_type_id = :contact_type_id AND contact_value = :contact_value FOR UPDATE");
+        $oStatement->execute(array(
+            "contact_type_id" => $iContactTypeId,
+            "contact_value" => $sContactValue
+        ));
+        $iTargetContactId = (int)$oStatement->fetchColumn();
+        if ($iTargetContactId > 0 && $iTargetContactId != $iOriginalContactId) {
+            $oStatement = $oPdo->prepare("UPDATE ex_subject_contacts SET contact_id = :contact_id WHERE id = :id");
+            $oStatement->execute(array(
+                "contact_id" => $iTargetContactId,
+                "id" => $iSubjectContactId
+            ));
+            if (!$blCurrentContactShared) {
+                $oStatement = $oPdo->prepare("DELETE FROM ex_contacts WHERE id = :id");
+                $oStatement->execute(array("id" => $iOriginalContactId));
+            }
+            $iContactId = $iTargetContactId;
+            $blContactReassigned = true;
+        } elseif ($blCurrentContactShared) {
+            $oStatement = $oPdo->prepare("INSERT INTO ex_contacts (contact_type_id, contact_value) VALUES (:contact_type_id, :contact_value)");
+            $oStatement->execute(array(
+                "contact_type_id" => $iContactTypeId,
+                "contact_value" => $sContactValue
+            ));
+            $iContactId = (int)$oPdo->lastInsertId();
+            $oStatement = $oPdo->prepare("UPDATE ex_subject_contacts SET contact_id = :contact_id WHERE id = :id");
+            $oStatement->execute(array(
+                "contact_id" => $iContactId,
+                "id" => $iSubjectContactId
+            ));
+            $blContactReassigned = true;
+        } else {
+            $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
+            $oStatement->execute(array(
+                "contact_type_id" => $iContactTypeId,
+                "contact_value" => $sContactValue,
+                "id" => $iOriginalContactId
+            ));
+        }
+    }
+
+    $aContact = array(
+        "subject_contact_id" => $iSubjectContactId,
+        "subject_id" => (int)$aSubjectContact["subject_id"],
+        "contact_id" => $iContactId,
+        "previous_contact_id" => $iOriginalContactId,
+        "contact_type_id" => $iContactTypeId,
+        "contact_type" => (string)$aContactType["contact_type"],
+        "contact_type_label" => (string)$aContactType["name"],
+        "contact_value" => $sContactValue,
+        "contact_display_value" => nxContactDisplayValue((string)$aContactType["contact_type"], $sContactValue),
+        "current_is_active" => (int)$aSubjectContact["current_is_active"],
+        "contact_type_changed" => $blContactTypeChanged ? 1 : 0,
+        "contact_value_changed" => $blContactValueChanged ? 1 : 0,
+        "contact_identity_changed" => $blContactIdentityChanged ? 1 : 0,
+        "contact_reassigned" => $blContactReassigned ? 1 : 0
+    );
+    return nxAddContactTimestampTooltip($oPdo, $aContact);
 }
 
 function nxCollectHiddenInactiveSubjectItems(&$aHiddenInactive, $aItems) {
@@ -3919,6 +4018,10 @@ function nxRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroup
     $sBirthNumberClassAttribute = $sBirthNumberClass != "" ? " class=\"" . nxHtml($sBirthNumberClass) . "\"" : "";
     $sBirthDateClass = nxBirthDateClass($aRow["birth_number"], $aRow["birth_date"]);
     $sBirthDateClassAttribute = $sBirthDateClass != "" ? " class=\"" . nxHtml($sBirthDateClass) . "\"" : "";
+    $sBirthDateAgeLabel = trim((string)$aRow["death_date"]) == "" ? nxSubjectAgeLabel(nxAgeInYears($aRow["birth_date"]), "*") : "";
+    $sDeathDateAgeLabel = trim((string)$aRow["death_date"]) != "" ? nxSubjectAgeLabel(nxAgeInYears($aRow["birth_date"], $aRow["death_date"]), "†") : "";
+    $sTimestampTooltipText = nxTimestampTooltipText($aRow);
+    $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sTimestampTooltipText)) . "\"" : "";
     $sActions = "";
     if ($blShowActions) {
         $sActions = "<span class=\"nx-list-item-actions\">"
@@ -3927,17 +4030,17 @@ function nxRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroup
             . "<a href=\"#\" class=\"nx-item-action js-delete-subject\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-name=\"" . nxHtml($aRow["subject_name"]) . "\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>"
             . "</span>";
     }
-    return "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\"" . nxRenderSubjectRowDataAttributes($aRow, $iSubjectId, $blIsActive) . ">\n"
+    return "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
         . "        <td class=\"nx-subject-type-column\" style=\"vertical-align: top;\">" . nxHtml($aRow["subject_type"]) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\"><span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aRow) . ">" . nxHtmlValue($aRow["subject_name"]) . "</span>"
+        . "        <td style=\"vertical-align: top;\"><span class=\"nx-subject-item-value\"" . $sTimestampTooltipAttribute . ">" . nxHtmlValue($aRow["subject_name"]) . "</span>"
         . nxRenderCopyAction($aRow["subject_name"])
         . $sActions . "</td>\n"
         . "        <td style=\"vertical-align: top;\">" . nxHtmlValue($aRow["first_name"]) . "</td>\n"
         . "        <td style=\"vertical-align: top;\">" . nxHtmlValue($aRow["last_name"]) . "</td>\n"
         . "        <td style=\"vertical-align: top;\">" . nxHtmlValue($aRow["birth_name"]) . "</td>\n"
         . ($blShowBirthNumber ? "        <td" . $sBirthNumberClassAttribute . " style=\"vertical-align: top;\">" . nxRenderBirthNumberValue($aRow["birth_number"]) . "</td>\n" : "")
-        . "        <td" . $sBirthDateClassAttribute . " style=\"vertical-align: top;\">" . nxHtmlValue($aRow["birth_date"]) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . nxHtmlValue($aRow["death_date"]) . "</td>\n"
+        . "        <td" . $sBirthDateClassAttribute . " style=\"vertical-align: top;\">" . nxRenderSubjectDateValue($aRow["birth_date"], $sBirthDateAgeLabel) . "</td>\n"
+        . "        <td style=\"vertical-align: top;\">" . nxRenderSubjectDateValue($aRow["death_date"], $sDeathDateAgeLabel) . "</td>\n"
         . "        <td style=\"vertical-align: top;\">" . nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true, true, true) . "</td>\n"
         . "        <td style=\"vertical-align: top;\">" . nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, true, true, true) . "</td>\n"
         . "        <td style=\"vertical-align: top;\">" . nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true, true, true) . "</td>\n"
@@ -3961,15 +4064,6 @@ function nxRenderSubjectTableCell($sHtml, $sClass = "", $sStyle = "") {
     return "        <td" . $sAttributes . ">" . $sHtml . "</td>\n";
 }
 
-function nxRenderSubjectRowDataAttributes($aRow, $iSubjectId, $blIsActive) {
-    $sSubjectSortName = isset($aRow["subject_sort_name"]) ? (string)$aRow["subject_sort_name"] : (string)$aRow["subject_name"];
-    return " data-subject-id=\"" . nxHtml($iSubjectId) . "\""
-        . " data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\""
-        . " data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\""
-        . " data-subject-sort-name=\"" . nxHtml($sSubjectSortName) . "\""
-        . (isset($aRow["days_to_birthday"]) ? " data-days-to-birthday=\"" . nxHtml((int)$aRow["days_to_birthday"]) . "\"" : "");
-}
-
 function nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive = array(), $aDisplaySettings = null, $aOptions = array()) {
     $iSubjectId = (int)$aRow["subject_id"];
     $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aRow["subject_type"]));
@@ -3979,8 +4073,14 @@ function nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresse
     $sNoWrapStyle = "overflow-wrap: normal; white-space: nowrap; word-break: normal;";
     $sBirthNumberClass = nxBirthNumberClass($aRow["birth_number"], nxSubjectRowOption($aOptions, "birth_number_class", "nx-column-hidden"));
     $sBirthDateClass = nxBirthDateClass($aRow["birth_number"], $aRow["birth_date"], nxSubjectRowOption($aOptions, "birth_date_class", "nx-column-step-two"));
+    $sDeathDateClass = nxSubjectRowOption($aOptions, "death_date_class", "nx-column-hidden");
+    $blDeathDateHidden = strpos(" " . trim((string)$sDeathDateClass) . " ", " nx-column-hidden ") !== false;
+    $sBirthDateAgeLabel = trim((string)$aRow["death_date"]) == "" ? nxSubjectAgeLabel(nxAgeInYears($aRow["birth_date"]), "*") : ($blDeathDateHidden ? nxSubjectAgeLabel(nxAgeInYears($aRow["birth_date"], $aRow["death_date"]), "†") : "");
+    $sDeathDateAgeLabel = trim((string)$aRow["death_date"]) != "" && !$blDeathDateHidden ? nxSubjectAgeLabel(nxAgeInYears($aRow["birth_date"], $aRow["death_date"]), "†") : "";
+    $sTimestampTooltipText = nxTimestampTooltipText($aRow);
+    $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", nxHtml($sTimestampTooltipText)) . "\"" : "";
     $aBeforeNameCells = nxSubjectRowOption($aOptions, "before_name_cells", array());
-    $sHtml = "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\"" . nxRenderSubjectRowDataAttributes($aRow, $iSubjectId, $blIsActive) . ">\n"
+    $sHtml = "      <tr class=\"nx-subject-row nx-subject-row-type-" . nxHtml($sSubjectType) . ($blIsActive ? " nx-subject-row-active" : " nx-subject-row-inactive") . "\" data-subject-id=\"" . nxHtml($iSubjectId) . "\" data-subject-type=\"" . nxHtml($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
         . nxRenderSubjectTableCell(nxHtml($aRow["subject_type"]), nxSubjectRowOption($aOptions, "type_class", "nx-column-hidden"), nxSubjectRowOption($aOptions, "type_style", ""));
     if (is_array($aBeforeNameCells)) {
         foreach ($aBeforeNameCells as $sCellHtml) {
@@ -3988,7 +4088,7 @@ function nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresse
         }
     }
     $sHtml .= nxRenderSubjectTableCell(
-            "<span class=\"nx-subject-item-value\"" . nxRenderTimestampTooltipAttribute($aRow) . ">" . nxHtmlValue($aRow["subject_name"]) . "</span>"
+            "<span class=\"nx-subject-item-value\"" . $sTimestampTooltipAttribute . ">" . nxHtmlValue($aRow["subject_name"]) . "</span>"
             . nxRenderCopyAction($aRow["subject_name"])
             . nxSubjectRowOption($aOptions, "name_actions", ""),
             nxSubjectRowOption($aOptions, "name_class", ""),
@@ -3998,8 +4098,8 @@ function nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresse
         . nxRenderSubjectTableCell(nxHtmlValue($aRow["last_name"]), nxSubjectRowOption($aOptions, "last_name_class", "nx-column-hidden"), nxSubjectRowOption($aOptions, "last_name_style", ""))
         . nxRenderSubjectTableCell(nxHtmlValue($aRow["birth_name"]), nxSubjectRowOption($aOptions, "birth_name_class", "nx-column-step-one"), nxSubjectRowOption($aOptions, "birth_name_style", ""))
         . nxRenderSubjectTableCell(nxRenderBirthNumberValue($aRow["birth_number"]), $sBirthNumberClass, nxSubjectRowOption($aOptions, "birth_number_style", ""))
-        . nxRenderSubjectTableCell(nxHtmlValue($aRow["birth_date"]), $sBirthDateClass, nxSubjectRowOption($aOptions, "birth_date_style", $sNoWrapStyle))
-        . nxRenderSubjectTableCell(nxHtmlValue($aRow["death_date"]), nxSubjectRowOption($aOptions, "death_date_class", "nx-column-hidden"), nxSubjectRowOption($aOptions, "death_date_style", ""))
+        . nxRenderSubjectTableCell(nxRenderSubjectDateValue($aRow["birth_date"], $sBirthDateAgeLabel), $sBirthDateClass, nxSubjectRowOption($aOptions, "birth_date_style", $sNoWrapStyle))
+        . nxRenderSubjectTableCell(nxRenderSubjectDateValue($aRow["death_date"], $sDeathDateAgeLabel), $sDeathDateClass, nxSubjectRowOption($aOptions, "death_date_style", ""))
         . nxRenderSubjectTableCell(nxRenderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), nxSubjectRowOption($aOptions, "nickname_show_add_action", false), nxSubjectRowOption($aOptions, "nickname_show_cell_copy_action", true), nxSubjectRowOption($aOptions, "nickname_cell_copy_before_add_action", true)), nxSubjectRowOption($aOptions, "nickname_class", "nx-column-step-one"), nxSubjectRowOption($aOptions, "nickname_style", ""))
         . nxRenderSubjectTableCell(nxRenderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, nxSubjectRowOption($aOptions, "address_show_add_action", false), nxSubjectRowOption($aOptions, "address_show_cell_copy_action", true), nxSubjectRowOption($aOptions, "address_cell_copy_before_add_action", true)), nxSubjectRowOption($aOptions, "address_class", ""), nxSubjectRowOption($aOptions, "address_style", ""))
         . nxRenderSubjectTableCell(nxRenderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), nxSubjectRowOption($aOptions, "contact_show_add_action", false), nxSubjectRowOption($aOptions, "contact_show_cell_copy_action", true), nxSubjectRowOption($aOptions, "contact_cell_copy_before_add_action", true)), nxSubjectRowOption($aOptions, "contact_class", ""), nxSubjectRowOption($aOptions, "contact_style", ""))
@@ -7502,10 +7602,6 @@ function nxSchemaColumnTypeDisplay($sColumnType, $bShorten = true) {
         return "enum(" . implode(", ", $aDisplayValues) . ")";
     }
     return $sColumnType;
-}
-
-function isPmdLikeUserAgent($sUserAgent) {
-    return preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent) == 1;
 }
 
 function isThrobberLockTarget($sUserAgent) {

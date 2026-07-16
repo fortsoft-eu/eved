@@ -988,23 +988,10 @@ if ($sBdPostAction == "update_contact") {
 
     try {
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("SELECT sc.id, sc.subject_id, sc.contact_id, c.contact_type_id AS current_contact_type_id, c.contact_value AS current_contact_value FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id WHERE sc.id = :id FOR UPDATE");
-        $oStatement->execute(array("id" => $iSubjectContactId));
-        $aSubjectContact = $oStatement->fetch(PDO::FETCH_ASSOC);
-        if (!$aSubjectContact) {
+        $aUpdatedContact = nxUpdateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId, $sContactValue, $aContactType);
+        if (!$aUpdatedContact) {
             $oPdo->rollBack();
             nxSendJsonAndExit(array("success" => false, "message" => "Contact link was not found."), 404);
-        }
-
-        $iContactId = (int)$aSubjectContact["contact_id"];
-        $blContactIdentityChanged = (int)$aSubjectContact["current_contact_type_id"] != $iContactTypeId || (string)$aSubjectContact["current_contact_value"] != $sContactValue;
-        if ($blContactIdentityChanged) {
-            $oStatement = $oPdo->prepare("UPDATE ex_contacts SET contact_type_id = :contact_type_id, contact_value = :contact_value WHERE id = :id");
-            $oStatement->execute(array(
-                "contact_type_id" => $iContactTypeId,
-                "contact_value" => $sContactValue,
-                "id" => $iContactId
-            ));
         }
 
         $oStatement = $oPdo->prepare("UPDATE ex_subject_contacts SET is_primary = :is_primary, is_active = :is_active, note = :note WHERE id = :id");
@@ -1016,20 +1003,12 @@ if ($sBdPostAction == "update_contact") {
         ));
         $oPdo->commit();
 
-        $aResponse = nxInterGetUpdatedSubjectResponse($oPdo, (int)$aSubjectContact["subject_id"], $aBirthdaySettings, $blCanEdit);
-        $aResponse["reload_required"] = $blContactIdentityChanged;
-        $aResponse["contact"] = nxAddContactTimestampTooltip($oPdo, array(
-            "subject_contact_id" => $iSubjectContactId,
-            "contact_id" => $iContactId,
-            "contact_type_id" => $iContactTypeId,
-            "contact_type" => (string)$aContactType["contact_type"],
-            "contact_type_label" => (string)$aContactType["name"],
-            "contact_value" => $sContactValue,
-            "contact_display_value" => nxContactDisplayValue((string)$aContactType["contact_type"], $sContactValue),
-            "note" => $sNote,
-            "is_primary" => $iIsPrimary,
-            "is_active" => $iIsActive
-        ));
+        $aResponse = nxInterGetUpdatedSubjectResponse($oPdo, (int)$aUpdatedContact["subject_id"], $aBirthdaySettings, $blCanEdit);
+        $aResponse["reload_required"] = !empty($aUpdatedContact["contact_type_changed"]);
+        $aUpdatedContact["note"] = $sNote;
+        $aUpdatedContact["is_primary"] = $iIsPrimary;
+        $aUpdatedContact["is_active"] = $iIsActive;
+        $aResponse["contact"] = $aUpdatedContact;
         nxSendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {

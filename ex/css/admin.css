@@ -1255,6 +1255,13 @@ body.phpinfo-page .admin-controls {
     word-break: normal;
 }
 
+.nx-subject-date-age {
+    color: #666;
+    display: block;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
 .nx-admin-action-column {
     box-sizing: border-box;
     max-width: 5.5em;
