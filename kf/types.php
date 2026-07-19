@@ -1,0 +1,181 @@
+<?php
+
+include "main.php";
+
+requireExFullAccess($aAllowedIps);
+
+if (!$oPdo) {
+    send500AndExit("Database error: " . $sError);
+}
+
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    kfRequireCsrfToken();
+    $sAction = kfPostedValue("action");
+
+    if ($sAction == "save_type") {
+        $iId = (int)kfPostedValue("id", "0");
+        $sName = kfPostedValue("name");
+        $sTypeKind = kfPostedValue("type_kind", "expense");
+        $aAllowedKinds = array("expense", "income", "group");
+        if ($sName == "" || !in_array($sTypeKind, $aAllowedKinds, true)) {
+            kfSetMessage("The type could not be saved. Name and kind are required.", "error");
+            kfRedirect("types.php");
+        }
+
+        try {
+            if ($iId > 0) {
+                $oStatement = $oPdo->prepare("UPDATE kf_fin_types SET name = :name, type_kind = :type_kind WHERE id = :id");
+                $oStatement->execute(array("name" => $sName, "type_kind" => $sTypeKind, "id" => $iId));
+                kfSetMessage("Type updated.");
+            } else {
+                $oStatement = $oPdo->prepare("INSERT INTO kf_fin_types (name, type_kind) VALUES (:name, :type_kind)");
+                $oStatement->execute(array("name" => $sName, "type_kind" => $sTypeKind));
+                $iId = (int)$oPdo->lastInsertId();
+                kfSetMessage("Type added.");
+            }
+
+            $oStatement = $oPdo->prepare("DELETE FROM kf_fin_groups WHERE group_type_id = :group_type_id");
+            $oStatement->execute(array("group_type_id" => $iId));
+            if ($sTypeKind == "group" && isset($_POST["members"]) && is_array($_POST["members"])) {
+                $oInsert = $oPdo->prepare("INSERT IGNORE INTO kf_fin_groups (group_type_id, member_type_id) VALUES (:group_type_id, :member_type_id)");
+                foreach ($_POST["members"] as $sMemberId) {
+                    $iMemberId = (int)$sMemberId;
+                    if ($iMemberId > 0 && $iMemberId != $iId) {
+                        $oInsert->execute(array("group_type_id" => $iId, "member_type_id" => $iMemberId));
+                    }
+                }
+            }
+        } catch (PDOException $oException) {
+            kfSetMessage("The type could not be saved. The name may already exist.", "error");
+        }
+        kfRedirect("types.php");
+    } elseif ($sAction == "delete_type") {
+        $iId = (int)kfPostedValue("id", "0");
+        if ($iId > 0) {
+            $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_fin_trans WHERE finance_type_id = :id");
+            $oStatement->execute(array("id" => $iId));
+            if ((int)$oStatement->fetchColumn() > 0) {
+                kfSetMessage("The type is used by transactions and cannot be deleted.", "error");
+            } else {
+                try {
+                    $oStatement = $oPdo->prepare("DELETE FROM kf_fin_types WHERE id = :id");
+                    $oStatement->execute(array("id" => $iId));
+                    kfSetMessage("Type deleted.");
+                } catch (PDOException $oException) {
+                    kfSetMessage("The type could not be deleted.", "error");
+                }
+            }
+        }
+        kfRedirect("types.php");
+    }
+}
+
+$aRows = array();
+$oStatement = $oPdo->query("SELECT ft.id, ft.name, ft.type_kind, GROUP_CONCAT(m.id ORDER BY m.name SEPARATOR ',') AS member_ids, GROUP_CONCAT(m.name ORDER BY m.name SEPARATOR ', ') AS member_names FROM kf_fin_types ft LEFT JOIN kf_fin_groups gi ON gi.group_type_id = ft.id LEFT JOIN kf_fin_types m ON m.id = gi.member_type_id GROUP BY ft.id, ft.name, ft.type_kind ORDER BY FIELD(ft.type_kind, 'income', 'expense', 'group'), ft.name ASC, ft.id ASC");
+while ($aRow = $oStatement->fetch()) {
+    $aRows[] = $aRow;
+}
+
+$aMemberTypes = kfGetFinanceTypes(false);
+
+$sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-type\" data-modal-target=\"type-modal\" data-modal-title=\"New Type\" data-field-id=\"\" data-field-name=\"\" data-field-type_kind=\"expense\" data-field-members=\"\">New</button>\n";
+
+$sTitle = kfGetPageTitle("Income and Expense Types");
+$iTime = kfSendPageHeaders();
+
+?>
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="<?php echo kfHtml(kfGetCsrfToken()); ?>">
+  <title><?php echo kfHtml($sTitle); ?></title>
+  <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
+  <link href="<?php echo kfHtml($sBaseUrl . "../ex/css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/../ex/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo kfHtml($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+</head>
+<body>
+  <p class="admin-controls">
+<?php kfRenderMenu(); ?>
+    <label for="table-filter">Filter:</label>
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-types-table" value="">
+    <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
+    <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
+    <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
+<?php echo $sToolbarHtml; ?>
+  </p>
+<?php kfRenderMessage(); ?>
+  <table id="kf-types-table" class="table-filter-target">
+    <thead>
+      <tr>
+        <th>Kind</th>
+        <th>Name</th>
+        <th>Group Members</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+<?php
+
+foreach ($aRows as $aRow) {
+    echo "      <tr>\n"
+        . "        <td>" . kfHtml(ucfirst($aRow["type_kind"])) . "</td>\n"
+        . "        <td>" . kfHtml($aRow["name"]) . "</td>\n"
+        . "        <td>" . kfHtmlValue($aRow["member_names"]) . "</td>\n"
+        . "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"type-modal\" data-modal-title=\"Edit Type\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-name=\"" . kfHtml($aRow["name"]) . "\" data-field-type_kind=\"" . kfHtml($aRow["type_kind"]) . "\" data-field-members=\"" . kfHtml($aRow["member_ids"]) . "\">Edit</button></td>\n"
+        . "      </tr>\n";
+}
+
+if (!$aRows) {
+    echo "      <tr><td colspan=\"4\">No types found.</td></tr>\n";
+}
+
+?>
+    </tbody>
+  </table>
+
+  <div id="type-modal" class="modal-dialog" hidden>
+    <div class="modal-box">
+      <div class="modal-header"><strong data-modal-heading>Type</strong><button type="button" class="modal-close" data-modal-close aria-label="Close">&times;</button></div>
+      <form method="post" class="modal-form">
+        <input type="hidden" name="kf_csrf_token" value="<?php echo kfHtml(kfGetCsrfToken()); ?>">
+        <input type="hidden" name="action" value="save_type">
+        <input type="hidden" name="id" value="">
+        <label for="type-name">Name</label>
+        <input type="text" id="type-name" name="name" required>
+        <label for="type-kind">Kind</label>
+        <select id="type-kind" name="type_kind" required>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+          <option value="group">Group</option>
+        </select>
+        <div data-visible-for-kind="group" hidden>
+          <label>Group Members</label>
+          <div class="checkbox-grid">
+<?php
+
+foreach ($aMemberTypes as $aType) {
+    echo "            <label><input type=\"checkbox\" name=\"members[]\" value=\"" . (int)$aType["id"] . "\"> " . kfHtml($aType["name"]) . "</label>\n";
+}
+
+?>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="submit">Save</button>
+          <button type="submit" name="action" value="delete_type">Delete</button>
+          <button type="button" data-modal-close>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<?php
+
+echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
+    . "  <script type=\"text/javascript\" src=\"" . kfHtml($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
+    . "</body>\n"
+    . "</html>\n";
+

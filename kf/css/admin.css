@@ -1,0 +1,146 @@
+.modal-dialog {
+    background: rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+    display: block;
+    height: 100vh;
+    left: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 40px 24px;
+    position: fixed;
+    top: 0;
+    width: 100vw;
+    z-index: 8;
+}
+
+.modal-dialog[hidden] {
+    display: none;
+}
+
+.modal-box {
+    background: #FFF;
+    border: 1px solid #C0C0C0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+    margin: 0 auto;
+    max-width: 560px;
+    width: 100%;
+}
+
+.modal-header {
+    align-items: stretch;
+    background: #E5E5E5;
+    border-bottom: 1px solid #C0C0C0;
+    display: flex;
+    justify-content: space-between;
+    padding-left: 10px;
+}
+
+.modal-header strong {
+    align-self: center;
+    padding: 8px 0;
+}
+
+.modal-close {
+    align-self: stretch;
+    background: transparent;
+    border: 0;
+    color: #000;
+    font-size: 20px;
+    margin: 0;
+    padding: 0 16px;
+    width: auto;
+}
+
+.modal-close:hover {
+    background: #C42B1C;
+    color: #FFF;
+}
+
+.modal-form {
+    display: grid;
+    gap: 8px;
+    padding: 14px 16px 16px;
+}
+
+.modal-form label {
+    display: block;
+    font-weight: bold;
+    margin-top: 0;
+}
+
+.modal-form input[type="date"],
+.modal-form input[type="email"],
+.modal-form input[type="text"],
+.modal-form select,
+.modal-form textarea {
+    box-sizing: border-box;
+    margin-top: 0;
+    width: 100%;
+}
+
+.modal-form textarea {
+    min-height: 84px;
+    resize: vertical;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 8px;
+}
+
+.modal-actions button {
+    min-width: 82px;
+    width: auto;
+}
+
+.checkbox-grid {
+    display: grid;
+    gap: 4px;
+}
+
+.checkbox-grid label {
+    font-weight: normal;
+}
+
+#kf-transactions-table,
+#kf-types-table,
+#kf-debts-table {
+    table-layout: auto;
+    width: auto;
+}
+
+#kf-transactions-table td,
+#kf-transactions-table th,
+#kf-types-table td,
+#kf-types-table th,
+#kf-debts-table td,
+#kf-debts-table th {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+.kf-amount-positive {
+    color: #080;
+    font-weight: bold;
+}
+
+.kf-amount-negative,
+.kf-debt-total {
+    color: #F00;
+    font-weight: bold;
+}
+
+.kf-amount-zero {
+    color: #000;
+    font-weight: bold;
+}
+
+.database-structure-cell pre {
+    font-family: Consolas, "Courier New", monospace;
+    margin: 0;
+    white-space: pre-wrap;
+}
