@@ -10,7 +10,7 @@ CREATE TABLE `fs_photo_lab_orders` (
   `returned_at` datetime(6) DEFAULT NULL,
   `invoice` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_czech_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `fs_film_scans` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -42,7 +42,7 @@ CREATE TABLE `fs_film_scans` (
   KEY `idx_lab` (`lab`),
   KEY `fk_fs_film_scans_lab_order` (`lab_order_id`),
   CONSTRAINT `fk_fs_film_scans_lab_order` FOREIGN KEY (`lab_order_id`) REFERENCES `fs_photo_lab_orders` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_czech_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `fs_film_exposure_dates` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -54,20 +54,20 @@ CREATE TABLE `fs_film_exposure_dates` (
   UNIQUE KEY `uq_scan_date` (`film_scan_id`,`exposure_date`),
   KEY `idx_exposure_date` (`exposure_date`),
   CONSTRAINT `fk_exposures_scan` FOREIGN KEY (`film_scan_id`) REFERENCES `fs_film_scans` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_czech_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `fs_film_photos` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `scan_id` int(10) unsigned NOT NULL,
   `subdir` varchar(255) NOT NULL,
   `filename` varchar(255) NOT NULL,
-  `status` enum('internal','ok_private','ok_public') CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT 'internal',
+  `status` enum('internal','ok_private','ok_public') NOT NULL DEFAULT 'internal',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_scan_subdir_filename` (`scan_id`,`subdir`,`filename`),
   KEY `idx_scan_id` (`scan_id`),
   KEY `idx_subdir` (`subdir`),
   CONSTRAINT `fk_film_photos_scan` FOREIGN KEY (`scan_id`) REFERENCES `fs_film_scans` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_czech_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `fs_film_ua` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -110,7 +110,7 @@ CREATE TABLE `fs_film_ua` (
   KEY `idx_fs_film_ua_created_at` (`timestamp`) USING BTREE,
   KEY `idx_fs_film_ua_requested_film_scan_id` (`requested_film_scan_id`) USING BTREE,
   KEY `idx_fs_film_ua_requested_img` (`requested_img`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_czech_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `fs_flickr_photosets` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -136,11 +136,11 @@ CREATE TABLE `fs_flickr_photosets` (
   `date_updated` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_photoset` (`photoset_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_czech_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `fs_photo_equip` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `equip_type` enum('camera','lens','filter','case','bag','tripod','level','hood') CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  `equip_type` enum('camera','lens','filter','case','bag','tripod','level','hood') NOT NULL,
   `equip_name` varchar(191) NOT NULL,
   `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
@@ -150,7 +150,7 @@ CREATE TABLE `fs_photo_equip` (
   PRIMARY KEY (`id`) USING BTREE,
   KEY `acquired_at` (`acquired_at`) USING BTREE,
   KEY `retired_at` (`retired_at`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_czech_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `fs_photo_tags` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -161,4 +161,4 @@ CREATE TABLE `fs_photo_tags` (
   PRIMARY KEY (`id`),
   KEY `fk_equip` (`equip_id`),
   CONSTRAINT `fk_equip` FOREIGN KEY (`equip_id`) REFERENCES `fs_photo_equip` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_czech_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
