@@ -500,7 +500,7 @@ function finishAdminSubjectRowEdit(oRow, blSaved) {
         addAdminClass(oRow, "nx-admin-row-saved");
         window.setTimeout(function () {
             removeAdminClass(oRow, "nx-admin-row-saved");
-        }, 1400)
+        }, 1400);
     }
 }
 
@@ -557,7 +557,7 @@ function enableAdminDialogDrag(oDialog, oBox, oHeader) {
         document.addEventListener("mousemove", moveOnMouse);
         document.addEventListener("mouseup", stopDrag);
         oEvent.preventDefault();
-    })
+    });
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -596,7 +596,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 "checked": aInputs[iI].checked,
                 "disabled": aInputs[iI].disabled,
                 "czechiaStored": aInputs[iI].getAttribute("data-czechia-stored")
-            })
+            });
         }
     }
 
@@ -683,17 +683,17 @@ document.addEventListener("DOMContentLoaded", function () {
     if (oCzechiaCountry) {
         oCzechiaCountry.addEventListener("change", function () {
             updateCzechiaCountryOptions();
-        })
+        });
     }
     if (oClose) {
         oClose.addEventListener("click", function () {
             closeDialog();
-        })
+        });
     }
     if (oCancel) {
         oCancel.addEventListener("click", function () {
             closeDialog();
-        })
+        });
     }
 });
 
@@ -886,7 +886,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         oValue.addEventListener("change", function () {
             scheduleDraftSave();
-        })
+        });
     }
 
     function createComplexFilterBooleanSelect(sValue) {
@@ -1120,7 +1120,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         window.setTimeout(function () {
             restoreApplyValueFields(aValues, aOperators);
-        }, 0)
+        }, 0);
     }
 
     function saveDraftNow() {
@@ -1150,7 +1150,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         iDraftTimer = window.setTimeout(function () {
             saveDraftNow();
-        }, 300)
+        }, 300);
     }
 
     function updateRowValueState(oRow) {
@@ -1248,13 +1248,13 @@ document.addEventListener("DOMContentLoaded", function () {
             oField.addEventListener("change", function () {
                 updateRowValueState(oRow);
                 scheduleDraftSave();
-            })
+            });
         }
         if (oOperator) {
             oOperator.addEventListener("change", function () {
                 updateRowValueState(oRow);
                 scheduleDraftSave();
-            })
+            });
         }
         bindComplexFilterValue(oValue);
         if (oRemove) {
@@ -1266,7 +1266,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     setRowReset(oRow);
                 }
                 scheduleDraftSave();
-            })
+            });
         }
         updateRowValueState(oRow);
     }
@@ -1354,7 +1354,7 @@ document.addEventListener("DOMContentLoaded", function () {
     for (var iI = 0; iI < aMatchInputs.length; iI += 1) {
         aMatchInputs[iI].addEventListener("change", function () {
             scheduleDraftSave();
-        })
+        });
     }
     oOpen.addEventListener("click", function () {
         openDialog();
@@ -1362,17 +1362,17 @@ document.addEventListener("DOMContentLoaded", function () {
     if (oClose) {
         oClose.addEventListener("click", function () {
             closeDialog();
-        })
+        });
     }
     if (oCancel) {
         oCancel.addEventListener("click", function () {
             closeDialog();
-        })
+        });
     }
     if (oAdd) {
         oAdd.addEventListener("click", function () {
             addBlankRow();
-        })
+        });
     }
     if (oReset) {
         oReset.addEventListener("click", function () {
@@ -1380,11 +1380,11 @@ document.addEventListener("DOMContentLoaded", function () {
             resetDialogRows();
             saveDraftNow();
             focusAdminElement(oDialog.querySelector(".js-complex-filter-field"));
-        })
+        });
     }
     oForm.addEventListener("submit", function () {
         prepareApplySubmit();
-    })
+    });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1404,8 +1404,8 @@ document.addEventListener("DOMContentLoaded", function () {
         window.setTimeout(function () {
             focusAdminElement(oFilter, true);
             window.scrollTo(iScrollLeft, 0);
-        }, 0)
-    })
+        }, 0);
+    });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1450,8 +1450,8 @@ document.addEventListener("DOMContentLoaded", function () {
             logAdminException(oException);
             oButton.disabled = false;
             window.alert("Birthday could not be marked served.");
-        })
-    })
+        });
+    });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1505,7 +1505,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     closeExMenu(oMenu);
                 }
-            })
+            });
         })(aMenus[iI]);
     }
 
@@ -1532,7 +1532,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oButton.textContent = blSuccess ? "Copied" : "Copy failed";
         window.setTimeout(function () {
             oButton.textContent = sText;
-        }, 1500)
+        }, 1500);
     }
 
     function copyLink(oButton) {
@@ -1556,7 +1556,7 @@ document.addEventListener("DOMContentLoaded", function () {
     for (var iI = 0; iI < aButtons.length; iI += 1) {
         aButtons[iI].addEventListener("click", function () {
             copyLink(this);
-        })
+        });
     }
 });
 
@@ -1587,7 +1587,7 @@ document.addEventListener("click", function (oEvent) {
             } else {
                 oButton.textContent = sText;
             }
-        }, 1000)
+        }, 1000);
     }
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1971,7 +1971,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     window.addEventListener("resize", function () {
         window.setTimeout(drawRelations, 0);
-    })
+    });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -1994,7 +1994,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     aTerms.push({
                         "regex": new RegExp(sTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"), "i"),
                         "negated": blNegated
-                    })
+                    });
                 }
             }
             if (aTerms.length > 0) {
@@ -2078,7 +2078,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oFilter._quickTableFilterTimer = window.setTimeout(function () {
             oFilter._quickTableFilterTimer = null;
             sendQuickTableFilterValue(oFilter, "save");
-        }, 250)
+        }, 250);
     }
 
     function initializeTableFilter(oFilter) {
@@ -2132,7 +2132,7 @@ document.addEventListener("DOMContentLoaded", function () {
             iFilterTimer = window.setTimeout(function () {
                 iFilterTimer = null;
                 filterTable();
-            }, 250)
+            }, 250);
         }
 
         function runFilterTable() {
@@ -2162,7 +2162,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 runFilterTable();
                 scheduleQuickTableFilterSave(oFilter);
-            })
+            });
         }
         for (var iI = 0; iI < aResetButtons.length; iI += 1) {
             aResetButtons[iI].addEventListener("click", function () {
@@ -2174,7 +2174,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 sendQuickTableFilterValue(oFilter, "reset");
                 oFilter.focus();
-            })
+            });
         }
         refreshFilterFocusButton(oFilter);
         if (oFilter.value.replace(/^\s+|\s+$/g, "") !== "") {
@@ -2531,7 +2531,7 @@ document.addEventListener("DOMContentLoaded", function () {
             logAdminException(oException);
             setAdminDialogError(oDialogData.error, "Group could not be saved.");
             oDialogData.save.disabled = false;
-        })
+        });
     }
 
     function openGroupAdminDialog(oRow) {
@@ -2657,7 +2657,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (oAdd) {
         oAdd.addEventListener("click", function () {
             openGroupAdminDialog(null);
-        })
+        });
     }
     oTable.addEventListener("click", function (oEvent) {
         var oButton = oEvent.target.closest ? oEvent.target.closest(".js-edit-group, .js-delete-group, .js-merge-group, .js-move-group-up, .js-move-group-down") : null;
@@ -2676,7 +2676,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
             openGroupAdminDialog(oButton.closest("tr[data-group-id]"));
         }
-    })
+    });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -2721,8 +2721,8 @@ document.addEventListener("DOMContentLoaded", function () {
             logAdminException(oException);
             oButton.disabled = false;
             window.alert("Communication could not be marked served.");
-        })
-    })
+        });
+    });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -3023,7 +3023,7 @@ document.addEventListener("DOMContentLoaded", function () {
             logAdminException(oException);
             setAdminDialogError(oDialogData.error, "Contact type could not be saved.");
             oDialogData.save.disabled = false;
-        })
+        });
     }
 
     function openContactTypeAdminDialog(oRow) {
@@ -3144,7 +3144,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (oAdd) {
         oAdd.addEventListener("click", function () {
             openContactTypeAdminDialog(null);
-        })
+        });
     }
     oTable.addEventListener("click", function (oEvent) {
         var oButton = oEvent.target.closest ? oEvent.target.closest(".js-edit-contact-type, .js-delete-contact-type, .js-merge-contact-type, .js-move-contact-type-up, .js-move-contact-type-down") : null;
@@ -3163,7 +3163,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
             openContactTypeAdminDialog(oButton.closest("tr[data-contact-type-id]"));
         }
-    })
+    });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -3415,7 +3415,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (!oWrapper.contains(document.activeElement) && !oCalendar.contains(document.activeElement)) {
                     oCalendar.style.display = "none";
                 }
-            }, 0)
+            }, 0);
         });
         oParent.addEventListener("scroll", function () {
             if (oCalendar.style.display != "none") {
@@ -3585,7 +3585,7 @@ document.addEventListener("DOMContentLoaded", function () {
             aOptions.push({
                 "code": aSubjectCountryCodes[iI],
                 "name": sName || aSubjectCountryCodes[iI]
-            })
+            });
         }
         aOptions.sort(function (aLeft, aRight) {
             return aLeft.name.localeCompare(aRight.name);
@@ -3939,7 +3939,7 @@ document.addEventListener("DOMContentLoaded", function () {
             logAdminException(oException);
             setAdminDialogError(oDialogData.error, "Item could not be saved.");
             oDialogData.save.disabled = false;
-        })
+        });
     }
 
     function subjectPermissionKeySelected(aKeys, sPermissionKey) {
@@ -4063,7 +4063,7 @@ document.addEventListener("DOMContentLoaded", function () {
             "birth_name": "",
             "birth_date": "",
             "death_date": ""
-        }, null, true)
+        }, null, true);
     }
 
     function loadSubject(oButton) {
@@ -4095,7 +4095,7 @@ document.addEventListener("DOMContentLoaded", function () {
             logAdminException(oException);
             oButton.disabled = false;
             window.alert("Subject could not be loaded.");
-        })
+        });
     }
 
     function openSubjectPortalDialog(aSubject, oSubjectRow) {
@@ -4216,7 +4216,7 @@ document.addEventListener("DOMContentLoaded", function () {
             logAdminException(oException);
             oButton.disabled = false;
             window.alert("Portal account could not be loaded.");
-        })
+        });
     }
 
     function openNicknameDialog(oItem, oSubjectRow, blNewNickname) {
@@ -4539,7 +4539,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 loadSubject(oButton);
             }
         }
-    }, true)
+    }, true);
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -4561,7 +4561,7 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
                 oButton.textContent = sText;
             }
-        }, 1000)
+        }, 1000);
     }
 
     function copyContactValue(oButton) {
@@ -4690,7 +4690,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oSelect.addEventListener("focus", function () {
             window.setTimeout(function () {
                 openAdminSelectPicker(oSelect);
-            }, 0)
+            }, 0);
         });
         oForm.appendChild(oLabel);
         oForm.appendChild(oSelect);
@@ -4839,7 +4839,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 logAdminException(oException);
                 setAdminDialogError(oError, "Contact could not be saved.");
                 oSave.disabled = false;
-            })
+            });
         });
 
         document.addEventListener("keydown", closeOnEscape);
@@ -4856,7 +4856,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 openContactDialog(oButton.closest(".nx-contact-item"), null, false);
             }
         }
-    }, true)
+    }, true);
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -5233,7 +5233,7 @@ document.addEventListener("DOMContentLoaded", function () {
             addAdminClass(oRow, "nx-admin-row-saved");
             window.setTimeout(function () {
                 removeAdminClass(oRow, "nx-admin-row-saved");
-            }, 1500)
+            }, 1500);
         }
         oCurrentSubjectCell = null;
     }
@@ -5264,7 +5264,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).catch(function (oException) {
             logAdminException(oException);
             setDialogError(oError, "Address operation failed.");
-        })
+        });
     }
 
     function submitSubjectAddressForm(oForm, sAction, oError) {
@@ -5317,7 +5317,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).catch(function (oException) {
             logAdminException(oException);
             setDialogError(oError, "Address operation failed.");
-        })
+        });
     }
 
     document.addEventListener("click", function (oEvent) {
@@ -5344,25 +5344,25 @@ document.addEventListener("DOMContentLoaded", function () {
         oEditForm.addEventListener("submit", function (oEvent) {
             oEvent.preventDefault();
             submitSharedAddressForm(oEditForm, "update_shared_address", oEditError);
-        })
+        });
     }
     if (oDeleteForm) {
         oDeleteForm.addEventListener("submit", function (oEvent) {
             oEvent.preventDefault();
             submitSharedAddressForm(oDeleteForm, "delete_shared_address", oDeleteError);
-        })
+        });
     }
     if (oSubjectEditForm) {
         oSubjectEditForm.addEventListener("submit", function (oEvent) {
             oEvent.preventDefault();
             submitSubjectAddressForm(oSubjectEditForm, "update_subject_address", oSubjectEditError);
-        })
+        });
     }
     if (oSubjectDeleteForm) {
         oSubjectDeleteForm.addEventListener("submit", function (oEvent) {
             oEvent.preventDefault();
             submitSubjectAddressForm(oSubjectDeleteForm, "delete_subject_address", oSubjectDeleteError);
-        })
+        });
     }
 });
 
@@ -5373,7 +5373,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (this.form) {
                 this.form.submit();
             }
-        })
+        });
     }
 });
 

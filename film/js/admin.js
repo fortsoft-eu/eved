@@ -158,7 +158,7 @@ function finishAdminSubjectRowEdit(oRow, blSaved) {
         addAdminClass(oRow, "nx-admin-row-saved");
         window.setTimeout(function () {
             removeAdminClass(oRow, "nx-admin-row-saved");
-        }, 1400)
+        }, 1400);
     }
 }
 
@@ -214,7 +214,7 @@ function enableAdminDialogDrag(oDialog, oBox, oHeader) {
         document.addEventListener("mousemove", moveOnMouse);
         document.addEventListener("mouseup", stopDrag);
         oEvent.preventDefault();
-    })
+    });
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -245,8 +245,8 @@ document.addEventListener("DOMContentLoaded", function () {
         window.setTimeout(function () {
             focusAdminElement(oFilter, true);
             window.scrollTo(iScrollLeft, 0);
-        }, 0)
-    })
+        }, 0);
+    });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -276,7 +276,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oButton.textContent = blSuccess ? "Copied" : "Copy failed";
         window.setTimeout(function () {
             oButton.textContent = sText;
-        }, 1500)
+        }, 1500);
     }
 
     function copyLink(oButton) {
@@ -300,7 +300,7 @@ document.addEventListener("DOMContentLoaded", function () {
     for (var iI = 0; iI < aButtons.length; iI += 1) {
         aButtons[iI].addEventListener("click", function () {
             copyLink(this);
-        })
+        });
     }
 });
 
@@ -355,7 +355,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else {
                     closeFilmMenu(oMenu);
                 }
-            })
+            });
         })(aMenus[iI]);
     }
 
@@ -384,7 +384,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (oMessageBox) {
         setTimeout(function () {
             oMessageBox.style.display = "none";
-        }, 10000)
+        }, 10000);
     }
 
     function getGroupColor(oRow) {
@@ -544,12 +544,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 window.setTimeout(function () {
                     oConfirmRow.setAttribute("data-saved", "0");
                     applyRowColor(oConfirmRow);
-                }, 1400)
+                }, 1400);
             } else {
                 window.setTimeout(function () {
                     oConfirmRow.setAttribute("data-confirming", "0");
                     applyRowColor(oConfirmRow);
-                }, 1000)
+                }, 1000);
             }
         }
         closeFilmDialogElement(oConfirmDialog);
@@ -592,12 +592,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (oConfirmCancel) {
         oConfirmCancel.addEventListener("click", function () {
             closeConfirmDialog();
-        })
+        });
     }
     if (oConfirmClose) {
         oConfirmClose.addEventListener("click", function () {
             closeConfirmDialog();
-        })
+        });
     }
 
     document.addEventListener("click", function (oEvent) {
@@ -672,7 +672,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } else if (oOrderDetail) {
             clearOrderDetail();
         }
-    })
+    });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -934,7 +934,7 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addEventListener("load", drawRelations);
     window.addEventListener("resize", function () {
         window.setTimeout(drawRelations, 0);
-    })
+    });
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -957,7 +957,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     aTerms.push({
                         "regex": new RegExp(sTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"), "i"),
                         "negated": blNegated
-                    })
+                    });
                 }
             }
             if (aTerms.length > 0) {
@@ -1041,7 +1041,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oFilter._quickTableFilterTimer = window.setTimeout(function () {
             oFilter._quickTableFilterTimer = null;
             sendQuickTableFilterValue(oFilter, "save");
-        }, 250)
+        }, 250);
     }
 
     function initializeTableFilter(oFilter) {
@@ -1087,7 +1087,7 @@ document.addEventListener("DOMContentLoaded", function () {
             iFilterTimer = window.setTimeout(function () {
                 iFilterTimer = null;
                 filterTable();
-            }, 250)
+            }, 250);
         }
 
         function runFilterTable() {
@@ -1117,7 +1117,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 runFilterTable();
                 scheduleQuickTableFilterSave(oFilter);
-            })
+            });
         }
         for (var iI = 0; iI < aResetButtons.length; iI += 1) {
             aResetButtons[iI].addEventListener("click", function () {
@@ -1129,7 +1129,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 sendQuickTableFilterValue(oFilter, "reset");
                 oFilter.focus();
-            })
+            });
         }
         refreshFilterFocusButton(oFilter);
         if (oFilter.value.replace(/^\s+|\s+$/g, "") !== "") {
@@ -1182,7 +1182,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }).catch(function (oException) {
                 logFilmException(oException);
                 return false;
-            })
+            });
         }
         return Promise.resolve(oAudioContext.state == "running");
     }
@@ -1212,7 +1212,7 @@ document.addEventListener("DOMContentLoaded", function () {
             oSecondOscillator.connect(oGain);
             oSecondOscillator.start(iNow + 0.2);
             oSecondOscillator.stop(iNow + 0.65);
-        })
+        });
     }
 
     function scheduleRefreshCheck() {
@@ -1240,7 +1240,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 playChime().then(function () {
                     window.setTimeout(function () {
                         window.location.reload();
-                    }, 700)
+                    }, 700);
                 });
                 return;
             }
@@ -1248,7 +1248,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).catch(function (oException) {
             logFilmException(oException);
             scheduleRefreshCheck();
-        })
+        });
     }
 
     oAutoRefresh.addEventListener("change", function () {
@@ -1381,6 +1381,6 @@ document.addEventListener("DOMContentLoaded", function () {
             if (this.form) {
                 this.form.submit();
             }
-        })
+        });
     }
 });

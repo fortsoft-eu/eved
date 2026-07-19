@@ -266,7 +266,7 @@
                 document.addEventListener("mousemove", moveOnMouse);
                 document.addEventListener("mouseup", stopDrag);
                 oEvent.preventDefault();
-            })
+            });
         }
 
         function closeModal(oModal) {

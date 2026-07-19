@@ -80,7 +80,7 @@ function sendFilmUaFingerprint(oFingerprint) {
             "Content-Type": "application/json"
         },
         body: JSON.stringify(oFingerprint)
-    })
+    });
 }
 
 function getFilmUaFullBrowserVersion(sBrowserName, aBrands) {
@@ -289,7 +289,7 @@ function openFancyboxGroupFromAnchor(a) {
                 type: "image",
                 caption: cap
             }
-        })
+        });
     } else {
         var cap = a.dataset.caption || a.title || (a.querySelector("img") ? a.querySelector("img").alt : "");
         items = [{
@@ -317,7 +317,7 @@ function openFancyboxGroupFromAnchor(a) {
         Images: {
             zoom: false
         }
-    })
+    });
 }
 
 function prepareImagesForScreenshot(container) {
@@ -342,7 +342,7 @@ function prepareImagesForScreenshot(container) {
                 parent,
                 div,
                 img
-            })
+            });
         }
     });
     return function restoreDom() {
@@ -352,7 +352,7 @@ function prepareImagesForScreenshot(container) {
                 img
             }) => {
             parent.replaceChild(img, div);
-        })
+        });
     }
 }
 
@@ -396,12 +396,12 @@ function onSavePng(button, fileName) {
             link.click();
             URL.revokeObjectURL(link.href);
             button.disabled = false;
-        }, "image/png", 1.0)
+        }, "image/png", 1.0);
     }).catch(error => {
         logFilmException(error);
         restoreDom();
         button.disabled = false;
-    })
+    });
 }
 
 function initializeGalleryControlHandlers() {
@@ -435,7 +435,7 @@ function initializeGalleryControlHandlers() {
         event.preventDefault();
         event.stopPropagation();
         onSavePng(button, button.getAttribute("data-file-name") || "gallery");
-    }, true)
+    }, true);
 }
 
 function initializeAdminLinkHandlers() {
@@ -452,7 +452,7 @@ function initializeAdminLinkHandlers() {
         event.preventDefault();
         event.stopImmediatePropagation();
         window.open(link.href, link.target || "_blank", "noopener");
-    }, true)
+    }, true);
 }
 
 app.EVENTS.onTopicChanged = function (url) {
@@ -519,11 +519,11 @@ document.addEventListener("DOMContentLoaded", function () {
             const newSrc = base + (base.indexOf("?") >= 0 ? "&" : "?") + suffix;
             setTimeout(function () {
                 img.src = newSrc;
-            }, retryDelay)
+            }, retryDelay);
         });
         img.addEventListener("load", function () {
             img.dataset.retryAttempt = "";
-        })
+        });
     }
 
     const initialImages = document.querySelectorAll("img");
@@ -549,5 +549,5 @@ document.addEventListener("DOMContentLoaded", function () {
     observer.observe(document.documentElement, {
         childList: true,
         subtree: true
-    })
+    });
 });
