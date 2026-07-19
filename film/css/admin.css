@@ -153,6 +153,10 @@ input[type="text"] {
     z-index: 2000;
 }
 
+.confirm-dialog[hidden] {
+    display: none;
+}
+
 @supports (height: 100dvh) {
     .confirm-dialog {
         height: 100dvh;

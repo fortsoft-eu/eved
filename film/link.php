@@ -295,6 +295,21 @@ foreach ($aLinks as $aLink) {
     </tbody>
   </table>
 
+  <div class="confirm-dialog" id="film-unassign-confirm-dialog" hidden>
+    <form class="confirm-dialog-box" method="post" action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES, "UTF-8"); ?>" enctype="application/x-www-form-urlencoded">
+      <input type="hidden" name="unassign" value="">
+      <div class="confirm-dialog-header">
+        <strong>Confirm Unassignment</strong>
+        <button type="button" class="confirm-dialog-close js-film-unassign-close" aria-label="Close">&times;</button>
+      </div>
+      <p class="confirm-dialog-message">The film roll <strong class="js-film-unassign-roll"></strong><br> will be unassigned from the lab bag <strong class="js-film-unassign-bag"></strong>.</p>
+      <div class="confirm-dialog-actions">
+        <button type="submit" class="confirm-dialog-button js-film-unassign-confirm">Yes</button>
+        <button type="button" class="confirm-dialog-button js-film-unassign-cancel">No</button>
+      </div>
+    </form>
+  </div>
+
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>

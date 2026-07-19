@@ -191,6 +191,11 @@ function nxGetExMenuPathPrefix() {
     return nxNormalizeFsMenuPath(basename(dirname($sScriptDirectory)) . "/" . basename($sScriptDirectory)) . "/";
 }
 
+function nxGetCurrentExMenuPath() {
+    $sScriptName = getQuickTableFilterScriptName();
+    return $sScriptName == "index.php" ? nxGetExMenuPathPrefix() : nxGetExMenuPathPrefix() . $sScriptName;
+}
+
 function nxGetExMenuItems($oPdo) {
     $aItems = array();
     $sPathPrefix = nxGetExMenuPathPrefix();
@@ -206,7 +211,7 @@ function nxGetExMenuItems($oPdo) {
                 continue;
             }
             $sRelativePath = substr($sPath, strlen($sPathPrefix));
-            if ($sRelativePath == "" || strpos($sRelativePath, "..") !== false || preg_match("#(^|/)\\.#", $sRelativePath) || preg_match("#[^A-Za-z0-9/_\\.\\-]#", $sRelativePath)) {
+            if (strpos($sRelativePath, "..") !== false || preg_match("#(^|/)\\.#", $sRelativePath) || preg_match("#[^A-Za-z0-9/_\\.\\-]#", $sRelativePath)) {
                 continue;
             }
             $sName = trim((string)(isset($aRow["name"]) ? $aRow["name"] : ""));
@@ -233,7 +238,7 @@ function nxGetExMenuItems($oPdo) {
 function nxGetCurrentExMenuName($oPdo) {
     global $sError;
 
-    $sPath = nxGetExMenuPathPrefix() . getQuickTableFilterScriptName();
+    $sPath = nxGetCurrentExMenuPath();
     if (!$oPdo) {
         send500AndExit("Database error: " . $sError);
     }
@@ -254,7 +259,7 @@ function nxRenderExMenu() {
     global $oPdo, $sBaseUrl, $sMenuEmoji;
 
     $aItems = nxGetExMenuItems($oPdo);
-    $sCurrentPath = nxGetExMenuPathPrefix() . getQuickTableFilterScriptName();
+    $sCurrentPath = nxGetCurrentExMenuPath();
     if (!$aItems) {
         return;
     }
@@ -874,8 +879,13 @@ function nxRenderEmojiData() {
     return $sHtml . "></span>\n";
 }
 
+function nxRenderAdminReusableDialogs() {
+    return "  <div class=\"confirm-dialog\" id=\"admin-reusable-dialog\" data-reusable-dialog=\"1\" hidden></div>\n";
+}
+
 function nxRenderAdminScript($sBaseUrl) {
     return nxRenderEmojiData()
+        . nxRenderAdminReusableDialogs()
         . "  <script type=\"text/javascript\" src=\"" . nxHtml($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n";
 }
 

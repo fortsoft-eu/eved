@@ -10,6 +10,7 @@ var sRenderThrobberHtmlOverflow = "";
 var sRenderThrobberViewportContent = "";
 var iRenderThrobberScrollLeft = 0;
 var iRenderThrobberScrollTop = 0;
+var oAdminOpenDialog = null;
 
 function logAdminException(oException) {
     if (window.console && window.console.error) {
@@ -124,11 +125,94 @@ function replaceAdminTableCellHtml(oCurrentCell, sCellHtml) {
     return oNewCell;
 }
 
+function closeAdminOpenDialog(oExceptDialog) {
+    var aDialogs;
+    var iI;
+    if (oAdminOpenDialog && oAdminOpenDialog !== oExceptDialog && oAdminOpenDialog._adminDialogClose) {
+        oAdminOpenDialog._adminDialogClose();
+    }
+    aDialogs = document.querySelectorAll(".confirm-dialog:not([hidden])");
+    for (iI = 0; iI < aDialogs.length; iI += 1) {
+        if (aDialogs[iI] !== oExceptDialog) {
+            if (aDialogs[iI]._adminDialogClose) {
+                aDialogs[iI]._adminDialogClose();
+            } else {
+                closeAdminDialogElement(aDialogs[iI]);
+            }
+        }
+    }
+}
+
+function saveAdminReusableDialogBoxPosition(oDialog) {
+    var oBox = oDialog ? oDialog.querySelector(".confirm-dialog-box") : null;
+    if (!oDialog || oDialog.getAttribute("data-reusable-dialog") != "1" || !oBox) {
+        return;
+    }
+    oDialog.setAttribute("data-reusable-dialog-position", oBox.style.position || "");
+    oDialog.setAttribute("data-reusable-dialog-left", oBox.style.left || "");
+    oDialog.setAttribute("data-reusable-dialog-top", oBox.style.top || "");
+    oDialog.setAttribute("data-reusable-dialog-margin", oBox.style.margin || "");
+}
+
+function restoreAdminReusableDialogBoxPosition(oDialog) {
+    var oBox = oDialog ? oDialog.querySelector(".confirm-dialog-box") : null;
+    if (!oDialog || oDialog.getAttribute("data-reusable-dialog") != "1" || !oBox) {
+        return;
+    }
+    oBox.style.position = oDialog.getAttribute("data-reusable-dialog-position") || "";
+    oBox.style.left = oDialog.getAttribute("data-reusable-dialog-left") || "";
+    oBox.style.top = oDialog.getAttribute("data-reusable-dialog-top") || "";
+    oBox.style.margin = oDialog.getAttribute("data-reusable-dialog-margin") || "";
+}
+
+function openAdminDialogElement(oDialog, fClose) {
+    if (!oDialog) {
+        return false;
+    }
+    if (!oDialog.hidden) {
+        closeAdminOpenDialog(oDialog);
+        return false;
+    }
+    closeAdminOpenDialog(oDialog);
+    oDialog._adminDialogClose = fClose || null;
+    oAdminOpenDialog = oDialog;
+    restoreAdminReusableDialogBoxPosition(oDialog);
+    oDialog.hidden = false;
+    lockAdminModalScroll();
+    return true;
+}
+
 function closeAdminDialogElement(oDialog) {
-    if (oDialog && oDialog.parentNode) {
-        oDialog.parentNode.removeChild(oDialog);
+    if (oDialog && !oDialog.hidden) {
+        oDialog.hidden = true;
         unlockAdminModalScroll();
     }
+    if (oAdminOpenDialog === oDialog) {
+        oAdminOpenDialog = null;
+    }
+    if (oDialog) {
+        oDialog._adminDialogClose = null;
+        if (oDialog.getAttribute("data-reusable-dialog") == "1") {
+            saveAdminReusableDialogBoxPosition(oDialog);
+            while (oDialog.firstChild) {
+                oDialog.removeChild(oDialog.firstChild);
+            }
+        }
+    }
+}
+
+function prepareAdminReusableDialog() {
+    var oDialog = document.getElementById("admin-reusable-dialog");
+    if (!oDialog) {
+        return null;
+    }
+    closeAdminOpenDialog(oDialog);
+    if (oDialog._adminDialogClose) {
+        oDialog._adminDialogClose();
+    }
+    closeAdminDialogElement(oDialog);
+    oDialog.hidden = true;
+    return oDialog;
 }
 
 function copyAdminTextWithTextarea(sText) {
@@ -376,12 +460,14 @@ prepareRenderThrobbers();
 document.addEventListener("DOMContentLoaded", prepareRenderThrobbers);
 
 function setAdminMergeSourceListColumns(oDialog, oSourceList, iRenderedCount) {
+    var oBox;
     var iColumnCount = Math.max(1, Math.ceil(iRenderedCount / 10));
     if (!oSourceList || iColumnCount <= 1) {
         return;
     }
     oSourceList.style.gridTemplateColumns = "repeat(" + iColumnCount + ", minmax(0, 1fr))";
-    addAdminClass(oDialog, "merge-dialog-wide");
+    oBox = oDialog && oDialog.closest ? oDialog.closest(".confirm-dialog-box") : null;
+    addAdminClass(oBox || oDialog, "merge-dialog-wide");
 }
 
 function findAdminSubjectRowById(sSubjectId) {
@@ -448,9 +534,10 @@ function enableAdminDialogDrag(oDialog, oBox, oHeader) {
         }
     }
 
-    if (!oDialog || !oBox || !oHeader) {
+    if (!oDialog || !oBox || !oHeader || oHeader.getAttribute("data-admin-dialog-drag-bound") == "1") {
         return;
     }
+    oHeader.setAttribute("data-admin-dialog-drag-bound", "1");
     oHeader.addEventListener("mousedown", function (oEvent) {
         var oTarget = oEvent.target;
         var oRect;
@@ -472,6 +559,17 @@ function enableAdminDialogDrag(oDialog, oBox, oHeader) {
         oEvent.preventDefault();
     })
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    var aDialogs = document.querySelectorAll(".confirm-dialog");
+    var oBox;
+    var oHeader;
+    for (var iI = 0; iI < aDialogs.length; iI += 1) {
+        oBox = aDialogs[iI].querySelector(".confirm-dialog-box");
+        oHeader = aDialogs[iI].querySelector(".confirm-dialog-header");
+        enableAdminDialogDrag(aDialogs[iI], oBox, oHeader);
+    }
+});
 
 document.addEventListener("DOMContentLoaded", function () {
     var oOpen = document.querySelector(".js-index-settings-open");
@@ -554,8 +652,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         rememberCheckboxStates();
         updateCzechiaCountryOptions();
-        oDialog.hidden = false;
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oDialog, closeDialog)) {
+            return;
+        }
 
         document.addEventListener("keydown", closeOnEscape);
         focusAdminElement(oFirstInput, true);
@@ -567,8 +666,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         document.removeEventListener("keydown", closeOnEscape);
         restoreCheckboxStates();
-        oDialog.hidden = true;
-        unlockAdminModalScroll();
+        closeAdminDialogElement(oDialog);
         focusAdminElement(oOpen);
     }
 
@@ -1224,8 +1322,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oDialog) {
             return;
         }
-        oDialog.hidden = false;
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oDialog, closeDialog)) {
+            return;
+        }
         bindRows();
 
         document.addEventListener("keydown", closeOnEscape);
@@ -1239,8 +1338,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         document.removeEventListener("keydown", closeOnEscape);
         saveDraftNow();
-        oDialog.hidden = true;
-        unlockAdminModalScroll();
+        closeAdminDialogElement(oDialog);
         focusAdminElement(oOpen);
     }
 
@@ -2185,8 +2283,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function createGroupDialog(sTitle, oGroupRow) {
         var oDialogData = {};
         var closeOnEscape;
-        oDialogData.dialog = document.createElement("div");
+        oDialogData.dialog = prepareAdminReusableDialog();
         oDialogData.form = document.createElement("form");
+        oDialogData.box = oDialogData.form;
         oDialogData.header = document.createElement("div");
         oDialogData.title = document.createElement("strong");
         oDialogData.closeButton = document.createElement("button");
@@ -2194,6 +2293,9 @@ document.addEventListener("DOMContentLoaded", function () {
         oDialogData.actions = document.createElement("div");
         oDialogData.save = document.createElement("button");
         oDialogData.cancel = document.createElement("button");
+        if (!oDialogData.dialog) {
+            return null;
+        }
         oDialogData.groupRow = oGroupRow || null;
         oDialogData.groupId = oGroupRow ? (oGroupRow.getAttribute("data-group-id") || "") : "";
         oDialogData.closed = false;
@@ -2209,10 +2311,7 @@ document.addEventListener("DOMContentLoaded", function () {
             oDialogData.closed = true;
             document.removeEventListener("keydown", closeOnEscape);
             finishAdminSubjectRowEdit(findAdminGroupRowById(oDialogData.groupId) || oDialogData.groupRow, blSaved === true);
-            if (oDialogData.dialog.parentNode) {
-                oDialogData.dialog.parentNode.removeChild(oDialogData.dialog);
-                unlockAdminModalScroll();
-            }
+            closeAdminDialogElement(oDialogData.dialog);
             focusAdminElement(oAdd);
         };
         oDialogData.dialog.className = "confirm-dialog";
@@ -2243,7 +2342,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oDialogData.closeButton.addEventListener("click", function () {
             oDialogData.close();
         });
-        enableAdminDialogDrag(oDialogData.dialog, oDialogData.form, oDialogData.header);
+        enableAdminDialogDrag(oDialogData.dialog, oDialogData.box, oDialogData.header);
 
         document.addEventListener("keydown", closeOnEscape);
         return oDialogData;
@@ -2391,8 +2490,9 @@ document.addEventListener("DOMContentLoaded", function () {
         oDialogData.actions.appendChild(oDialogData.cancel);
         oDialogData.form.appendChild(oDialogData.actions);
         oDialogData.dialog.appendChild(oDialogData.form);
-        document.body.appendChild(oDialogData.dialog);
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oDialogData.dialog, oDialogData.close)) {
+            return;
+        }
         beginAdminSubjectRowEdit(findAdminGroupRowById(oDialogData.groupId) || oDialogData.groupRow);
         focusAdminElement(oFocus, true);
     }
@@ -2437,6 +2537,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function openGroupAdminDialog(oRow) {
         var blNewGroup = !oRow;
         var oDialogData = createGroupDialog(blNewGroup ? "New Group" : "Edit Group", oRow);
+        if (!oDialogData) {
+            return;
+        }
         var oName = appendGroupTextField(oDialogData.form, "Name", "name", oRow ? (oRow.getAttribute("data-group-name") || "") : "");
         var aPermissionInputs = appendGroupPermissionFields(oDialogData.form, oRow);
         oDialogData.form.addEventListener("submit", function (oEvent) {
@@ -2464,6 +2567,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oRow) {
             return;
         }
+        if (!oDialogData) {
+            return;
+        }
         oDialogData.save.textContent = "Yes";
         oDialogData.cancel.textContent = "No";
         oText.textContent = "Delete this group?";
@@ -2485,6 +2591,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var oDeleteLabel = document.createElement("label");
         var oDeleteInput = document.createElement("input");
         if (!oRow) {
+            return;
+        }
+        if (!oDialogData) {
             return;
         }
         oDialogData.save.textContent = "Merge";
@@ -2698,8 +2807,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     function createContactTypeDialog(sTitle, oRow) {
-        var oDialog = document.createElement("div");
+        var oDialog = prepareAdminReusableDialog();
         var oForm = document.createElement("form");
+        var oBox = oForm;
         var oHeader = document.createElement("div");
         var oTitle = document.createElement("strong");
         var oClose = document.createElement("button");
@@ -2723,6 +2833,9 @@ document.addEventListener("DOMContentLoaded", function () {
             finishAdminSubjectRowEdit(findAdminContactTypeRowById(sContactTypeId) || oRow, blSaved === true);
             closeAdminDialogElement(oDialog);
         };
+        if (!oDialog) {
+            return null;
+        }
         oDialog.className = "confirm-dialog";
         oForm.className = "confirm-dialog-box subject-edit-dialog";
         oForm.method = "post";
@@ -2745,7 +2858,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oHeader.appendChild(oTitle);
         oHeader.appendChild(oClose);
         oForm.appendChild(oHeader);
-        enableAdminDialogDrag(oDialog, oForm, oHeader);
+        enableAdminDialogDrag(oDialog, oBox, oHeader);
         oClose.addEventListener("click", function () {
             closeDialog();
         });
@@ -2756,6 +2869,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.addEventListener("keydown", closeOnEscape);
         return {
             "dialog": oDialog,
+            "box": oBox,
             "form": oForm,
             "error": oError,
             "actions": oActions,
@@ -2873,8 +2987,9 @@ document.addEventListener("DOMContentLoaded", function () {
         oDialogData.actions.appendChild(oDialogData.cancel);
         oDialogData.form.appendChild(oDialogData.actions);
         oDialogData.dialog.appendChild(oDialogData.form);
-        document.body.appendChild(oDialogData.dialog);
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oDialogData.dialog, oDialogData.close)) {
+            return;
+        }
         beginAdminSubjectRowEdit(findAdminContactTypeRowById(oDialogData.contactTypeId) || oDialogData.contactTypeRow);
         focusAdminElement(oFocus, true);
     }
@@ -2914,6 +3029,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function openContactTypeAdminDialog(oRow) {
         var blNewContactType = !oRow;
         var oDialogData = createContactTypeDialog(blNewContactType ? "New Contact Type" : "Edit Contact Type", oRow);
+        if (!oDialogData) {
+            return;
+        }
         var oName = appendContactTypeTextField(oDialogData.form, "Name", "name", oRow ? (oRow.getAttribute("data-contact-type-name") || "") : "");
         var oActive = appendContactTypeCheckbox(oDialogData.form, "Active", "is_active", blNewContactType ? true : oRow.getAttribute("data-contact-type-active") == "1");
         oDialogData.form.addEventListener("submit", function (oEvent) {
@@ -2934,6 +3052,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var oDialogData = createContactTypeDialog("Confirm Deletion", oRow);
         var oText = document.createElement("p");
         if (!oRow) {
+            return;
+        }
+        if (!oDialogData) {
             return;
         }
         oDialogData.save.textContent = "Yes";
@@ -2957,6 +3078,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var oDeleteLabel = document.createElement("label");
         var oDeleteInput = document.createElement("input");
         if (!oRow) {
+            return;
+        }
+        if (!oDialogData) {
             return;
         }
         oDialogData.save.textContent = "Merge";
@@ -3071,10 +3195,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 aCalendars[iI].parentNode.removeChild(aCalendars[iI]);
             }
         }
-        if (oDialog && oDialog.parentNode) {
-            oDialog.parentNode.removeChild(oDialog);
-            unlockAdminModalScroll();
-        }
+        closeAdminDialogElement(oDialog);
     }
 
     function getSubjectValue(aData, sName) {
@@ -3673,8 +3794,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function createSubjectDialog(sTitle, oSubjectRow) {
         var oDialogData = {};
         var closeOnEscape;
-        oDialogData.dialog = document.createElement("div");
+        oDialogData.dialog = prepareAdminReusableDialog();
         oDialogData.form = document.createElement("form");
+        oDialogData.box = oDialogData.form;
         oDialogData.header = document.createElement("div");
         oDialogData.title = document.createElement("strong");
         oDialogData.closeButton = document.createElement("button");
@@ -3682,6 +3804,9 @@ document.addEventListener("DOMContentLoaded", function () {
         oDialogData.actions = document.createElement("div");
         oDialogData.save = document.createElement("button");
         oDialogData.cancel = document.createElement("button");
+        if (!oDialogData.dialog) {
+            return null;
+        }
         oDialogData.openedAt = 0;
         oDialogData.subjectRow = oSubjectRow || null;
         oDialogData.subjectId = oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : "";
@@ -3758,7 +3883,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oDialogData.closeButton.addEventListener("click", function (oEvent) {
             oDialogData.closeFromClick(oEvent);
         });
-        enableAdminDialogDrag(oDialogData.dialog, oDialogData.form, oDialogData.header);
+        enableAdminDialogDrag(oDialogData.dialog, oDialogData.box, oDialogData.header);
 
         document.addEventListener("keydown", closeOnEscape);
         return oDialogData;
@@ -3770,9 +3895,10 @@ document.addEventListener("DOMContentLoaded", function () {
         oDialogData.actions.appendChild(oDialogData.cancel);
         oDialogData.form.appendChild(oDialogData.actions);
         oDialogData.dialog.appendChild(oDialogData.form);
-        document.body.appendChild(oDialogData.dialog);
         oDialogData.openedAt = new Date().getTime();
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oDialogData.dialog, oDialogData.close)) {
+            return;
+        }
         beginAdminSubjectRowEdit(oDialogData.getCurrentSubjectRow());
         if (oFocus) {
             focusAdminElement(oFocus, true);
@@ -3843,6 +3969,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var oBirthDate;
         var oDeathDate;
         var setSubjectTypeFields;
+        if (!oDialogData) {
+            return;
+        }
         oType = appendSubjectSelect(oDialogData.form, "Type", "subject_type", getSubjectValue(aSubject, "subject_type"), [{
                         "value": "person",
                         "label": "Person"
@@ -3984,6 +4113,9 @@ document.addEventListener("DOMContentLoaded", function () {
         var aPortalPermissionInputs = [];
         var setPortalFields;
         var iI;
+        if (!oDialogData) {
+            return;
+        }
         if (!aPortalUser) {
             aPortalUser = {};
         }
@@ -4090,6 +4222,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function openNicknameDialog(oItem, oSubjectRow, blNewNickname) {
         var oDialogData = createSubjectDialog(blNewNickname ? "New Nickname" : "Edit Nickname", blNewNickname ? oSubjectRow : getAdminSubjectRow(oItem));
         var sSubjectId = blNewNickname && oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : getSubjectItemValue(oItem, "data-subject-id");
+        if (!oDialogData) {
+            return;
+        }
         var oNickname = appendSubjectTextField(oDialogData.form, "Nickname", "nickname", getSubjectItemValue(oItem, "data-nickname"));
         var oContext = appendSubjectTextField(oDialogData.form, "Context", "context", getSubjectItemValue(oItem, "data-context"));
         var oNote = appendSubjectTextField(oDialogData.form, "Note", "note", getSubjectItemValue(oItem, "data-note"));
@@ -4136,7 +4271,10 @@ document.addEventListener("DOMContentLoaded", function () {
         var oNote;
         var oPrimary;
         var oActive;
-        oDialogData.form.className += " subject-address-edit-dialog";
+        if (!oDialogData) {
+            return;
+        }
+        oDialogData.box.className += " subject-address-edit-dialog";
         oAddressFields.className = "subject-address-field-grid";
         oDialogData.form.appendChild(oAddressFields);
         oAddressType = appendAddressTypeSelect(appendSubjectAddressField(oAddressFields), blNewAddress ? "main" : getSubjectItemValue(oItem, "data-address-type"));
@@ -4204,6 +4342,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function openGroupDialog(oItem) {
         var oDialogData = createSubjectDialog("Edit Group", getAdminSubjectRow(oItem));
         var oSharedNote = document.createElement("p");
+        if (!oDialogData) {
+            return;
+        }
         var oName = appendSubjectTextField(oDialogData.form, "Name", "name", getSubjectItemValue(oItem, "data-group-name"));
         oSharedNote.textContent = "Name is shared by all subjects using this group.";
         oDialogData.form.insertBefore(oSharedNote, oDialogData.form.children[1]);
@@ -4222,6 +4363,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function openAddSubjectGroupDialog(oSubjectRow) {
         var oDialogData = createSubjectDialog("Assign Group", oSubjectRow);
         var sSubjectId = oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : "";
+        if (!oDialogData) {
+            return;
+        }
         var oName = appendSubjectTextField(oDialogData.form, "Name", "name", "");
         if (document.getElementById("nx-group-list")) {
             oName.setAttribute("list", "nx-group-list");
@@ -4240,6 +4384,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function openNoteDialog(oItem, oSubjectRow, blNewNote) {
         var oDialogData = createSubjectDialog(blNewNote ? "New Note" : "Edit Note", blNewNote ? oSubjectRow : getAdminSubjectRow(oItem));
         var sSubjectId = blNewNote && oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : getSubjectItemValue(oItem, "data-subject-id");
+        if (!oDialogData) {
+            return;
+        }
         var oNoteText = appendSubjectTextField(oDialogData.form, "Text", "note_text", getSubjectNoteText(oItem));
         var oPrimary = appendSubjectCheckbox(oDialogData.form, "Primary", "is_primary", blNewNote ? false : getSubjectItemFlag(oItem, "data-primary"));
         var oActive = appendSubjectCheckbox(oDialogData.form, "Active", "is_active", blNewNote ? true : getSubjectItemFlag(oItem, "data-active"));
@@ -4263,6 +4410,9 @@ document.addEventListener("DOMContentLoaded", function () {
     function openDeleteDialog(sTitle, sMessage, aParams, oSubjectRow) {
         var oDialogData = createSubjectDialog(sTitle, oSubjectRow);
         var oText = document.createElement("p");
+        if (!oDialogData) {
+            return;
+        }
         oText.textContent = sMessage;
         oDialogData.save.textContent = "Yes";
         oDialogData.cancel.textContent = "No";
@@ -4549,8 +4699,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     function openContactDialog(oItem, oSubjectRowParam, blNewContact) {
-        var oDialog = document.createElement("div");
+        var oDialog = prepareAdminReusableDialog();
         var oForm = document.createElement("form");
+        var oBox = oForm;
         var oHeader = document.createElement("div");
         var oTitle = document.createElement("strong");
         var oClose = document.createElement("button");
@@ -4581,6 +4732,9 @@ document.addEventListener("DOMContentLoaded", function () {
             finishAdminSubjectRowEdit(getCurrentSubjectRow(), blSaved === true);
             closeAdminDialogElement(oDialog);
         };
+        if (!oDialog) {
+            return;
+        }
         oDialog.className = "confirm-dialog";
         oForm.className = "confirm-dialog-box contact-edit-dialog";
         oForm.method = "post";
@@ -4603,7 +4757,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oHeader.appendChild(oTitle);
         oHeader.appendChild(oClose);
         oForm.appendChild(oHeader);
-        enableAdminDialogDrag(oDialog, oForm, oHeader);
+        enableAdminDialogDrag(oDialog, oBox, oHeader);
         var oSharedNote = document.createElement("p");
         oSharedNote.textContent = "Shared contact values used by other subjects are preserved.";
         oForm.appendChild(oSharedNote);
@@ -4617,8 +4771,9 @@ document.addEventListener("DOMContentLoaded", function () {
         oActions.appendChild(oCancel);
         oForm.appendChild(oActions);
         oDialog.appendChild(oForm);
-        document.body.appendChild(oDialog);
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oDialog, closeDialog)) {
+            return;
+        }
         beginAdminSubjectRowEdit(oSubjectRow);
         focusAdminElement(oValue, true);
         oCancel.addEventListener("click", function () {
@@ -4748,8 +4903,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oDialog) {
             return;
         }
-        oDialog.hidden = false;
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oDialog, closeSharedContactDialog)) {
+            return;
+        }
         document.addEventListener("keydown", closeOnEscape);
         if (oFocus) {
             focusAdminElement(oFocus, true);
@@ -4757,10 +4913,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function hideDialog(oDialog) {
-        if (oDialog && !oDialog.hidden) {
-            oDialog.hidden = true;
-            unlockAdminModalScroll();
-        }
+        closeAdminDialogElement(oDialog);
     }
 
     function closeSharedContactDialog(blSaved) {
@@ -4779,6 +4932,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var oContactId = getField(oEditForm, "contact_id");
         var oContactType = getField(oEditForm, "contact_type_id");
         var oContactValue = getField(oEditForm, "contact_value");
+        closeAdminOpenDialog();
         oCurrentContactCell = oCell;
         setDialogError(oEditError, "");
         if (oContactId) {
@@ -4796,6 +4950,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function openSharedContactDelete(oCell) {
         var oContactId = getField(oDeleteForm, "contact_id");
+        closeAdminOpenDialog();
         oCurrentContactCell = oCell;
         setDialogError(oDeleteError, "");
         if (oContactId) {
@@ -4976,6 +5131,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oEditDialog || !oEditForm || !oCell) {
             return;
         }
+        closeAdminOpenDialog();
         oCurrentAddressCell = oCell;
         getField(oEditForm, "address_match").value = oCell.getAttribute("data-address-match") || "";
         for (iI = 0; iI < aAddressFields.length; iI += 1) {
@@ -4985,8 +5141,9 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
         setDialogError(oEditError, "");
-        oEditDialog.hidden = false;
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oEditDialog, closeSharedAddressDialog)) {
+            return;
+        }
         setAddressRowsModal(oCell, true);
 
         document.addEventListener("keydown", closeOnEscape);
@@ -4997,11 +5154,13 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oDeleteDialog || !oDeleteForm || !oCell) {
             return;
         }
+        closeAdminOpenDialog();
         oCurrentAddressCell = oCell;
         getField(oDeleteForm, "address_match").value = oCell.getAttribute("data-address-match") || "";
         setDialogError(oDeleteError, "");
-        oDeleteDialog.hidden = false;
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oDeleteDialog, closeSharedAddressDialog)) {
+            return;
+        }
         setAddressRowsModal(oCell, true);
 
         document.addEventListener("keydown", closeOnEscape);
@@ -5009,14 +5168,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function closeSharedAddressDialog(blSaved) {
-        if (oEditDialog && !oEditDialog.hidden) {
-            oEditDialog.hidden = true;
-            unlockAdminModalScroll();
-        }
-        if (oDeleteDialog && !oDeleteDialog.hidden) {
-            oDeleteDialog.hidden = true;
-            unlockAdminModalScroll();
-        }
+        closeAdminDialogElement(oEditDialog);
+        closeAdminDialogElement(oDeleteDialog);
         document.removeEventListener("keydown", closeOnEscape);
         setAddressRowsModal(oCurrentAddressCell, false);
         if (blSaved) {
@@ -5031,6 +5184,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oSubjectEditDialog || !oSubjectEditForm || !oCell) {
             return;
         }
+        closeAdminOpenDialog();
         oCurrentSubjectCell = oCell;
         getField(oSubjectEditForm, "address_id").value = oCell.getAttribute("data-address-id") || "";
         for (iI = 0; iI < aSubjectAddressFields.length; iI += 1) {
@@ -5042,8 +5196,9 @@ document.addEventListener("DOMContentLoaded", function () {
         getField(oSubjectEditForm, "is_primary").checked = oCell.getAttribute("data-primary") == "1";
         getField(oSubjectEditForm, "is_active").checked = oCell.getAttribute("data-active") == "1";
         setDialogError(oSubjectEditError, "");
-        oSubjectEditDialog.hidden = false;
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oSubjectEditDialog, closeSubjectAddressDialog)) {
+            return;
+        }
         setSubjectRowModal(oCell, true);
 
         document.addEventListener("keydown", closeOnEscape);
@@ -5054,11 +5209,13 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oSubjectDeleteDialog || !oSubjectDeleteForm || !oCell) {
             return;
         }
+        closeAdminOpenDialog();
         oCurrentSubjectCell = oCell;
         getField(oSubjectDeleteForm, "address_id").value = oCell.getAttribute("data-address-id") || "";
         setDialogError(oSubjectDeleteError, "");
-        oSubjectDeleteDialog.hidden = false;
-        lockAdminModalScroll();
+        if (!openAdminDialogElement(oSubjectDeleteDialog, closeSubjectAddressDialog)) {
+            return;
+        }
         setSubjectRowModal(oCell, true);
 
         document.addEventListener("keydown", closeOnEscape);
@@ -5067,14 +5224,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function closeSubjectAddressDialog(blSaved) {
         var oRow;
-        if (oSubjectEditDialog && !oSubjectEditDialog.hidden) {
-            oSubjectEditDialog.hidden = true;
-            unlockAdminModalScroll();
-        }
-        if (oSubjectDeleteDialog && !oSubjectDeleteDialog.hidden) {
-            oSubjectDeleteDialog.hidden = true;
-            unlockAdminModalScroll();
-        }
+        closeAdminDialogElement(oSubjectEditDialog);
+        closeAdminDialogElement(oSubjectDeleteDialog);
         document.removeEventListener("keydown", closeOnEscape);
         setSubjectRowModal(oCurrentSubjectCell, false);
         if (blSaved && oCurrentSubjectCell && oCurrentSubjectCell.parentNode) {

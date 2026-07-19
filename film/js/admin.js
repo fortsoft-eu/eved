@@ -1,5 +1,6 @@
 var iAdminModalCount = 0;
 var sAdminBodyOverflow = "";
+var oFilmOpenDialog = null;
 
 
 function getAdminAjaxHeaders() {
@@ -22,6 +23,53 @@ function unlockAdminModalScroll() {
     }
     if (iAdminModalCount === 0) {
         document.body.style.overflow = sAdminBodyOverflow;
+    }
+}
+
+function closeFilmOpenDialog(oExceptDialog) {
+    var aDialogs;
+    var iI;
+    if (oFilmOpenDialog && oFilmOpenDialog !== oExceptDialog && oFilmOpenDialog._filmDialogClose) {
+        oFilmOpenDialog._filmDialogClose();
+    }
+    aDialogs = document.querySelectorAll(".confirm-dialog:not([hidden])");
+    for (iI = 0; iI < aDialogs.length; iI += 1) {
+        if (aDialogs[iI] !== oExceptDialog) {
+            if (aDialogs[iI]._filmDialogClose) {
+                aDialogs[iI]._filmDialogClose();
+            } else {
+                closeFilmDialogElement(aDialogs[iI]);
+            }
+        }
+    }
+}
+
+function openFilmDialogElement(oDialog, fClose) {
+    if (!oDialog) {
+        return false;
+    }
+    if (!oDialog.hidden) {
+        closeFilmOpenDialog(oDialog);
+        return false;
+    }
+    closeFilmOpenDialog(oDialog);
+    oDialog._filmDialogClose = fClose || null;
+    oFilmOpenDialog = oDialog;
+    oDialog.hidden = false;
+    lockAdminModalScroll();
+    return true;
+}
+
+function closeFilmDialogElement(oDialog) {
+    if (oDialog && !oDialog.hidden) {
+        oDialog.hidden = true;
+        unlockAdminModalScroll();
+    }
+    if (oFilmOpenDialog === oDialog) {
+        oFilmOpenDialog = null;
+    }
+    if (oDialog) {
+        oDialog._filmDialogClose = null;
     }
 }
 
@@ -144,9 +192,10 @@ function enableAdminDialogDrag(oDialog, oBox, oHeader) {
         }
     }
 
-    if (!oDialog || !oBox || !oHeader) {
+    if (!oDialog || !oBox || !oHeader || oHeader.getAttribute("data-admin-dialog-drag-bound") == "1") {
         return;
     }
+    oHeader.setAttribute("data-admin-dialog-drag-bound", "1");
     oHeader.addEventListener("mousedown", function (oEvent) {
         var oTarget = oEvent.target;
         var oRect;
@@ -167,6 +216,17 @@ function enableAdminDialogDrag(oDialog, oBox, oHeader) {
         oEvent.preventDefault();
     })
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    var aDialogs = document.querySelectorAll(".confirm-dialog");
+    var oBox;
+    var oHeader;
+    for (var iI = 0; iI < aDialogs.length; iI += 1) {
+        oBox = aDialogs[iI].querySelector(".confirm-dialog-box");
+        oHeader = aDialogs[iI].querySelector(".confirm-dialog-header");
+        enableAdminDialogDrag(aDialogs[iI], oBox, oHeader);
+    }
+});
 
 document.addEventListener("DOMContentLoaded", function () {
     var oButton = document.querySelector(".js-filter-focus");
@@ -458,117 +518,86 @@ document.addEventListener("DOMContentLoaded", function () {
         return !!oRow.getAttribute("data-order-id");
     }
 
-    function closeConfirmDialog(oDialog) {
-        if (oDialog) {
-            document.body.removeChild(oDialog);
-            unlockAdminModalScroll();
+    var oConfirmDialog = document.getElementById("film-unassign-confirm-dialog");
+    var oConfirmForm = oConfirmDialog ? oConfirmDialog.querySelector("form") : null;
+    var oConfirmHidden = oConfirmForm ? oConfirmForm.querySelector("input[name=\"unassign\"]") : null;
+    var oConfirmFilm = oConfirmDialog ? oConfirmDialog.querySelector(".js-film-unassign-roll") : null;
+    var oConfirmBag = oConfirmDialog ? oConfirmDialog.querySelector(".js-film-unassign-bag") : null;
+    var oConfirmButton = oConfirmDialog ? oConfirmDialog.querySelector(".js-film-unassign-confirm") : null;
+    var oConfirmCancel = oConfirmDialog ? oConfirmDialog.querySelector(".js-film-unassign-cancel") : null;
+    var oConfirmClose = oConfirmDialog ? oConfirmDialog.querySelector(".js-film-unassign-close") : null;
+    var oConfirmRow = null;
+    var closeOnConfirmEscape = function (oEvent) {
+        if (oEvent.key == "Escape") {
+            closeConfirmDialog();
         }
-    }
+    };
 
-    function setConfirmDialogText(oElement, sFilmRoll, sLabBag) {
-        var oFilm = document.createElement("strong");
-        var oBag = document.createElement("strong");
-        oFilm.textContent = sFilmRoll || "\u2014";
-        oBag.textContent = sLabBag || "\u2014";
-        oElement.appendChild(document.createTextNode("The film roll "));
-        oElement.appendChild(oFilm);
-        oElement.appendChild(document.createElement("br"));
-        oElement.appendChild(document.createTextNode(" will be unassigned from the lab bag "));
-        oElement.appendChild(oBag);
-        oElement.appendChild(document.createTextNode("."));
+    function closeConfirmDialog(blSaved) {
+        document.removeEventListener("keydown", closeOnConfirmEscape);
+        if (oConfirmRow) {
+            finishAdminSubjectRowEdit(oConfirmRow, blSaved === true);
+            if (blSaved === true) {
+                oConfirmRow.setAttribute("data-confirming", "0");
+                oConfirmRow.setAttribute("data-saved", "1");
+                applyRowColor(oConfirmRow);
+                window.setTimeout(function () {
+                    oConfirmRow.setAttribute("data-saved", "0");
+                    applyRowColor(oConfirmRow);
+                }, 1400)
+            } else {
+                window.setTimeout(function () {
+                    oConfirmRow.setAttribute("data-confirming", "0");
+                    applyRowColor(oConfirmRow);
+                }, 1000)
+            }
+        }
+        closeFilmDialogElement(oConfirmDialog);
+        oConfirmRow = null;
     }
 
     function openConfirmDialog(sAction, sUnassignId, sFilmRoll, sLabBag, oRow) {
-        var oDialog = document.createElement("div");
-        var oForm = document.createElement("form");
-        var oHeader = document.createElement("div");
-        var oTitle = document.createElement("strong");
-        var oClose = document.createElement("button");
-        var oHidden = document.createElement("input");
-        var oText = document.createElement("p");
-        var oActions = document.createElement("div");
-        var oConfirm = document.createElement("button");
-        var oCancel = document.createElement("button");
-        var closeOnEscape = function (oEvent) {
-            if (oEvent.key == "Escape") {
-                closeDialog();
-            }
-        };
-        var closeDialog = function (blSaved) {
-            document.removeEventListener("keydown", closeOnEscape);
-            if (oRow) {
-                finishAdminSubjectRowEdit(oRow, blSaved === true);
-                if (blSaved === true) {
-                    oRow.setAttribute("data-confirming", "0");
-                    oRow.setAttribute("data-saved", "1");
-                    applyRowColor(oRow);
-                    window.setTimeout(function () {
-                        oRow.setAttribute("data-saved", "0");
-                        applyRowColor(oRow);
-                    }, 1400)
-                } else {
-                    window.setTimeout(function () {
-                        oRow.setAttribute("data-confirming", "0");
-                        applyRowColor(oRow);
-                    }, 1000)
-                }
-            }
-            closeConfirmDialog(oDialog);
-        };
-        oDialog.className = "confirm-dialog";
-        oForm.className = "confirm-dialog-box";
-        oForm.method = "post";
-        oForm.action = sAction;
-        oHeader.className = "confirm-dialog-header";
-        oTitle.textContent = "Confirm Unassignment";
-        oClose.type = "button";
-        oClose.className = "confirm-dialog-close";
-        oClose.setAttribute("aria-label", "Close");
-        oClose.textContent = "\u00D7";
-        oHidden.type = "hidden";
-        oHidden.name = "unassign";
-        oHidden.value = sUnassignId;
-        oActions.className = "confirm-dialog-actions";
-        setConfirmDialogText(oText, sFilmRoll, sLabBag);
-        oConfirm.type = "submit";
-        oConfirm.className = "confirm-dialog-button";
-        oConfirm.textContent = "Yes";
-        oCancel.type = "button";
-        oCancel.className = "confirm-dialog-button";
-        oCancel.textContent = "No";
-        oActions.appendChild(oConfirm);
-        oActions.appendChild(oCancel);
-        oHeader.appendChild(oTitle);
-        oHeader.appendChild(oClose);
-        oForm.appendChild(oHidden);
-        oForm.appendChild(oHeader);
-        enableAdminDialogDrag(oDialog, oForm, oHeader);
-        oForm.appendChild(oText);
-        oForm.appendChild(oActions);
-        oDialog.appendChild(oForm);
-        document.body.appendChild(oDialog);
-        lockAdminModalScroll();
-        if (oRow) {
-            oRow.setAttribute("data-confirming", "1");
-            beginAdminSubjectRowEdit(oRow);
-            applyRowColor(oRow);
+        closeFilmOpenDialog();
+        if (!oConfirmDialog || !oConfirmForm || !oConfirmHidden || !oConfirmFilm || !oConfirmBag) {
+            return;
         }
-        oConfirm.focus();
-        oForm.addEventListener("submit", function () {
-            if (oRow) {
-                finishAdminSubjectRowEdit(oRow, true);
-                oRow.setAttribute("data-confirming", "0");
-                oRow.setAttribute("data-saved", "1");
-                applyRowColor(oRow);
+        oConfirmRow = oRow || null;
+        oConfirmForm.action = sAction;
+        oConfirmHidden.value = sUnassignId;
+        oConfirmFilm.textContent = sFilmRoll || "\u2014";
+        oConfirmBag.textContent = sLabBag || "\u2014";
+        if (!openFilmDialogElement(oConfirmDialog, closeConfirmDialog)) {
+            return;
+        }
+        if (oConfirmRow) {
+            oConfirmRow.setAttribute("data-confirming", "1");
+            beginAdminSubjectRowEdit(oConfirmRow);
+            applyRowColor(oConfirmRow);
+        }
+        focusAdminElement(oConfirmButton);
+        document.addEventListener("keydown", closeOnConfirmEscape);
+    }
+
+    if (oConfirmDialog && oConfirmForm) {
+        enableAdminDialogDrag(oConfirmDialog, oConfirmForm, oConfirmDialog.querySelector(".confirm-dialog-header"));
+        oConfirmForm.addEventListener("submit", function () {
+            if (oConfirmRow) {
+                finishAdminSubjectRowEdit(oConfirmRow, true);
+                oConfirmRow.setAttribute("data-confirming", "0");
+                oConfirmRow.setAttribute("data-saved", "1");
+                applyRowColor(oConfirmRow);
             }
         });
-        oCancel.addEventListener("click", function () {
-            closeDialog();
-        });
-        oClose.addEventListener("click", function () {
-            closeDialog();
-        });
-        document.addEventListener("keydown", closeOnEscape);
+    }
+    if (oConfirmCancel) {
+        oConfirmCancel.addEventListener("click", function () {
+            closeConfirmDialog();
+        })
+    }
+    if (oConfirmClose) {
+        oConfirmClose.addEventListener("click", function () {
+            closeConfirmDialog();
+        })
     }
 
     document.addEventListener("click", function (oEvent) {

@@ -438,7 +438,7 @@ function renderFilmMenu() {
 
     $aGroups = getFilmPhpFileLinkGroups();
     $sTitle = htmlspecialchars("Film Scans Gallery", ENT_QUOTES, "UTF-8");
-    $sLinks = "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl . "index.php", ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-icon\" aria-hidden=\"true\">" . $sFilmMenuEmoji . "</span><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n"
+    $sLinks = "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-icon\" aria-hidden=\"true\">" . $sFilmMenuEmoji . "</span><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n"
         . "        <span class=\"film-menu-separator\"></span>\n";
     foreach ($aGroups as $iGroup => $aGroup) {
         if ($iGroup > 0 && $sLinks != "" && count($aGroup) > 0) {
