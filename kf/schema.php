@@ -2,7 +2,7 @@
 
 include "main.php";
 
-requireExFullAccess($aAllowedIps);
+requireFullAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -43,8 +43,8 @@ $aSchemaRelationRoutes = array(
     "kf_fin_trans.finance_type_id>kf_fin_types.id" => array("source" => "left", "target" => "right", "curve" => "72")
 );
 
-$sTitle = kfGetPageTitle("Database Schema");
-$iTime = kfSendPageHeaders();
+$sTitle = getPageTitle("Database Schema");
+$iTime = sendPageHeaders();
 
 ?>
 <!DOCTYPE html>
@@ -53,16 +53,16 @@ $iTime = kfSendPageHeaders();
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="<?php echo kfHtml(kfGetCsrfToken()); ?>">
-  <title><?php echo kfHtml($sTitle); ?></title>
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
+  <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo kfHtml($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
-<?php kfRenderMenu(); ?>
+<?php renderMenu(); ?>
   </p>
-<?php kfRenderMessage(); ?>
+<?php renderMessage(); ?>
   <p class="schema-unavailable-message"><strong>Database Schema: </strong>The database schema cannot be displayed on this device.</p>
   <div class="schema-diagram" id="schema-diagram">
     <div class="schema-canvas" id="schema-canvas">
@@ -77,8 +77,8 @@ $iTime = kfSendPageHeaders();
 <?php
 
 foreach ($aTables as $sTableName => $aColumns) {
-    echo "        <table class=\"schema-table\" data-table=\"" . kfHtml($sTableName) . "\">\n"
-        . "          <caption>" . kfHtml($sTableName) . "</caption>\n"
+    echo "        <table class=\"schema-table\" data-table=\"" . html($sTableName) . "\">\n"
+        . "          <caption>" . html($sTableName) . "</caption>\n"
         . "          <colgroup>\n"
         . "            <col class=\"schema-col-key\">\n"
         . "            <col class=\"schema-col-column\">\n"
@@ -100,9 +100,9 @@ foreach ($aTables as $sTableName => $aColumns) {
         $sKey = "";
         $sKeyClass = "";
         $sColumnType = (string)$aColumn["COLUMN_TYPE"];
-        $sColumnTypeDisplay = kfSchemaColumnTypeDisplay($sColumnType);
-        $sColumnTypeTitleDisplay = kfSchemaColumnTypeDisplay($sColumnType, false);
-        $sColumnTypeTitle = $sColumnTypeDisplay != $sColumnTypeTitleDisplay ? " title=\"" . kfHtml($sColumnTypeTitleDisplay) . "\"" : "";
+        $sColumnTypeDisplay = schemaColumnTypeDisplay($sColumnType);
+        $sColumnTypeTitleDisplay = schemaColumnTypeDisplay($sColumnType, false);
+        $sColumnTypeTitle = $sColumnTypeDisplay != $sColumnTypeTitleDisplay ? " title=\"" . str_replace("…", "&hellip;", html($sColumnTypeTitleDisplay)) . "\"" : "";
         if ($aColumn["COLUMN_KEY"] == "PRI") {
             $sKey = "PK";
             $sKeyClass = " schema-key-pk";
@@ -115,12 +115,12 @@ foreach ($aTables as $sTableName => $aColumns) {
             $sKey = "IX";
         }
         $sColumnId = "column-" . preg_replace("/[^a-zA-Z0-9_-]/", "-", $sTableName . "-" . $aColumn["COLUMN_NAME"]);
-        echo "            <tr id=\"" . kfHtml($sColumnId) . "\">\n"
-            . "              <td class=\"schema-key" . $sKeyClass . "\">" . kfHtml($sKey) . "</td>\n"
-            . "              <td>" . kfHtml($aColumn["COLUMN_NAME"]) . "</td>\n"
-            . "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . kfHtml($sColumnTypeDisplay) . "</td>\n"
+        echo "            <tr id=\"" . html($sColumnId) . "\">\n"
+            . "              <td class=\"schema-key" . $sKeyClass . "\">" . html($sKey) . "</td>\n"
+            . "              <td>" . html($aColumn["COLUMN_NAME"]) . "</td>\n"
+            . "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . str_replace("…", "&hellip;", html($sColumnTypeDisplay)) . "</td>\n"
             . "              <td class=\"schema-null\">" . ($aColumn["IS_NULLABLE"] == "YES" ? "Yes" : "No") . "</td>\n"
-            . "              <td>" . kfHtml($aColumn["EXTRA"]) . "</td>\n"
+            . "              <td>" . html($aColumn["EXTRA"]) . "</td>\n"
             . "            </tr>\n";
     }
     echo "          </tbody>\n"
@@ -147,47 +147,47 @@ foreach ($aRelations as $aRelation) {
     $sRelationKey = $aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"] . ">" . $aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"];
     $sRouteAttributes = "";
     if (isset($aSchemaRelationRoutes[$sRelationKey])) {
-        $sRouteAttributes = " data-source-side=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["source"]) . "\""
-            . " data-target-side=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["target"]) . "\"";
+        $sRouteAttributes = " data-source-side=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source"]) . "\""
+            . " data-target-side=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target"]) . "\"";
         if (isset($aSchemaRelationRoutes[$sRelationKey]["curve"])) {
-            $sRouteAttributes .= " data-curve=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["curve"]) . "\"";
+            $sRouteAttributes .= " data-curve=\"" . html($aSchemaRelationRoutes[$sRelationKey]["curve"]) . "\"";
         }
         if (isset($aSchemaRelationRoutes[$sRelationKey]["source-x"])) {
-            $sRouteAttributes .= " data-source-x-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["source-x"]) . "\"";
+            $sRouteAttributes .= " data-source-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source-x"]) . "\"";
         }
         if (isset($aSchemaRelationRoutes[$sRelationKey]["source-y"])) {
-            $sRouteAttributes .= " data-source-y-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["source-y"]) . "\"";
+            $sRouteAttributes .= " data-source-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source-y"]) . "\"";
         }
         if (isset($aSchemaRelationRoutes[$sRelationKey]["target-x"])) {
-            $sRouteAttributes .= " data-target-x-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["target-x"]) . "\"";
+            $sRouteAttributes .= " data-target-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target-x"]) . "\"";
         }
         if (isset($aSchemaRelationRoutes[$sRelationKey]["target-y"])) {
-            $sRouteAttributes .= " data-target-y-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["target-y"]) . "\"";
+            $sRouteAttributes .= " data-target-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target-y"]) . "\"";
         }
         if (isset($aSchemaRelationRoutes[$sRelationKey]["via-x"])) {
-            $sRouteAttributes .= " data-via-x=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["via-x"]) . "\"";
+            $sRouteAttributes .= " data-via-x=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-x"]) . "\"";
         }
         if (isset($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"])) {
-            $sRouteAttributes .= " data-via-x-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"]) . "\"";
+            $sRouteAttributes .= " data-via-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"]) . "\"";
         }
         if (isset($aSchemaRelationRoutes[$sRelationKey]["via-y"])) {
-            $sRouteAttributes .= " data-via-y=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["via-y"]) . "\"";
+            $sRouteAttributes .= " data-via-y=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-y"]) . "\"";
         }
         if (isset($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"])) {
-            $sRouteAttributes .= " data-via-y-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"]) . "\"";
+            $sRouteAttributes .= " data-via-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"]) . "\"";
         }
         if (isset($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"])) {
-            $sRouteAttributes .= " data-via-table-bottom-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"]) . "\"";
+            $sRouteAttributes .= " data-via-table-bottom-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"]) . "\"";
         }
     }
-    echo "      <tr data-source-table=\"" . kfHtml($aRelation["TABLE_NAME"])
-        . "\" data-source-column=\"" . kfHtml($aRelation["COLUMN_NAME"])
-        . "\" data-target-table=\"" . kfHtml($aRelation["REFERENCED_TABLE_NAME"])
-        . "\" data-target-column=\"" . kfHtml($aRelation["REFERENCED_COLUMN_NAME"]) . "\""
+    echo "      <tr data-source-table=\"" . html($aRelation["TABLE_NAME"])
+        . "\" data-source-column=\"" . html($aRelation["COLUMN_NAME"])
+        . "\" data-target-table=\"" . html($aRelation["REFERENCED_TABLE_NAME"])
+        . "\" data-target-column=\"" . html($aRelation["REFERENCED_COLUMN_NAME"]) . "\""
         . $sRouteAttributes . ">\n"
-        . "        <td>" . kfHtml($aRelation["CONSTRAINT_NAME"]) . "</td>\n"
-        . "        <td>" . kfHtml($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"]) . "</td>\n"
-        . "        <td>" . kfHtml($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"]) . "</td>\n"
+        . "        <td>" . html($aRelation["CONSTRAINT_NAME"]) . "</td>\n"
+        . "        <td>" . html($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"]) . "</td>\n"
+        . "        <td>" . html($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"]) . "</td>\n"
         . "      </tr>\n";
 }
 
@@ -200,7 +200,7 @@ if (!$aRelations) {
   </table>
 <?php
 
-echo "  <script type=\"text/javascript\" src=\"" . kfHtml($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
+echo "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
     . "</body>\n"
     . "</html>\n";
 

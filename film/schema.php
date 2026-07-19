@@ -102,9 +102,9 @@ foreach ($aTables as $sTableName => $aColumns) {
         $sKey = "";
         $sKeyClass = "";
         $sColumnType = (string)$aColumn["COLUMN_TYPE"];
-        $sColumnTypeDisplay = nxSchemaColumnTypeDisplay($sColumnType);
-        $sColumnTypeTitleDisplay = nxSchemaColumnTypeDisplay($sColumnType, false);
-        $sColumnTypeTitle = $sColumnTypeDisplay != $sColumnTypeTitleDisplay ? " title=\"" . htmlspecialchars($sColumnTypeTitleDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"" : "";
+        $sColumnTypeDisplay = schemaColumnTypeDisplay($sColumnType);
+        $sColumnTypeTitleDisplay = schemaColumnTypeDisplay($sColumnType, false);
+        $sColumnTypeTitle = $sColumnTypeDisplay != $sColumnTypeTitleDisplay ? " title=\"" . str_replace("…", "&hellip;", htmlspecialchars($sColumnTypeTitleDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")) . "\"" : "";
         if ($aColumn["COLUMN_KEY"] == "PRI") {
             $sKey = "PK";
             $sKeyClass = " schema-key-pk";
@@ -118,7 +118,7 @@ foreach ($aTables as $sTableName => $aColumns) {
         echo "            <tr id=\"" . htmlspecialchars($sColumnId, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n"
             . "              <td class=\"schema-key" . $sKeyClass . "\">" . $sKey . "</td>\n"
             . "              <td>" . htmlspecialchars($aColumn["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . htmlspecialchars($sColumnTypeDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
+            . "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . str_replace("…", "&hellip;", htmlspecialchars($sColumnTypeDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")) . "</td>\n"
             . "              <td class=\"schema-null\">" . ($aColumn["IS_NULLABLE"] == "YES" ? "Yes" : "No") . "</td>\n"
             . "              <td>" . htmlspecialchars($aColumn["EXTRA"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
             . "            </tr>\n";

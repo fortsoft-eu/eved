@@ -623,6 +623,22 @@ tr:nth-child(even) {
     word-break: normal;
 }
 
+.kf-monthly-overview-table {
+    table-layout: fixed;
+}
+
+.kf-monthly-overview-table td,
+.kf-monthly-overview-table th {
+    overflow-wrap: anywhere;
+    white-space: normal;
+    word-break: normal;
+}
+
+.kf-monthly-overview-table td.numeric {
+    overflow-wrap: normal;
+    white-space: nowrap;
+}
+
 td.numeric,
 th.numeric {
     text-align: right;

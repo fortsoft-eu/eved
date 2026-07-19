@@ -39,6 +39,18 @@
         });
     }
 
+    function setupMessages() {
+        var aMessages = document.querySelectorAll(".message-box");
+        if (!aMessages.length) {
+            return;
+        }
+        window.setTimeout(function () {
+            for (var iI = 0; iI < aMessages.length; iI += 1) {
+                aMessages[iI].style.display = "none";
+            }
+        }, 10000);
+    }
+
     function buildFilterExpression(sFilter) {
         var aOrParts = String(sFilter || "").trim().split(/\s+OR\s+/i);
         var aExpression = [];
@@ -408,6 +420,7 @@
     }
 
     function setupTableRows() {
+        var aRelatedRowsCache = {};
         var sHoverColor = "#fff3cd";
         var sSelectedColor = "#cfe2ff";
 
@@ -456,13 +469,33 @@
             return oTarget && oTarget.closest && oTarget.closest("table tbody tr") == oRow;
         }
 
+        function getRelatedRows(oRow) {
+            var sMonth = oRow.getAttribute("data-month") || "";
+            var sCacheKey;
+            if (sMonth == "") {
+                return [oRow];
+            }
+            sCacheKey = "month:" + sMonth;
+            if (!aRelatedRowsCache[sCacheKey]) {
+                aRelatedRowsCache[sCacheKey] = document.querySelectorAll("table tbody tr[data-month=\"" + sMonth + "\"]");
+            }
+            return aRelatedRowsCache[sCacheKey];
+        }
+
+        function setRelatedRowsAttribute(oRow, sName, sValue) {
+            var aRelatedRows = getRelatedRows(oRow);
+            for (var iI = 0; iI < aRelatedRows.length; iI += 1) {
+                aRelatedRows[iI].setAttribute(sName, sValue);
+                applyRowColor(aRelatedRows[iI]);
+            }
+        }
+
         document.addEventListener("mouseover", function (oEvent) {
             var oRow = getEventTableRow(oEvent);
             if (!oRow || isInsideTableRow(oRow, oEvent.relatedTarget)) {
                 return;
             }
-            oRow.setAttribute("data-hover", "1");
-            applyRowColor(oRow);
+            setRelatedRowsAttribute(oRow, "data-hover", "1");
         });
 
         document.addEventListener("mouseout", function (oEvent) {
@@ -470,8 +503,7 @@
             if (!oRow || isInsideTableRow(oRow, oEvent.relatedTarget)) {
                 return;
             }
-            oRow.setAttribute("data-hover", "0");
-            applyRowColor(oRow);
+            setRelatedRowsAttribute(oRow, "data-hover", "0");
         });
 
         document.addEventListener("click", function (oEvent) {
@@ -479,8 +511,7 @@
             if (!oRow || isTableRowActionTarget(oEvent.target)) {
                 return;
             }
-            oRow.setAttribute("data-selected", oRow.getAttribute("data-selected") == "1" ? "0" : "1");
-            applyRowColor(oRow);
+            setRelatedRowsAttribute(oRow, "data-selected", oRow.getAttribute("data-selected") == "1" ? "0" : "1");
         });
     }
 
@@ -748,6 +779,7 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         setupMenu();
+        setupMessages();
         setupTableFilter();
         setupModals();
         setupCopyLinks();

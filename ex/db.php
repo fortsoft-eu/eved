@@ -3,7 +3,7 @@
 include "main.php";
 
 
-requireExFullAccess($aAllowedIps);
+requireFullAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -104,11 +104,11 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo nxHtml(nxGetLockedViewportContent()); ?>">
+  <meta name="viewport" content="<?php echo html(getLockedViewportContent()); ?>">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo nxHtml(getExPageTitleText("Database Structure", $aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText("Database Structure", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -120,9 +120,9 @@ $iTime = sendPageHeaders();
     <input type="hidden" name="download" value="backup">
   </form>
   <p class="admin-controls">
-<?php nxRenderExMenu(); ?>
+<?php renderMenu(); ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="database-table" value="<?php echo nxHtml(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="database-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -150,8 +150,8 @@ foreach ($aTables as $aTable) {
 
 echo "    </tbody>\n"
     . "  </table>\n"
-    . nxRenderFilterFocusButton()
-    . nxRenderAdminScript($sBaseUrl);
+    . renderFilterFocusButton()
+    . renderAdminScript($sBaseUrl);
 ?>
 </body>
 </html>

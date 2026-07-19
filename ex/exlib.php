@@ -7,7 +7,7 @@ if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-requireExFullAccess($aAllowedIps);
+requireFullAccess($aAllowedIps);
 
 $aExternalLibraries = array();
 $sLibraryDirectory = __DIR__ . "/lib";
@@ -20,8 +20,8 @@ if (is_dir($sLibraryDirectory)) {
         }
         $sPathname = $oItem->getPathname();
         $aExternalLibraries[] = array(
-            "permissions" => nxExternalLibraryPermissions($sPathname),
-            "owner" => nxExternalLibraryOwner($sPathname),
+            "permissions" => externalLibraryPermissions($sPathname),
+            "owner" => externalLibraryOwner($sPathname),
             "downloaded_at" => date("Y-m-d H:i:s", $oItem->getMTime()),
             "name" => $oItem->getFilename()
         );
@@ -42,19 +42,19 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo nxHtml(nxGetLockedViewportContent()); ?>">
+  <meta name="viewport" content="<?php echo html(getLockedViewportContent()); ?>">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo nxHtml(getExPageTitleText("External Libraries", $aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText("External Libraries", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
-<?php nxRenderExMenu(); ?>
+<?php renderMenu(); ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-external-libraries-table" value="<?php echo nxHtml(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-external-libraries-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -73,17 +73,17 @@ $iTime = sendPageHeaders();
 
 foreach ($aExternalLibraries as $aExternalLibrary) {
     echo "      <tr>\n"
-        . "        <td>" . nxHtmlValue($aExternalLibrary["permissions"]) . "</td>\n"
-        . "        <td>" . nxHtmlValue($aExternalLibrary["owner"]) . "</td>\n"
-        . "        <td>" . nxHtmlValue($aExternalLibrary["downloaded_at"]) . "</td>\n"
-        . "        <td>" . nxHtmlValue($aExternalLibrary["name"]) . "</td>\n"
+        . "        <td>" . htmlValue($aExternalLibrary["permissions"]) . "</td>\n"
+        . "        <td>" . htmlValue($aExternalLibrary["owner"]) . "</td>\n"
+        . "        <td>" . htmlValue($aExternalLibrary["downloaded_at"]) . "</td>\n"
+        . "        <td>" . htmlValue($aExternalLibrary["name"]) . "</td>\n"
         . "      </tr>\n";
 }
 
 echo "    </tbody>\n"
     . "  </table>\n"
-    . nxRenderFilterFocusButton()
-    . nxRenderAdminScript($sBaseUrl);
+    . renderFilterFocusButton()
+    . renderAdminScript($sBaseUrl);
 ?>
 </body>
 </html>

@@ -119,8 +119,8 @@ function replaceAdminTableCellHtml(oCurrentCell, sCellHtml) {
     }
     oCurrentCell.parentNode.replaceChild(oNewCell, oCurrentCell);
     oNewCell.parentNode._quickTableFilterText = null;
-    if (window.nxBindAdminTableRow) {
-        window.nxBindAdminTableRow(oNewCell.parentNode);
+    if (window.bindAdminTableRow) {
+        window.bindAdminTableRow(oNewCell.parentNode);
     }
     return oNewCell;
 }
@@ -1706,8 +1706,8 @@ document.addEventListener("DOMContentLoaded", function () {
         applyRowColor(oRow);
     });
 
-    window.nxCopyAdminTableRowState = copyTableRowState;
-    window.nxBindAdminTableRow = bindTableRow;
+    window.copyAdminTableRowState = copyTableRowState;
+    window.bindAdminTableRow = bindTableRow;
 });
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -2231,11 +2231,11 @@ document.addEventListener("DOMContentLoaded", function () {
         var sGroupId;
         for (var iI = 0; iI < aRows.length; iI += 1) {
             sGroupId = aRows[iI].getAttribute("data-group-id") || "";
-            if (sGroupId !== "" && aStates[sGroupId] && window.nxCopyAdminTableRowState) {
-                window.nxCopyAdminTableRowState(aStates[sGroupId], aRows[iI]);
+            if (sGroupId !== "" && aStates[sGroupId] && window.copyAdminTableRowState) {
+                window.copyAdminTableRowState(aStates[sGroupId], aRows[iI]);
             }
-            if (window.nxBindAdminTableRow) {
-                window.nxBindAdminTableRow(aRows[iI]);
+            if (window.bindAdminTableRow) {
+                window.bindAdminTableRow(aRows[iI]);
             }
         }
     }
@@ -2258,16 +2258,16 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oNewRow) {
             return;
         }
-        if (oCurrentRow && window.nxCopyAdminTableRowState) {
-            window.nxCopyAdminTableRowState(oCurrentRow, oNewRow);
+        if (oCurrentRow && window.copyAdminTableRowState) {
+            window.copyAdminTableRowState(oCurrentRow, oNewRow);
         }
         if (oCurrentRow) {
             oCurrentRow.parentNode.replaceChild(oNewRow, oCurrentRow);
         } else {
             oTable.querySelector("tbody").appendChild(oNewRow);
         }
-        if (window.nxBindAdminTableRow) {
-            window.nxBindAdminTableRow(oNewRow);
+        if (window.bindAdminTableRow) {
+            window.bindAdminTableRow(oNewRow);
         }
         refreshAdminTableFilter();
     }
@@ -2756,11 +2756,11 @@ document.addEventListener("DOMContentLoaded", function () {
         var sContactTypeId;
         for (var iI = 0; iI < aRows.length; iI += 1) {
             sContactTypeId = aRows[iI].getAttribute("data-contact-type-id") || "";
-            if (sContactTypeId !== "" && aStates[sContactTypeId] && window.nxCopyAdminTableRowState) {
-                window.nxCopyAdminTableRowState(aStates[sContactTypeId], aRows[iI]);
+            if (sContactTypeId !== "" && aStates[sContactTypeId] && window.copyAdminTableRowState) {
+                window.copyAdminTableRowState(aStates[sContactTypeId], aRows[iI]);
             }
-            if (window.nxBindAdminTableRow) {
-                window.nxBindAdminTableRow(aRows[iI]);
+            if (window.bindAdminTableRow) {
+                window.bindAdminTableRow(aRows[iI]);
             }
         }
     }
@@ -2783,16 +2783,16 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oNewRow) {
             return;
         }
-        if (oCurrentRow && window.nxCopyAdminTableRowState) {
-            window.nxCopyAdminTableRowState(oCurrentRow, oNewRow);
+        if (oCurrentRow && window.copyAdminTableRowState) {
+            window.copyAdminTableRowState(oCurrentRow, oNewRow);
         }
         if (oCurrentRow && oCurrentRow.parentNode) {
             oCurrentRow.parentNode.replaceChild(oNewRow, oCurrentRow);
         } else {
             oTable.querySelector("tbody").appendChild(oNewRow);
         }
-        if (window.nxBindAdminTableRow) {
-            window.nxBindAdminTableRow(oNewRow);
+        if (window.bindAdminTableRow) {
+            window.bindAdminTableRow(oNewRow);
         }
         refreshAdminTableFilter();
     }
@@ -3722,15 +3722,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 oNewRow.setAttribute("data-hover", "1");
             }
             oCurrentRow.parentNode.replaceChild(oNewRow, oCurrentRow);
-            if (window.nxBindAdminTableRow) {
-                window.nxBindAdminTableRow(oNewRow);
+            if (window.bindAdminTableRow) {
+                window.bindAdminTableRow(oNewRow);
             }
         } else if (!oCurrentRow && oNewRow) {
             oTableBody = document.querySelector("#nx-subjects-table tbody, #nx-birthdays-table tbody, #nx-interactions-table tbody, #nx-contacts-table tbody");
             if (oTableBody) {
                 oTableBody.appendChild(oNewRow);
-                if (window.nxBindAdminTableRow) {
-                    window.nxBindAdminTableRow(oNewRow);
+                if (window.bindAdminTableRow) {
+                    window.bindAdminTableRow(oNewRow);
                 }
             } else {
                 window.location.reload();
@@ -3747,8 +3747,8 @@ document.addEventListener("DOMContentLoaded", function () {
         refreshAdminTableFilter();
     }
 
-    window.nxReplaceSubjectRow = replaceSubjectRow;
-    window.nxRemoveSubjectRow = removeSubjectRow;
+    window.replaceSubjectRow = replaceSubjectRow;
+    window.removeSubjectRow = removeSubjectRow;
 
     function updateSharedGroupElements(aGroup) {
         var aItems;
@@ -4822,8 +4822,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     window.location.reload();
                     return;
                 }
-                if (aData.subject_deleted && window.nxRemoveSubjectRow) {
-                    window.nxRemoveSubjectRow(aData.subject_id);
+                if (aData.subject_deleted && window.removeSubjectRow) {
+                    window.removeSubjectRow(aData.subject_id);
                     closeDialog(true);
                     return;
                 }
@@ -4831,8 +4831,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     replaceAdminTableCellHtml(oItem.closest(".nx-contact-subject-cell"), aData.subject_cell_html);
                     refreshAdminTableFilter();
                 }
-                if (aData.row_html && window.nxReplaceSubjectRow) {
-                    window.nxReplaceSubjectRow(aData.subject_id, aData.row_html);
+                if (aData.row_html && window.replaceSubjectRow) {
+                    window.replaceSubjectRow(aData.subject_id, aData.row_html);
                 }
                 closeDialog(true);
             }).catch(function (oException) {

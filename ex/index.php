@@ -3,8 +3,8 @@
 include "main.php";
 
 
-$blCanEdit = isExFullAccessAllowed($aAllowedIps);
-requireExViewAccess($aAllowedIps);
+$blCanEdit = isFullAccessAllowed($aAllowedIps);
+requireViewAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -29,7 +29,7 @@ foreach ($aIndexSettingsDefaults as $sIndexSettingName => $iIndexSettingDefault)
         $aIndexSettings[$sIndexSettingName] = $iIndexSettingDefault;
     }
 }
-$aIndexSettings = nxApplyExCountrySettings($aIndexSettings);
+$aIndexSettings = applyCountrySettings($aIndexSettings);
 
 $aFullListComplexFilterContactTypes = array();
 try {
@@ -38,30 +38,30 @@ try {
 } catch (Exception $oException) {
     send500AndExit("Database error: " . $oException->getMessage());
 }
-$aFullListComplexFilterFields = nxGetFullListComplexFilterFields($aFullListComplexFilterContactTypes);
-$aFullListComplexFilterOperators = nxGetFullListComplexFilterOperators();
-$aFullListComplexFilter = nxGetDefaultFullListComplexFilter();
-$aFullListComplexFilterDraft = nxGetDefaultFullListComplexFilterDraft();
+$aFullListComplexFilterFields = getFullListComplexFilterFields($aFullListComplexFilterContactTypes);
+$aFullListComplexFilterOperators = getFullListComplexFilterOperators();
+$aFullListComplexFilter = getDefaultFullListComplexFilter();
+$aFullListComplexFilterDraft = getDefaultFullListComplexFilterDraft();
 
 if (isset($_SESSION["ex_index_complex_filter"]) && is_array($_SESSION["ex_index_complex_filter"])) {
-    $aFullListComplexFilter = nxNormalizeFullListComplexFilter($_SESSION["ex_index_complex_filter"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilter = normalizeFullListComplexFilter($_SESSION["ex_index_complex_filter"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 }
 if (isset($_SESSION["ex_index_complex_filter_draft"]) && is_array($_SESSION["ex_index_complex_filter_draft"])) {
-    $aFullListComplexFilterDraft = nxNormalizeFullListComplexFilterDraft($_SESSION["ex_index_complex_filter_draft"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($_SESSION["ex_index_complex_filter_draft"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 } elseif (count($aFullListComplexFilter["conditions"]) > 0) {
-    $aFullListComplexFilterDraft = nxNormalizeFullListComplexFilterDraft($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireExCsrfToken();
+    requireCsrfToken();
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_index_settings") {
     foreach ($aIndexSettingsDefaults as $sIndexSettingName => $iIndexSettingDefault) {
         $aIndexSettings[$sIndexSettingName] = isset($_POST[$sIndexSettingName]) && (string)$_POST[$sIndexSettingName] == "1" ? 1 : 0;
     }
-    $aIndexSettings = nxSaveExCountrySettings($aIndexSettings, $_POST);
-    $_SESSION["ex_index_settings"] = nxRemoveExCountrySettings($aIndexSettings);
+    $aIndexSettings = saveCountrySettings($aIndexSettings, $_POST);
+    $_SESSION["ex_index_settings"] = removeCountrySettings($aIndexSettings);
     session_write_close();
     sendSecurityHeaders();
     header("Location: " . $sBaseUrl, true, 303);
@@ -69,9 +69,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter") {
-    $aFullListComplexFilterPayload = nxGetFullListComplexFilterPostPayload();
-    $aFullListComplexFilterDraft = nxNormalizeFullListComplexFilterDraft($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
-    $aFullListComplexFilter = nxNormalizeFullListComplexFilter($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilterPayload = getFullListComplexFilterPostPayload();
+    $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilter = normalizeFullListComplexFilter($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
     $_SESSION["ex_index_complex_filter"] = $aFullListComplexFilter;
     $_SESSION["ex_index_complex_filter_draft"] = $aFullListComplexFilterDraft;
     session_write_close();
@@ -81,14 +81,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter_draft") {
-    $aFullListComplexFilterDraft = nxNormalizeFullListComplexFilterDraft(nxGetFullListComplexFilterPostPayload(), $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft(getFullListComplexFilterPostPayload(), $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
     $_SESSION["ex_index_complex_filter_draft"] = $aFullListComplexFilterDraft;
     session_write_close();
-    nxSendJsonAndExit(array("success" => true));
+    sendJsonAndExit(array("success" => true));
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "reset_full_list_complex_filter") {
-    $aFullListComplexFilter = nxGetDefaultFullListComplexFilter();
+    $aFullListComplexFilter = getDefaultFullListComplexFilter();
     $_SESSION["ex_index_complex_filter"] = $aFullListComplexFilter;
     session_write_close();
     sendSecurityHeaders();
@@ -104,21 +104,21 @@ $aGroups = array();
 $aAllGroups = array();
 $aNotes = array();
 $aHiddenInactive = array();
-$aFullListComplexFilterSql = nxBuildFullListComplexFilterSql($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+$aFullListComplexFilterSql = buildFullListComplexFilterSql($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 try {
     $oPdo->query("SET SESSION group_concat_max_len = 1048576");
-    $aRows = nxFetchSubjectRows($oPdo, 0, $aFullListComplexFilterSql);
-    $aContacts = nxFetchSubjectContacts($oPdo);
-    $aNicknames = nxFetchSubjectNicknames($oPdo);
-    $aAddresses = nxFetchSubjectAddresses($oPdo);
-    $aGroups = nxFetchSubjectGroups($oPdo);
-    $aAllGroups = nxFetchGroups($oPdo);
-    $aNotes = nxFetchSubjectNotes($oPdo);
+    $aRows = fetchSubjectRows($oPdo, 0, $aFullListComplexFilterSql);
+    $aContacts = fetchSubjectContacts($oPdo);
+    $aNicknames = fetchSubjectNicknames($oPdo);
+    $aAddresses = fetchSubjectAddresses($oPdo);
+    $aGroups = fetchSubjectGroups($oPdo);
+    $aAllGroups = fetchGroups($oPdo);
+    $aNotes = fetchSubjectNotes($oPdo);
 } catch (Exception $oException) {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
-$aHiddenInactive = nxGetHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aIndexSettings);
+$aHiddenInactive = getHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aIndexSettings);
 
 if (!$aIndexSettings["show_inactive_subjects"]) {
     $aActiveRows = array();
@@ -192,22 +192,22 @@ foreach ($aAllGroups as $aGroup) {
     $aFullListComplexFilterGroups[] = (string)$aGroup["name"];
 }
 $aFullListComplexFilterSubjectTypes = array();
-foreach (nxGetSubjectTypes() as $sSubjectType) {
+foreach (getSubjectTypes() as $sSubjectType) {
     $aFullListComplexFilterSubjectTypes[] = array(
         "value" => $sSubjectType,
         "label" => ucfirst($sSubjectType)
     );
 }
 $aFullListComplexFilterAddressTypes = array();
-foreach (nxGetAddressTypes() as $sAddressType) {
+foreach (getAddressTypes() as $sAddressType) {
     $aFullListComplexFilterAddressTypes[] = array(
         "value" => $sAddressType,
-        "label" => nxAddressTypeLabel($sAddressType)
+        "label" => addressTypeLabel($sAddressType)
     );
 }
 
-$sViewportContent = nxGetLockedViewportContent();
-$sRenderThrobberHtmlAttributes = nxGetRenderThrobberHtmlAttributes(count($aRows) > 0);
+$sViewportContent = getLockedViewportContent();
+$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aRows) > 0);
 $iTime = sendPageHeaders();
 
 ?>
@@ -218,20 +218,20 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo nxHtml($sViewportContent); ?>">
+  <meta name="viewport" content="<?php echo html($sViewportContent); ?>">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo nxHtml(getExPageTitleText("Contacts", $aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText("Contacts", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo nxHtml(getExCsrfToken()); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
-<?php nxRenderExMenu(); ?>
+<?php renderMenu(); ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-contacts-table" value="<?php echo nxHtml(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-contacts-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -241,13 +241,13 @@ $iTime = sendPageHeaders();
   </p>
   <form id="complex-filter-reset-form" method="post" action="<?php echo $sBaseUrl; ?>" enctype="application/x-www-form-urlencoded" hidden>
     <input type="hidden" name="action" value="reset_full_list_complex_filter">
-    <input type="hidden" name="ex_csrf_token" value="<?php echo nxHtml(getExCsrfToken()); ?>">
+    <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken()); ?>">
   </form>
-  <?php echo nxRenderCountryDatalist(); ?>
+  <?php echo renderCountryDatalist(); ?>
   <div class="confirm-dialog complex-filter-dialog" id="complex-filter-dialog" hidden>
     <form class="confirm-dialog-box complex-filter-form" method="post" action="<?php echo $sBaseUrl; ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_full_list_complex_filter">
-      <input type="hidden" name="ex_csrf_token" value="<?php echo nxHtml(getExCsrfToken()); ?>">
+      <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken()); ?>">
       <div class="confirm-dialog-header">
         <strong>Complex Filter</strong>
         <button type="button" class="confirm-dialog-close js-complex-filter-close" aria-label="Close">&times;</button>
@@ -257,7 +257,7 @@ $iTime = sendPageHeaders();
           <label><input type="radio" name="complex_filter_match" value="all"<?php echo $aFullListComplexFilterDraft["match"] == "all" ? " checked" : ""; ?>> Match all conditions</label>
           <label><input type="radio" name="complex_filter_match" value="any"<?php echo $aFullListComplexFilterDraft["match"] == "any" ? " checked" : ""; ?>> Match any condition</label>
         </div>
-        <div class="complex-filter-rows js-complex-filter-rows" data-empty-row-count="1" data-group-options="<?php echo nxHtml(json_encode($aFullListComplexFilterGroups)); ?>" data-subject-type-options="<?php echo nxHtml(json_encode($aFullListComplexFilterSubjectTypes)); ?>" data-address-type-options="<?php echo nxHtml(json_encode($aFullListComplexFilterAddressTypes)); ?>">
+        <div class="complex-filter-rows js-complex-filter-rows" data-empty-row-count="1" data-group-options="<?php echo html(json_encode($aFullListComplexFilterGroups)); ?>" data-subject-type-options="<?php echo html(json_encode($aFullListComplexFilterSubjectTypes)); ?>" data-address-type-options="<?php echo html(json_encode($aFullListComplexFilterAddressTypes)); ?>">
 <?php
 
 foreach ($aFullListComplexFilterRows as $aCondition) {
@@ -267,22 +267,22 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
     }
     $sComplexOperator = isset($aCondition["operator"]) ? (string)$aCondition["operator"] : "contains";
     if ($sComplexOperator != "" && !isset($aFullListComplexFilterOperators[$sComplexOperator])) {
-        $sComplexOperator = $sComplexField != "" ? nxGetFullListComplexFilterDefaultOperator($aFullListComplexFilterFields[$sComplexField]) : "contains";
+        $sComplexOperator = $sComplexField != "" ? getFullListComplexFilterDefaultOperator($aFullListComplexFilterFields[$sComplexField]) : "contains";
     }
     $sComplexValueType = $sComplexField != "" && isset($aFullListComplexFilterFields[$sComplexField]["value_type"]) ? (string)$aFullListComplexFilterFields[$sComplexField]["value_type"] : "text";
     if ($sComplexValueType == "boolean") {
         $sComplexOperator = "equals";
     }
-    if ($sComplexField != "" && !nxIsFullListComplexFilterOperatorAllowed($aFullListComplexFilterFields[$sComplexField], $sComplexOperator)) {
-        $sComplexOperator = nxGetFullListComplexFilterDefaultOperator($aFullListComplexFilterFields[$sComplexField]);
+    if ($sComplexField != "" && !isFullListComplexFilterOperatorAllowed($aFullListComplexFilterFields[$sComplexField], $sComplexOperator)) {
+        $sComplexOperator = getFullListComplexFilterDefaultOperator($aFullListComplexFilterFields[$sComplexField]);
     }
     $sComplexValue = isset($aCondition["value"]) ? (string)$aCondition["value"] : "";
     $blComplexNeedsValue = $sComplexOperator == "" || !empty($aFullListComplexFilterOperators[$sComplexOperator]["needs_value"]);
     $blComplexOperatorHidden = $sComplexValueType == "boolean";
     echo "          <div class=\"complex-filter-row js-complex-filter-row\">\n"
-        . "            <select name=\"complex_filter_field[]\" class=\"js-complex-filter-field\">" . nxRenderFullListComplexFilterFieldOptions($aFullListComplexFilterFields, $sComplexField) . "</select>\n"
-        . "            <select name=\"complex_filter_operator[]\" class=\"js-complex-filter-operator\"" . ($blComplexOperatorHidden ? " disabled aria-hidden=\"true\" tabindex=\"-1\"" : "") . ">" . nxRenderFullListComplexFilterOperatorOptions($aFullListComplexFilterOperators, $sComplexOperator, $sComplexField != "" ? $aFullListComplexFilterFields[$sComplexField] : null) . "</select>\n"
-        . "            <input type=\"text\" name=\"complex_filter_value[]\" class=\"js-complex-filter-value\" value=\"" . nxHtml($sComplexValue) . "\" autocomplete=\"off\"" . ($blComplexNeedsValue ? "" : " disabled") . ">\n"
+        . "            <select name=\"complex_filter_field[]\" class=\"js-complex-filter-field\">" . renderFullListComplexFilterFieldOptions($aFullListComplexFilterFields, $sComplexField) . "</select>\n"
+        . "            <select name=\"complex_filter_operator[]\" class=\"js-complex-filter-operator\"" . ($blComplexOperatorHidden ? " disabled aria-hidden=\"true\" tabindex=\"-1\"" : "") . ">" . renderFullListComplexFilterOperatorOptions($aFullListComplexFilterOperators, $sComplexOperator, $sComplexField != "" ? $aFullListComplexFilterFields[$sComplexField] : null) . "</select>\n"
+        . "            <input type=\"text\" name=\"complex_filter_value[]\" class=\"js-complex-filter-value\" value=\"" . html($sComplexValue) . "\" autocomplete=\"off\"" . ($blComplexNeedsValue ? "" : " disabled") . ">\n"
         . "            <button type=\"button\" class=\"complex-filter-remove js-complex-filter-remove\" title=\"Remove condition\" aria-label=\"Remove condition\">&times;</button>\n"
         . "          </div>\n";
 }
@@ -301,7 +301,7 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
   <div class="confirm-dialog index-settings-dialog" id="index-settings-dialog" hidden>
     <form class="confirm-dialog-box index-settings-form" method="post" action="<?php echo $sBaseUrl; ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_index_settings">
-      <input type="hidden" name="ex_csrf_token" value="<?php echo nxHtml(getExCsrfToken()); ?>">
+      <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken()); ?>">
       <div class="confirm-dialog-header">
         <strong>Index Settings</strong>
         <button type="button" class="confirm-dialog-close js-index-settings-close" aria-label="Close">&times;</button>
@@ -317,7 +317,7 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
         <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aIndexSettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aIndexSettings["show_czechia_country"] && $aIndexSettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aIndexSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
         <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aIndexSettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aIndexSettings["show_czechia_country"] && $aIndexSettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aIndexSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show Česká republika instead of Česko</label>
       </div>
-      <?php echo nxRenderExSettingsScopeNote(); ?>
+      <?php echo renderSettingsScopeNote(); ?>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Save</button>
         <button type="button" class="confirm-dialog-button js-index-settings-cancel">Cancel</button>
@@ -330,10 +330,10 @@ if (!$aRows) {
     echo "  <p>No visible records found.</p>\n";
 } else {
 
-echo nxRenderPageThrobber();
+echo renderPageThrobber();
 
 ?>
-  <table id="nx-contacts-table" class="nx-contacts-table table-filter-target<?php echo nxGetCondensedTableClass(); ?>">
+  <table id="nx-contacts-table" class="nx-contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th class="nx-column-hidden">Type</th>
@@ -355,15 +355,15 @@ echo nxRenderPageThrobber();
 <?php
 
     foreach ($aRows as $aRow) {
-        echo nxRenderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aIndexSettings);
+        echo renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aIndexSettings);
     }
 
     echo "    </tbody>\n"
         . "  </table>\n";
 }
 
-echo nxRenderFilterFocusButton()
-    . nxRenderAdminScript($sBaseUrl);
+echo renderFilterFocusButton()
+    . renderAdminScript($sBaseUrl);
 
 ?>
 </body>

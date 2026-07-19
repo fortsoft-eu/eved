@@ -3,8 +3,8 @@
 include "main.php";
 
 
-$blCanEdit = isExFullAccessAllowed($aAllowedIps);
-requireExViewAccess($aAllowedIps);
+$blCanEdit = isFullAccessAllowed($aAllowedIps);
+requireViewAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -12,20 +12,20 @@ if (!$oPdo) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireExCsrfToken();
+    requireCsrfToken();
 }
 
 
 if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] == "POST") {
-    nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
+    sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_group") {
-    $sName = nxGetPostedTrimmedValue("name");
+    $sName = getPostedTrimmedValue("name");
     $aPermissionKeys = isset($_POST["permissions"]) && is_array($_POST["permissions"]) ? $_POST["permissions"] : array();
     if ($sName == "") {
-        nxSendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
 
     try {
@@ -34,32 +34,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("INSERT INTO ex_groups (name, `order`) VALUES (:name, :order)");
         $oStatement->execute(array("name" => $sName, "order" => $iOrder));
         $iGroupId = (int)$oPdo->lastInsertId();
-        nxSaveGroupPortalPermissions($oPdo, $iGroupId, $aPermissionKeys);
+        saveGroupPortalPermissions($oPdo, $iGroupId, $aPermissionKeys);
         $oPdo->commit();
-        $aGroups = nxFetchGroupAdminRows($oPdo, $iGroupId);
+        $aGroups = fetchGroupAdminRows($oPdo, $iGroupId);
         $aGroup = count($aGroups) > 0 ? $aGroups[0] : null;
-        nxSendJsonAndExit(array("success" => true, "group_id" => $iGroupId, "row_html" => nxRenderGroupAdminRow($aGroup)));
+        sendJsonAndExit(array("success" => true, "group_id" => $iGroupId, "row_html" => renderGroupAdminRow($aGroup)));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
         if ((string)$oException->getCode() == "23000") {
-            nxSendJsonAndExit(array("success" => false, "message" => "The selected group name already exists."), 409);
+            sendJsonAndExit(array("success" => false, "message" => "The selected group name already exists."), 409);
         }
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_group") {
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
-    $sName = nxGetPostedTrimmedValue("name");
+    $sName = getPostedTrimmedValue("name");
     $aPermissionKeys = isset($_POST["permissions"]) && is_array($_POST["permissions"]) ? $_POST["permissions"] : array();
     if ($iGroupId < 1) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid group."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid group."), 400);
     }
     if ($sName == "") {
-        nxSendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
 
     try {
@@ -68,23 +68,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement->execute(array("id" => $iGroupId));
         if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(array("success" => false, "message" => "Group was not found."), 404);
+            sendJsonAndExit(array("success" => false, "message" => "Group was not found."), 404);
         }
         $oStatement = $oPdo->prepare("UPDATE ex_groups SET name = :name WHERE id = :id");
         $oStatement->execute(array("name" => $sName, "id" => $iGroupId));
-        nxSaveGroupPortalPermissions($oPdo, $iGroupId, $aPermissionKeys);
+        saveGroupPortalPermissions($oPdo, $iGroupId, $aPermissionKeys);
         $oPdo->commit();
-        $aGroups = nxFetchGroupAdminRows($oPdo, $iGroupId);
+        $aGroups = fetchGroupAdminRows($oPdo, $iGroupId);
         $aGroup = count($aGroups) > 0 ? $aGroups[0] : null;
-        nxSendJsonAndExit(array("success" => true, "group_id" => $iGroupId, "row_html" => nxRenderGroupAdminRow($aGroup)));
+        sendJsonAndExit(array("success" => true, "group_id" => $iGroupId, "row_html" => renderGroupAdminRow($aGroup)));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
         if ((string)$oException->getCode() == "23000") {
-            nxSendJsonAndExit(array("success" => false, "message" => "The selected group name already exists."), 409);
+            sendJsonAndExit(array("success" => false, "message" => "The selected group name already exists."), 409);
         }
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
@@ -92,10 +92,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_group") {
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     if ($iGroupId < 1) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid group."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid group."), 400);
     }
     if ($iGroupId === 1) {
-        nxSendJsonAndExit(array("success" => false, "message" => "The portal access group cannot be deleted."), 409);
+        sendJsonAndExit(array("success" => false, "message" => "The portal access group cannot be deleted."), 409);
     }
 
     try {
@@ -104,7 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement->execute(array("id" => $iGroupId));
         if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(array("success" => false, "message" => "Group was not found."), 404);
+            sendJsonAndExit(array("success" => false, "message" => "Group was not found."), 404);
         }
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_groups WHERE group_id = :id");
         $oStatement->execute(array("id" => $iGroupId));
@@ -113,12 +113,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("DELETE FROM ex_groups WHERE id = :id");
         $oStatement->execute(array("id" => $iGroupId));
         $oPdo->commit();
-        nxSendJsonAndExit(array("success" => true, "group_id" => $iGroupId, "group_deleted" => true));
+        sendJsonAndExit(array("success" => true, "group_id" => $iGroupId, "group_deleted" => true));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
@@ -127,19 +127,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     $sDirection = isset($_POST["direction"]) ? (string)$_POST["direction"] : "";
     if ($iGroupId < 1 || ($sDirection != "up" && $sDirection != "down")) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid order change."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid order change."), 400);
     }
 
     try {
         $oPdo->beginTransaction();
-        nxMoveGroupOrder($oPdo, $iGroupId, $sDirection);
+        moveGroupOrder($oPdo, $iGroupId, $sDirection);
         $oPdo->commit();
-        nxSendJsonAndExit(array("success" => true, "rows_html" => nxRenderGroupAdminRows($oPdo, $blCanEdit)));
+        sendJsonAndExit(array("success" => true, "rows_html" => renderGroupAdminRows($oPdo, $blCanEdit)));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
@@ -158,13 +158,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
     }
     if ($iTargetGroupId < 1) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid target group."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid target group."), 400);
     }
     if (!$aSourceGroupIds) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Select at least one source group."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Select at least one source group."), 400);
     }
     if ($blDeleteSourceGroups && isset($aSourceGroupIdMap[1])) {
-        nxSendJsonAndExit(array("success" => false, "message" => "The portal access group cannot be deleted."), 409);
+        sendJsonAndExit(array("success" => false, "message" => "The portal access group cannot be deleted."), 409);
     }
 
     try {
@@ -186,12 +186,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         if (!isset($aFoundGroupIds[$iTargetGroupId])) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(array("success" => false, "message" => "Target group was not found."), 404);
+            sendJsonAndExit(array("success" => false, "message" => "Target group was not found."), 404);
         }
         foreach ($aSourceGroupIds as $iSourceGroupId) {
             if (!isset($aFoundGroupIds[$iSourceGroupId])) {
                 $oPdo->rollBack();
-                nxSendJsonAndExit(array("success" => false, "message" => "Source group was not found."), 404);
+                sendJsonAndExit(array("success" => false, "message" => "Source group was not found."), 404);
             }
         }
 
@@ -255,21 +255,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
 
         $oPdo->commit();
-        $aGroups = nxFetchGroupAdminRows($oPdo, $iTargetGroupId);
+        $aGroups = fetchGroupAdminRows($oPdo, $iTargetGroupId);
         $aGroup = count($aGroups) > 0 ? $aGroups[0] : null;
-        nxSendJsonAndExit(array(
+        sendJsonAndExit(array(
             "success" => true,
             "groups_merged" => true,
             "target_group_id" => $iTargetGroupId,
             "source_group_ids" => $aSourceGroupIds,
             "source_groups_deleted" => $blDeleteSourceGroups,
-            "target_row_html" => nxRenderGroupAdminRow($aGroup)
+            "target_row_html" => renderGroupAdminRow($aGroup)
         ));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
@@ -277,8 +277,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 $aGroups = array();
 $aPortalPermissions = array();
 try {
-    $aGroups = nxFetchGroupAdminRows($oPdo);
-    $aPortalPermissions = nxFetchPortalPermissions($oPdo);
+    $aGroups = fetchGroupAdminRows($oPdo);
+    $aPortalPermissions = fetchPortalPermissions($oPdo);
 } catch (Exception $oException) {
     send500AndExit("Database error: " . $oException->getMessage());
 }
@@ -293,20 +293,20 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo nxHtml(nxGetLockedViewportContent()); ?>">
+  <meta name="viewport" content="<?php echo html(getLockedViewportContent()); ?>">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo nxHtml(getExPageTitleText("Groups", $aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText("Groups", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo nxHtml(getExCsrfToken()); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
-<?php nxRenderExMenu(); ?>
+<?php renderMenu(); ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-groups-table" value="<?php echo nxHtml(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-groups-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -333,13 +333,13 @@ if ($blCanEdit) {
 <?php
 
 foreach ($aGroups as $aGroup) {
-    echo nxRenderGroupAdminRow($aGroup, $blCanEdit);
+    echo renderGroupAdminRow($aGroup, $blCanEdit);
 }
 
 echo "    </tbody>\n"
     . "  </table>\n"
-    . nxRenderFilterFocusButton()
-    . nxRenderAdminScript($sBaseUrl);
+    . renderFilterFocusButton()
+    . renderAdminScript($sBaseUrl);
 ?>
 </body>
 </html>

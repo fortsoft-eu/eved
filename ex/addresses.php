@@ -3,8 +3,8 @@
 include "main.php";
 
 
-requireExViewAccess($aAllowedIps);
-$blCanEdit = isExFullAccessAllowed($aAllowedIps);
+requireViewAccess($aAllowedIps);
+$blCanEdit = isFullAccessAllowed($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -26,59 +26,59 @@ foreach ($aAddressesSettingsDefaults as $sAddressSettingName => $iAddressSetting
         $aAddressSettings[$sAddressSettingName] = $iAddressSettingDefault;
     }
 }
-$aAddressSettings = nxApplyExCountrySettings($aAddressSettings);
+$aAddressSettings = applyCountrySettings($aAddressSettings);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireExCsrfToken();
+    requireCsrfToken();
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "get_subject") {
     if (!$blCanEdit) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
+        sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
     }
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
     try {
-        $aSubject = nxFetchSubjectEditorData($oPdo, $iSubjectId);
+        $aSubject = fetchSubjectEditorData($oPdo, $iSubjectId);
         if (!$aSubject) {
-            nxSendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
+            sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
-        nxSendJsonAndExit(array("success" => true, "subject" => $aSubject));
+        sendJsonAndExit(array("success" => true, "subject" => $aSubject));
     } catch (Exception $oException) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject") {
     if (!$blCanEdit) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
+        sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
     }
-    $sPayload = nxGetPostedValue("subject_payload");
+    $sPayload = getPostedValue("subject_payload");
     $aPayload = $sPayload != "" ? json_decode($sPayload, true) : null;
     if (!is_array($aPayload)) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject data."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid subject data."), 400);
     }
     $iSubjectId = isset($aPayload["subject_id"]) ? (int)$aPayload["subject_id"] : 0;
-    $sSubjectType = nxPayloadValue($aPayload, "subject_type");
-    $sBirthDate = nxPayloadValue($aPayload, "birth_date");
-    $sDeathDate = nxPayloadValue($aPayload, "death_date");
-    $sBirthNumber = nxNormalizeBirthNumber(nxPayloadValue($aPayload, "birth_number"));
+    $sSubjectType = payloadValue($aPayload, "subject_type");
+    $sBirthDate = payloadValue($aPayload, "birth_date");
+    $sDeathDate = payloadValue($aPayload, "death_date");
+    $sBirthNumber = normalizeBirthNumber(payloadValue($aPayload, "birth_number"));
     if ($iSubjectId < 1) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-    if ($sSubjectType != "" && !in_array($sSubjectType, nxGetSubjectTypes(), true)) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid subject type."), 400);
+    if ($sSubjectType != "" && !in_array($sSubjectType, getSubjectTypes(), true)) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid subject type."), 400);
     }
     if ($sBirthDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sBirthDate)) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Birth date must use YYYY-MM-DD."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Birth date must use YYYY-MM-DD."), 400);
     }
     if ($sDeathDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDeathDate)) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Death date must use YYYY-MM-DD."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Death date must use YYYY-MM-DD."), 400);
     }
     if (!$sBirthNumber) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Birth number must contain 9 or 10 digits."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Birth number must contain 9 or 10 digits."), 400);
     }
 
     try {
@@ -88,20 +88,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $aSubjectRow = $oStatement->fetch(PDO::FETCH_ASSOC);
         if (!$aSubjectRow) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
+            sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
         if ($sSubjectType != "" && $sSubjectType != (string)$aSubjectRow["subject_type"]) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(array("success" => false, "message" => "Subject type cannot be changed."), 409);
+            sendJsonAndExit(array("success" => false, "message" => "Subject type cannot be changed."), 409);
         }
         $sEffectiveSubjectType = (string)$aSubjectRow["subject_type"];
 
         $oStatement = $oPdo->prepare("UPDATE ex_subjects SET is_active = :is_active WHERE id = :subject_id");
         $oStatement->execute(array(
-            "is_active" => nxPayloadFlag($aPayload, "is_active"),
+            "is_active" => payloadFlag($aPayload, "is_active"),
             "subject_id" => $iSubjectId
         ));
-        $sSubjectName = nxPayloadValue($aPayload, "subject_name_value");
+        $sSubjectName = payloadValue($aPayload, "subject_name_value");
         if ($sEffectiveSubjectType == "person" || $sSubjectName == "") {
             $oStatement = $oPdo->prepare("DELETE FROM ex_subject_names WHERE subject_id = :subject_id");
             $oStatement->execute(array("subject_id" => $iSubjectId));
@@ -115,13 +115,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             $oStatement->execute(array("subject_id" => $iSubjectId));
         } else {
             $aPersonValues = array(
-                "title_before" => nxDbValue(nxPayloadValue($aPayload, "title_before")),
-                "first_name" => nxDbValue(nxPayloadValue($aPayload, "first_name")),
-                "middle_name" => nxDbValue(nxPayloadValue($aPayload, "middle_name")),
-                "last_name" => nxDbValue(nxPayloadValue($aPayload, "last_name")),
-                "title_after" => nxDbValue(nxPayloadValue($aPayload, "title_after")),
-                "birth_name" => nxDbValue(nxPayloadValue($aPayload, "birth_name")),
-                "birth_number" => nxDbValue($sBirthNumber),
+                "title_before" => dbValue(payloadValue($aPayload, "title_before")),
+                "first_name" => dbValue(payloadValue($aPayload, "first_name")),
+                "middle_name" => dbValue(payloadValue($aPayload, "middle_name")),
+                "last_name" => dbValue(payloadValue($aPayload, "last_name")),
+                "title_after" => dbValue(payloadValue($aPayload, "title_after")),
+                "birth_name" => dbValue(payloadValue($aPayload, "birth_name")),
+                "birth_number" => dbValue($sBirthNumber),
                 "birth_date" => $sBirthDate != "" ? $sBirthDate : null,
                 "death_date" => $sDeathDate != "" ? $sDeathDate : null
             );
@@ -151,12 +151,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             }
         }
         $oPdo->commit();
-        nxSendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId, "reload_required" => true));
+        sendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId, "reload_required" => true));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
@@ -164,8 +164,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     foreach ($aAddressesSettingsDefaults as $sAddressSettingName => $iAddressSettingDefault) {
         $aAddressSettings[$sAddressSettingName] = isset($_POST[$sAddressSettingName]) && (string)$_POST[$sAddressSettingName] == "1" ? 1 : 0;
     }
-    $aAddressSettings = nxSaveExCountrySettings($aAddressSettings, $_POST);
-    $_SESSION["ex_addresses_settings"] = nxRemoveExCountrySettings($aAddressSettings);
+    $aAddressSettings = saveCountrySettings($aAddressSettings, $_POST);
+    $_SESSION["ex_addresses_settings"] = removeCountrySettings($aAddressSettings);
     session_write_close();
     sendSecurityHeaders();
     header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
@@ -174,81 +174,81 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_shared_address") {
     if (!$blCanEdit) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
+        sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
     }
-    $aOldAddress = nxAddressesDecodeMatch(nxGetPostedValue("address_match"));
+    $aOldAddress = addressesDecodeMatch(getPostedValue("address_match"));
     if (!is_array($aOldAddress)) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
     }
-    $aNewAddress = nxAddressesPostedAddressValues();
+    $aNewAddress = addressesPostedAddressValues();
     try {
         $oPdo->beginTransaction();
-        $sWhere = nxAddressesMatchSql("old_");
-        $aOldParams = nxAddressesMatchParams($aOldAddress, "old_");
+        $sWhere = addressesMatchSql("old_");
+        $aOldParams = addressesMatchParams($aOldAddress, "old_");
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subject_addresses WHERE " . $sWhere . " FOR UPDATE");
         $oStatement->execute($aOldParams);
         $aAddressIds = $oStatement->fetchAll(PDO::FETCH_COLUMN, 0);
         if (!$aAddressIds) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(array("success" => false, "message" => "Address was not found."), 404);
+            sendJsonAndExit(array("success" => false, "message" => "Address was not found."), 404);
         }
         $aSetSql = array();
-        foreach (nxAddressesAddressFields() as $sField) {
+        foreach (addressesAddressFields() as $sField) {
             $aSetSql[] = "`" . $sField . "` = :new_" . $sField;
         }
-        $aParams = array_merge(nxAddressesMatchParams($aOldAddress, "old_"), nxAddressesMatchParams($aNewAddress, "new_"));
+        $aParams = array_merge(addressesMatchParams($aOldAddress, "old_"), addressesMatchParams($aNewAddress, "new_"));
         $oStatement = $oPdo->prepare("UPDATE ex_subject_addresses SET " . implode(", ", $aSetSql) . " WHERE " . $sWhere);
         $oStatement->execute($aParams);
         $oPdo->commit();
-        nxSendJsonAndExit(array("success" => true));
+        sendJsonAndExit(array("success" => true));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_shared_address") {
     if (!$blCanEdit) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
+        sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
     }
-    $aOldAddress = nxAddressesDecodeMatch(nxGetPostedValue("address_match"));
+    $aOldAddress = addressesDecodeMatch(getPostedValue("address_match"));
     if (!is_array($aOldAddress)) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
     }
     try {
         $oPdo->beginTransaction();
-        $sWhere = nxAddressesMatchSql("old_");
-        $aOldParams = nxAddressesMatchParams($aOldAddress, "old_");
+        $sWhere = addressesMatchSql("old_");
+        $aOldParams = addressesMatchParams($aOldAddress, "old_");
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subject_addresses WHERE " . $sWhere . " FOR UPDATE");
         $oStatement->execute($aOldParams);
         $aAddressIds = $oStatement->fetchAll(PDO::FETCH_COLUMN, 0);
         if (!$aAddressIds) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(array("success" => false, "message" => "Address was not found."), 404);
+            sendJsonAndExit(array("success" => false, "message" => "Address was not found."), 404);
         }
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_addresses WHERE " . $sWhere);
         $oStatement->execute($aOldParams);
         $oPdo->commit();
-        nxSendJsonAndExit(array("success" => true));
+        sendJsonAndExit(array("success" => true));
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject_address") {
     if (!$blCanEdit) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
+        sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
     }
-    $iAddressId = (int)nxGetPostedValue("address_id");
+    $iAddressId = (int)getPostedValue("address_id");
     if ($iAddressId <= 0) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
     }
-    $aNewAddress = nxAddressesPostedSubjectAddressValues();
+    $aNewAddress = addressesPostedSubjectAddressValues();
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id, subject_id, address_type, organization_name, department_name, care_of, street_name, house_number, evidence_number, orientation_number, orientation_suffix, address_line2, city, city_part, postal_code, region, country, is_primary, is_active, note FROM ex_subject_addresses WHERE id = :id FOR UPDATE");
@@ -256,16 +256,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $aOldAddress = $oStatement->fetch(PDO::FETCH_ASSOC);
         if (!$aOldAddress) {
             $oPdo->rollBack();
-            nxSendJsonAndExit(array("success" => false, "message" => "Address was not found."), 404);
+            sendJsonAndExit(array("success" => false, "message" => "Address was not found."), 404);
         }
         $aSetSql = array();
-        foreach (nxAddressesSubjectAddressFields() as $sField) {
+        foreach (addressesSubjectAddressFields() as $sField) {
             $aSetSql[] = "`" . $sField . "` = :new_" . $sField;
         }
         $aSetSql[] = "is_primary = :is_primary";
         $aSetSql[] = "is_active = :is_active";
         $aParams = array("id" => $iAddressId);
-        foreach (nxAddressesSubjectAddressFields() as $sField) {
+        foreach (addressesSubjectAddressFields() as $sField) {
             $aParams["new_" . $sField] = array_key_exists($sField, $aNewAddress) ? $aNewAddress[$sField] : null;
         }
         $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
@@ -274,20 +274,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oStatement = $oPdo->prepare("UPDATE ex_subject_addresses SET " . implode(", ", $aSetSql) . " WHERE id = :id");
         $oStatement->execute($aParams);
         $oPdo->commit();
-        $blAddressGroupChanged = json_encode(nxAddressesBuildMatch($aOldAddress)) !== json_encode(nxAddressesBuildMatch($aNewAddress));
+        $blAddressGroupChanged = json_encode(addressesBuildMatch($aOldAddress)) !== json_encode(addressesBuildMatch($aNewAddress));
         $blAddressVisibilityChanged = empty($aAddressSettings["show_inactive_addresses"]) && (int)$aOldAddress["is_active"] != $iIsActive;
         $aResponse = array(
             "success" => true,
             "reload_required" => $blAddressGroupChanged || $blAddressVisibilityChanged
         );
         if (!$aResponse["reload_required"]) {
-            $aUpdatedRows = nxAddressesFetchRows($oPdo, $aAddressSettings);
+            $aUpdatedRows = addressesFetchRows($oPdo, $aAddressSettings);
             foreach ($aUpdatedRows as $aUpdatedRow) {
-                $sUpdatedAddressFilterText = nxAddressesFilterText($aUpdatedRow);
+                $sUpdatedAddressFilterText = addressesFilterText($aUpdatedRow);
                 foreach ($aUpdatedRow["subjects"] as $aUpdatedSubject) {
                     if ((int)$aUpdatedSubject["address_id"] == $iAddressId) {
-                        $aResponse["address_cell_html"] = nxAddressesRenderAddressCell($aUpdatedRow, count($aUpdatedRow["subjects"]), $blCanEdit);
-                        $aResponse["subject_cell_html"] = nxAddressesRenderSubjectCell($aUpdatedSubject, $sUpdatedAddressFilterText, $blCanEdit);
+                        $aResponse["address_cell_html"] = addressesRenderAddressCell($aUpdatedRow, count($aUpdatedRow["subjects"]), $blCanEdit);
+                        $aResponse["subject_cell_html"] = addressesRenderSubjectCell($aUpdatedSubject, $sUpdatedAddressFilterText, $blCanEdit);
                         break 2;
                     }
                 }
@@ -296,38 +296,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
                 $aResponse["reload_required"] = true;
             }
         }
-        nxSendJsonAndExit($aResponse);
+        sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_subject_address") {
     if (!$blCanEdit) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
+        sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
     }
-    $iAddressId = (int)nxGetPostedValue("address_id");
+    $iAddressId = (int)getPostedValue("address_id");
     if ($iAddressId <= 0) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
+        sendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
     }
     try {
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_addresses WHERE id = :id");
         $oStatement->execute(array("id" => $iAddressId));
         if (!$oStatement->rowCount()) {
-            nxSendJsonAndExit(array("success" => false, "message" => "Address was not found."), 404);
+            sendJsonAndExit(array("success" => false, "message" => "Address was not found."), 404);
         }
-        nxSendJsonAndExit(array("success" => true, "reload_required" => true));
+        sendJsonAndExit(array("success" => true, "reload_required" => true));
     } catch (Exception $oException) {
-        nxSendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
 
-$aAddressRows = nxAddressesFetchRows($oPdo, $aAddressSettings);
-$sViewportContent = nxGetLockedViewportContent();
-$sRenderThrobberHtmlAttributes = nxGetRenderThrobberHtmlAttributes(count($aAddressRows) > 0);
+$aAddressRows = addressesFetchRows($oPdo, $aAddressSettings);
+$sViewportContent = getLockedViewportContent();
+$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aAddressRows) > 0);
 $iTime = sendPageHeaders();
 
 ?>
@@ -338,29 +338,29 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo nxHtml($sViewportContent); ?>">
+  <meta name="viewport" content="<?php echo html($sViewportContent); ?>">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo nxHtml(getExPageTitleText("Addresses", $aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText("Addresses", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo nxHtml(getExCsrfToken()); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
-<?php nxRenderExMenu(); ?>
+<?php renderMenu(); ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-addresses-table" value="<?php echo nxHtml(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-addresses-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="button" class="button-link js-index-settings-open">Settings</button>
   </p>
   <div class="confirm-dialog index-settings-dialog" id="index-settings-dialog" hidden>
-    <form class="confirm-dialog-box index-settings-form" method="post" action="<?php echo nxHtml($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
+    <form class="confirm-dialog-box index-settings-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_addresses_settings">
-      <input type="hidden" name="ex_csrf_token" value="<?php echo nxHtml(getExCsrfToken()); ?>">
+      <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken()); ?>">
       <div class="confirm-dialog-header">
         <strong>Address Settings</strong>
         <button type="button" class="confirm-dialog-close js-index-settings-close" aria-label="Close">&times;</button>
@@ -373,7 +373,7 @@ $iTime = sendPageHeaders();
         <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aAddressSettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aAddressSettings["show_czechia_country"] && $aAddressSettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aAddressSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
         <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aAddressSettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aAddressSettings["show_czechia_country"] && $aAddressSettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aAddressSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show &#268;esk&aacute; republika instead of &#268;esko</label>
       </div>
-      <?php echo nxRenderExSettingsScopeNote(); ?>
+      <?php echo renderSettingsScopeNote(); ?>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Save</button>
         <button type="button" class="confirm-dialog-button js-index-settings-cancel">Cancel</button>
@@ -384,12 +384,12 @@ $iTime = sendPageHeaders();
 
 if (count($aAddressRows) > 0) {
 
-echo nxRenderPageThrobber();
+echo renderPageThrobber();
 
 }
 
 ?>
-  <table id="nx-addresses-table" class="nx-contacts-table table-filter-target<?php echo nxGetCondensedTableClass(); ?>">
+  <table id="nx-addresses-table" class="nx-contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Address</th>
@@ -402,14 +402,14 @@ echo nxRenderPageThrobber();
 foreach ($aAddressRows as $aAddressRow) {
     $iSubjectCount = count($aAddressRow["subjects"]);
     $blFirstSubject = true;
-    $sAddressFilterText = nxAddressesFilterText($aAddressRow);
+    $sAddressFilterText = addressesFilterText($aAddressRow);
     foreach ($aAddressRow["subjects"] as $aSubject) {
-        echo "      <tr data-subject-id=\"" . nxHtml($aSubject["subject_id"]) . "\">\n";
+        echo "      <tr data-subject-id=\"" . html($aSubject["subject_id"]) . "\">\n";
         if ($blFirstSubject) {
-            echo nxAddressesRenderAddressCell($aAddressRow, $iSubjectCount, $blCanEdit);
+            echo addressesRenderAddressCell($aAddressRow, $iSubjectCount, $blCanEdit);
             $blFirstSubject = false;
         }
-        echo nxAddressesRenderSubjectCell($aSubject, $sAddressFilterText, $blCanEdit)
+        echo addressesRenderSubjectCell($aSubject, $sAddressFilterText, $blCanEdit)
             . "      </tr>\n";
     }
 }
@@ -423,7 +423,7 @@ if (!$aAddressRows) {
     </tbody>
   </table>
   <div class="confirm-dialog" id="shared-address-edit-dialog" hidden>
-    <form class="confirm-dialog-box subject-edit-dialog subject-address-edit-dialog" method="post" action="<?php echo nxHtml($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
+    <form class="confirm-dialog-box subject-edit-dialog subject-address-edit-dialog" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="address_match" value="">
       <div class="confirm-dialog-header">
         <strong>Edit Shared Address</strong>
@@ -454,7 +454,7 @@ if (!$aAddressRows) {
     </form>
   </div>
   <div class="confirm-dialog" id="shared-address-delete-dialog" hidden>
-    <form class="confirm-dialog-box subject-edit-dialog" method="post" action="<?php echo nxHtml($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
+    <form class="confirm-dialog-box subject-edit-dialog" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="address_match" value="">
       <div class="confirm-dialog-header">
         <strong>Confirm Deletion</strong>
@@ -469,7 +469,7 @@ if (!$aAddressRows) {
     </form>
   </div>
   <div class="confirm-dialog" id="subject-address-edit-dialog" hidden>
-    <form class="confirm-dialog-box subject-edit-dialog subject-address-edit-dialog" method="post" action="<?php echo nxHtml($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
+    <form class="confirm-dialog-box subject-edit-dialog subject-address-edit-dialog" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="address_id" value="">
       <div class="confirm-dialog-header">
         <strong>Edit Subject Address</strong>
@@ -481,8 +481,8 @@ if (!$aAddressRows) {
           <select id="subject-address-type" name="address_type">
 <?php
 
-foreach (nxGetAddressTypes() as $sAddressType) {
-    echo "            <option value=\"" . nxHtml($sAddressType) . "\">" . nxHtml(nxAddressesTypeLabel($sAddressType)) . "</option>\n";
+foreach (getAddressTypes() as $sAddressType) {
+    echo "            <option value=\"" . html($sAddressType) . "\">" . html(addressesTypeLabel($sAddressType)) . "</option>\n";
 }
 
 ?>
@@ -514,7 +514,7 @@ foreach (nxGetAddressTypes() as $sAddressType) {
     </form>
   </div>
   <div class="confirm-dialog" id="subject-address-delete-dialog" hidden>
-    <form class="confirm-dialog-box subject-edit-dialog" method="post" action="<?php echo nxHtml($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
+    <form class="confirm-dialog-box subject-edit-dialog" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="address_id" value="">
       <div class="confirm-dialog-header">
         <strong>Confirm Deletion</strong>
@@ -530,9 +530,9 @@ foreach (nxGetAddressTypes() as $sAddressType) {
   </div>
 <?php
 
-echo nxRenderCountryDatalist()
-    . nxRenderFilterFocusButton()
-    . nxRenderAdminScript($sBaseUrl);
+echo renderCountryDatalist()
+    . renderFilterFocusButton()
+    . renderAdminScript($sBaseUrl);
 
 ?>
 </body>

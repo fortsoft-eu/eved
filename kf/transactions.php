@@ -2,7 +2,7 @@
 
 include "main.php";
 
-requireExFullAccess($aAllowedIps);
+requireFullAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -10,24 +10,24 @@ if (!$oPdo) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    kfRequireCsrfToken();
-    $sAction = kfPostedValue("action");
+    requireCsrfToken();
+    $sAction = getPostedTrimmedValue("action");
 
     if ($sAction == "save_transaction") {
-        $iId = (int)kfPostedValue("id", "0");
-        $sDate = kfPostedValue("transaction_date");
-        $iFinanceTypeId = (int)kfPostedValue("finance_type_id", "0");
-        $fAmount = kfParseAmount(kfPostedValue("amount"));
-        $sCounterparty = kfPostedValue("counterparty");
-        $sNote = kfPostedValue("note");
+        $iId = (int)getPostedTrimmedValue("id", "0");
+        $sDate = getPostedTrimmedValue("transaction_date");
+        $iFinanceTypeId = (int)getPostedTrimmedValue("finance_type_id", "0");
+        $fAmount = parseAmount(getPostedTrimmedValue("amount"));
+        $sCounterparty = getPostedTrimmedValue("counterparty");
+        $sNote = getPostedTrimmedValue("note");
 
         $oStatement = $oPdo->prepare("SELECT id, type_kind FROM kf_fin_types WHERE id = :id AND type_kind IN ('income', 'expense')");
         $oStatement->execute(array("id" => $iFinanceTypeId));
         $aType = $oStatement->fetch();
 
         if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDate) || !$aType || $fAmount === null || $fAmount <= 0) {
-            kfSetMessage("The transaction could not be saved. Check the date, type, and amount.", "error");
-            kfRedirect("transactions.php");
+            setMessage("The transaction could not be saved. Check the date, type, and amount.", "error");
+            redirect("transactions.php");
         }
 
         $fSignedAmount = $aType["type_kind"] == "expense" ? -abs($fAmount) : abs($fAmount);
@@ -41,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "note" => $sNote != "" ? $sNote : null,
                 "id" => $iId
             ));
-            kfSetMessage("Transaction updated.");
+            setMessage("Transaction updated.");
         } else {
             $oStatement = $oPdo->prepare("INSERT INTO kf_fin_trans (transaction_date, finance_type_id, amount, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :counterparty, :note)");
             $oStatement->execute(array(
@@ -51,17 +51,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
                 "note" => $sNote != "" ? $sNote : null
             ));
-            kfSetMessage("Transaction added.");
+            setMessage("Transaction added.");
         }
-        kfRedirect("transactions.php");
+        redirect("transactions.php");
     } elseif ($sAction == "delete_transaction") {
-        $iId = (int)kfPostedValue("id", "0");
+        $iId = (int)getPostedTrimmedValue("id", "0");
         if ($iId > 0) {
             $oStatement = $oPdo->prepare("DELETE FROM kf_fin_trans WHERE id = :id");
             $oStatement->execute(array("id" => $iId));
-            kfSetMessage("Transaction deleted.");
+            setMessage("Transaction deleted.");
         }
-        kfRedirect("transactions.php");
+        redirect("transactions.php");
     }
 }
 
@@ -71,10 +71,10 @@ while ($aRow = $oStatement->fetch()) {
     $aRows[] = $aRow;
 }
 
-$sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-transaction\" data-modal-target=\"transaction-modal\" data-modal-title=\"New Transaction\" data-field-id=\"\" data-field-transaction_date=\"" . kfHtml(date("Y-m-d")) . "\" data-field-finance_type_id=\"\" data-field-amount=\"\" data-field-counterparty=\"\" data-field-note=\"\">New</button>\n";
+$sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-transaction\" data-modal-target=\"transaction-modal\" data-modal-title=\"New Transaction\" data-field-id=\"\" data-field-transaction_date=\"" . html(date("Y-m-d")) . "\" data-field-finance_type_id=\"\" data-field-amount=\"\" data-field-counterparty=\"\" data-field-note=\"\">New</button>\n";
 
-$sTitle = kfGetPageTitle("Transactions");
-$iTime = kfSendPageHeaders();
+$sTitle = getPageTitle("Transactions");
+$iTime = sendPageHeaders();
 
 ?>
 <!DOCTYPE html>
@@ -83,14 +83,14 @@ $iTime = kfSendPageHeaders();
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="<?php echo kfHtml(kfGetCsrfToken()); ?>">
-  <title><?php echo kfHtml($sTitle); ?></title>
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
+  <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo kfHtml($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
-<?php kfRenderMenu(); ?>
+<?php renderMenu(); ?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-transactions-table" value="">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -98,7 +98,7 @@ $iTime = kfSendPageHeaders();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php echo $sToolbarHtml; ?>
   </p>
-<?php kfRenderMessage(); ?>
+<?php renderMessage(); ?>
   <table id="kf-transactions-table" class="table-filter-target">
     <thead>
       <tr>
@@ -116,12 +116,12 @@ $iTime = kfSendPageHeaders();
 foreach ($aRows as $aRow) {
     $sAmountClass = $aRow["amount"] < 0 ? "kf-amount-negative" : ($aRow["amount"] > 0 ? "kf-amount-positive" : "kf-amount-zero");
     echo "      <tr>\n"
-        . "        <td class=\"nowrap\">" . kfHtml(kfFormatDate($aRow["transaction_date"])) . "</td>\n"
-        . "        <td>" . kfHtml($aRow["type_name"]) . "</td>\n"
-        . "        <td class=\"numeric " . $sAmountClass . "\">" . kfHtml(kfFormatAmount($aRow["amount"])) . "</td>\n"
-        . "        <td>" . kfHtmlValue($aRow["counterparty"]) . "</td>\n"
-        . "        <td>" . kfHtmlValue($aRow["note"]) . "</td>\n"
-        . "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"transaction-modal\" data-modal-title=\"Edit Transaction\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-transaction_date=\"" . kfHtml(kfFormatDate($aRow["transaction_date"])) . "\" data-field-finance_type_id=\"" . (int)$aRow["finance_type_id"] . "\" data-field-amount=\"" . kfHtml(kfFormatAmount(abs($aRow["amount"]))) . "\" data-field-counterparty=\"" . kfHtml($aRow["counterparty"]) . "\" data-field-note=\"" . kfHtml($aRow["note"]) . "\">Edit</button></td>\n"
+        . "        <td class=\"nowrap\">" . html(formatDate($aRow["transaction_date"])) . "</td>\n"
+        . "        <td>" . html($aRow["type_name"]) . "</td>\n"
+        . "        <td class=\"numeric " . $sAmountClass . "\">" . html(formatAmount($aRow["amount"])) . "</td>\n"
+        . "        <td>" . htmlValue($aRow["counterparty"]) . "</td>\n"
+        . "        <td>" . htmlValue($aRow["note"]) . "</td>\n"
+        . "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"transaction-modal\" data-modal-title=\"Edit Transaction\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-transaction_date=\"" . html(formatDate($aRow["transaction_date"])) . "\" data-field-finance_type_id=\"" . (int)$aRow["finance_type_id"] . "\" data-field-amount=\"" . html(formatAmount(abs($aRow["amount"]))) . "\" data-field-counterparty=\"" . html($aRow["counterparty"]) . "\" data-field-note=\"" . html($aRow["note"]) . "\">Edit</button></td>\n"
         . "      </tr>\n";
 }
 
@@ -136,14 +136,14 @@ if (!$aRows) {
   <div id="transaction-modal" class="confirm-dialog" hidden>
     <form method="post" class="confirm-dialog-box kf-edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Transaction</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
-        <input type="hidden" name="kf_csrf_token" value="<?php echo kfHtml(kfGetCsrfToken()); ?>">
+        <input type="hidden" name="kf_csrf_token" value="<?php echo html(getCsrfToken()); ?>">
         <input type="hidden" name="action" value="save_transaction">
         <input type="hidden" name="id" value="">
         <label for="transaction-date">Date</label>
         <input type="date" id="transaction-date" name="transaction_date" required>
         <label for="finance-type-id">Type</label>
         <select id="finance-type-id" name="finance_type_id" required>
-<?php echo kfGetFinanceTypeOptionsHtml(); ?>
+<?php echo getFinanceTypeOptionsHtml(); ?>
         </select>
         <label for="amount">Amount</label>
         <input type="text" id="amount" name="amount" required>
@@ -161,7 +161,7 @@ if (!$aRows) {
 <?php
 
 echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
-    . "  <script type=\"text/javascript\" src=\"" . kfHtml($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
+    . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
     . "</body>\n"
     . "</html>\n";
 

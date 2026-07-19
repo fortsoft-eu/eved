@@ -1,13 +1,14 @@
 <?php
 
 include "config.php";
+include "../functions.php";
 include "functions.php";
 
 
 redirectIndexPhpToRoot();
 
 
-if ($blDebug && kfIsAllowedIp($aAllowedIps)) {
+if ($blDebug && isAllowedIp($aAllowedIps)) {
     error_reporting(E_ALL);
     ini_set("display_errors", 1);
     ini_set("display_startup_errors", 1);
@@ -45,7 +46,7 @@ $sBaseUrl = $sHost != "" ? $sScheme . "://" . $sHost . $sPath : "";
 
 $sMenuEmoji        = "&#9776;";
 $sFilterFocusEmoji = "&#128269;";
-$sEmptyValueText   = "—";
+$sEmptyValueEmoji  = "&#10134;";
 
 
 $sError = "";

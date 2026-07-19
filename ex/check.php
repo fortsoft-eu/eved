@@ -3,7 +3,7 @@
 include "main.php";
 
 
-requireExFullAccess($aAllowedIps);
+requireFullAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -102,11 +102,11 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo nxHtml(nxGetLockedViewportContent()); ?>">
+  <meta name="viewport" content="<?php echo html(getLockedViewportContent()); ?>">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo nxHtml(getExPageTitleText("Database Consistency", $aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText("Database Consistency", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -114,7 +114,7 @@ $iTime = sendPageHeaders();
   <p class="admin-controls">
 <?php
 
-nxRenderExMenu();
+renderMenu();
 echo "  </p>\n"
     . "  <h1>Database Consistency</h1>\n";
 
@@ -128,7 +128,7 @@ if ($blHasErrors) {
 
 foreach ($aChecks as $aCheck) {
     $aRows = isset($aCheck["rows"]) ? $aCheck["rows"] : array();
-    echo "  <h2>" . nxHtml($aCheck["title"]) . " (" . count($aRows) . ")</h2>\n";
+    echo "  <h2>" . html($aCheck["title"]) . " (" . count($aRows) . ")</h2>\n";
     if (!$aRows) {
         echo "  <p><em>&mdash;</em></p>\n";
         continue;
@@ -138,7 +138,7 @@ foreach ($aChecks as $aCheck) {
         . "    <thead>\n"
         . "      <tr>\n";
     foreach ($aColumns as $sColumn) {
-        echo "        <th>" . nxHtml($sColumn) . "</th>\n";
+        echo "        <th>" . html($sColumn) . "</th>\n";
     }
     echo "      </tr>\n"
         . "    </thead>\n"
@@ -146,7 +146,7 @@ foreach ($aChecks as $aCheck) {
     foreach ($aRows as $aRow) {
         echo "      <tr>\n";
         foreach ($aColumns as $sColumn) {
-            echo "        <td>" . nxHtmlValue($aRow[$sColumn]) . "</td>\n";
+            echo "        <td>" . htmlValue($aRow[$sColumn]) . "</td>\n";
         }
         echo "      </tr>\n";
     }
@@ -154,7 +154,7 @@ foreach ($aChecks as $aCheck) {
         . "  </table>\n";
 }
 
-echo nxRenderAdminScript($sBaseUrl);
+echo renderAdminScript($sBaseUrl);
 
 ?>
 </body>

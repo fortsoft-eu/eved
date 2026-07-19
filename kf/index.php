@@ -2,14 +2,14 @@
 
 include "main.php";
 
-requireExFullAccess($aAllowedIps);
+requireFullAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
 
-$aTypes = kfGetFinanceTypes(false);
+$aTypes = getFinanceTypes(false);
 $aGroups = array();
 $oStatement = $oPdo->query("SELECT id, name FROM kf_fin_types WHERE type_kind = 'group' ORDER BY name ASC, id ASC");
 while ($aRow = $oStatement->fetch()) {
@@ -40,8 +40,40 @@ while ($aRow = $oStatement->fetch()) {
     $aSummaryTotals[$aRow["month_key"]][$aRow["type_kind"]] = (float)$aRow["amount_sum"];
 }
 
-$sTitle = kfGetPageTitle("Income and Expenses");
-$iTime = kfSendPageHeaders();
+$aOverviewColumns = array();
+foreach ($aTypes as $aType) {
+    $aOverviewColumns[] = array(
+        "type" => "type",
+        "id" => (int)$aType["id"],
+        "title" => (string)$aType["name"]
+    );
+}
+foreach ($aGroups as $aGroup) {
+    $aOverviewColumns[] = array(
+        "type" => "group",
+        "id" => (int)$aGroup["id"],
+        "title" => "Group: " . (string)$aGroup["name"]
+    );
+}
+$aOverviewColumns[] = array("type" => "summary", "key" => "income", "title" => "Income Total");
+$aOverviewColumns[] = array("type" => "summary", "key" => "expense", "title" => "Expense Total");
+$aOverviewColumns[] = array("type" => "summary", "key" => "net", "title" => "Net Total");
+
+$aOverviewColumnGroups = array();
+$aOverviewColumnGroup = array();
+foreach ($aOverviewColumns as $aOverviewColumn) {
+    if (count($aOverviewColumnGroup) >= 10) {
+        $aOverviewColumnGroups[] = $aOverviewColumnGroup;
+        $aOverviewColumnGroup = array();
+    }
+    $aOverviewColumnGroup[] = $aOverviewColumn;
+}
+if ($aOverviewColumnGroup) {
+    $aOverviewColumnGroups[] = $aOverviewColumnGroup;
+}
+
+$sTitle = getPageTitle("Income and Expenses");
+$iTime = sendPageHeaders();
 
 ?>
 <!DOCTYPE html>
@@ -50,79 +82,74 @@ $iTime = kfSendPageHeaders();
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="<?php echo kfHtml(kfGetCsrfToken()); ?>">
-  <title><?php echo kfHtml($sTitle); ?></title>
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
+  <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo kfHtml($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
-<?php kfRenderMenu(); ?>
+<?php renderMenu(); ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-monthly-overview-table" value="">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-monthly-overview-tables" value="">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
   </p>
-<?php kfRenderMessage(); ?>
-  <table id="kf-monthly-overview-table" class="table-filter-target">
-    <thead>
-      <tr>
-        <th>Month</th>
+<?php renderMessage(); ?>
+  <div id="kf-monthly-overview-tables">
 <?php
 
-foreach ($aTypes as $aType) {
-    echo "        <th class=\"numeric\">" . kfHtml($aType["name"]) . "</th>\n";
-}
-foreach ($aGroups as $aGroup) {
-    echo "        <th class=\"numeric\">Group: " . kfHtml($aGroup["name"]) . "</th>\n";
+foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColumnGroup) {
+    echo "  <table id=\"kf-monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target kf-monthly-overview-table\">\n"
+        . "    <thead>\n"
+        . "      <tr>\n"
+        . "        <th>Month</th>\n";
+    foreach ($aOverviewColumnGroup as $aOverviewColumn) {
+        echo "        <th class=\"numeric\">" . html($aOverviewColumn["title"]) . "</th>\n";
+    }
+    echo "      </tr>\n"
+        . "    </thead>\n"
+        . "    <tbody>\n";
+
+    foreach ($aMonths as $sMonth) {
+        $fIncome = isset($aSummaryTotals[$sMonth]["income"]) ? $aSummaryTotals[$sMonth]["income"] : 0;
+        $fExpense = isset($aSummaryTotals[$sMonth]["expense"]) ? $aSummaryTotals[$sMonth]["expense"] : 0;
+        $fNet = $fIncome + $fExpense;
+        echo "      <tr data-month=\"" . html($sMonth) . "\">\n"
+            . "        <td class=\"nowrap\">" . html(monthLabel($sMonth)) . "</td>\n";
+        foreach ($aOverviewColumnGroup as $aOverviewColumn) {
+            if ($aOverviewColumn["type"] == "type") {
+                $fAmount = isset($aTypeTotals[$sMonth][(int)$aOverviewColumn["id"]]) ? $aTypeTotals[$sMonth][(int)$aOverviewColumn["id"]] : 0;
+            } elseif ($aOverviewColumn["type"] == "group") {
+                $fAmount = isset($aGroupTotals[$sMonth][(int)$aOverviewColumn["id"]]) ? $aGroupTotals[$sMonth][(int)$aOverviewColumn["id"]] : 0;
+            } elseif ($aOverviewColumn["key"] == "income") {
+                $fAmount = $fIncome;
+            } elseif ($aOverviewColumn["key"] == "expense") {
+                $fAmount = $fExpense;
+            } else {
+                $fAmount = $fNet;
+            }
+            $sAmountClass = $fAmount < 0 ? "kf-amount-negative" : ($fAmount > 0 ? "kf-amount-positive" : "kf-amount-zero");
+            echo "        <td class=\"numeric " . $sAmountClass . "\">" . html(formatAmount($fAmount)) . "</td>\n";
+        }
+        echo "      </tr>\n";
+    }
+
+    if (!$aMonths) {
+        echo "      <tr><td colspan=\"" . (count($aOverviewColumnGroup) + 1) . "\">No transactions found.</td></tr>\n";
+    }
+
+    echo "    </tbody>\n"
+        . "  </table>\n";
 }
 
 ?>
-        <th class="numeric">Income Total</th>
-        <th class="numeric">Expense Total</th>
-        <th class="numeric">Net Total</th>
-      </tr>
-    </thead>
-    <tbody>
-<?php
-
-foreach ($aMonths as $sMonth) {
-    $fIncome = isset($aSummaryTotals[$sMonth]["income"]) ? $aSummaryTotals[$sMonth]["income"] : 0;
-    $fExpense = isset($aSummaryTotals[$sMonth]["expense"]) ? $aSummaryTotals[$sMonth]["expense"] : 0;
-    $fNet = $fIncome + $fExpense;
-    echo "      <tr>\n"
-        . "        <td class=\"nowrap\">" . kfHtml(kfMonthLabel($sMonth)) . "</td>\n";
-    foreach ($aTypes as $aType) {
-        $fAmount = isset($aTypeTotals[$sMonth][(int)$aType["id"]]) ? $aTypeTotals[$sMonth][(int)$aType["id"]] : 0;
-        $sAmountClass = $fAmount < 0 ? "kf-amount-negative" : ($fAmount > 0 ? "kf-amount-positive" : "kf-amount-zero");
-        echo "        <td class=\"numeric " . $sAmountClass . "\">" . kfHtml(kfFormatAmount($fAmount)) . "</td>\n";
-    }
-    foreach ($aGroups as $aGroup) {
-        $fAmount = isset($aGroupTotals[$sMonth][(int)$aGroup["id"]]) ? $aGroupTotals[$sMonth][(int)$aGroup["id"]] : 0;
-        $sAmountClass = $fAmount < 0 ? "kf-amount-negative" : ($fAmount > 0 ? "kf-amount-positive" : "kf-amount-zero");
-        echo "        <td class=\"numeric " . $sAmountClass . "\">" . kfHtml(kfFormatAmount($fAmount)) . "</td>\n";
-    }
-    $sIncomeClass = $fIncome < 0 ? "kf-amount-negative" : ($fIncome > 0 ? "kf-amount-positive" : "kf-amount-zero");
-    $sExpenseClass = $fExpense < 0 ? "kf-amount-negative" : ($fExpense > 0 ? "kf-amount-positive" : "kf-amount-zero");
-    $sNetClass = $fNet < 0 ? "kf-amount-negative" : ($fNet > 0 ? "kf-amount-positive" : "kf-amount-zero");
-    echo "        <td class=\"numeric " . $sIncomeClass . "\">" . kfHtml(kfFormatAmount($fIncome)) . "</td>\n"
-        . "        <td class=\"numeric " . $sExpenseClass . "\">" . kfHtml(kfFormatAmount($fExpense)) . "</td>\n"
-        . "        <td class=\"numeric " . $sNetClass . "\">" . kfHtml(kfFormatAmount($fNet)) . "</td>\n"
-        . "      </tr>\n";
-}
-
-if (!$aMonths) {
-    echo "      <tr><td colspan=\"" . (count($aTypes) + count($aGroups) + 4) . "\">No transactions found.</td></tr>\n";
-}
-
-?>
-    </tbody>
-  </table>
+  </div>
 <?php
 
 echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
-    . "  <script type=\"text/javascript\" src=\"" . kfHtml($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
+    . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
     . "</body>\n"
     . "</html>\n";
 

@@ -2,7 +2,7 @@
 
 include "main.php";
 
-requireExFullAccess($aAllowedIps);
+requireFullAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -10,29 +10,29 @@ if (!$oPdo) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    kfRequireCsrfToken();
-    $sAction = kfPostedValue("action");
+    requireCsrfToken();
+    $sAction = getPostedTrimmedValue("action");
 
     if ($sAction == "save_type") {
-        $iId = (int)kfPostedValue("id", "0");
-        $sName = kfPostedValue("name");
-        $sTypeKind = kfPostedValue("type_kind", "expense");
+        $iId = (int)getPostedTrimmedValue("id", "0");
+        $sName = getPostedTrimmedValue("name");
+        $sTypeKind = getPostedTrimmedValue("type_kind", "expense");
         $aAllowedKinds = array("expense", "income", "group");
         if ($sName == "" || !in_array($sTypeKind, $aAllowedKinds, true)) {
-            kfSetMessage("The type could not be saved. Name and kind are required.", "error");
-            kfRedirect("types.php");
+            setMessage("The type could not be saved. Name and kind are required.", "error");
+            redirect("types.php");
         }
 
         try {
             if ($iId > 0) {
                 $oStatement = $oPdo->prepare("UPDATE kf_fin_types SET name = :name, type_kind = :type_kind WHERE id = :id");
                 $oStatement->execute(array("name" => $sName, "type_kind" => $sTypeKind, "id" => $iId));
-                kfSetMessage("Type updated.");
+                setMessage("Type updated.");
             } else {
                 $oStatement = $oPdo->prepare("INSERT INTO kf_fin_types (name, type_kind) VALUES (:name, :type_kind)");
                 $oStatement->execute(array("name" => $sName, "type_kind" => $sTypeKind));
                 $iId = (int)$oPdo->lastInsertId();
-                kfSetMessage("Type added.");
+                setMessage("Type added.");
             }
 
             $oStatement = $oPdo->prepare("DELETE FROM kf_fin_groups WHERE group_type_id = :group_type_id");
@@ -47,27 +47,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
         } catch (PDOException $oException) {
-            kfSetMessage("The type could not be saved. The name may already exist.", "error");
+            setMessage("The type could not be saved. The name may already exist.", "error");
         }
-        kfRedirect("types.php");
+        redirect("types.php");
     } elseif ($sAction == "delete_type") {
-        $iId = (int)kfPostedValue("id", "0");
+        $iId = (int)getPostedTrimmedValue("id", "0");
         if ($iId > 0) {
             $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_fin_trans WHERE finance_type_id = :id");
             $oStatement->execute(array("id" => $iId));
             if ((int)$oStatement->fetchColumn() > 0) {
-                kfSetMessage("The type is used by transactions and cannot be deleted.", "error");
+                setMessage("The type is used by transactions and cannot be deleted.", "error");
             } else {
                 try {
                     $oStatement = $oPdo->prepare("DELETE FROM kf_fin_types WHERE id = :id");
                     $oStatement->execute(array("id" => $iId));
-                    kfSetMessage("Type deleted.");
+                    setMessage("Type deleted.");
                 } catch (PDOException $oException) {
-                    kfSetMessage("The type could not be deleted.", "error");
+                    setMessage("The type could not be deleted.", "error");
                 }
             }
         }
-        kfRedirect("types.php");
+        redirect("types.php");
     }
 }
 
@@ -77,12 +77,12 @@ while ($aRow = $oStatement->fetch()) {
     $aRows[] = $aRow;
 }
 
-$aMemberTypes = kfGetFinanceTypes(false);
+$aMemberTypes = getFinanceTypes(false);
 
 $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-type\" data-modal-target=\"type-modal\" data-modal-title=\"New Type\" data-field-id=\"\" data-field-name=\"\" data-field-type_kind=\"expense\" data-field-members=\"\">New</button>\n";
 
-$sTitle = kfGetPageTitle("Income and Expense Types");
-$iTime = kfSendPageHeaders();
+$sTitle = getPageTitle("Income and Expense Types");
+$iTime = sendPageHeaders();
 
 ?>
 <!DOCTYPE html>
@@ -91,14 +91,14 @@ $iTime = kfSendPageHeaders();
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="<?php echo kfHtml(kfGetCsrfToken()); ?>">
-  <title><?php echo kfHtml($sTitle); ?></title>
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
+  <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo kfHtml($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
-<?php kfRenderMenu(); ?>
+<?php renderMenu(); ?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-types-table" value="">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -106,7 +106,7 @@ $iTime = kfSendPageHeaders();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php echo $sToolbarHtml; ?>
   </p>
-<?php kfRenderMessage(); ?>
+<?php renderMessage(); ?>
   <table id="kf-types-table" class="table-filter-target">
     <thead>
       <tr>
@@ -121,10 +121,10 @@ $iTime = kfSendPageHeaders();
 
 foreach ($aRows as $aRow) {
     echo "      <tr>\n"
-        . "        <td>" . kfHtml(ucfirst($aRow["type_kind"])) . "</td>\n"
-        . "        <td>" . kfHtml($aRow["name"]) . "</td>\n"
-        . "        <td>" . kfHtmlValue($aRow["member_names"]) . "</td>\n"
-        . "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"type-modal\" data-modal-title=\"Edit Type\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-name=\"" . kfHtml($aRow["name"]) . "\" data-field-type_kind=\"" . kfHtml($aRow["type_kind"]) . "\" data-field-members=\"" . kfHtml($aRow["member_ids"]) . "\">Edit</button></td>\n"
+        . "        <td>" . html(ucfirst($aRow["type_kind"])) . "</td>\n"
+        . "        <td>" . html($aRow["name"]) . "</td>\n"
+        . "        <td>" . htmlValue($aRow["member_names"]) . "</td>\n"
+        . "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"type-modal\" data-modal-title=\"Edit Type\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-name=\"" . html($aRow["name"]) . "\" data-field-type_kind=\"" . html($aRow["type_kind"]) . "\" data-field-members=\"" . html($aRow["member_ids"]) . "\">Edit</button></td>\n"
         . "      </tr>\n";
 }
 
@@ -139,7 +139,7 @@ if (!$aRows) {
   <div id="type-modal" class="confirm-dialog" hidden>
     <form method="post" class="confirm-dialog-box kf-edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Type</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
-        <input type="hidden" name="kf_csrf_token" value="<?php echo kfHtml(kfGetCsrfToken()); ?>">
+        <input type="hidden" name="kf_csrf_token" value="<?php echo html(getCsrfToken()); ?>">
         <input type="hidden" name="action" value="save_type">
         <input type="hidden" name="id" value="">
         <label for="type-name">Name</label>
@@ -156,7 +156,7 @@ if (!$aRows) {
 <?php
 
 foreach ($aMemberTypes as $aType) {
-    echo "            <label class=\"checkbox-label\"><input type=\"checkbox\" name=\"members[]\" value=\"" . (int)$aType["id"] . "\"> " . kfHtml($aType["name"]) . "</label>\n";
+    echo "            <label class=\"checkbox-label\"><input type=\"checkbox\" name=\"members[]\" value=\"" . (int)$aType["id"] . "\"> " . html($aType["name"]) . "</label>\n";
 }
 
 ?>
@@ -172,7 +172,7 @@ foreach ($aMemberTypes as $aType) {
 <?php
 
 echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
-    . "  <script type=\"text/javascript\" src=\"" . kfHtml($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
+    . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
     . "</body>\n"
     . "</html>\n";
 

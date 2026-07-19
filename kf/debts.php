@@ -2,7 +2,7 @@
 
 include "main.php";
 
-requireExFullAccess($aAllowedIps);
+requireFullAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -10,20 +10,20 @@ if (!$oPdo) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    kfRequireCsrfToken();
-    $sAction = kfPostedValue("action");
+    requireCsrfToken();
+    $sAction = getPostedTrimmedValue("action");
 
     if ($sAction == "save_debt") {
-        $iId = (int)kfPostedValue("id", "0");
-        $sFirstName = kfPostedValue("first_name");
-        $sLastName = kfPostedValue("last_name");
-        $fAmount = kfParseAmount(kfPostedValue("amount"));
-        $sAccountNumber = kfPostedValue("account_number");
-        $sEmail = kfPostedValue("email");
+        $iId = (int)getPostedTrimmedValue("id", "0");
+        $sFirstName = getPostedTrimmedValue("first_name");
+        $sLastName = getPostedTrimmedValue("last_name");
+        $fAmount = parseAmount(getPostedTrimmedValue("amount"));
+        $sAccountNumber = getPostedTrimmedValue("account_number");
+        $sEmail = getPostedTrimmedValue("email");
 
         if (($sFirstName == "" && $sLastName == "") || $fAmount === null) {
-            kfSetMessage("The debt could not be saved. Name and amount are required.", "error");
-            kfRedirect("debts.php");
+            setMessage("The debt could not be saved. Name and amount are required.", "error");
+            redirect("debts.php");
         }
 
         if ($iId > 0) {
@@ -36,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "email" => $sEmail != "" ? $sEmail : null,
                 "id" => $iId
             ));
-            kfSetMessage("Debt updated.");
+            setMessage("Debt updated.");
         } else {
             $oStatement = $oPdo->prepare("INSERT INTO kf_debts (first_name, last_name, amount, account_number, email) VALUES (:first_name, :last_name, :amount, :account_number, :email)");
             $oStatement->execute(array(
@@ -46,17 +46,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "account_number" => $sAccountNumber != "" ? $sAccountNumber : null,
                 "email" => $sEmail != "" ? $sEmail : null
             ));
-            kfSetMessage("Debt added.");
+            setMessage("Debt added.");
         }
-        kfRedirect("debts.php");
+        redirect("debts.php");
     } elseif ($sAction == "delete_debt") {
-        $iId = (int)kfPostedValue("id", "0");
+        $iId = (int)getPostedTrimmedValue("id", "0");
         if ($iId > 0) {
             $oStatement = $oPdo->prepare("DELETE FROM kf_debts WHERE id = :id");
             $oStatement->execute(array("id" => $iId));
-            kfSetMessage("Debt deleted.");
+            setMessage("Debt deleted.");
         }
-        kfRedirect("debts.php");
+        redirect("debts.php");
     }
 }
 
@@ -68,8 +68,8 @@ while ($aRow = $oStatement->fetch()) {
 
 $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-debt\" data-modal-target=\"debt-modal\" data-modal-title=\"New Debt\" data-field-id=\"\" data-field-first_name=\"\" data-field-last_name=\"\" data-field-amount=\"\" data-field-account_number=\"\" data-field-email=\"\">New</button>\n";
 
-$sTitle = kfGetPageTitle("Debts");
-$iTime = kfSendPageHeaders();
+$sTitle = getPageTitle("Debts");
+$iTime = sendPageHeaders();
 
 ?>
 <!DOCTYPE html>
@@ -78,14 +78,14 @@ $iTime = kfSendPageHeaders();
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="<?php echo kfHtml(kfGetCsrfToken()); ?>">
-  <title><?php echo kfHtml($sTitle); ?></title>
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
+  <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo kfHtml($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
-<?php kfRenderMenu(); ?>
+<?php renderMenu(); ?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-debts-table" value="">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -93,7 +93,7 @@ $iTime = kfSendPageHeaders();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php echo $sToolbarHtml; ?>
   </p>
-<?php kfRenderMessage(); ?>
+<?php renderMessage(); ?>
   <table id="kf-debts-table" class="table-filter-target">
     <thead>
       <tr>
@@ -112,17 +112,17 @@ $fTotal = 0;
 foreach ($aRows as $aRow) {
     $fTotal += (float)$aRow["amount"];
     echo "      <tr>\n"
-        . "        <td>" . kfHtmlValue($aRow["first_name"]) . "</td>\n"
-        . "        <td>" . kfHtmlValue($aRow["last_name"]) . "</td>\n"
-        . "        <td class=\"numeric\">" . kfHtml(kfFormatAmount($aRow["amount"])) . "</td>\n"
-        . "        <td>" . kfHtmlValue($aRow["account_number"]) . "</td>\n"
-        . "        <td>" . ($aRow["email"] != "" ? "<a href=\"mailto:" . kfHtml($aRow["email"]) . "\">" . kfHtml($aRow["email"]) . "</a>" : kfHtmlValue("")) . "</td>\n"
-        . "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"debt-modal\" data-modal-title=\"Edit Debt\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-first_name=\"" . kfHtml($aRow["first_name"]) . "\" data-field-last_name=\"" . kfHtml($aRow["last_name"]) . "\" data-field-amount=\"" . kfHtml(kfFormatAmount($aRow["amount"])) . "\" data-field-account_number=\"" . kfHtml($aRow["account_number"]) . "\" data-field-email=\"" . kfHtml($aRow["email"]) . "\">Edit</button></td>\n"
+        . "        <td>" . htmlValue($aRow["first_name"]) . "</td>\n"
+        . "        <td>" . htmlValue($aRow["last_name"]) . "</td>\n"
+        . "        <td class=\"numeric\">" . html(formatAmount($aRow["amount"])) . "</td>\n"
+        . "        <td>" . htmlValue($aRow["account_number"]) . "</td>\n"
+        . "        <td>" . ($aRow["email"] != "" ? "<a href=\"mailto:" . html($aRow["email"]) . "\">" . html($aRow["email"]) . "</a>" : htmlValue("")) . "</td>\n"
+        . "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"debt-modal\" data-modal-title=\"Edit Debt\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-first_name=\"" . html($aRow["first_name"]) . "\" data-field-last_name=\"" . html($aRow["last_name"]) . "\" data-field-amount=\"" . html(formatAmount($aRow["amount"])) . "\" data-field-account_number=\"" . html($aRow["account_number"]) . "\" data-field-email=\"" . html($aRow["email"]) . "\">Edit</button></td>\n"
         . "      </tr>\n";
 }
 
 if ($aRows) {
-    echo "      <tr><td colspan=\"2\" class=\"kf-debt-total\">Total</td><td class=\"numeric kf-debt-total\">" . kfHtml(kfFormatAmount($fTotal)) . "</td><td colspan=\"3\"></td></tr>\n";
+    echo "      <tr><td colspan=\"2\" class=\"kf-debt-total\">Total</td><td class=\"numeric kf-debt-total\">" . html(formatAmount($fTotal)) . "</td><td colspan=\"3\"></td></tr>\n";
 } else {
     echo "      <tr><td colspan=\"6\">No debts found.</td></tr>\n";
 }
@@ -134,7 +134,7 @@ if ($aRows) {
   <div id="debt-modal" class="confirm-dialog" hidden>
     <form method="post" class="confirm-dialog-box kf-edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Debt</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
-        <input type="hidden" name="kf_csrf_token" value="<?php echo kfHtml(kfGetCsrfToken()); ?>">
+        <input type="hidden" name="kf_csrf_token" value="<?php echo html(getCsrfToken()); ?>">
         <input type="hidden" name="action" value="save_debt">
         <input type="hidden" name="id" value="">
         <label for="first-name">First Name</label>
@@ -157,7 +157,7 @@ if ($aRows) {
 <?php
 
 echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
-    . "  <script type=\"text/javascript\" src=\"" . kfHtml($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
+    . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
     . "</body>\n"
     . "</html>\n";
 

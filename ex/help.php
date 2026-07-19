@@ -17,17 +17,17 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo nxHtml(nxGetLockedViewportContent()); ?>">
+  <meta name="viewport" content="<?php echo html(getLockedViewportContent()); ?>">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo nxHtml(getExPageTitleText("Portal Help", $aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText("Portal Help", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
-<?php nxRenderExMenu(); ?>
+<?php renderMenu(); ?>
   </p>
   <h1>Portal Help</h1>
   <h2>US English</h2>
@@ -588,6 +588,6 @@ $iTime = sendPageHeaders();
       </ul>
     </dd>
   </dl>
-<?php echo nxRenderAdminScript($sBaseUrl); ?>
+<?php echo renderAdminScript($sBaseUrl); ?>
 </body>
 </html>
