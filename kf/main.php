@@ -24,10 +24,9 @@ ini_set("session.use_strict_mode", 1);
 ini_set("session.use_only_cookies", 1);
 ini_set("session.use_trans_sid", 0);
 ini_set("session.gc_maxlifetime", 31536000);
-session_name("EVEDKFSID");
 session_set_cookie_params(array(
     "lifetime" => 31536000,
-    "path" => "/kf/",
+    "path" => "/",
     "domain" => "",
     "secure" => true,
     "httponly" => true,
@@ -38,7 +37,7 @@ session_start();
 
 $sHost = isset($_SERVER["HTTP_HOST"]) ? $_SERVER["HTTP_HOST"] : "";
 $sPath = isset($_SERVER["REQUEST_URI"]) ? parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH) : "/kf/";
-if ($sPath == "" || substr($sPath, -1) != "/") {
+if (!$sPath || substr($sPath, -1) != "/") {
     $sPath = dirname($sPath) . "/";
 }
 $sBaseUrl = $sHost != "" ? $sScheme . "://" . $sHost . $sPath : "";

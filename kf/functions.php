@@ -1,65 +1,47 @@
 <?php
 
-function isTrustedClient($aAllowedIps) {
-    global $sTrustedUserAgent, $sTrustedAcceptLanguage;
-
-    if (!isAllowedIp($aAllowedIps) || $sTrustedUserAgent == "" || $sTrustedAcceptLanguage == "") {
-        return false;
-    }
-    if (!isset($_SERVER["HTTP_USER_AGENT"], $_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
-        return false;
-    }
-    return hash_equals($sTrustedUserAgent, (string)$_SERVER["HTTP_USER_AGENT"]) && hash_equals($sTrustedAcceptLanguage, (string)$_SERVER["HTTP_ACCEPT_LANGUAGE"]);
+function isAuthenticatedClient() {
+    return refreshAuthSession();
 }
 
-function isAuthenticatedClient() {
-    return (isset($_SESSION["kf_view_auth"], $_SESSION["kf_auth_user_id"])
-            && $_SESSION["kf_view_auth"] === true
-            && (int)$_SESSION["kf_auth_user_id"] > 0)
-        || (isset($_SESSION["ex_view_auth"], $_SESSION["ex_auth_user_id"])
-            && $_SESSION["ex_view_auth"] === true
-            && (int)$_SESSION["ex_auth_user_id"] > 0);
+function isViewAllowed($aAllowedIps) {
+    return isViewAllowedForProject($aAllowedIps, "kf");
+}
+
+function isFullAccessAllowed($aAllowedIps) {
+    return isFullAccessAllowedForProject($aAllowedIps, "kf");
+}
+
+function getCurrentUrlWithoutAuthAction() {
+    return getCurrentUrlWithoutAuthActionForToken("kf_csrf_token");
+}
+
+function getLogoutUrl() {
+    return getLogoutUrlForToken("kf_csrf_token");
+}
+
+function getCsrfToken() {
+    return getNamedCsrfToken("kf_csrf_token");
+}
+
+function resetCsrfToken() {
+    return resetNamedCsrfToken("kf_csrf_token");
+}
+
+function isCsrfTokenValid($sToken) {
+    return isNamedCsrfTokenValid("kf_csrf_token", $sToken);
+}
+
+function requireCsrfToken() {
+    requireNamedCsrfToken("kf_csrf_token");
+}
+
+function requireViewAccess($aAllowedIps) {
+    requireProjectViewAccess($aAllowedIps, "kf", "kf_csrf_token");
 }
 
 function requireFullAccess($aAllowedIps) {
-    if (isTrustedClient($aAllowedIps)) {
-        return;
-    }
-
-    send403AndExit();
-}
-
-function getCurrentScriptName() {
-    $sScriptName = isset($_SERVER["SCRIPT_NAME"]) ? basename((string)$_SERVER["SCRIPT_NAME"]) : "index.php";
-    return $sScriptName != "" ? $sScriptName : "index.php";
-}
-
-function normalizeMenuPath($sPath) {
-    $sPath = str_replace("\\", "/", trim((string)$sPath));
-    $sPath = preg_replace("#/+#", "/", $sPath);
-    $sPath = preg_replace("#^/+#", "", $sPath);
-    return $sPath;
-}
-
-function encodeMenuPath($sPath) {
-    $aParts = explode("/", normalizeMenuPath($sPath));
-    $aEncodedParts = array();
-    foreach ($aParts as $sPart) {
-        $aEncodedParts[] = rawurlencode($sPart);
-    }
-    return implode("/", $aEncodedParts);
-}
-
-function getMenuPathPrefix() {
-    $sScriptFile = isset($_SERVER["SCRIPT_FILENAME"]) ? (string)$_SERVER["SCRIPT_FILENAME"] : __FILE__;
-    $sScriptFile = str_replace("\\", "/", $sScriptFile);
-    $sScriptDirectory = dirname($sScriptFile);
-    return normalizeMenuPath(basename(dirname($sScriptDirectory)) . "/" . basename($sScriptDirectory)) . "/";
-}
-
-function getCurrentMenuPath() {
-    $sScriptName = getCurrentScriptName();
-    return $sScriptName == "index.php" ? getMenuPathPrefix() : getMenuPathPrefix() . $sScriptName;
+    requireProjectFullAccess($aAllowedIps, "kf", "kf_csrf_token");
 }
 
 function getMenuItems() {
@@ -106,20 +88,6 @@ function getPageTitle($sFallbackTitle) {
     return getPageTitleText($sTitle, $aAllowedIps);
 }
 
-function getPageTitleText($sTitle, $aAllowedIps) {
-    $aStates = array();
-    if (isTrustedClient($aAllowedIps)) {
-        $aStates[] = "Trusted";
-    }
-    if (isAuthenticatedClient()) {
-        $aStates[] = "Authenticated";
-    }
-    if (count($aStates) > 0) {
-        $sTitle .= " - " . implode(" + ", $aStates);
-    }
-    return $sTitle;
-}
-
 function renderMenu() {
     global $sBaseUrl, $sMenuEmoji;
 
@@ -147,21 +115,6 @@ function renderMenu() {
     }
     echo "      </span>\n"
         . "    </span>\n";
-}
-
-function getCsrfToken() {
-    if (!isset($_SESSION["kf_csrf_token"]) || !is_string($_SESSION["kf_csrf_token"]) || $_SESSION["kf_csrf_token"] == "") {
-        $_SESSION["kf_csrf_token"] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION["kf_csrf_token"];
-}
-
-function requireCsrfToken() {
-    $sToken = isset($_POST["kf_csrf_token"]) ? (string)$_POST["kf_csrf_token"] : "";
-    $sSessionToken = isset($_SESSION["kf_csrf_token"]) ? (string)$_SESSION["kf_csrf_token"] : "";
-    if ($sToken == "" || $sSessionToken == "" || !hash_equals($sSessionToken, $sToken)) {
-        send500AndExit("Invalid form token.");
-    }
 }
 
 function setMessage($sMessage, $sType = "success") {

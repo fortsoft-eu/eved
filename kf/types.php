@@ -2,7 +2,8 @@
 
 include "main.php";
 
-requireFullAccess($aAllowedIps);
+$blCanEdit = isFullAccessAllowed($aAllowedIps);
+requireViewAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -10,6 +11,7 @@ if (!$oPdo) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    requireFullAccess($aAllowedIps);
     requireCsrfToken();
     $sAction = getPostedTrimmedValue("action");
 
@@ -79,9 +81,12 @@ while ($aRow = $oStatement->fetch()) {
     $aRows[] = $aRow;
 }
 
-$aMemberTypes = getFinanceTypes(false);
+$aMemberTypes = $blCanEdit ? getFinanceTypes(false) : array();
 
-$sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-type\" data-modal-target=\"type-modal\" data-modal-title=\"New Type\" data-field-id=\"\" data-field-name=\"\" data-field-type_kind=\"expense\" data-field-members=\"\">New</button>\n";
+$sToolbarHtml = "";
+if ($blCanEdit) {
+    $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-type\" data-modal-target=\"type-modal\" data-modal-title=\"New Type\" data-field-id=\"\" data-field-name=\"\" data-field-type_kind=\"expense\" data-field-members=\"\">New</button>\n";
+}
 
 $sTitle = getPageTitle("Income and Expense Types");
 $iTime = sendPageHeaders();
@@ -115,29 +120,36 @@ $iTime = sendPageHeaders();
         <th>Kind</th>
         <th>Name</th>
         <th>Group Members</th>
+<?php if ($blCanEdit) { ?>
         <th></th>
+<?php } ?>
       </tr>
     </thead>
     <tbody>
 <?php
 
 foreach ($aRows as $aRow) {
+    $sActionCell = "";
+    if ($blCanEdit) {
+        $sActionCell = "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"type-modal\" data-modal-title=\"Edit Type\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-name=\"" . html($aRow["name"]) . "\" data-field-type_kind=\"" . html($aRow["type_kind"]) . "\" data-field-members=\"" . html($aRow["member_ids"]) . "\">Edit</button></td>\n";
+    }
     echo "      <tr>\n"
         . "        <td>" . html(ucfirst($aRow["type_kind"])) . "</td>\n"
         . "        <td>" . html($aRow["name"]) . "</td>\n"
         . "        <td>" . htmlValue($aRow["member_names"]) . "</td>\n"
-        . "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"type-modal\" data-modal-title=\"Edit Type\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-name=\"" . html($aRow["name"]) . "\" data-field-type_kind=\"" . html($aRow["type_kind"]) . "\" data-field-members=\"" . html($aRow["member_ids"]) . "\">Edit</button></td>\n"
+        . $sActionCell
         . "      </tr>\n";
 }
 
 if (!$aRows) {
-    echo "      <tr><td colspan=\"4\">No types found.</td></tr>\n";
+    echo "      <tr><td colspan=\"" . ($blCanEdit ? 4 : 3) . "\">No types found.</td></tr>\n";
 }
 
 ?>
     </tbody>
   </table>
 
+<?php if ($blCanEdit) { ?>
   <div id="type-modal" class="confirm-dialog" hidden>
     <form method="post" class="confirm-dialog-box kf-edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Type</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
@@ -172,6 +184,7 @@ foreach ($aMemberTypes as $aType) {
     </form>
   </div>
 <?php
+}
 
 echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
     . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"

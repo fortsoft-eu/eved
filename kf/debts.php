@@ -2,7 +2,8 @@
 
 include "main.php";
 
-requireFullAccess($aAllowedIps);
+$blCanEdit = isFullAccessAllowed($aAllowedIps);
+requireViewAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -10,6 +11,7 @@ if (!$oPdo) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    requireFullAccess($aAllowedIps);
     requireCsrfToken();
     $sAction = getPostedTrimmedValue("action");
 
@@ -66,7 +68,10 @@ while ($aRow = $oStatement->fetch()) {
     $aRows[] = $aRow;
 }
 
-$sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-debt\" data-modal-target=\"debt-modal\" data-modal-title=\"New Debt\" data-field-id=\"\" data-field-first_name=\"\" data-field-last_name=\"\" data-field-amount=\"\" data-field-account_number=\"\" data-field-email=\"\">New</button>\n";
+$sToolbarHtml = "";
+if ($blCanEdit) {
+    $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-debt\" data-modal-target=\"debt-modal\" data-modal-title=\"New Debt\" data-field-id=\"\" data-field-first_name=\"\" data-field-last_name=\"\" data-field-amount=\"\" data-field-account_number=\"\" data-field-email=\"\">New</button>\n";
+}
 
 $sTitle = getPageTitle("Debts");
 $iTime = sendPageHeaders();
@@ -102,7 +107,9 @@ $iTime = sendPageHeaders();
         <th class="numeric">Amount</th>
         <th>Account Number</th>
         <th>Email</th>
+<?php if ($blCanEdit) { ?>
         <th></th>
+<?php } ?>
       </tr>
     </thead>
     <tbody>
@@ -111,26 +118,31 @@ $iTime = sendPageHeaders();
 $fTotal = 0;
 foreach ($aRows as $aRow) {
     $fTotal += (float)$aRow["amount"];
+    $sActionCell = "";
+    if ($blCanEdit) {
+        $sActionCell = "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"debt-modal\" data-modal-title=\"Edit Debt\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-first_name=\"" . html($aRow["first_name"]) . "\" data-field-last_name=\"" . html($aRow["last_name"]) . "\" data-field-amount=\"" . html(formatAmount($aRow["amount"])) . "\" data-field-account_number=\"" . html($aRow["account_number"]) . "\" data-field-email=\"" . html($aRow["email"]) . "\">Edit</button></td>\n";
+    }
     echo "      <tr>\n"
         . "        <td>" . htmlValue($aRow["first_name"]) . "</td>\n"
         . "        <td>" . htmlValue($aRow["last_name"]) . "</td>\n"
         . "        <td class=\"numeric\">" . html(formatAmount($aRow["amount"])) . "</td>\n"
         . "        <td>" . htmlValue($aRow["account_number"]) . "</td>\n"
         . "        <td>" . ($aRow["email"] != "" ? "<a href=\"mailto:" . html($aRow["email"]) . "\">" . html($aRow["email"]) . "</a>" : htmlValue("")) . "</td>\n"
-        . "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"debt-modal\" data-modal-title=\"Edit Debt\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-first_name=\"" . html($aRow["first_name"]) . "\" data-field-last_name=\"" . html($aRow["last_name"]) . "\" data-field-amount=\"" . html(formatAmount($aRow["amount"])) . "\" data-field-account_number=\"" . html($aRow["account_number"]) . "\" data-field-email=\"" . html($aRow["email"]) . "\">Edit</button></td>\n"
+        . $sActionCell
         . "      </tr>\n";
 }
 
 if ($aRows) {
-    echo "      <tr><td colspan=\"2\" class=\"kf-debt-total\">Total</td><td class=\"numeric kf-debt-total\">" . html(formatAmount($fTotal)) . "</td><td colspan=\"3\"></td></tr>\n";
+    echo "      <tr><td colspan=\"2\" class=\"kf-debt-total\">Total</td><td class=\"numeric kf-debt-total\">" . html(formatAmount($fTotal)) . "</td><td colspan=\"" . ($blCanEdit ? 3 : 2) . "\"></td></tr>\n";
 } else {
-    echo "      <tr><td colspan=\"6\">No debts found.</td></tr>\n";
+    echo "      <tr><td colspan=\"" . ($blCanEdit ? 6 : 5) . "\">No debts found.</td></tr>\n";
 }
 
 ?>
     </tbody>
   </table>
 
+<?php if ($blCanEdit) { ?>
   <div id="debt-modal" class="confirm-dialog" hidden>
     <form method="post" class="confirm-dialog-box kf-edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Debt</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
@@ -155,6 +167,7 @@ if ($aRows) {
     </form>
   </div>
 <?php
+}
 
 echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
     . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"

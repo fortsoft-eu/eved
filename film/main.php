@@ -24,10 +24,9 @@ ini_set("session.use_strict_mode", 1);
 ini_set("session.use_only_cookies", 1);
 ini_set("session.use_trans_sid", 0);
 ini_set("session.gc_maxlifetime", 31536000);
-session_name("EVEDFILMSID");
 session_set_cookie_params(array(
     "lifetime" => 31536000,
-    "path" => "/film/",
+    "path" => "/",
     "domain" => "",
     "secure" => true,
     "httponly" => true,

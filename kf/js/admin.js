@@ -364,6 +364,28 @@
         });
     }
 
+    function focusLoginUser() {
+        var oUser = document.getElementById("login-user");
+        if (!oUser) {
+            return;
+        }
+        try {
+            oUser.focus({
+                "preventScroll": true
+            });
+        } catch (oException) {
+            console.error(oException);
+            oUser.focus();
+        }
+        if (typeof oUser.select == "function") {
+            try {
+                oUser.select();
+            } catch (oException) {
+                console.error(oException);
+            }
+        }
+    }
+
     function copyTextWithInput(sText) {
         var oInput = document.createElement("input");
         var blSuccess = false;
@@ -784,6 +806,7 @@
         setupMessages();
         setupTableFilter();
         setupModals();
+        focusLoginUser();
         setupCopyLinks();
         setupTableRows();
         setupSchemaRelations();

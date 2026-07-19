@@ -5,86 +5,6 @@ function isDesktop() {
     return !preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent);
 }
 
-function sendQuickTableFilterJsonAndExit($aData, $iStatusCode = 200) {
-    http_response_code($iStatusCode);
-    header("Content-Type: application/json; charset=utf-8", true);
-    header("Cache-Control: no-store", true);
-    sendSecurityHeaders();
-    echo json_encode($aData);
-    exit;
-}
-
-function getQuickTableFilterScriptName() {
-    $sScriptName = isset($_SERVER["SCRIPT_NAME"]) ? (string)$_SERVER["SCRIPT_NAME"] : "";
-    $sScriptName = str_replace("\\", "/", $sScriptName);
-    $sScriptName = basename($sScriptName);
-    if ($sScriptName == "") {
-        $sScriptName = "index.php";
-    }
-    return $sScriptName;
-}
-
-function getQuickTableFilterId($sFilterId) {
-    $sFilterId = trim((string)$sFilterId);
-    $sFilterId = preg_replace("/[^A-Za-z0-9_\\-]/", "", $sFilterId);
-    if ($sFilterId == "") {
-        $sFilterId = "table-filter";
-    }
-    return $sFilterId;
-}
-
-function getQuickTableFilterValue($sFilterId = "table-filter") {
-    $sScriptName = getQuickTableFilterScriptName();
-    $sFilterId = getQuickTableFilterId($sFilterId);
-    if (!isset($_SESSION["quick_table_filters"]) || !is_array($_SESSION["quick_table_filters"])) {
-        return "";
-    }
-    if (!isset($_SESSION["quick_table_filters"][$sScriptName]) || !is_array($_SESSION["quick_table_filters"][$sScriptName])) {
-        return "";
-    }
-    if (!isset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId]) || !is_string($_SESSION["quick_table_filters"][$sScriptName][$sFilterId])) {
-        return "";
-    }
-    return $_SESSION["quick_table_filters"][$sScriptName][$sFilterId];
-}
-
-function handleQuickTableFilterRequest() {
-    if ($_SERVER["REQUEST_METHOD"] != "POST" || !isset($_POST["quick_table_filter_action"])) {
-        return;
-    }
-    if (!isset($_SERVER["HTTP_X_REQUESTED_WITH"]) || $_SERVER["HTTP_X_REQUESTED_WITH"] != "XMLHttpRequest") {
-        send403AndExit();
-    }
-    $sAction = (string)$_POST["quick_table_filter_action"];
-    $sFilterId = isset($_POST["filter_id"]) ? (string)$_POST["filter_id"] : "table-filter";
-    if ($sAction == "save") {
-        $sValue = isset($_POST["filter_value"]) ? (string)$_POST["filter_value"] : "";
-        $sScriptName = getQuickTableFilterScriptName();
-        $sFilterId = getQuickTableFilterId($sFilterId);
-        if (!isset($_SESSION["quick_table_filters"]) || !is_array($_SESSION["quick_table_filters"])) {
-            $_SESSION["quick_table_filters"] = array();
-        }
-        if (!isset($_SESSION["quick_table_filters"][$sScriptName]) || !is_array($_SESSION["quick_table_filters"][$sScriptName])) {
-            $_SESSION["quick_table_filters"][$sScriptName] = array();
-        }
-        $_SESSION["quick_table_filters"][$sScriptName][$sFilterId] = (string)$sValue;
-        session_write_close();
-        sendQuickTableFilterJsonAndExit(array("success" => true));
-    } elseif ($sAction == "reset") {
-        $sScriptName = getQuickTableFilterScriptName();
-        $sFilterId = getQuickTableFilterId($sFilterId);
-        if (isset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId])) {
-            unset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId]);
-        }
-        if (isset($_SESSION["quick_table_filters"][$sScriptName]) && is_array($_SESSION["quick_table_filters"][$sScriptName]) && !$_SESSION["quick_table_filters"][$sScriptName]) {
-            unset($_SESSION["quick_table_filters"][$sScriptName]);
-        }
-        session_write_close();
-        sendQuickTableFilterJsonAndExit(array("success" => true));
-    }
-    sendQuickTableFilterJsonAndExit(array("success" => false, "message" => "Invalid quick filter action."), 400);
-}
-
 function startFilmUaPageRequest($iRequestedFilmScanId) {
     global $iVisitTimeout;
 
@@ -755,27 +675,6 @@ function getPhpGeneratedStyleTag($sStyleNonce) {
         . "  </style>\n";
 }
 
-function addPhpGeneratedStyleAttributes($sHtml, $sStyleNonce) {
-    $sNonce = htmlspecialchars($sStyleNonce, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-    return preg_replace_callback("#<style([^>]*)>#i", function ($aMatches) use ($sNonce) {
-        $sAttributes = $aMatches[1];
-        if (!preg_match("#\\stype\\s*=#i", $sAttributes)) {
-            $sAttributes .= " type=\"text/css\"";
-        }
-        if (!preg_match("#\\snonce\\s*=#i", $sAttributes)) {
-            $sAttributes .= " nonce=\"" . $sNonce . "\"";
-        }
-        return "<style" . $sAttributes . ">";
-    }, $sHtml);
-}
-
-function addPhpGeneratedViewportMeta($sHtml) {
-    if (preg_match("#<meta\\b[^>]*\\bname\\s*=\\s*([\"'])viewport\\1#i", $sHtml) || stripos($sHtml, "</head>") === false) {
-        return $sHtml;
-    }
-    return preg_replace("#</head>#i", "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n</head>", $sHtml, 1);
-}
-
 function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
     $sHtml = addPhpGeneratedStyleAttributes($sHtml, $sStyleNonce);
     if (stripos($sHtml, "<html") !== false) {
@@ -796,20 +695,6 @@ function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
         . $sHtml
         . "\n</div></body>\n"
         . "</html>\n";
-}
-
-function sendPhpGeneratedHeaders($sStyleNonce) {
-    $iTime = time();
-    $sDate = gmdate("D, d M Y H:i:s", $iTime);
-    header("Content-Type: text/html; charset=utf-8", true);
-    header("Content-Language: en-US", true);
-    header("Last-Modified: " . $sDate . " GMT", true);
-    header("Expires: " . $sDate . " GMT", true);
-    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0", true);
-    header("Cache-Control: post-check=0, pre-check=0", false);
-    header("Pragma: no-cache", true);
-    header("X-Robots-Tag: noindex, nofollow", true);
-    sendSecurityHeaders($sStyleNonce);
 }
 
 function sendPhpGeneratedOutputAndExit($sType, $iSelect) {

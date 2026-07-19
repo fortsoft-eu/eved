@@ -2,7 +2,8 @@
 
 include "main.php";
 
-requireFullAccess($aAllowedIps);
+$blCanEdit = isFullAccessAllowed($aAllowedIps);
+requireViewAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -10,6 +11,7 @@ if (!$oPdo) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    requireFullAccess($aAllowedIps);
     requireCsrfToken();
     $sAction = getPostedTrimmedValue("action");
 
@@ -71,7 +73,10 @@ while ($aRow = $oStatement->fetch()) {
     $aRows[] = $aRow;
 }
 
-$sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-transaction\" data-modal-target=\"transaction-modal\" data-modal-title=\"New Transaction\" data-field-id=\"\" data-field-transaction_date=\"" . html(date("Y-m-d")) . "\" data-field-finance_type_id=\"\" data-field-amount=\"\" data-field-counterparty=\"\" data-field-note=\"\">New</button>\n";
+$sToolbarHtml = "";
+if ($blCanEdit) {
+    $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-transaction\" data-modal-target=\"transaction-modal\" data-modal-title=\"New Transaction\" data-field-id=\"\" data-field-transaction_date=\"" . html(date("Y-m-d")) . "\" data-field-finance_type_id=\"\" data-field-amount=\"\" data-field-counterparty=\"\" data-field-note=\"\">New</button>\n";
+}
 
 $sTitle = getPageTitle("Transactions");
 $iTime = sendPageHeaders();
@@ -107,7 +112,9 @@ $iTime = sendPageHeaders();
         <th class="numeric">Amount</th>
         <th>Counterparty</th>
         <th>Note</th>
+<?php if ($blCanEdit) { ?>
         <th></th>
+<?php } ?>
       </tr>
     </thead>
     <tbody>
@@ -115,24 +122,29 @@ $iTime = sendPageHeaders();
 
 foreach ($aRows as $aRow) {
     $sAmountClass = $aRow["amount"] < 0 ? "kf-amount-negative" : ($aRow["amount"] > 0 ? "kf-amount-positive" : "kf-amount-zero");
+    $sActionCell = "";
+    if ($blCanEdit) {
+        $sActionCell = "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"transaction-modal\" data-modal-title=\"Edit Transaction\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-transaction_date=\"" . html(formatDate($aRow["transaction_date"])) . "\" data-field-finance_type_id=\"" . (int)$aRow["finance_type_id"] . "\" data-field-amount=\"" . html(formatAmount(abs($aRow["amount"]))) . "\" data-field-counterparty=\"" . html($aRow["counterparty"]) . "\" data-field-note=\"" . html($aRow["note"]) . "\">Edit</button></td>\n";
+    }
     echo "      <tr>\n"
         . "        <td class=\"nowrap\">" . html(formatDate($aRow["transaction_date"])) . "</td>\n"
         . "        <td>" . html($aRow["type_name"]) . "</td>\n"
         . "        <td class=\"numeric " . $sAmountClass . "\">" . html(formatAmount($aRow["amount"])) . "</td>\n"
         . "        <td>" . htmlValue($aRow["counterparty"]) . "</td>\n"
         . "        <td>" . htmlValue($aRow["note"]) . "</td>\n"
-        . "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"transaction-modal\" data-modal-title=\"Edit Transaction\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-transaction_date=\"" . html(formatDate($aRow["transaction_date"])) . "\" data-field-finance_type_id=\"" . (int)$aRow["finance_type_id"] . "\" data-field-amount=\"" . html(formatAmount(abs($aRow["amount"]))) . "\" data-field-counterparty=\"" . html($aRow["counterparty"]) . "\" data-field-note=\"" . html($aRow["note"]) . "\">Edit</button></td>\n"
+        . $sActionCell
         . "      </tr>\n";
 }
 
 if (!$aRows) {
-    echo "      <tr><td colspan=\"6\">No transactions found.</td></tr>\n";
+    echo "      <tr><td colspan=\"" . ($blCanEdit ? 6 : 5) . "\">No transactions found.</td></tr>\n";
 }
 
 ?>
     </tbody>
   </table>
 
+<?php if ($blCanEdit) { ?>
   <div id="transaction-modal" class="confirm-dialog" hidden>
     <form method="post" class="confirm-dialog-box kf-edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Transaction</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
@@ -159,6 +171,7 @@ if (!$aRows) {
     </form>
   </div>
 <?php
+}
 
 echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
     . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"

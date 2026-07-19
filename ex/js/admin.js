@@ -569,6 +569,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oHeader = aDialogs[iI].querySelector(".confirm-dialog-header");
         enableAdminDialogDrag(aDialogs[iI], oBox, oHeader);
     }
+    focusAdminElement(document.getElementById("login-user"), true);
 });
 
 document.addEventListener("DOMContentLoaded", function () {

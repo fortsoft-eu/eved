@@ -2,7 +2,7 @@
 
 include "main.php";
 
-requireFullAccess($aAllowedIps);
+requireViewAccess($aAllowedIps);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);

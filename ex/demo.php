@@ -529,7 +529,11 @@ $aDummySubjectEditors = array(
 
 $aDummyPortalPermissions = array(
     array("permission_key" => "portal.view", "name" => "Portal View", "note" => "Dummy view permission."),
-    array("permission_key" => "portal.full", "name" => "Portal Full", "note" => "Dummy full permission.")
+    array("permission_key" => "portal.full", "name" => "Portal Full", "note" => "Dummy full permission."),
+    array("permission_key" => "ex.view", "name" => "EX View", "note" => "Dummy EX view permission."),
+    array("permission_key" => "ex.full", "name" => "EX Full", "note" => "Dummy EX full permission."),
+    array("permission_key" => "kf.view", "name" => "KF View", "note" => "Dummy KF view permission."),
+    array("permission_key" => "kf.full", "name" => "KF Full", "note" => "Dummy KF full permission.")
 );
 
 $aDummySubjectPortals = array(
