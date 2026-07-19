@@ -274,6 +274,7 @@ function send500AndExit($sMessage) {
         . "<h1>Internal Server Error</h1>\n"
         . "<p>" . htmlspecialchars($sMessage, ENT_QUOTES, "UTF-8") . "</p>\n"
         . "</body></html>\n";
+    error_log("500 Internal Server Error: " . (string)$sMessage . " [" . $_SERVER["REQUEST_METHOD"] . " " . $_SERVER["REQUEST_URI"] . "]");
     http_response_code(500);
     header("Content-Type: text/html; charset=utf-8", true);
     header("Content-Language: en-US", true);
