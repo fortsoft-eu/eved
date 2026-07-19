@@ -176,6 +176,25 @@ function kfFormatDatabaseStructureHtml($sSql) {
     return $sHtml;
 }
 
+function kfSchemaColumnTypeDisplay($sColumnType, $blShorten = true) {
+    $sColumnType = (string)$sColumnType;
+    if (preg_match("/^enum\\((.*)\\)$/i", $sColumnType, $aMatches)) {
+        preg_match_all("/'((?:''|[^'])*)'/", $aMatches[1], $aEnumValues);
+        $aDisplayValues = array();
+        foreach ($aEnumValues[1] as $sEnumValue) {
+            $aDisplayValues[] = "'" . $sEnumValue . "'";
+        }
+        if ($blShorten && count($aDisplayValues) > 24) {
+            $aShortValues = array_slice($aDisplayValues, 0, 12);
+            $aShortValues[] = "…";
+            $aShortValues[] = $aDisplayValues[count($aDisplayValues) - 1];
+            return "enum(" . implode(", ", $aShortValues) . ")";
+        }
+        return "enum(" . implode(", ", $aDisplayValues) . ")";
+    }
+    return $sColumnType;
+}
+
 function kfSendDatabaseSqlAndExit($sFileName, $sBody) {
     $sDate = gmdate("D, d M Y H:i:s", time());
     header("Content-Type: application/sql; charset=utf-8", true);
@@ -291,14 +310,14 @@ function kfRenderMenu() {
         return;
     }
     $sCurrentPath = kfGetCurrentMenuPath();
-    echo "    <span class=\"ex-menu\" data-ex-menu>\n"
-        . "      <button type=\"button\" class=\"ex-menu-button\" data-ex-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n"
-        . "      <span class=\"ex-menu-panel\" data-ex-menu-panel hidden>\n";
+    echo "    <span class=\"kf-menu\" data-kf-menu>\n"
+        . "      <button type=\"button\" class=\"kf-menu-button\" data-kf-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n"
+        . "      <span class=\"kf-menu-panel\" data-kf-menu-panel hidden>\n";
     foreach ($aItems as $aItem) {
-        $sClass = "ex-menu-link";
+        $sClass = "kf-menu-link";
         $sCurrent = "";
         if ($aItem["path"] === $sCurrentPath) {
-            $sClass .= " ex-menu-link-active";
+            $sClass .= " kf-menu-link-active";
             $sCurrent = " aria-current=\"page\"";
         }
         $sTitle = trim((string)$aItem["title"]);
@@ -306,7 +325,7 @@ function kfRenderMenu() {
         $sTitleAttribute = $sTitle != "" ? " title=\"" . kfHtml($sTitle) . "\"" : "";
         $sTargetAttribute = $sTarget != "" ? " target=\"" . kfHtml($sTarget) . "\"" : "";
         $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
-        echo "        <a class=\"" . kfHtml($sClass) . "\" href=\"" . kfHtml($sBaseUrl . kfEncodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"ex-menu-icon\" aria-hidden=\"true\">" . kfHtml($aItem["icon"]) . "</span><span class=\"ex-menu-text\">" . kfHtml($aItem["name"]) . "</span></a>\n";
+        echo "        <a class=\"" . kfHtml($sClass) . "\" href=\"" . kfHtml($sBaseUrl . kfEncodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"kf-menu-icon\" aria-hidden=\"true\">" . kfHtml($aItem["icon"]) . "</span><span class=\"kf-menu-text\">" . kfHtml($aItem["name"]) . "</span></a>\n";
     }
     echo "      </span>\n"
         . "    </span>\n";

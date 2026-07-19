@@ -53,7 +53,6 @@ $iTime = kfSendPageHeaders();
   <meta name="csrf-token" content="<?php echo kfHtml(kfGetCsrfToken()); ?>">
   <title><?php echo kfHtml($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo kfHtml($sBaseUrl . "../ex/css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/../ex/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
   <link href="<?php echo kfHtml($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
@@ -73,16 +72,16 @@ $iTime = kfSendPageHeaders();
 <?php
 
 foreach ($aTypes as $aType) {
-    echo "        <th>" . kfHtml($aType["name"]) . "</th>\n";
+    echo "        <th class=\"numeric\">" . kfHtml($aType["name"]) . "</th>\n";
 }
 foreach ($aGroups as $aGroup) {
-    echo "        <th>Group: " . kfHtml($aGroup["name"]) . "</th>\n";
+    echo "        <th class=\"numeric\">Group: " . kfHtml($aGroup["name"]) . "</th>\n";
 }
 
 ?>
-        <th>Income Total</th>
-        <th>Expense Total</th>
-        <th>Net Total</th>
+        <th class="numeric">Income Total</th>
+        <th class="numeric">Expense Total</th>
+        <th class="numeric">Net Total</th>
       </tr>
     </thead>
     <tbody>

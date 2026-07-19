@@ -37,6 +37,12 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
+$aSchemaRelationRoutes = array(
+    "kf_fin_groups.group_type_id>kf_fin_types.id" => array("source" => "right", "target" => "left", "curve" => "36", "target-y" => "-10"),
+    "kf_fin_groups.member_type_id>kf_fin_types.id" => array("source" => "right", "target" => "left", "curve" => "54", "target-y" => "10"),
+    "kf_fin_trans.finance_type_id>kf_fin_types.id" => array("source" => "left", "target" => "right", "curve" => "72")
+);
+
 $sTitle = kfGetPageTitle("Database Schema");
 $iTime = kfSendPageHeaders();
 
@@ -50,7 +56,6 @@ $iTime = kfSendPageHeaders();
   <meta name="csrf-token" content="<?php echo kfHtml(kfGetCsrfToken()); ?>">
   <title><?php echo kfHtml($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo kfHtml($sBaseUrl . "../ex/css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/../ex/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
   <link href="<?php echo kfHtml($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
@@ -94,6 +99,10 @@ foreach ($aTables as $sTableName => $aColumns) {
     foreach ($aColumns as $aColumn) {
         $sKey = "";
         $sKeyClass = "";
+        $sColumnType = (string)$aColumn["COLUMN_TYPE"];
+        $sColumnTypeDisplay = kfSchemaColumnTypeDisplay($sColumnType);
+        $sColumnTypeTitleDisplay = kfSchemaColumnTypeDisplay($sColumnType, false);
+        $sColumnTypeTitle = $sColumnTypeDisplay != $sColumnTypeTitleDisplay ? " title=\"" . kfHtml($sColumnTypeTitleDisplay) . "\"" : "";
         if ($aColumn["COLUMN_KEY"] == "PRI") {
             $sKey = "PK";
             $sKeyClass = " schema-key-pk";
@@ -109,7 +118,7 @@ foreach ($aTables as $sTableName => $aColumns) {
         echo "            <tr id=\"" . kfHtml($sColumnId) . "\">\n"
             . "              <td class=\"schema-key" . $sKeyClass . "\">" . kfHtml($sKey) . "</td>\n"
             . "              <td>" . kfHtml($aColumn["COLUMN_NAME"]) . "</td>\n"
-            . "              <td class=\"schema-column-type\">" . kfHtml($aColumn["COLUMN_TYPE"]) . "</td>\n"
+            . "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . kfHtml($sColumnTypeDisplay) . "</td>\n"
             . "              <td class=\"schema-null\">" . ($aColumn["IS_NULLABLE"] == "YES" ? "Yes" : "No") . "</td>\n"
             . "              <td>" . kfHtml($aColumn["EXTRA"]) . "</td>\n"
             . "            </tr>\n";
@@ -135,10 +144,47 @@ foreach ($aTables as $sTableName => $aColumns) {
 <?php
 
 foreach ($aRelations as $aRelation) {
+    $sRelationKey = $aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"] . ">" . $aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"];
+    $sRouteAttributes = "";
+    if (isset($aSchemaRelationRoutes[$sRelationKey])) {
+        $sRouteAttributes = " data-source-side=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["source"]) . "\""
+            . " data-target-side=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["target"]) . "\"";
+        if (isset($aSchemaRelationRoutes[$sRelationKey]["curve"])) {
+            $sRouteAttributes .= " data-curve=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["curve"]) . "\"";
+        }
+        if (isset($aSchemaRelationRoutes[$sRelationKey]["source-x"])) {
+            $sRouteAttributes .= " data-source-x-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["source-x"]) . "\"";
+        }
+        if (isset($aSchemaRelationRoutes[$sRelationKey]["source-y"])) {
+            $sRouteAttributes .= " data-source-y-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["source-y"]) . "\"";
+        }
+        if (isset($aSchemaRelationRoutes[$sRelationKey]["target-x"])) {
+            $sRouteAttributes .= " data-target-x-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["target-x"]) . "\"";
+        }
+        if (isset($aSchemaRelationRoutes[$sRelationKey]["target-y"])) {
+            $sRouteAttributes .= " data-target-y-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["target-y"]) . "\"";
+        }
+        if (isset($aSchemaRelationRoutes[$sRelationKey]["via-x"])) {
+            $sRouteAttributes .= " data-via-x=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["via-x"]) . "\"";
+        }
+        if (isset($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"])) {
+            $sRouteAttributes .= " data-via-x-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"]) . "\"";
+        }
+        if (isset($aSchemaRelationRoutes[$sRelationKey]["via-y"])) {
+            $sRouteAttributes .= " data-via-y=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["via-y"]) . "\"";
+        }
+        if (isset($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"])) {
+            $sRouteAttributes .= " data-via-y-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"]) . "\"";
+        }
+        if (isset($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"])) {
+            $sRouteAttributes .= " data-via-table-bottom-offset=\"" . kfHtml($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"]) . "\"";
+        }
+    }
     echo "      <tr data-source-table=\"" . kfHtml($aRelation["TABLE_NAME"])
         . "\" data-source-column=\"" . kfHtml($aRelation["COLUMN_NAME"])
         . "\" data-target-table=\"" . kfHtml($aRelation["REFERENCED_TABLE_NAME"])
-        . "\" data-target-column=\"" . kfHtml($aRelation["REFERENCED_COLUMN_NAME"]) . "\">\n"
+        . "\" data-target-column=\"" . kfHtml($aRelation["REFERENCED_COLUMN_NAME"]) . "\""
+        . $sRouteAttributes . ">\n"
         . "        <td>" . kfHtml($aRelation["CONSTRAINT_NAME"]) . "</td>\n"
         . "        <td>" . kfHtml($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"]) . "</td>\n"
         . "        <td>" . kfHtml($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"]) . "</td>\n"

@@ -117,7 +117,6 @@ $iTime = kfSendPageHeaders();
   <meta name="csrf-token" content="<?php echo kfHtml(kfGetCsrfToken()); ?>">
   <title><?php echo kfHtml($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo kfHtml($sBaseUrl . "../ex/css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/../ex/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
   <link href="<?php echo kfHtml($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>

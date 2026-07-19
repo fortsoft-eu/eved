@@ -94,7 +94,6 @@ $iTime = kfSendPageHeaders();
   <meta name="csrf-token" content="<?php echo kfHtml(kfGetCsrfToken()); ?>">
   <title><?php echo kfHtml($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo kfHtml($sBaseUrl . "../ex/css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/../ex/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
   <link href="<?php echo kfHtml($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
@@ -137,10 +136,9 @@ if (!$aRows) {
     </tbody>
   </table>
 
-  <div id="type-modal" class="modal-dialog" hidden>
-    <div class="modal-box">
-      <div class="modal-header"><strong data-modal-heading>Type</strong><button type="button" class="modal-close" data-modal-close aria-label="Close">&times;</button></div>
-      <form method="post" class="modal-form">
+  <div id="type-modal" class="confirm-dialog" hidden>
+    <form method="post" class="confirm-dialog-box kf-edit-dialog">
+      <div class="confirm-dialog-header"><strong data-modal-heading>Type</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
         <input type="hidden" name="kf_csrf_token" value="<?php echo kfHtml(kfGetCsrfToken()); ?>">
         <input type="hidden" name="action" value="save_type">
         <input type="hidden" name="id" value="">
@@ -158,19 +156,18 @@ if (!$aRows) {
 <?php
 
 foreach ($aMemberTypes as $aType) {
-    echo "            <label><input type=\"checkbox\" name=\"members[]\" value=\"" . (int)$aType["id"] . "\"> " . kfHtml($aType["name"]) . "</label>\n";
+    echo "            <label class=\"checkbox-label\"><input type=\"checkbox\" name=\"members[]\" value=\"" . (int)$aType["id"] . "\"> " . kfHtml($aType["name"]) . "</label>\n";
 }
 
 ?>
           </div>
         </div>
-        <div class="modal-actions">
-          <button type="submit">Save</button>
-          <button type="submit" name="action" value="delete_type">Delete</button>
-          <button type="button" data-modal-close>Cancel</button>
+        <div class="confirm-dialog-actions">
+          <button type="submit" class="confirm-dialog-button">Save</button>
+          <button type="submit" name="action" value="delete_type" class="confirm-dialog-button">Delete</button>
+          <button type="button" class="confirm-dialog-button" data-modal-close>Cancel</button>
         </div>
-      </form>
-    </div>
+    </form>
   </div>
 <?php
 
