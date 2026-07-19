@@ -225,6 +225,7 @@ function getMenuItems($oPdo) {
             );
         }
     } catch (Exception $oException) {
+        error_log((string)$oException);
         return array();
     }
     return $aItems;
@@ -245,6 +246,7 @@ function getCurrentMenuName($oPdo) {
             return $sName;
         }
     } catch (Exception $oException) {
+        error_log((string)$oException);
         send500AndExit("Database error: " . $oException->getMessage());
     }
     send500AndExit("Menu error: Missing active menu name for " . $sPath . ".");
@@ -332,6 +334,7 @@ function updateLastLogin($oPdo, $iUserId) {
         $oStatement = $oPdo->prepare("UPDATE ex_users SET last_login_at = NOW() WHERE id = :id");
         $oStatement->execute(array("id" => $iUserId));
     } catch (Exception $oException) {
+        error_log((string)$oException);
     }
 }
 
@@ -382,6 +385,7 @@ function refreshAuthSession() {
         $blAuthenticated = true;
         return true;
     } catch (Exception $oException) {
+        error_log((string)$oException);
         clearAuthSession();
         return false;
     }
@@ -4335,6 +4339,7 @@ function bdIsBirthdayServed($aServedRows, $iSubjectId, $sBirthdayDate) {
         $oServedAt = new DateTimeImmutable($sServedAt);
         $oBirthday = new DateTimeImmutable((string)$sBirthdayDate . " 00:00:00");
     } catch (Exception $oException) {
+        error_log((string)$oException);
         return false;
     }
     return $oServedAt >= $oBirthday->modify("-17 days") && $oServedAt < $oBirthday->modify("+3 days");
@@ -4541,6 +4546,7 @@ function cardDavRequireUser($oPdo) {
     try {
         $aUser = fetchPortalLoginUser($oPdo, trim($sUserName));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         cardDavSendTextAndExit(500, "Database error.");
     }
     if (!$aUser || (int)$aUser["is_active"] != 1 || (int)$aUser["subject_active"] != 1 || !in_array((string)$aUser["subject_type"], array("person", "service"), true) || !password_verify($sPassword, (string)$aUser["password_hash"]) || (!userHasPermission($oPdo, (int)$aUser["id"], (int)$aUser["subject_id"], "portal.view") && !userHasPermission($oPdo, (int)$aUser["id"], (int)$aUser["subject_id"], "portal.full"))) {
@@ -6534,6 +6540,7 @@ function interGetBirthdayInfo($sCommunicationServedAt) {
     try {
         $oCommunicationDue = (new DateTimeImmutable($sCommunicationServedAt))->modify("+2 months")->setTime(0, 0, 0);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         return null;
     }
     $iDaysToCommunication = (int)$oToday->diff($oCommunicationDue)->format("%r%a");

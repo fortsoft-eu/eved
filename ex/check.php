@@ -89,6 +89,7 @@ try {
         }
     }
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 

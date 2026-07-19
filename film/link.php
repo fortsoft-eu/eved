@@ -148,6 +148,7 @@ try {
     $oStmtLinks = $oPdo->query("SELECT f.id AS film_id, f.archive_no, f.folder_name, f.scanned_at, f.lab_order_id, o.lab, o.bag_no, o.order_no, o.price_vat, o.currency, o.ordered_at, o.returned_at, o.invoice, o.ordered_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR) AS can_unassign, fd.film_scan_dates, sd.scan_dates FROM fs_film_scans AS f LEFT JOIN fs_photo_lab_orders AS o ON f.lab_order_id = o.id LEFT JOIN (SELECT lab_order_id, GROUP_CONCAT(DISTINCT DATE(scanned_at) ORDER BY scanned_at SEPARATOR '\\n') AS film_scan_dates FROM fs_film_scans WHERE lab_order_id IS NOT NULL GROUP BY lab_order_id) AS fd ON fd.lab_order_id = o.id LEFT JOIN (SELECT lab_order_id, GROUP_CONCAT(DISTINCT DATE(scanned_at) ORDER BY scanned_at SEPARATOR '\\n') AS scan_dates FROM fs_film_scans WHERE lab_order_id IS NOT NULL GROUP BY lab_order_id) AS sd ON sd.lab_order_id = o.id WHERE f.archive_no <= 990 ORDER BY f.archive_no ASC");
     $aLinks = $oStmtLinks->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 

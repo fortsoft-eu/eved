@@ -14,6 +14,7 @@ try {
     $oStatement->execute();
     $aEquipment = $oStatement->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 

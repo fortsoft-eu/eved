@@ -96,12 +96,14 @@ function selectAdminTextField(oElement) {
     try {
         oElement.select();
     } catch (oException) {
+        console.error(oException);
         logFilmException(oException);
     }
     if (typeof oElement.setSelectionRange == "function") {
         try {
             oElement.setSelectionRange(0, (oElement.value || "").length);
         } catch (oException) {
+            console.error(oException);
             logFilmException(oException);
         }
     }
@@ -116,6 +118,7 @@ function focusAdminElement(oElement, blSelectText) {
             "preventScroll": true
         });
     } catch (oException) {
+        console.error(oException);
         logFilmException(oException);
         oElement.focus();
     }
@@ -264,6 +267,7 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             blResult = document.execCommand("copy");
         } catch (oException) {
+            console.error(oException);
             logFilmException(oException);
             blResult = false;
         }
@@ -289,6 +293,7 @@ document.addEventListener("DOMContentLoaded", function () {
             navigator.clipboard.writeText(sLink).then(function () {
                 showCopyResult(oButton, true);
             }).catch(function (oException) {
+                console.error(oException);
                 logFilmException(oException);
                 showCopyResult(oButton, fallbackCopyLink(sLink));
             });
@@ -1026,6 +1031,7 @@ document.addEventListener("DOMContentLoaded", function () {
             "headers": getAdminAjaxHeaders(),
             "body": oData
         }).catch(function (oException) {
+            console.error(oException);
             logFilmException(oException);
         });
     }
@@ -1165,6 +1171,7 @@ document.addEventListener("DOMContentLoaded", function () {
     try {
         oAutoRefresh.checked = window.localStorage.getItem(sStorageKey) == "1";
     } catch (oException) {
+        console.error(oException);
         logFilmException(oException);
     }
 
@@ -1180,6 +1187,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return oAudioContext.resume().then(function () {
                 return oAudioContext.state == "running";
             }).catch(function (oException) {
+                console.error(oException);
                 logFilmException(oException);
                 return false;
             });
@@ -1246,6 +1254,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             scheduleRefreshCheck();
         }).catch(function (oException) {
+            console.error(oException);
             logFilmException(oException);
             scheduleRefreshCheck();
         });
@@ -1255,6 +1264,7 @@ document.addEventListener("DOMContentLoaded", function () {
         try {
             window.localStorage.setItem(sStorageKey, oAutoRefresh.checked ? "1" : "0");
         } catch (oException) {
+            console.error(oException);
             logFilmException(oException);
         }
         if (oAutoRefresh.checked) {
@@ -1311,6 +1321,7 @@ document.addEventListener("DOMContentLoaded", function () {
             try {
                 oResult = window.bowser.parse(sUserAgent);
             } catch (oException) {
+                console.error(oException);
                 logFilmException(oException);
                 return sUserAgent;
             }

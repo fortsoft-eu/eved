@@ -377,6 +377,7 @@
         try {
             blSuccess = document.execCommand("copy");
         } catch (oException) {
+            console.error(oException);
             blSuccess = false;
         }
         document.body.removeChild(oInput);
@@ -404,7 +405,8 @@
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(sLink).then(function () {
                     showCopyResult(oButton, true);
-                }).catch(function () {
+                }).catch(function (oException) {
+                    console.error(oException);
                     showCopyResult(oButton, copyTextWithInput(sLink));
                 });
                 return;

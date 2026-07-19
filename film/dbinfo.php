@@ -23,6 +23,7 @@ try {
     $aDatabaseInfo[] = array("pdo_client_version", $oPdo->getAttribute(PDO::ATTR_CLIENT_VERSION));
     $aDatabaseInfo[] = array("pdo_connection_status", $oPdo->getAttribute(PDO::ATTR_CONNECTION_STATUS));
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 

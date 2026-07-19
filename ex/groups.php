@@ -40,6 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $aGroup = count($aGroups) > 0 ? $aGroups[0] : null;
         sendJsonAndExit(array("success" => true, "group_id" => $iGroupId, "row_html" => renderGroupAdminRow($aGroup)));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -78,6 +79,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $aGroup = count($aGroups) > 0 ? $aGroups[0] : null;
         sendJsonAndExit(array("success" => true, "group_id" => $iGroupId, "row_html" => renderGroupAdminRow($aGroup)));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -115,6 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "group_id" => $iGroupId, "group_deleted" => true));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -136,6 +139,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "rows_html" => renderGroupAdminRows($oPdo, $blCanEdit)));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -266,6 +270,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "target_row_html" => renderGroupAdminRow($aGroup)
         ));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -280,6 +285,7 @@ try {
     $aGroups = fetchGroupAdminRows($oPdo);
     $aPortalPermissions = fetchPortalPermissions($oPdo);
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 

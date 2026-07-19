@@ -19,6 +19,7 @@ function getFilmUaGpu() {
         }
         return "Unknown GPU";
     } catch (oException) {
+        console.error(oException);
         logFilmException(oException);
         return "Error";
     }
@@ -114,6 +115,7 @@ function addFilmUaBrowserData(oFingerprint, oUserAgentData) {
         try {
             oResult = window.bowser.parse(navigator.userAgent || "", oUserAgentData || null);
         } catch (oException) {
+            console.error(oException);
             logFilmException(oException);
             oResult = null;
         }
@@ -154,6 +156,7 @@ function collectAndSendFilmUaFingerprint() {
             sTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
         }
     } catch (oException) {
+        console.error(oException);
         logFilmException(oException);
         sTimeZone = "";
     }
@@ -184,6 +187,7 @@ function collectAndSendFilmUaFingerprint() {
                 addFilmUaBrowserData(oFingerprint, oUserAgentData);
                 sendFilmUaFingerprint(oFingerprint);
             }).catch(function (oException) {
+                console.error(oException);
                 logFilmException(oException);
                 addFilmUaBrowserData(oFingerprint, oLowEntropyData);
                 sendFilmUaFingerprint(oFingerprint);
@@ -239,6 +243,7 @@ function getIdFromUrl(url) {
         var u = new URL(url, window.location.href);
         return u.searchParams.get("id");
     } catch (e) {
+        console.error(e);
         logFilmException(e);
         return null;
     }
@@ -398,6 +403,7 @@ function onSavePng(button, fileName) {
             button.disabled = false;
         }, "image/png", 1.0);
     }).catch(error => {
+        console.error(error);
         logFilmException(error);
         restoreDom();
         button.disabled = false;

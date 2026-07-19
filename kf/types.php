@@ -47,6 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
         } catch (PDOException $oException) {
+            error_log((string)$oException);
             setMessage("The type could not be saved. The name may already exist.", "error");
         }
         redirect("types.php");
@@ -63,6 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $oStatement->execute(array("id" => $iId));
                     setMessage("Type deleted.");
                 } catch (PDOException $oException) {
+                    error_log((string)$oException);
                     setMessage("The type could not be deleted.", "error");
                 }
             }

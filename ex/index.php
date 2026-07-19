@@ -36,6 +36,7 @@ try {
     $oStatement = $oPdo->query("SELECT id, contact_type, name FROM ex_contact_types ORDER BY `order` ASC, id ASC");
     $aFullListComplexFilterContactTypes = $oStatement->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 $aFullListComplexFilterFields = getFullListComplexFilterFields($aFullListComplexFilterContactTypes);
@@ -115,6 +116,7 @@ try {
     $aAllGroups = fetchGroups($oPdo);
     $aNotes = fetchSubjectNotes($oPdo);
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 

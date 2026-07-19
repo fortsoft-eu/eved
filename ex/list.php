@@ -36,6 +36,7 @@ try {
     $oStatement = $oPdo->query("SELECT id, contact_type, name FROM ex_contact_types ORDER BY `order` ASC, id ASC");
     $aFullListComplexFilterContactTypes = $oStatement->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 $aFullListComplexFilterFields = getFullListComplexFilterFields($aFullListComplexFilterContactTypes);
@@ -120,6 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         sendJsonAndExit(array("success" => true, "subject" => $aSubject));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
@@ -137,6 +139,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         sendJsonAndExit(array("success" => true, "subject" => $aSubject));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
@@ -169,6 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -283,6 +287,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -360,6 +365,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -404,6 +410,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -447,6 +454,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -536,6 +544,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -624,6 +633,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -671,6 +681,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $aResponse["group"] = fetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -719,6 +730,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $aResponse["group"] = fetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -757,6 +769,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -791,6 +804,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -818,6 +832,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -846,6 +861,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -874,6 +890,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -902,6 +919,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -930,6 +948,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -958,6 +977,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -1027,6 +1047,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $aResponse = getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -1081,6 +1102,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $aResponse = getUpdatedSubjectResponse($oPdo, (int)$aUpdatedContact["subject_id"], $aFullListSettings, $aFullListComplexFilterSql);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -1112,6 +1134,7 @@ try {
     $aAllGroups = fetchGroups($oPdo);
     $aNotes = fetchSubjectNotes($oPdo);
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 

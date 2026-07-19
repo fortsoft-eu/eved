@@ -47,6 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         sendJsonAndExit(array("success" => true, "subject" => $aSubject));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
@@ -153,6 +154,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId, "reload_required" => true));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -202,6 +204,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(array("success" => true));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -233,6 +236,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(array("success" => true));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -298,6 +302,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -321,6 +326,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         sendJsonAndExit(array("success" => true, "reload_required" => true));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }

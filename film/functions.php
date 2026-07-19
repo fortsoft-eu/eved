@@ -142,6 +142,7 @@ function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension, $aAllowedIps) {
             $iRequestedFilmScanId = (int)$mFilmScanId;
         }
     } catch (PDOException $oException) {
+        error_log((string)$oException);
         return;
     }
     $iNow = time();
@@ -253,6 +254,7 @@ function insertFilmUaRequest($oPdo, $aRequest, $aData) {
             "mime_types"             => getFilmUaFingerprintText($aData, "mimes")
         ));
     } catch (PDOException $oException) {
+        error_log((string)$oException);
         return false;
     }
     return true;

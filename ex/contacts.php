@@ -57,6 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         sendJsonAndExit(array("success" => true, "subject" => $aSubject));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
@@ -166,6 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId, "reload_required" => true));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -219,6 +221,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "reload_required" => $blContactTypeChanged || $blContactValueChanged
         ));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -245,6 +248,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         sendJsonAndExit(array("success" => true, "reload_required" => true));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
@@ -265,6 +269,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         sendJsonAndExit(array("success" => true, "reload_required" => true));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
@@ -332,6 +337,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -347,6 +353,7 @@ try {
     $aContactTypes = fetchContactTypes($oPdo, false);
     $aContactRows = contactsFetchRows($oPdo, $aContactSettings);
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 $sViewportContent = getLockedViewportContent();

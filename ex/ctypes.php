@@ -45,6 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $aContactType = count($aContactTypes) > 0 ? $aContactTypes[0] : null;
         sendJsonAndExit(array("success" => true, "contact_type_id" => $iContactTypeId, "row_html" => renderContactTypeAdminRow($aContactType)));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -86,6 +87,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $aContactType = count($aContactTypes) > 0 ? $aContactTypes[0] : null;
         sendJsonAndExit(array("success" => true, "contact_type_id" => $iContactTypeId, "row_html" => renderContactTypeAdminRow($aContactType)));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -123,6 +125,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "contact_type_id" => $iContactTypeId, "contact_type_deleted" => true, "rows_html" => renderContactTypeAdminRows($oPdo, $blCanEdit)));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -144,6 +147,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "rows_html" => renderContactTypeAdminRows($oPdo, $blCanEdit)));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -227,6 +231,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "rows_html" => renderContactTypeAdminRows($oPdo, $blCanEdit)
         ));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -239,6 +244,7 @@ $aContactTypes = array();
 try {
     $aContactTypes = fetchContactTypeAdminRows($oPdo);
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 

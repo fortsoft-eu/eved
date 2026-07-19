@@ -70,6 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
     } catch (Exception $oException) {
+        error_log((string)$oException);
         $sUploadError = $oException->getMessage();
     }
 }

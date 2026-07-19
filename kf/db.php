@@ -68,6 +68,7 @@ try {
     }
     $aTables = $aSortedTables;
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
@@ -80,6 +81,7 @@ if (isset($_GET["download"])) {
         try {
             $sBody = $sDownload == "backup" ? getDatabaseBackupSql($oPdo, $aTables) : getDatabaseSchemaSql($aTables);
         } catch (Exception $oException) {
+            error_log((string)$oException);
             send500AndExit("Database error: " . $oException->getMessage());
         }
         $aScriptNameParts = explode("/", trim((string)$_SERVER["SCRIPT_NAME"], "/"));

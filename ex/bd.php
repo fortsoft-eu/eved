@@ -67,6 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -131,6 +132,7 @@ if ($sBdPostAction == "get_subject") {
         }
         sendJsonAndExit(array("success" => true, "subject" => $aSubject));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
@@ -147,6 +149,7 @@ if ($sBdPostAction == "get_subject_portal_user") {
         }
         sendJsonAndExit(array("success" => true, "subject" => $aSubject));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
@@ -178,6 +181,7 @@ if ($sBdPostAction == "update_subject_portal_user") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -291,6 +295,7 @@ if ($sBdPostAction == "update_subject") {
 
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -334,6 +339,7 @@ if ($sBdPostAction == "update_subject_nickname") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -376,6 +382,7 @@ if ($sBdPostAction == "create_subject_nickname") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -464,6 +471,7 @@ if ($sBdPostAction == "update_subject_address") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -551,6 +559,7 @@ if ($sBdPostAction == "create_subject_address") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -597,6 +606,7 @@ if ($sBdPostAction == "update_subject_group") {
         $aResponse["group"] = fetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -644,6 +654,7 @@ if ($sBdPostAction == "create_subject_group") {
         $aResponse["group"] = fetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -681,6 +692,7 @@ if ($sBdPostAction == "update_subject_note") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -714,6 +726,7 @@ if ($sBdPostAction == "create_subject_note") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -740,6 +753,7 @@ if ($sBdPostAction == "delete_subject") {
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -767,6 +781,7 @@ if ($sBdPostAction == "delete_subject_contact") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -794,6 +809,7 @@ if ($sBdPostAction == "delete_subject_nickname") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -821,6 +837,7 @@ if ($sBdPostAction == "delete_subject_address") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -848,6 +865,7 @@ if ($sBdPostAction == "delete_subject_group") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -875,6 +893,7 @@ if ($sBdPostAction == "delete_subject_note") {
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -943,6 +962,7 @@ if ($sBdPostAction == "create_contact") {
         $aResponse = bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -996,6 +1016,7 @@ if ($sBdPostAction == "update_contact") {
         $aResponse = bdGetUpdatedSubjectResponse($oPdo, (int)$aUpdatedContact["subject_id"], $aBirthdaySettings, $blCanEdit);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
+        error_log((string)$oException);
         if ($oPdo->inTransaction()) {
             $oPdo->rollBack();
         }
@@ -1028,6 +1049,7 @@ try {
     $aNotes = fetchSubjectNotes($oPdo);
     $aBirthdayServedRows = bdFetchBirthdayServedRows($oPdo);
 } catch (Exception $oException) {
+    error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
