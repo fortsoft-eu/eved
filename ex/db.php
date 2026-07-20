@@ -136,7 +136,7 @@ renderMenu();
     <button type="submit" form="database-backup-download-form" class="button-link database-action-button">Download backup</button>
     <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo htmlspecialchars($sBackupDownloadUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">Copy backup link</button>
   </p>
-  <table id="database-table" class="table-filter-target">
+  <table id="database-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Table</th>

@@ -163,11 +163,6 @@ function getRenderThrobberHtmlAttributes($blUseRenderThrobberLock) {
     return $sAttributes;
 }
 
-function getCondensedTableClass() {
-    $sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
-    return preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent) ? " nx-condensed-table" : "";
-}
-
 function renderCopyAction($mValue, $sTitle = "Copy") {
     global $sCopyEmoji;
 

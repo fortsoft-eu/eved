@@ -293,6 +293,11 @@ table {
     background: #FFF;
 }
 
+.condensed-table {
+    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+    font-stretch: condensed;
+}
+
 .admin-controls {
     margin: 0 0 5px;
     align-items: center;
@@ -424,8 +429,13 @@ table {
     margin: 8px 0;
 }
 
+.film-menu-link-active,
 .film-menu-link:hover {
     background: #DCDCE4;
+}
+
+.film-menu-link-active {
+    font-weight: bold;
 }
 
 .filter-focus-button {
@@ -488,10 +498,32 @@ table {
     vertical-align: top;
 }
 
+#database-table {
+    table-layout: auto;
+    width: auto;
+}
+
+#database-table td,
+#database-table th {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+#database-table .database-structure-cell {
+    white-space: pre;
+}
+
+.condensed-table .database-structure-cell,
+.condensed-table .database-structure-cell pre {
+    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+    font-stretch: condensed;
+}
+
 .database-structure-cell {
     font-family: Consolas, "Courier New", monospace;
     overflow-wrap: normal;
-    white-space: pre-wrap;
+    white-space: pre;
     vertical-align: top;
 }
 

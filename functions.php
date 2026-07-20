@@ -16,6 +16,15 @@ function isTrustedClient($aAllowedIps) {
     return hash_equals($sTrustedUserAgent, (string)$_SERVER["HTTP_USER_AGENT"]) && hash_equals($sTrustedAcceptLanguage, (string)$_SERVER["HTTP_ACCEPT_LANGUAGE"]);
 }
 
+function isDesktop() {
+    $sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
+    return !preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent);
+}
+
+function getCondensedTableClass() {
+    return isDesktop() ? "" : " condensed-table";
+}
+
 function getContentSecurityPolicySource() {
     global $sScheme;
 
@@ -600,6 +609,11 @@ function refreshAuthSession() {
         clearAuthSession();
         return false;
     }
+    $iAuthTime = isset($_SESSION["auth_time"]) ? (int)$_SESSION["auth_time"] : 0;
+    if ($iAuthTime < 1 || $iAuthTime < time() - 1200) {
+        clearAuthSession();
+        return false;
+    }
     if (!$oPdo) {
         clearAuthSession();
         return false;
@@ -876,7 +890,8 @@ function requireViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse
         exit;
     }
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "cancel") {
-        if (isTrustedClient($aAllowedIps) || refreshAuthSession()) {
+        $blAuthenticated = refreshAuthSession();
+        if (isTrustedClient($aAllowedIps) || $blAuthenticated) {
             unset($_SESSION["login_cancel_forbidden"]);
             resetLoginToken();
             sendSecurityHeaders();
@@ -895,11 +910,12 @@ function requireViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse
         }
         handleLoginPost($sTokenName);
     }
+    $blAuthenticated = refreshAuthSession();
     if (isTrustedClient($aAllowedIps)) {
         unset($_SESSION["login_cancel_forbidden"]);
         return;
     }
-    if (refreshAuthSession()) {
+    if ($blAuthenticated) {
         unset($_SESSION["login_cancel_forbidden"]);
         if (isProjectViewAllowed($sProject)) {
             return;

@@ -240,7 +240,7 @@ echo "      </select>\n";
     </div>
   </div>
 
-  <table>
+  <table class="<?php echo trim(getCondensedTableClass()); ?>">
     <thead>
       <tr>
         <th style="text-align: right; width: 1px;">#</th>

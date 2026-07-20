@@ -359,7 +359,7 @@ table {
     background: #FFF;
 }
 
-.nx-condensed-table {
+.condensed-table {
     font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
     font-stretch: condensed;
 }
@@ -669,6 +669,28 @@ table {
     word-break: normal;
 }
 
+#database-table {
+    table-layout: auto;
+    width: auto;
+}
+
+#database-table td,
+#database-table th {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+#database-table .database-structure-cell {
+    white-space: pre;
+}
+
+.condensed-table .database-structure-cell,
+.condensed-table .database-structure-cell pre {
+    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+    font-stretch: condensed;
+}
+
 .database-table-name {
     vertical-align: top;
 }
@@ -676,7 +698,7 @@ table {
 .database-structure-cell {
     font-family: Consolas, "Courier New", monospace;
     overflow-wrap: normal;
-    white-space: pre-wrap;
+    white-space: pre;
     vertical-align: top;
 }
 

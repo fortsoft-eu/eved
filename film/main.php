@@ -4,6 +4,7 @@ include "config.php";
 include "../functions.php";
 include "functions.php";
 
+
 ini_set("log_errors", "1");
 ini_set("error_log", __DIR__ . "/../log/error.log");
 
@@ -36,17 +37,6 @@ session_set_cookie_params(array(
     "samesite" => "Lax"
 ));
 session_start();
-unset(
-    $_SESSION["cover"],
-    $_SESSION["metadata"],
-    $_SESSION["mode"],
-    $_SESSION["link_last_bag_id"],
-    $_SESSION["link_message"],
-    $_SESSION["link_message_type"],
-    $_SESSION["fs_film_ua"],
-    $_SESSION["fs_film_ua_page_visits"],
-    $_SESSION["fs_film_ua_fingerprint"]
-);
 
 
 handleQuickTableFilterRequest();

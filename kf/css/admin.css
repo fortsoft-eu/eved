@@ -241,6 +241,11 @@ table {
     width: 100%;
 }
 
+.condensed-table {
+    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+    font-stretch: condensed;
+}
+
 .admin-controls {
     align-items: center;
     display: flex;
@@ -415,10 +420,32 @@ table {
     vertical-align: top;
 }
 
+#kf-database-table {
+    table-layout: auto;
+    width: auto;
+}
+
+#kf-database-table td,
+#kf-database-table th {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+#kf-database-table .database-structure-cell {
+    white-space: pre;
+}
+
+.condensed-table .database-structure-cell,
+.condensed-table .database-structure-cell pre {
+    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+    font-stretch: condensed;
+}
+
 .database-structure-cell {
     font-family: Consolas, "Courier New", monospace;
     overflow-wrap: normal;
-    white-space: pre-wrap;
+    white-space: pre;
     vertical-align: top;
 }
 
@@ -778,5 +805,5 @@ th.numeric {
 .database-structure-cell pre {
     font-family: Consolas, "Courier New", monospace;
     margin: 0;
-    white-space: pre-wrap;
+    white-space: pre;
 }

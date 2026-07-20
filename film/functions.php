@@ -1,10 +1,5 @@
 <?php
 
-function isDesktop() {
-    $sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
-    return !preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent);
-}
-
 function startFilmUaPageRequest($iRequestedFilmScanId) {
     global $iVisitTimeout;
 

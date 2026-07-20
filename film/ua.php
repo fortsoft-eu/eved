@@ -59,7 +59,7 @@ if (!$aRows) {
 } else {
 
 ?>
-  <table id="film-ua-table" class="ua-table table-filter-target">
+  <table id="film-ua-table" class="ua-table table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Date and Time</th>
