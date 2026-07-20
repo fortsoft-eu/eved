@@ -604,7 +604,7 @@ if ($oPdo) {
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/uri-1.19.2/uri.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/headroom-0.11.0/headroom.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/jstree-3.3.10/jstree.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/interactjs-1.9.22/interact.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/interactjs-1.10.27/interact.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/html2canvas-1.4.1/html2canvas.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/hndsd.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/hndse.min.js"></script>

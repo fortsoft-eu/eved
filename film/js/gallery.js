@@ -1,6 +1,4 @@
-var app = new Hnd.App({
-    searchEngineMinChars: 3
-});
+var app = new Hnd.App();
 
 var oCameraImageResizeObserver = null;
 
@@ -9,13 +7,13 @@ function getFilmUaGpu() {
     try {
         var oCanvas = document.createElement("canvas");
         var oGl = oCanvas.getContext("webgl") || oCanvas.getContext("experimental-webgl");
-        var oDebugInfo;
+        var sRenderer;
         if (!oGl) {
             return "Not supported";
         }
-        oDebugInfo = oGl.getExtension("WEBGL_debug_renderer_info");
-        if (oDebugInfo) {
-            return oGl.getParameter(oDebugInfo.UNMASKED_RENDERER_WEBGL);
+        sRenderer = oGl.getParameter(oGl.RENDERER);
+        if (sRenderer) {
+            return String(sRenderer);
         }
         return "Unknown GPU";
     } catch (oException) {
@@ -249,7 +247,7 @@ function getIdFromUrl(url) {
     }
 }
 
-function syncJsTreeSelection(app, urlJustLoaded) {
+function syncJsTreeSelection(urlJustLoaded) {
     var topic = document.querySelector("#topic-content");
     var id = topic && topic.dataset ? topic.dataset.hndId : null;
     if (!id || id === "") {
@@ -445,11 +443,6 @@ function initializeGalleryControlHandlers() {
 }
 
 function initializeAdminLinkHandlers() {
-    if (initializeAdminLinkHandlers.initialized) {
-        return;
-    }
-    initializeAdminLinkHandlers.initialized = true;
-
     document.addEventListener("click", function (event) {
         var link = event.target.closest ? event.target.closest("a[data-admin-link]") : null;
         if (!link) {
@@ -472,35 +465,26 @@ app.EVENTS.onTopicChanged = function (url) {
         if (topicTitle) {
             document.title = topicTitle;
         }
-        syncJsTreeSelection(app, url);
+        syncJsTreeSelection(url);
     }
     setupCameraImage();
     collectAndSendFilmUaFingerprint();
 };
 
-document.addEventListener("DOMContentLoaded", function () {
-    syncJsTreeSelection(app, window.location.href);
-    setupCameraImage();
-    collectAndSendFilmUaFingerprint();
-    initializeGalleryControlHandlers();
-});
+function initializeFancyboxHandlers() {
+    document.addEventListener("click", function (ev) {
+        var a = ev.target.closest("a[data-fancybox]");
+        if (!a) {
+            return;
+        }
+        ev.preventDefault();
+        ev.stopPropagation();
+        ev.stopImmediatePropagation();
+        openFancyboxGroupFromAnchor(a);
+    }, true);
+}
 
-window.addEventListener("resize", resizeCameraImage);
-initializeAdminLinkHandlers();
-app.Boot();
-
-document.addEventListener("click", function (ev) {
-    var a = ev.target.closest("a[data-fancybox]");
-    if (!a) {
-        return;
-    }
-    ev.preventDefault();
-    ev.stopPropagation();
-    ev.stopImmediatePropagation();
-    openFancyboxGroupFromAnchor(a);
-}, true);
-
-document.addEventListener("DOMContentLoaded", function () {
+function initializeImageRetryHandlers() {
     const maxRetries = 5;
     const retryDelay = 500;
 
@@ -520,9 +504,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
             img.dataset.retryAttempt = currentAttempt.toString();
-            const base = originalSrc;
             const suffix = "reload=" + Date.now() + "-" + currentAttempt;
-            const newSrc = base + (base.indexOf("?") >= 0 ? "&" : "?") + suffix;
+            const newSrc = originalSrc + (originalSrc.indexOf("?") >= 0 ? "&" : "?") + suffix;
             setTimeout(function () {
                 img.src = newSrc;
             }, retryDelay);
@@ -556,4 +539,11 @@ document.addEventListener("DOMContentLoaded", function () {
         childList: true,
         subtree: true
     });
-});
+}
+
+initializeGalleryControlHandlers();
+initializeAdminLinkHandlers();
+initializeFancyboxHandlers();
+initializeImageRetryHandlers();
+window.addEventListener("resize", resizeCameraImage);
+app.Boot();
