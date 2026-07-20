@@ -480,7 +480,6 @@ table {
     box-sizing: border-box;
     display: block;
     left: 0;
-    overflow-y: auto;
     position: absolute;
     top: calc(100% + 5px);
     width: max-content;
@@ -1291,7 +1290,7 @@ body.phpinfo-page .admin-controls {
 .nx-admin-permissions-column {
     box-sizing: border-box;
     max-width: 6.5em;
-    min-width: 6.5em;
+    min-width: 3em;
     overflow-wrap: normal;
     white-space: nowrap;
     width: 6.5em;
@@ -1326,6 +1325,18 @@ body.phpinfo-page .admin-controls {
     word-break: normal;
 }
 
+#nx-contact-types-table td:first-child,
+#nx-contact-types-table th:first-child {
+    min-width: 3em;
+    width: 6.5em;
+}
+
+#nx-groups-table td:first-child,
+#nx-groups-table th:first-child {
+    min-width: 3em;
+    width: 6.5em;
+}
+
 #nx-groups-table td:nth-child(2),
 .nx-admin-subjects-column {
     box-sizing: border-box;
@@ -1336,6 +1347,13 @@ body.phpinfo-page .admin-controls {
     white-space: nowrap;
     width: 6.5em;
     word-break: normal;
+}
+
+#nx-groups-table td:nth-child(2),
+#nx-groups-table th:nth-child(2),
+#nx-groups-table td:nth-child(5),
+#nx-groups-table th:nth-child(5) {
+    min-width: 3em;
 }
 
 #nx-contact-types-table td:nth-child(2),
@@ -1359,6 +1377,15 @@ body.phpinfo-page .admin-controls {
 #nx-contact-types-table td:nth-child(3),
 #nx-contact-types-table th:nth-child(3) {
     text-align: left;
+}
+
+#nx-contact-types-table td:nth-child(2),
+#nx-contact-types-table th:nth-child(2),
+#nx-contact-types-table td:nth-child(3),
+#nx-contact-types-table th:nth-child(3),
+#nx-contact-types-table td:nth-child(5),
+#nx-contact-types-table th:nth-child(5) {
+    min-width: 3em;
 }
 
 .nx-add-item-row .nx-add-item-action,

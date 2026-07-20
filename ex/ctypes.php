@@ -270,7 +270,7 @@ if ($blCanEdit) {
 
 ?>
   </p>
-  <table id="nx-contact-types-table" class="table-filter-target">
+  <table id="nx-contact-types-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Name</th>

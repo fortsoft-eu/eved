@@ -387,7 +387,6 @@ table {
     box-sizing: border-box;
     display: block;
     left: 0;
-    overflow-y: auto;
     position: absolute;
     top: calc(100% + 5px);
     width: max-content;

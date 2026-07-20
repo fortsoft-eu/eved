@@ -509,6 +509,15 @@ $aFullListComplexFilterGroups = array();
 foreach ($aAllGroups as $aGroup) {
     $aFullListComplexFilterGroups[] = (string)$aGroup["name"];
 }
+
+$aFullListComplexFilterSubjectTypes = array();
+foreach (getSubjectTypes() as $sSubjectType) {
+    $aFullListComplexFilterSubjectTypes[] = array(
+        "value" => $sSubjectType,
+        "label" => ucfirst($sSubjectType)
+    );
+}
+
 $aFullListComplexFilterAddressTypes = array();
 foreach (getAddressTypes() as $sAddressType) {
     $aFullListComplexFilterAddressTypes[] = array(
@@ -516,6 +525,8 @@ foreach (getAddressTypes() as $sAddressType) {
         "label" => addressTypeLabel($sAddressType)
     );
 }
+
+$aContactTypes = fetchContactTypes(null, false);
 
 $aDummySubjectEditors = array(
     101 => array("subject_id" => 101, "subject_type" => "person", "is_active" => 1, "subject_name_value" => "", "title_before" => "Mgr.", "first_name" => "Ada", "middle_name" => "M.", "last_name" => "Example", "title_after" => "Ph.D.", "birth_name" => "Tester", "birth_date" => "1985-04-12", "death_date" => ""),
@@ -546,11 +557,12 @@ $aDummySubjectPortals = array(
     107 => array("subject_id" => 107, "subject_name" => "Foreign Archive Office", "subject_type" => "organization", "portal_user" => array("has_user" => 0, "user_name" => "", "is_active" => 1, "direct_permission_keys" => array(), "effective_permission_keys" => array()), "portal_permissions" => $aDummyPortalPermissions)
 );
 
+$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aRows) > 0);
 $iTime = sendPageHeaders();
 
 ?>
 <!DOCTYPE html>
-<html lang="en-US" dir="ltr">
+<html lang="en-US" dir="ltr"<?php echo $sRenderThrobberHtmlAttributes; ?>>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -603,7 +615,7 @@ echo renderCountryDatalist();
           <label><input type="radio" name="complex_filter_match" value="all"<?php echo $aFullListComplexFilterDraft["match"] == "all" ? " checked" : ""; ?>> Match all conditions</label>
           <label><input type="radio" name="complex_filter_match" value="any"<?php echo $aFullListComplexFilterDraft["match"] == "any" ? " checked" : ""; ?>> Match any condition</label>
         </div>
-        <div class="complex-filter-rows js-complex-filter-rows" data-empty-row-count="1" data-group-options="<?php echo html(json_encode($aFullListComplexFilterGroups)); ?>" data-address-type-options="<?php echo html(json_encode($aFullListComplexFilterAddressTypes)); ?>">
+        <div class="complex-filter-rows js-complex-filter-rows" data-empty-row-count="1" data-group-options="<?php echo html(json_encode($aFullListComplexFilterGroups)); ?>" data-subject-type-options="<?php echo html(json_encode($aFullListComplexFilterSubjectTypes)); ?>" data-address-type-options="<?php echo html(json_encode($aFullListComplexFilterAddressTypes)); ?>">
 <?php
 
 foreach ($aFullListComplexFilterRows as $aCondition) {
@@ -613,18 +625,21 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
     }
     $sComplexOperator = isset($aCondition["operator"]) ? (string)$aCondition["operator"] : "contains";
     if ($sComplexOperator != "" && !isset($aFullListComplexFilterOperators[$sComplexOperator])) {
-        $sComplexOperator = "contains";
+        $sComplexOperator = $sComplexField != "" ? getFullListComplexFilterDefaultOperator($aFullListComplexFilterFields[$sComplexField]) : "contains";
     }
     $sComplexValueType = $sComplexField != "" && isset($aFullListComplexFilterFields[$sComplexField]["value_type"]) ? (string)$aFullListComplexFilterFields[$sComplexField]["value_type"] : "text";
     if ($sComplexValueType == "boolean") {
         $sComplexOperator = "equals";
+    }
+    if ($sComplexField != "" && !isFullListComplexFilterOperatorAllowed($aFullListComplexFilterFields[$sComplexField], $sComplexOperator)) {
+        $sComplexOperator = getFullListComplexFilterDefaultOperator($aFullListComplexFilterFields[$sComplexField]);
     }
     $sComplexValue = isset($aCondition["value"]) ? (string)$aCondition["value"] : "";
     $blComplexNeedsValue = $sComplexOperator == "" || !empty($aFullListComplexFilterOperators[$sComplexOperator]["needs_value"]);
     $blComplexOperatorHidden = $sComplexValueType == "boolean";
     echo "          <div class=\"complex-filter-row js-complex-filter-row\">\n",
         "            <select name=\"complex_filter_field[]\" class=\"js-complex-filter-field\">" . renderFullListComplexFilterFieldOptions($aFullListComplexFilterFields, $sComplexField) . "</select>\n",
-        "            <select name=\"complex_filter_operator[]\" class=\"js-complex-filter-operator\"" . ($blComplexOperatorHidden ? " disabled aria-hidden=\"true\" tabindex=\"-1\"" : "") . ">" . renderDemoFullListComplexFilterOperatorOptions($aFullListComplexFilterOperators, $sComplexOperator) . "</select>\n",
+        "            <select name=\"complex_filter_operator[]\" class=\"js-complex-filter-operator\"" . ($blComplexOperatorHidden ? " disabled aria-hidden=\"true\" tabindex=\"-1\"" : "") . ">" . renderFullListComplexFilterOperatorOptions($aFullListComplexFilterOperators, $sComplexOperator, $sComplexField != "" ? $aFullListComplexFilterFields[$sComplexField] : null) . "</select>\n",
         "            <input type=\"text\" name=\"complex_filter_value[]\" class=\"js-complex-filter-value\" value=\"" . html($sComplexValue) . "\" autocomplete=\"off\"" . ($blComplexNeedsValue ? "" : " disabled") . ">\n",
         "            <button type=\"button\" class=\"complex-filter-remove js-complex-filter-remove\" title=\"Remove condition\" aria-label=\"Remove condition\">&times;</button>\n",
         "          </div>\n";
@@ -673,13 +688,19 @@ echo "  <datalist id=\"nx-group-list\">\n";
 foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . html($aGroup["name"]) . "\"></option>\n";
 }
-echo "  </datalist>\n";
+echo "  </datalist>\n",
+    "  <select id=\"nx-contact-type-list\" hidden>\n";
+foreach ($aContactTypes as $aContactType) {
+    echo "    <option value=\"" . html($aContactType["id"]) . "\" data-contact-type=\"" . html($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . html($aContactType["is_active"]) . "\">" . html($aContactType["name"]) . "</option>\n";
+}
+echo "  </select>\n";
 if (!$aRows) {
     echo "  <p>" . ($blFullListComplexFilterActive ? "<strong>Complex Filter: </strong>" : "") . "No visible records found.</p>\n";
 } else {
+    echo renderPageThrobber();
 
 ?>
-  <table id="nx-subjects-table" class="table-filter-target">
+  <table id="nx-subjects-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th class="nx-subject-type-column">Type</th>

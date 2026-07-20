@@ -63,7 +63,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
   </p>
-  <table id="nx-external-libraries-table" class="table-filter-target consistency-table">
+  <table id="nx-external-libraries-table" class="table-filter-target consistency-table<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Permissions</th>

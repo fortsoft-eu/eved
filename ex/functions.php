@@ -4762,7 +4762,7 @@ function renderContactTypeAdminRows($oPdo, $blCanEdit) {
 
 function getDemoFullListComplexFilterFields() {
     return array(
-        "subject_type" => array("label" => "Type", "value_type" => "text"),
+        "subject_type" => array("label" => "Type", "value_type" => "subject_type"),
         "subject_name" => array("label" => "Name"),
         "title_before" => array("label" => "Title Before", "scope_type" => "person"),
         "first_name" => array("label" => "First Name", "scope_type" => "person"),
@@ -4827,6 +4827,9 @@ function normalizeDemoFullListComplexFilter($aPayload, $aFields, $aOperators) {
             } elseif (!isset($aOperators[$sOperator])) {
                 continue;
             }
+            if (!isFullListComplexFilterOperatorAllowed($aFields[$sField], $sOperator)) {
+                continue;
+            }
             if (empty($aOperators[$sOperator]["needs_value"])) {
                 $sValue = "";
             }
@@ -4853,6 +4856,9 @@ function normalizeDemoFullListComplexFilter($aPayload, $aFields, $aOperators) {
         if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
             $sOperator = "equals";
         } elseif (!isset($aOperators[$sOperator])) {
+            continue;
+        }
+        if (!isFullListComplexFilterOperatorAllowed($aFields[$sField], $sOperator)) {
             continue;
         }
         if (empty($aOperators[$sOperator]["needs_value"])) {
@@ -4899,7 +4905,10 @@ function normalizeDemoFullListComplexFilterDraft($aPayload, $aFields, $aOperator
             if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
                 $sOperator = "equals";
             } elseif (!isset($aOperators[$sOperator])) {
-                $sOperator = "contains";
+                $sOperator = getFullListComplexFilterDefaultOperator($aFields[$sField]);
+            }
+            if (!isFullListComplexFilterOperatorAllowed($aFields[$sField], $sOperator)) {
+                $sOperator = getFullListComplexFilterDefaultOperator($aFields[$sField]);
             }
             if (empty($aOperators[$sOperator]["needs_value"])) {
                 $sValue = "";
@@ -4934,7 +4943,10 @@ function normalizeDemoFullListComplexFilterDraft($aPayload, $aFields, $aOperator
             if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
                 $sOperator = "equals";
             } elseif (!isset($aOperators[$sOperator])) {
-                $sOperator = "contains";
+                $sOperator = getFullListComplexFilterDefaultOperator($aFields[$sField]);
+            }
+            if (!isFullListComplexFilterOperatorAllowed($aFields[$sField], $sOperator)) {
+                $sOperator = getFullListComplexFilterDefaultOperator($aFields[$sField]);
             }
             if (empty($aOperators[$sOperator]["needs_value"])) {
                 $sValue = "";
@@ -4950,14 +4962,6 @@ function normalizeDemoFullListComplexFilterDraft($aPayload, $aFields, $aOperator
         $aFilter = getDefaultFullListComplexFilterDraft();
     }
     return $aFilter;
-}
-
-function renderDemoFullListComplexFilterOperatorOptions($aOperators, $sSelected) {
-    $sHtml = "<option value=\"\" data-needs-value=\"1\"" . ($sSelected == "" ? " selected" : "") . "></option>";
-    foreach ($aOperators as $sOperator => $aOperator) {
-        $sHtml .= "<option value=\"" . html($sOperator) . "\" data-needs-value=\"" . (!empty($aOperator["needs_value"]) ? "1" : "0") . "\"" . ($sSelected == $sOperator ? " selected" : "") . ">" . html($aOperator["label"]) . "</option>";
-    }
-    return $sHtml;
 }
 
 function demoFullListLower($sValue) {
@@ -5059,6 +5063,15 @@ function normalizeDemoFullListComplexFilterValue($aField, $sValue) {
     }
     if (isset($aField["value_type"]) && (string)$aField["value_type"] == "country") {
         return countryNameToCode($sValue);
+    }
+    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "subject_type") {
+        $sNormalized = strtolower(trim((string)$sValue));
+        foreach (getSubjectTypes() as $sSubjectType) {
+            if ($sNormalized == $sSubjectType || $sNormalized == strtolower(ucfirst($sSubjectType))) {
+                return $sSubjectType;
+            }
+        }
+        return $sNormalized;
     }
     if (isset($aField["value_type"]) && (string)$aField["value_type"] == "address_type") {
         $sNormalized = strtolower(trim((string)$sValue));

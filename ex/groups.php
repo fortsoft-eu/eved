@@ -306,7 +306,7 @@ if ($blCanEdit) {
 
 ?>
   </p>
-  <table id="nx-groups-table" class="table-filter-target" data-permissions="<?php echo htmlspecialchars(json_encode($aPortalPermissions), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="nx-groups-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-permissions="<?php echo htmlspecialchars(json_encode($aPortalPermissions), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th>Name</th>
