@@ -3,10 +3,20 @@
 include "main.php";
 
 
-requireFullAccess($aAllowedIps, "film", "film_csrf_token");
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
+}
+
+
+$sDownload = "";
+if (isset($_GET["download"])) {
+    $sDownload = (string)$_GET["download"];
+    if ($sDownload == "db.sql") {
+        $sDownload = "schema";
+    }
+    if ($sDownload == "backup" && !isTrustedClient($aAllowedIps) && !isProjectViewAllowed("film")) {
+        send403AndExit();
+    }
 }
 
 
@@ -73,29 +83,24 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
-if (isset($_GET["download"])) {
-    $sDownload = (string)$_GET["download"];
-    if ($sDownload == "db.sql") {
-        $sDownload = "schema";
+if ($sDownload == "schema" || $sDownload == "backup") {
+    try {
+        $sBody = $sDownload == "backup" ? getDatabaseBackupSql($oPdo, $aTables) : getDatabaseSchemaSql($aTables);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        send500AndExit("Database error: " . $oException->getMessage());
     }
-    if ($sDownload == "schema" || $sDownload == "backup") {
-        try {
-            $sBody = $sDownload == "backup" ? getDatabaseBackupSql($oPdo, $aTables) : getDatabaseSchemaSql($aTables);
-        } catch (Exception $oException) {
-            error_log((string)$oException);
-            send500AndExit("Database error: " . $oException->getMessage());
-        }
-        $aScriptNameParts = explode("/", $_SERVER["SCRIPT_NAME"]);
-        $sPrefix = $aScriptNameParts[1];
-        $sProject = $aScriptNameParts[2];
-        $sFileName = $sPrefix . "_" . $sProject . "_" . $sDownload . "_" . date("Y-m-d_His", time()) . ".sql";
-        sendDatabaseSqlAndExit($sFileName, $sBody);
-    }
+    $aScriptNameParts = explode("/", $_SERVER["SCRIPT_NAME"]);
+    $sPrefix = $aScriptNameParts[1];
+    $sProject = $aScriptNameParts[2];
+    $sFileName = $sPrefix . "_" . $sProject . "_" . $sDownload . "_" . date("Y-m-d_His", time()) . ".sql";
+    sendDatabaseSqlAndExit($sFileName, $sBody);
 }
 
 $sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $sSchemaDownloadUrl = $sScriptUrl . "?download=schema";
 $sBackupDownloadUrl = $sScriptUrl . "?download=backup";
+$blCanDownloadBackup = isTrustedClient($aAllowedIps) || isProjectViewAllowed("film");
 $iTime = sendPageHeaders();
 
 ?>
@@ -133,7 +138,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="submit" form="database-schema-download-form" class="button-link database-action-button">Download schema</button>
     <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo htmlspecialchars($sSchemaDownloadUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">Copy schema link</button>
-    <button type="submit" form="database-backup-download-form" class="button-link database-action-button">Download backup</button>
+    <button type="submit" form="database-backup-download-form" class="button-link database-action-button"<?php echo $blCanDownloadBackup ? "" : " disabled"; ?>>Download backup</button>
     <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo htmlspecialchars($sBackupDownloadUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">Copy backup link</button>
   </p>
   <table id="database-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">

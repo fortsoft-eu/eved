@@ -200,6 +200,16 @@ input[type="text"] {
     text-decoration: none;
 }
 
+.button-link:disabled,
+.button-link:disabled:hover {
+    background: #E6E6E6;
+    border-color: #C8C8C8;
+    color: #777;
+    cursor: default;
+    opacity: 1;
+    text-decoration: none;
+}
+
 .confirm-dialog {
     background: rgba(0, 0, 0, 0.25);
     box-sizing: border-box;
