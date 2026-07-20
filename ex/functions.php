@@ -3656,6 +3656,8 @@ function addressesFetchRows($oPdo, $aAddressSettings) {
 }
 
 function bdGetBirthdayInfo($sBirthDate) {
+    global $iBirthdayDisplayMinDays, $iBirthdayDisplayMaxDays;
+
     $sBirthDate = trim((string)$sBirthDate);
     if ($sBirthDate == "" || $sBirthDate == "0000-00-00") {
         return null;
@@ -3680,7 +3682,7 @@ function bdGetBirthdayInfo($sBirthDate) {
             continue;
         }
         $iDaysToBirthday = (int)$oToday->diff($oBirthday)->format("%r%a");
-        if ($iDaysToBirthday < -2 || $iDaysToBirthday > 17) {
+        if ($iDaysToBirthday < $iBirthdayDisplayMinDays || $iDaysToBirthday > $iBirthdayDisplayMaxDays) {
             continue;
         }
         return array(
@@ -3708,6 +3710,8 @@ function bdFetchBirthdayServedRows($oPdo) {
 }
 
 function bdIsBirthdayServed($aServedRows, $iSubjectId, $sBirthdayDate) {
+    global $iBirthdayDisplayMinDays, $iBirthdayDisplayMaxDays;
+
     if (!isset($aServedRows[$iSubjectId])) {
         return false;
     }
@@ -3722,7 +3726,7 @@ function bdIsBirthdayServed($aServedRows, $iSubjectId, $sBirthdayDate) {
         error_log((string)$oException);
         return false;
     }
-    return $oServedAt >= $oBirthday->modify("-17 days") && $oServedAt < $oBirthday->modify("+3 days");
+    return $oServedAt >= $oBirthday->modify(sprintf("%+d days", -(int)$iBirthdayDisplayMaxDays)) && $oServedAt < $oBirthday->modify(sprintf("%+d days", 1 - (int)$iBirthdayDisplayMinDays));
 }
 
 function bdCompareRows($aFirst, $aSecond) {
@@ -3757,8 +3761,10 @@ function bdRenderSubjectActions($aRow, $blShowActions) {
 
 function renderServedSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aDisplaySettings, $sServedActionClass, $sServedActionLabel, $sServedActionEmoji, $aOptions = array()) {
     $iSubjectId = (int)$aRow["subject_id"];
+    $iServedDays = (int)$aRow["days_to_birthday"];
+    $sServedDays = $iServedDays < 0 ? "&#8722;" . html(abs($iServedDays)) : htmlValue($aRow["days_to_birthday"]);
     $sServedAction = $blShowActions ? "<a class=\"nx-item-action nx-birthday-served-action " . html($sServedActionClass) . "\" href=\"#\" data-subject-id=\"" . html($iSubjectId) . "\" title=\"" . html($sServedActionLabel) . "\" aria-label=\"" . html($sServedActionLabel) . "\"><span class=\"nx-copy-action-box\">" . $sServedActionEmoji . "</span></a>" : "";
-    $sServedInCell = htmlValue($aRow["days_to_birthday"]) . ($sServedAction != "" ? "&#8288;" . $sServedAction : "");
+    $sServedInCell = $sServedDays . ($sServedAction != "" ? "&#8288;" . $sServedAction : "");
     return renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aDisplaySettings, array_merge(array(
         "show_actions" => $blShowActions,
         "item_subject_id" => $iSubjectId,

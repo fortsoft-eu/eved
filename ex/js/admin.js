@@ -215,6 +215,69 @@ function prepareAdminReusableDialog() {
     return oDialog;
 }
 
+function showAdminMessageDialog(sMessage, sTitle) {
+    var oDialog = prepareAdminReusableDialog();
+    var oForm;
+    var oHeader;
+    var oTitle;
+    var oClose;
+    var oText;
+    var oActions;
+    var oOk;
+    var closeOnEscape;
+    var closeDialog;
+    if (!oDialog) {
+        return;
+    }
+    oForm = document.createElement("form");
+    oHeader = document.createElement("div");
+    oTitle = document.createElement("strong");
+    oClose = document.createElement("button");
+    oText = document.createElement("p");
+    oActions = document.createElement("div");
+    oOk = document.createElement("button");
+    closeOnEscape = function (oEvent) {
+        if (oEvent.key == "Escape") {
+            closeDialog();
+        }
+    };
+    closeDialog = function () {
+        document.removeEventListener("keydown", closeOnEscape);
+        closeAdminDialogElement(oDialog);
+    };
+    oDialog.className = "confirm-dialog";
+    oForm.className = "confirm-dialog-box subject-edit-dialog";
+    oForm.method = "post";
+    oForm.action = window.location.href;
+    oHeader.className = "confirm-dialog-header";
+    oTitle.textContent = sTitle || "Message";
+    oClose.type = "button";
+    oClose.className = "confirm-dialog-close";
+    oClose.setAttribute("aria-label", "Close");
+    oClose.textContent = "\u00D7";
+    oText.textContent = sMessage || "";
+    oActions.className = "confirm-dialog-actions";
+    oOk.type = "submit";
+    oOk.className = "confirm-dialog-button";
+    oOk.textContent = "OK";
+    oHeader.appendChild(oTitle);
+    oHeader.appendChild(oClose);
+    oForm.appendChild(oHeader);
+    oForm.appendChild(oText);
+    oActions.appendChild(oOk);
+    oForm.appendChild(oActions);
+    oForm.addEventListener("submit", function (oEvent) {
+        oEvent.preventDefault();
+        closeDialog();
+    });
+    oClose.addEventListener("click", closeDialog);
+    oDialog.appendChild(oForm);
+    enableAdminDialogDrag(oDialog, oForm, oHeader);
+    document.addEventListener("keydown", closeOnEscape);
+    openAdminDialogElement(oDialog, closeDialog);
+    focusAdminElement(oOk);
+}
+
 function copyAdminTextWithTextarea(sText) {
     var oTextArea = document.createElement("textarea");
     var blResult = false;
@@ -1411,21 +1474,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
     var oTable = document.getElementById("nx-birthdays-table");
-    if (!oTable || !window.fetch || !window.FormData) {
+    if (!oTable) {
         return;
     }
     oTable.addEventListener("click", function (oEvent) {
-        var oButton = oEvent.target.closest ? oEvent.target.closest(".js-birthday-served") : null;
+        var oTarget = oEvent.target;
+        var oButton = null;
         var oRow;
         var oData;
+        var sDefaultMessage = "Birthday could not be marked served.";
+        while (oTarget && oTarget !== oTable) {
+            if (oTarget.nodeType === 1 && (" " + oTarget.className + " ").indexOf(" js-birthday-served ") !== -1) {
+                oButton = oTarget;
+                break;
+            }
+            oTarget = oTarget.parentNode;
+        }
         if (!oButton) {
             return;
         }
         oEvent.preventDefault();
+        if (!window.fetch || !window.FormData) {
+            showAdminMessageDialog(sDefaultMessage);
+            return;
+        }
         if (oButton.disabled) {
             return;
         }
-        oRow = oButton.closest ? oButton.closest("tr[data-subject-id]") : null;
+        oRow = oButton;
+        while (oRow && oRow !== oTable) {
+            if (oRow.nodeType === 1 && oRow.tagName && oRow.tagName.toLowerCase() == "tr" && oRow.getAttribute("data-subject-id") !== null) {
+                break;
+            }
+            oRow = oRow.parentNode;
+        }
+        if (oRow === oTable) {
+            oRow = null;
+        }
         oData = new FormData();
         oButton.disabled = true;
         oData.append("action", "mark_birthday_served");
@@ -1437,11 +1522,27 @@ document.addEventListener("DOMContentLoaded", function () {
             "credentials": "same-origin",
             "headers": getAdminAjaxHeaders()
         }).then(function (oResponse) {
-            return oResponse.json();
+            return oResponse.text().then(function (sText) {
+                var aData = null;
+                var sMessage;
+                if (sText) {
+                    try {
+                        aData = JSON.parse(sText);
+                    } catch (oException) {
+                        aData = null;
+                    }
+                }
+                if (aData) {
+                    return aData;
+                }
+                sMessage = (sText || "").replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
+                sMessage = sMessage.replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+                throw new Error(sMessage || sDefaultMessage);
+            });
         }).then(function (aData) {
             if (!aData || !aData.success) {
                 oButton.disabled = false;
-                window.alert(aData && aData.message ? aData.message : "Birthday could not be marked served.");
+                showAdminMessageDialog(aData && aData.message ? aData.message : sDefaultMessage);
                 return;
             }
             if (oRow && oRow.parentNode) {
@@ -1450,7 +1551,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).catch(function (oException) {
             logAdminException(oException);
             oButton.disabled = false;
-            window.alert("Birthday could not be marked served.");
+            showAdminMessageDialog(oException && oException.message ? oException.message : sDefaultMessage);
         });
     });
 });
@@ -2682,21 +2783,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
     var oTable = document.getElementById("nx-interactions-table");
-    if (!oTable || !window.fetch || !window.FormData) {
+    if (!oTable) {
         return;
     }
     oTable.addEventListener("click", function (oEvent) {
-        var oButton = oEvent.target.closest ? oEvent.target.closest(".js-communication-served") : null;
+        var oTarget = oEvent.target;
+        var oButton = null;
         var oRow;
         var oData;
+        var sDefaultMessage = "Communication could not be marked served.";
+        while (oTarget && oTarget !== oTable) {
+            if (oTarget.nodeType === 1 && (" " + oTarget.className + " ").indexOf(" js-communication-served ") !== -1) {
+                oButton = oTarget;
+                break;
+            }
+            oTarget = oTarget.parentNode;
+        }
         if (!oButton) {
             return;
         }
         oEvent.preventDefault();
+        if (!window.fetch || !window.FormData) {
+            showAdminMessageDialog(sDefaultMessage);
+            return;
+        }
         if (oButton.disabled) {
             return;
         }
-        oRow = oButton.closest ? oButton.closest("tr[data-subject-id]") : null;
+        oRow = oButton;
+        while (oRow && oRow !== oTable) {
+            if (oRow.nodeType === 1 && oRow.tagName && oRow.tagName.toLowerCase() == "tr" && oRow.getAttribute("data-subject-id") !== null) {
+                break;
+            }
+            oRow = oRow.parentNode;
+        }
+        if (oRow === oTable) {
+            oRow = null;
+        }
         oData = new FormData();
         oButton.disabled = true;
         oData.append("action", "mark_communication_served");
@@ -2708,11 +2831,27 @@ document.addEventListener("DOMContentLoaded", function () {
             "credentials": "same-origin",
             "headers": getAdminAjaxHeaders()
         }).then(function (oResponse) {
-            return oResponse.json();
+            return oResponse.text().then(function (sText) {
+                var aData = null;
+                var sMessage;
+                if (sText) {
+                    try {
+                        aData = JSON.parse(sText);
+                    } catch (oException) {
+                        aData = null;
+                    }
+                }
+                if (aData) {
+                    return aData;
+                }
+                sMessage = (sText || "").replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
+                sMessage = sMessage.replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+                throw new Error(sMessage || sDefaultMessage);
+            });
         }).then(function (aData) {
             if (!aData || !aData.success) {
                 oButton.disabled = false;
-                window.alert(aData && aData.message ? aData.message : "Communication could not be marked served.");
+                showAdminMessageDialog(aData && aData.message ? aData.message : sDefaultMessage);
                 return;
             }
             if (oRow && oRow.parentNode) {
@@ -2721,7 +2860,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).catch(function (oException) {
             logAdminException(oException);
             oButton.disabled = false;
-            window.alert("Communication could not be marked served.");
+            showAdminMessageDialog(oException && oException.message ? oException.message : sDefaultMessage);
         });
     });
 });
@@ -3215,7 +3354,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return JSON.parse(sJson);
         } catch (oException) {
             logAdminException(oException);
-            window.alert("Dummy data could not be loaded.");
+            showAdminMessageDialog("Dummy data could not be loaded.");
             return null;
         }
     }
@@ -4088,14 +4227,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }).then(function (aData) {
             oButton.disabled = false;
             if (!aData || !aData.success) {
-                window.alert(aData && aData.message ? aData.message : "Subject could not be loaded.");
+                showAdminMessageDialog(aData && aData.message ? aData.message : "Subject could not be loaded.");
                 return;
             }
             openSubjectDialog(aData.subject, getAdminSubjectRow(oButton), false);
         }).catch(function (oException) {
             logAdminException(oException);
             oButton.disabled = false;
-            window.alert("Subject could not be loaded.");
+            showAdminMessageDialog("Subject could not be loaded.");
         });
     }
 
@@ -4209,14 +4348,14 @@ document.addEventListener("DOMContentLoaded", function () {
         }).then(function (aData) {
             oButton.disabled = false;
             if (!aData || !aData.success) {
-                window.alert(aData && aData.message ? aData.message : "Portal account could not be loaded.");
+                showAdminMessageDialog(aData && aData.message ? aData.message : "Portal account could not be loaded.");
                 return;
             }
             openSubjectPortalDialog(aData.subject, getAdminSubjectRow(oButton));
         }).catch(function (oException) {
             logAdminException(oException);
             oButton.disabled = false;
-            window.alert("Portal account could not be loaded.");
+            showAdminMessageDialog("Portal account could not be loaded.");
         });
     }
 

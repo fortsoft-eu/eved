@@ -1073,6 +1073,14 @@ body.phpinfo-page .admin-controls {
     white-space: normal;
 }
 
+#nx-contacts-table thead th,
+#nx-birthdays-table thead th,
+#nx-interactions-table thead th {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
 .nx-invalid-birth-number {
     background-color: #FFF9C4;
     color: #D00;

@@ -45,23 +45,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
     try {
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("SELECT p.subject_id, p.birth_date, p.birthday_served_at FROM ex_persons AS p INNER JOIN ex_subjects AS s ON s.id = p.subject_id WHERE p.subject_id = :subject_id AND s.subject_type = 'person' FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT p.subject_id, p.birth_date FROM ex_persons AS p INNER JOIN ex_subjects AS s ON s.id = p.subject_id WHERE p.subject_id = :subject_id AND s.subject_type = 'person' FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
         $aPerson = $oStatement->fetch(PDO::FETCH_ASSOC);
         if (!$aPerson) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
-        $aBirthdayInfo = bdGetBirthdayInfo(isset($aPerson["birth_date"]) ? $aPerson["birth_date"] : "");
-        if (!is_array($aBirthdayInfo)) {
+        $sBirthDate = isset($aPerson["birth_date"]) ? trim((string)$aPerson["birth_date"]) : "";
+        if (!preg_match("/^[0-9]{4}-([0-9]{2})-([0-9]{2})$/", $sBirthDate, $aMatches) || !checkdate((int)$aMatches[1], (int)$aMatches[2], (int)substr($sBirthDate, 0, 4))) {
             $oPdo->rollBack();
-            sendJsonAndExit(array("success" => false, "message" => "Birthday is not in the current service window."), 409);
+            sendJsonAndExit(array("success" => false, "message" => "Subject does not have a valid birth date."), 409);
         }
-        if (!bdIsBirthdayServed(array($iSubjectId => $aPerson), $iSubjectId, $aBirthdayInfo["birthday_date"])) {
-            $oServedAt = new DateTimeImmutable("now");
-            $sServedAt = $oServedAt->format("Y-m-d H:i:s.u");
-            $oStatement = $oPdo->prepare("UPDATE ex_persons SET birthday_served_at = :birthday_served_at, inter_served_at = :inter_served_at WHERE subject_id = :subject_id");
-            $oStatement->execute(array("birthday_served_at" => $sServedAt, "inter_served_at" => $sServedAt, "subject_id" => $iSubjectId));
+        $oServedAt = new DateTimeImmutable("now");
+        $sServedAt = $oServedAt->format("Y-m-d H:i:s.u");
+        $oStatement = $oPdo->prepare("UPDATE ex_persons SET birthday_served_at = :birthday_served_at, inter_served_at = :inter_served_at WHERE subject_id = :subject_id");
+        $oStatement->execute(array("birthday_served_at" => $sServedAt, "inter_served_at" => $sServedAt, "subject_id" => $iSubjectId));
+        $oStatement = $oPdo->prepare("SELECT subject_id, birthday_served_at FROM ex_persons WHERE subject_id = :subject_id");
+        $oStatement->execute(array("subject_id" => $iSubjectId));
+        $aPerson = $oStatement->fetch(PDO::FETCH_ASSOC);
+        if (!$aPerson || trim((string)$aPerson["birthday_served_at"]) == "") {
+            $oPdo->rollBack();
+            sendJsonAndExit(array("success" => false, "message" => "Birthday could not be marked served."), 500);
+        }
+        try {
+            $oStoredServedAt = new DateTimeImmutable((string)$aPerson["birthday_served_at"]);
+        } catch (Exception $oException) {
+            error_log((string)$oException);
+            $oPdo->rollBack();
+            sendJsonAndExit(array("success" => false, "message" => "Birthday could not be marked served."), 500);
+        }
+        if ($oStoredServedAt < $oServedAt->modify("-1 second")) {
+            $oPdo->rollBack();
+            sendJsonAndExit(array("success" => false, "message" => "Birthday could not be marked served."), 500);
         }
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId));

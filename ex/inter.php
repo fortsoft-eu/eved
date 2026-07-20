@@ -44,21 +44,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
     try {
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("SELECT p.subject_id, p.inter_served_at FROM ex_persons AS p INNER JOIN ex_subjects AS s ON s.id = p.subject_id WHERE p.subject_id = :subject_id AND s.subject_type = 'person' FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT p.subject_id FROM ex_persons AS p INNER JOIN ex_subjects AS s ON s.id = p.subject_id WHERE p.subject_id = :subject_id AND s.subject_type = 'person' FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
         $aPerson = $oStatement->fetch(PDO::FETCH_ASSOC);
         if (!$aPerson) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
-        $aBirthdayInfo = interGetBirthdayInfo(isset($aPerson["inter_served_at"]) ? $aPerson["inter_served_at"] : "");
-        if (!is_array($aBirthdayInfo)) {
-            $oPdo->rollBack();
-            sendJsonAndExit(array("success" => false, "message" => "Communication is not in the current service window."), 409);
-        }
         $oServedAt = new DateTimeImmutable("now");
+        $sServedAt = $oServedAt->format("Y-m-d H:i:s.u");
         $oStatement = $oPdo->prepare("UPDATE ex_persons SET inter_served_at = :inter_served_at WHERE subject_id = :subject_id");
-        $oStatement->execute(array("inter_served_at" => $oServedAt->format("Y-m-d H:i:s.u"), "subject_id" => $iSubjectId));
+        $oStatement->execute(array("inter_served_at" => $sServedAt, "subject_id" => $iSubjectId));
+        $oStatement = $oPdo->prepare("SELECT subject_id, inter_served_at FROM ex_persons WHERE subject_id = :subject_id");
+        $oStatement->execute(array("subject_id" => $iSubjectId));
+        $aPerson = $oStatement->fetch(PDO::FETCH_ASSOC);
+        if (!$aPerson || trim((string)$aPerson["inter_served_at"]) == "") {
+            $oPdo->rollBack();
+            sendJsonAndExit(array("success" => false, "message" => "Communication could not be marked served."), 500);
+        }
+        try {
+            $oStoredServedAt = new DateTimeImmutable((string)$aPerson["inter_served_at"]);
+        } catch (Exception $oException) {
+            error_log((string)$oException);
+            $oPdo->rollBack();
+            sendJsonAndExit(array("success" => false, "message" => "Communication could not be marked served."), 500);
+        }
+        if ($oStoredServedAt < $oServedAt->modify("-1 second")) {
+            $oPdo->rollBack();
+            sendJsonAndExit(array("success" => false, "message" => "Communication could not be marked served."), 500);
+        }
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId));
     } catch (Exception $oException) {

@@ -93,6 +93,8 @@ $sContactTelegramEmoji      = "&#9992;&#65039;";
 $sContactMessageEmoji       = "&#128172;";
 $sContactYouTubeEmoji       = "&#9654;&#65039;";
 $iCalendarFirstDay          = 1;
+$iBirthdayDisplayMinDays    = -2;
+$iBirthdayDisplayMaxDays    = 17;
 $sDateInputFormat           = "YYYY-MM-DD";
 $sDateInputPattern          = "\\d{4}-\\d{2}-\\d{2}";
 
