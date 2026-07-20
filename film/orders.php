@@ -30,7 +30,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo htmlspecialchars(getPageTitleText("Photo Lab Orders", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
@@ -39,7 +38,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderFilmMenu(); ?>
+<?php
+
+renderFilmMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="orders-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -90,20 +93,20 @@ foreach ($aOrders as $aRow) {
     $sReturnedAt = htmlspecialchars($sReturnedAt, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     $sInvoice = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", htmlspecialchars($sInvoice, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"));
     $sScans = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", $sScans);
-    echo "      <tr>\n"
-        . "        <td style=\"vertical-align: top;\">" . htmlspecialchars($aRow["lab"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . htmlspecialchars($aRow["order_no"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . htmlspecialchars((string)$aRow["bag_no"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . $sFilmRolls . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . $sFilmScanDates . "</td>\n"
-        . "        <td style=\"text-align: right; vertical-align: top;\">" . htmlspecialchars((string)$aRow["price"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-        . "        <td style=\"text-align: right; vertical-align: top;\">" . htmlspecialchars((string)$aRow["price_vat"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . htmlspecialchars((string)$aRow["currency"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . $sOrderedAt . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . $sScans . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . $sInvoice . "</td>\n"
-        . "        <td" . ($blReturnedAtError ? " class=\"error-cell\"" : "") . " style=\"vertical-align: top;\">" . $sReturnedAt . "</td>\n"
-        . "      </tr>\n";
+    echo "      <tr>\n",
+        "        <td style=\"vertical-align: top;\">" . htmlspecialchars($aRow["lab"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . htmlspecialchars($aRow["order_no"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . htmlspecialchars((string)$aRow["bag_no"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . $sFilmRolls . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . $sFilmScanDates . "</td>\n",
+        "        <td style=\"text-align: right; vertical-align: top;\">" . htmlspecialchars((string)$aRow["price"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td style=\"text-align: right; vertical-align: top;\">" . htmlspecialchars((string)$aRow["price_vat"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . htmlspecialchars((string)$aRow["currency"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . $sOrderedAt . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . $sScans . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . $sInvoice . "</td>\n",
+        "        <td" . ($blReturnedAtError ? " class=\"error-cell\"" : "") . " style=\"vertical-align: top;\">" . $sReturnedAt . "</td>\n",
+        "      </tr>\n";
 }
 
 ?>

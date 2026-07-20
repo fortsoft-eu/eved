@@ -47,7 +47,6 @@ if (isset($_GET["type"])) {
         sendPhpGeneratedOutputAndExit("credits", $iSelect);
     }
 }
-
 $sDefaultFrameUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]) . "?" . http_build_query(array(
     "type" => "info",
     "info" => array($iDefaultSelectedInfo)
@@ -63,7 +62,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("PHP Info and PHP Credits", $aAllowedIps)); ?></title>
@@ -72,7 +70,11 @@ $iTime = sendPageHeaders();
 </head>
 <body class="phpinfo-page">
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
   </p>
   <div id="phpinfo-select-form">
     <form action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="get" target="phpinfo-frame">
@@ -106,9 +108,7 @@ foreach ($aInfoTypes as $sKey => $iValue) {
 <?php
 
 foreach ($aCreditsTypes as $sKey => $iValue) {
-    echo "        <label><input type=\"checkbox\" name=\"credits[]\" value=\"" . (int)$iValue . "\" class=\"js-submit-on-change\""
-        . ($iValue == $iDefaultSelectedCredits ? " checked" : "") . "> "
-        . htmlspecialchars($sKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</label><br>\n";
+    echo "        <label><input type=\"checkbox\" name=\"credits[]\" value=\"" . (int)$iValue . "\" class=\"js-submit-on-change\"" . ($iValue == $iDefaultSelectedCredits ? " checked" : "") . "> " . htmlspecialchars($sKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</label><br>\n";
 }
 
 ?>
@@ -123,6 +123,10 @@ foreach ($aCreditsTypes as $sKey => $iValue) {
     </form>
   </div>
   <iframe class="phpinfo-frame" name="phpinfo-frame" src="<?php echo htmlspecialchars($sDefaultFrameUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" title="PHP Info"></iframe>
-<?php echo renderAdminScript($sBaseUrl); ?>
+<?php
+
+echo renderAdminScript($sBaseUrl);
+
+?>
 </body>
 </html>

@@ -89,28 +89,36 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-monthly-overview-tables" value="">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
   </p>
-<?php renderMessage(); ?>
+<?php
+
+renderMessage();
+
+?>
   <div id="kf-monthly-overview-tables">
 <?php
 
 foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColumnGroup) {
-    echo "  <table id=\"kf-monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target kf-monthly-overview-table\">\n"
-        . "    <thead>\n"
-        . "      <tr>\n"
-        . "        <th>Month</th>\n";
+    echo "  <table id=\"kf-monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target kf-monthly-overview-table\">\n",
+        "    <thead>\n",
+        "      <tr>\n",
+        "        <th>Month</th>\n";
     foreach ($aOverviewColumnGroup as $aOverviewColumn) {
         echo "        <th class=\"numeric\">" . html($aOverviewColumn["title"]) . "</th>\n";
     }
-    echo "      </tr>\n"
-        . "    </thead>\n"
-        . "    <tbody>\n";
+    echo "      </tr>\n",
+        "    </thead>\n",
+        "    <tbody>\n";
 
     foreach ($aMonths as $sMonth) {
         $fIncome = isset($aSummaryTotals[$sMonth]["income"]) ? $aSummaryTotals[$sMonth]["income"] : 0;
@@ -140,16 +148,16 @@ foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColum
         echo "      <tr><td colspan=\"" . (count($aOverviewColumnGroup) + 1) . "\">No transactions found.</td></tr>\n";
     }
 
-    echo "    </tbody>\n"
-        . "  </table>\n";
+    echo "    </tbody>\n",
+        "  </table>\n";
 }
 
 ?>
   </div>
 <?php
 
-echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
-    . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
-    . "</body>\n"
-    . "</html>\n";
+echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n",
+    "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n",
+    "</body>\n",
+    "</html>\n";
 

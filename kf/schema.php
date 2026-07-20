@@ -2,6 +2,7 @@
 
 include "main.php";
 
+
 requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
 
 if (!$oPdo) {
@@ -61,9 +62,17 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
   </p>
-<?php renderMessage(); ?>
+<?php
+
+renderMessage();
+
+?>
   <p class="schema-unavailable-message"><strong>Database Schema: </strong>The database schema cannot be displayed on this device.</p>
   <div class="schema-diagram" id="schema-diagram">
     <div class="schema-canvas" id="schema-canvas">
@@ -78,25 +87,25 @@ $iTime = sendPageHeaders();
 <?php
 
 foreach ($aTables as $sTableName => $aColumns) {
-    echo "        <table class=\"schema-table\" data-table=\"" . html($sTableName) . "\">\n"
-        . "          <caption>" . html($sTableName) . "</caption>\n"
-        . "          <colgroup>\n"
-        . "            <col class=\"schema-col-key\">\n"
-        . "            <col class=\"schema-col-column\">\n"
-        . "            <col class=\"schema-col-type\">\n"
-        . "            <col class=\"schema-col-null\">\n"
-        . "            <col class=\"schema-col-extra\">\n"
-        . "          </colgroup>\n"
-        . "          <thead>\n"
-        . "            <tr>\n"
-        . "              <th>Key</th>\n"
-        . "              <th>Column</th>\n"
-        . "              <th>Type</th>\n"
-        . "              <th>Null</th>\n"
-        . "              <th>Extra</th>\n"
-        . "            </tr>\n"
-        . "          </thead>\n"
-        . "          <tbody>\n";
+    echo "        <table class=\"schema-table\" data-table=\"" . html($sTableName) . "\">\n",
+        "          <caption>" . html($sTableName) . "</caption>\n",
+        "          <colgroup>\n",
+        "            <col class=\"schema-col-key\">\n",
+        "            <col class=\"schema-col-column\">\n",
+        "            <col class=\"schema-col-type\">\n",
+        "            <col class=\"schema-col-null\">\n",
+        "            <col class=\"schema-col-extra\">\n",
+        "          </colgroup>\n",
+        "          <thead>\n",
+        "            <tr>\n",
+        "              <th>Key</th>\n",
+        "              <th>Column</th>\n",
+        "              <th>Type</th>\n",
+        "              <th>Null</th>\n",
+        "              <th>Extra</th>\n",
+        "            </tr>\n",
+        "          </thead>\n",
+        "          <tbody>\n";
     foreach ($aColumns as $aColumn) {
         $sKey = "";
         $sKeyClass = "";
@@ -181,15 +190,15 @@ foreach ($aRelations as $aRelation) {
             $sRouteAttributes .= " data-via-table-bottom-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"]) . "\"";
         }
     }
-    echo "      <tr data-source-table=\"" . html($aRelation["TABLE_NAME"])
-        . "\" data-source-column=\"" . html($aRelation["COLUMN_NAME"])
-        . "\" data-target-table=\"" . html($aRelation["REFERENCED_TABLE_NAME"])
-        . "\" data-target-column=\"" . html($aRelation["REFERENCED_COLUMN_NAME"]) . "\""
-        . $sRouteAttributes . ">\n"
-        . "        <td>" . html($aRelation["CONSTRAINT_NAME"]) . "</td>\n"
-        . "        <td>" . html($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"]) . "</td>\n"
-        . "        <td>" . html($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"]) . "</td>\n"
-        . "      </tr>\n";
+    echo "      <tr data-source-table=\"" . html($aRelation["TABLE_NAME"]),
+        "\" data-source-column=\"" . html($aRelation["COLUMN_NAME"]),
+        "\" data-target-table=\"" . html($aRelation["REFERENCED_TABLE_NAME"]),
+        "\" data-target-column=\"" . html($aRelation["REFERENCED_COLUMN_NAME"]) . "\"",
+        $sRouteAttributes . ">\n",
+        "        <td>" . html($aRelation["CONSTRAINT_NAME"]) . "</td>\n",
+        "        <td>" . html($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"]) . "</td>\n",
+        "        <td>" . html($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"]) . "</td>\n",
+        "      </tr>\n";
 }
 
 if (!$aRelations) {
@@ -201,7 +210,7 @@ if (!$aRelations) {
   </table>
 <?php
 
-echo "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
-    . "</body>\n"
-    . "</html>\n";
+echo "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n",
+    "</body>\n",
+    "</html>\n";
 

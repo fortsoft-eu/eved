@@ -2,8 +2,10 @@
 
 include "main.php";
 
+
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "kf");
 requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
+
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -14,7 +16,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
     requireNamedCsrfToken("kf_csrf_token");
     $sAction = getPostedTrimmedValue("action");
-
     if ($sAction == "save_type") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         $sName = getPostedTrimmedValue("name");
@@ -24,7 +25,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             setMessage("The type could not be saved. Name and kind are required.", "error");
             redirect("types.php");
         }
-
         try {
             if ($iId > 0) {
                 $oStatement = $oPdo->prepare("UPDATE kf_fin_types SET name = :name, type_kind = :type_kind WHERE id = :id");
@@ -105,24 +105,44 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-types-table" value="">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
-<?php echo $sToolbarHtml; ?>
+<?php
+
+echo $sToolbarHtml;
+
+?>
   </p>
-<?php renderMessage(); ?>
+<?php
+
+renderMessage();
+
+?>
   <table id="kf-types-table" class="table-filter-target">
     <thead>
       <tr>
         <th>Kind</th>
         <th>Name</th>
         <th>Group Members</th>
-<?php if ($blCanEdit) { ?>
+<?php
+
+if ($blCanEdit) {
+
+?>
         <th></th>
-<?php } ?>
+<?php
+
+}
+
+?>
       </tr>
     </thead>
     <tbody>
@@ -133,12 +153,12 @@ foreach ($aRows as $aRow) {
     if ($blCanEdit) {
         $sActionCell = "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"type-modal\" data-modal-title=\"Edit Type\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-name=\"" . html($aRow["name"]) . "\" data-field-type_kind=\"" . html($aRow["type_kind"]) . "\" data-field-members=\"" . html($aRow["member_ids"]) . "\">Edit</button></td>\n";
     }
-    echo "      <tr>\n"
-        . "        <td>" . html(ucfirst($aRow["type_kind"])) . "</td>\n"
-        . "        <td>" . html($aRow["name"]) . "</td>\n"
-        . "        <td>" . htmlValue($aRow["member_names"]) . "</td>\n"
-        . $sActionCell
-        . "      </tr>\n";
+    echo "      <tr>\n",
+        "        <td>" . html(ucfirst($aRow["type_kind"])) . "</td>\n",
+        "        <td>" . html($aRow["name"]) . "</td>\n",
+        "        <td>" . htmlValue($aRow["member_names"]) . "</td>\n",
+        $sActionCell,
+        "      </tr>\n";
 }
 
 if (!$aRows) {
@@ -186,8 +206,8 @@ foreach ($aMemberTypes as $aType) {
 <?php
 }
 
-echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
-    . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
-    . "</body>\n"
-    . "</html>\n";
+echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n",
+    "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n",
+    "</body>\n",
+    "</html>\n";
 

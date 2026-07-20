@@ -344,7 +344,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Addresses", $aAllowedIps)); ?></title>
@@ -354,7 +353,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-addresses-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -378,7 +381,11 @@ $iTime = sendPageHeaders();
         <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aAddressSettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aAddressSettings["show_czechia_country"] && $aAddressSettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aAddressSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
         <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aAddressSettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aAddressSettings["show_czechia_country"] && $aAddressSettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aAddressSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show &#268;esk&aacute; republika instead of &#268;esko</label>
       </div>
-      <?php echo renderSettingsScopeNote(); ?>
+<?php
+
+echo renderSettingsScopeNote();
+
+?>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Save</button>
         <button type="button" class="confirm-dialog-button js-index-settings-cancel">Cancel</button>
@@ -388,9 +395,7 @@ $iTime = sendPageHeaders();
 <?php
 
 if (count($aAddressRows) > 0) {
-
-echo renderPageThrobber();
-
+    echo renderPageThrobber();
 }
 
 ?>
@@ -414,14 +419,13 @@ foreach ($aAddressRows as $aAddressRow) {
             echo addressesRenderAddressCell($aAddressRow, $iSubjectCount, $blCanEdit);
             $blFirstSubject = false;
         }
-        echo addressesRenderSubjectCell($aSubject, $sAddressFilterText, $blCanEdit)
-            . "      </tr>\n";
+        echo addressesRenderSubjectCell($aSubject, $sAddressFilterText, $blCanEdit) . "      </tr>\n";
     }
 }
 if (!$aAddressRows) {
-    echo "      <tr>\n"
-        . "        <td colspan=\"2\">No visible records found.</td>\n"
-        . "      </tr>\n";
+    echo "      <tr>\n",
+        "        <td colspan=\"2\">No visible records found.</td>\n",
+        "      </tr>\n";
 }
 
 ?>
@@ -535,9 +539,9 @@ foreach (getAddressTypes() as $sAddressType) {
   </div>
 <?php
 
-echo renderCountryDatalist()
-    . renderFilterFocusButton()
-    . renderAdminScript($sBaseUrl);
+echo renderCountryDatalist(),
+    renderFilterFocusButton(),
+    renderAdminScript($sBaseUrl);
 
 ?>
 </body>

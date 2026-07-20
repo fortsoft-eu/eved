@@ -2,6 +2,7 @@
 
 include "main.php";
 
+
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "kf");
 requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
 
@@ -9,12 +10,10 @@ if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
     requireNamedCsrfToken("kf_csrf_token");
     $sAction = getPostedTrimmedValue("action");
-
     if ($sAction == "save_debt") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         $sFirstName = getPostedTrimmedValue("first_name");
@@ -22,12 +21,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $fAmount = parseAmount(getPostedTrimmedValue("amount"));
         $sAccountNumber = getPostedTrimmedValue("account_number");
         $sEmail = getPostedTrimmedValue("email");
-
         if (($sFirstName == "" && $sLastName == "") || $fAmount === null) {
             setMessage("The debt could not be saved. Name and amount are required.", "error");
             redirect("debts.php");
         }
-
         if ($iId > 0) {
             $oStatement = $oPdo->prepare("UPDATE kf_debts SET first_name = :first_name, last_name = :last_name, amount = :amount, account_number = :account_number, email = :email WHERE id = :id");
             $oStatement->execute(array(

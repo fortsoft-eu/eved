@@ -1080,7 +1080,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Interactions", $aAllowedIps)); ?></title>
@@ -1090,7 +1089,11 @@ $iTime = sendPageHeaders();
 </head>
 <body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-date-input-format="<?php echo html($sDateInputFormat); ?>" data-date-input-pattern="<?php echo html($sDateInputPattern); ?>">
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-interactions-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -1117,7 +1120,11 @@ $iTime = sendPageHeaders();
         <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aBirthdaySettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aBirthdaySettings["show_czechia_country"] && $aBirthdaySettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aBirthdaySettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
         <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aBirthdaySettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aBirthdaySettings["show_czechia_country"] && $aBirthdaySettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aBirthdaySettings["show_czechia_country"] ? "" : " disabled"); ?>> Show &#268;esk&aacute; republika instead of &#268;esko</label>
       </div>
-      <?php echo renderSettingsScopeNote(); ?>
+<?php
+
+echo renderSettingsScopeNote();
+
+?>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Save</button>
         <button type="button" class="confirm-dialog-button js-index-settings-cancel">Cancel</button>
@@ -1127,20 +1134,15 @@ $iTime = sendPageHeaders();
 <?php
 
 echo "  <datalist id=\"nx-group-list\">\n";
-
 foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . html($aGroup["name"]) . "\"></option>\n";
 }
-
-echo "  </datalist>\n"
-    . "  <select id=\"nx-contact-type-list\" hidden>\n";
-
+echo "  </datalist>\n",
+    "  <select id=\"nx-contact-type-list\" hidden>\n";
 foreach ($aContactTypes as $aContactType) {
     echo "    <option value=\"" . html($aContactType["id"]) . "\" data-contact-type=\"" . html($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . html($aContactType["is_active"]) . "\">" . html($aContactType["name"]) . "</option>\n";
 }
-
 echo "  </select>\n";
-
 if (!$aBirthdayRows) {
     echo "  <p>No visible records found.</p>\n";
 } else {
@@ -1172,13 +1174,11 @@ if (!$aBirthdayRows) {
     foreach ($aBirthdayRows as $aRow) {
         echo interRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aBirthdaySettings);
     }
-
-    echo "    </tbody>\n"
-        . "  </table>\n";
+    echo "    </tbody>\n",
+        "  </table>\n";
 }
-
-echo renderFilterFocusButton()
-    . renderAdminScript($sBaseUrl);
+echo renderFilterFocusButton(),
+    renderAdminScript($sBaseUrl);
 ?>
 </body>
 </html>

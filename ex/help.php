@@ -18,7 +18,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Portal Help", $aAllowedIps)); ?></title>
@@ -27,7 +26,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
   </p>
   <h1>Portal Help</h1>
   <h2>US English</h2>
@@ -588,6 +591,10 @@ $iTime = sendPageHeaders();
       </ul>
     </dd>
   </dl>
-<?php echo renderAdminScript($sBaseUrl); ?>
+<?php
+
+echo renderAdminScript($sBaseUrl);
+
+?>
 </body>
 </html>

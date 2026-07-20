@@ -104,7 +104,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Database Consistency", $aAllowedIps)); ?></title>
@@ -116,8 +115,8 @@ $iTime = sendPageHeaders();
 <?php
 
 renderMenu();
-echo "  </p>\n"
-    . "  <h1>Database Consistency</h1>\n";
+echo "  </p>\n",
+    "  <h1>Database Consistency</h1>\n";
 
 if ($blHasErrors) {
     echo "  <p class=\"consistency-status consistency-status-error\">Database inconsistencies were found.</p>\n";
@@ -135,15 +134,15 @@ foreach ($aChecks as $aCheck) {
         continue;
     }
     $aColumns = array_keys($aRows[0]);
-    echo "  <table class=\"consistency-table\">\n"
-        . "    <thead>\n"
-        . "      <tr>\n";
+    echo "  <table class=\"consistency-table\">\n",
+        "    <thead>\n",
+        "      <tr>\n";
     foreach ($aColumns as $sColumn) {
         echo "        <th>" . html($sColumn) . "</th>\n";
     }
-    echo "      </tr>\n"
-        . "    </thead>\n"
-        . "    <tbody>\n";
+    echo "      </tr>\n",
+        "    </thead>\n",
+        "    <tbody>\n";
     foreach ($aRows as $aRow) {
         echo "      <tr>\n";
         foreach ($aColumns as $sColumn) {
@@ -151,10 +150,9 @@ foreach ($aChecks as $aCheck) {
         }
         echo "      </tr>\n";
     }
-    echo "    </tbody>\n"
-        . "  </table>\n";
+    echo "    </tbody>\n",
+        "  </table>\n";
 }
-
 echo renderAdminScript($sBaseUrl);
 
 ?>

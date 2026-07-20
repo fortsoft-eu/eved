@@ -368,7 +368,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Contacts", $aAllowedIps)); ?></title>
@@ -378,7 +377,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-contacts-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -407,13 +410,10 @@ $iTime = sendPageHeaders();
 <?php
 
 echo "  <select id=\"nx-contact-type-list\" hidden>\n";
-
 foreach ($aContactTypes as $aContactType) {
     echo "    <option value=\"" . html($aContactType["id"]) . "\" data-contact-type=\"" . html($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . html($aContactType["is_active"]) . "\">" . html($aContactType["name"]) . "</option>\n";
 }
-
 echo "  </select>\n";
-
 if (count($aContactRows) > 0) {
     echo renderPageThrobber();
 }
@@ -434,43 +434,35 @@ foreach ($aContactRows as $aContactRow) {
     $blFirstSubject = true;
     $sContactFilterText = contactsFilterText($aContactRow);
     $sContactTimestampTooltipText = timestampTooltipText($aContactRow);
-    $sContactTimestampTooltipAttribute = $sContactTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", html($sContactTimestampTooltipText)) . "\"" : "";
+    $sContactTimestampTooltipAttribute = $sContactTimestampTooltipText ? " title=\"" . str_replace("\n", "&#10;", html($sContactTimestampTooltipText)) . "\"" : "";
     $sContactActions = $blCanEdit ? "<span class=\"nx-list-item-actions\"><a href=\"#\" class=\"nx-item-action js-edit-shared-contact\" title=\"Edit shared contact\" aria-label=\"Edit shared contact\">" . $sEditEmoji . "</a><a href=\"#\" class=\"nx-item-action js-delete-shared-contact\" title=\"Delete shared contact\" aria-label=\"Delete shared contact\">" . $sDeleteEmoji . "</a></span>" : "";
     if (!$aContactRow["subjects"]) {
-        echo "      <tr>\n"
-            . "        <td class=\"nx-contact-cell nx-contact-item\"" . contactsRenderContactDataAttributes($aContactRow) . ">"
-            . "<span class=\"nx-contact-db-values\"" . $sContactTimestampTooltipAttribute . "><span class=\"nx-contact-type\">" . html($aContactRow["contact_type_name"]) . "</span>: "
-            . renderContactValueText($aContactRow["contact_type"], $aContactRow["contact_value"]) . "</span>"
-            . renderContactValueActions($aContactRow["contact_type"], $aContactRow["contact_value"], true, true)
-            . $sContactActions
-            . "</td>\n"
-            . "        <td class=\"nx-contact-subject-cell nx-contact-subject-inactive\">" . htmlValue("") . "</td>\n"
-            . "      </tr>\n";
+        echo "      <tr>\n",
+            "        <td class=\"nx-contact-cell nx-contact-item\"" . contactsRenderContactDataAttributes($aContactRow) . "><span class=\"nx-contact-db-values\"",
+            $sContactTimestampTooltipAttribute . "><span class=\"nx-contact-type\">" . html($aContactRow["contact_type_name"]) . "</span>: " . renderContactValueText($aContactRow["contact_type"], $aContactRow["contact_value"]),
+            "</span>" . renderContactValueActions($aContactRow["contact_type"], $aContactRow["contact_value"], true, true) . $sContactActions . "</td>\n",
+            "        <td class=\"nx-contact-subject-cell nx-contact-subject-inactive\">" . htmlValue("") . "</td>\n",
+            "      </tr>\n";
         continue;
     }
     foreach ($aContactRow["subjects"] as $aSubject) {
         echo "      <tr data-subject-id=\"" . html($aSubject["subject_id"]) . "\">\n";
         if ($blFirstSubject) {
-            echo "        <td class=\"nx-contact-cell nx-contact-item\" rowspan=\"" . html($iSubjectCount) . "\"" . contactsRenderContactDataAttributes($aContactRow) . ">"
-                . "<span class=\"nx-contact-db-values\"" . $sContactTimestampTooltipAttribute . "><span class=\"nx-contact-type\">" . html($aContactRow["contact_type_name"]) . "</span>: "
-                . renderContactValueText($aContactRow["contact_type"], $aContactRow["contact_value"]) . "</span>"
-                . renderContactValueActions($aContactRow["contact_type"], $aContactRow["contact_value"], true, true)
-                . $sContactActions
-                . "</td>\n";
+            echo "        <td class=\"nx-contact-cell nx-contact-item\" rowspan=\"" . html($iSubjectCount) . "\"" . contactsRenderContactDataAttributes($aContactRow) . "><span class=\"nx-contact-db-values\"",
+                $sContactTimestampTooltipAttribute . "><span class=\"nx-contact-type\">" . html($aContactRow["contact_type_name"]) . "</span>: " . renderContactValueText($aContactRow["contact_type"], $aContactRow["contact_value"]),
+                "</span>" . renderContactValueActions($aContactRow["contact_type"], $aContactRow["contact_value"], true, true) . $sContactActions . "</td>\n";
             $blFirstSubject = false;
         }
-        echo contactsRenderSubjectCell($aSubject, $sContactFilterText, $blCanEdit)
-            . "      </tr>\n";
+        echo contactsRenderSubjectCell($aSubject, $sContactFilterText, $blCanEdit) . "      </tr>\n";
     }
 }
 if (!$aContactRows) {
-    echo "      <tr>\n"
-        . "        <td colspan=\"2\">No visible records found.</td>\n"
-        . "      </tr>\n";
+    echo "      <tr>\n",
+        "        <td colspan=\"2\">No visible records found.</td>\n",
+        "      </tr>\n";
 }
-
-echo "    </tbody>\n"
-    . "  </table>\n";
+echo "    </tbody>\n",
+    "  </table>\n";
 
 ?>
   <div class="confirm-dialog" id="shared-contact-edit-dialog" hidden>
@@ -484,14 +476,12 @@ echo "    </tbody>\n"
 <?php
 
 echo "      <select id=\"shared-contact-type\" name=\"contact_type_id\">\n";
-
 foreach ($aContactTypes as $aContactType) {
     if ((int)$aContactType["is_active"] != 1) {
         continue;
     }
     echo "        <option value=\"" . html($aContactType["id"]) . "\">" . html($aContactType["name"]) . "</option>\n";
 }
-
 echo "      </select>\n";
 
 ?>

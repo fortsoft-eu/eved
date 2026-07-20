@@ -557,7 +557,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Demo Subjects", $aAllowedIps)); ?></title>
@@ -567,7 +566,11 @@ $iTime = sendPageHeaders();
 </head>
 <body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-date-input-format="<?php echo html($sDateInputFormat); ?>" data-date-input-pattern="<?php echo html($sDateInputPattern); ?>" data-hide-subject-birth-number="1">
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-subjects-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -582,7 +585,11 @@ $iTime = sendPageHeaders();
     <input type="hidden" name="action" value="reset_full_list_complex_filter">
     <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
   </form>
-  <?php echo renderCountryDatalist(); ?>
+<?php
+
+echo renderCountryDatalist();
+
+?>
   <div class="confirm-dialog complex-filter-dialog" id="complex-filter-dialog" hidden>
     <form class="confirm-dialog-box complex-filter-form" method="post" action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_full_list_complex_filter">
@@ -615,12 +622,12 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
     $sComplexValue = isset($aCondition["value"]) ? (string)$aCondition["value"] : "";
     $blComplexNeedsValue = $sComplexOperator == "" || !empty($aFullListComplexFilterOperators[$sComplexOperator]["needs_value"]);
     $blComplexOperatorHidden = $sComplexValueType == "boolean";
-    echo "          <div class=\"complex-filter-row js-complex-filter-row\">\n"
-        . "            <select name=\"complex_filter_field[]\" class=\"js-complex-filter-field\">" . renderFullListComplexFilterFieldOptions($aFullListComplexFilterFields, $sComplexField) . "</select>\n"
-        . "            <select name=\"complex_filter_operator[]\" class=\"js-complex-filter-operator\"" . ($blComplexOperatorHidden ? " disabled aria-hidden=\"true\" tabindex=\"-1\"" : "") . ">" . renderDemoFullListComplexFilterOperatorOptions($aFullListComplexFilterOperators, $sComplexOperator) . "</select>\n"
-        . "            <input type=\"text\" name=\"complex_filter_value[]\" class=\"js-complex-filter-value\" value=\"" . html($sComplexValue) . "\" autocomplete=\"off\"" . ($blComplexNeedsValue ? "" : " disabled") . ">\n"
-        . "            <button type=\"button\" class=\"complex-filter-remove js-complex-filter-remove\" title=\"Remove condition\" aria-label=\"Remove condition\">&times;</button>\n"
-        . "          </div>\n";
+    echo "          <div class=\"complex-filter-row js-complex-filter-row\">\n",
+        "            <select name=\"complex_filter_field[]\" class=\"js-complex-filter-field\">" . renderFullListComplexFilterFieldOptions($aFullListComplexFilterFields, $sComplexField) . "</select>\n",
+        "            <select name=\"complex_filter_operator[]\" class=\"js-complex-filter-operator\"" . ($blComplexOperatorHidden ? " disabled aria-hidden=\"true\" tabindex=\"-1\"" : "") . ">" . renderDemoFullListComplexFilterOperatorOptions($aFullListComplexFilterOperators, $sComplexOperator) . "</select>\n",
+        "            <input type=\"text\" name=\"complex_filter_value[]\" class=\"js-complex-filter-value\" value=\"" . html($sComplexValue) . "\" autocomplete=\"off\"" . ($blComplexNeedsValue ? "" : " disabled") . ">\n",
+        "            <button type=\"button\" class=\"complex-filter-remove js-complex-filter-remove\" title=\"Remove condition\" aria-label=\"Remove condition\">&times;</button>\n",
+        "          </div>\n";
 }
 
 ?>
@@ -663,13 +670,10 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
 <?php
 
 echo "  <datalist id=\"nx-group-list\">\n";
-
 foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . html($aGroup["name"]) . "\"></option>\n";
 }
-
 echo "  </datalist>\n";
-
 if (!$aRows) {
     echo "  <p>" . ($blFullListComplexFilterActive ? "<strong>Complex Filter: </strong>" : "") . "No visible records found.</p>\n";
 } else {
@@ -713,12 +717,12 @@ if (!$aRows) {
         echo $sRowHtml;
     }
 
-    echo "    </tbody>\n"
-        . "  </table>\n";
+    echo "    </tbody>\n",
+        "  </table>\n";
 }
 
-echo renderFilterFocusButton()
-    . renderAdminScript($sBaseUrl);
+echo renderFilterFocusButton(),
+    renderAdminScript($sBaseUrl);
 ?>
 </body>
 </html>

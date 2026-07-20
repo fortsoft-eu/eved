@@ -55,7 +55,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo htmlspecialchars(getPageTitleText("Database Schema", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
@@ -64,7 +63,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderFilmMenu(); ?>
+<?php
+
+renderFilmMenu();
+
+?>
   </p>
   <p class="schema-unavailable-message"><strong>Database Schema: </strong>The database schema cannot be displayed on this device.</p>
   <div class="schema-diagram" id="schema-diagram">
@@ -80,25 +83,25 @@ $iTime = sendPageHeaders();
 <?php
 
 foreach ($aTables as $sTableName => $aColumns) {
-    echo "        <table class=\"schema-table\" data-table=\"" . htmlspecialchars($sTableName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n"
-        . "          <caption>" . htmlspecialchars($sTableName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</caption>\n"
-        . "          <colgroup>\n"
-        . "            <col class=\"schema-col-key\">\n"
-        . "            <col class=\"schema-col-column\">\n"
-        . "            <col class=\"schema-col-type\">\n"
-        . "            <col class=\"schema-col-null\">\n"
-        . "            <col class=\"schema-col-extra\">\n"
-        . "          </colgroup>\n"
-        . "          <thead>\n"
-        . "            <tr>\n"
-        . "              <th>Key</th>\n"
-        . "              <th>Column</th>\n"
-        . "              <th>Type</th>\n"
-        . "              <th>Null</th>\n"
-        . "              <th>Extra</th>\n"
-        . "            </tr>\n"
-        . "          </thead>\n"
-        . "          <tbody>\n";
+    echo "        <table class=\"schema-table\" data-table=\"" . htmlspecialchars($sTableName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n",
+        "          <caption>" . htmlspecialchars($sTableName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</caption>\n",
+        "          <colgroup>\n",
+        "            <col class=\"schema-col-key\">\n",
+        "            <col class=\"schema-col-column\">\n",
+        "            <col class=\"schema-col-type\">\n",
+        "            <col class=\"schema-col-null\">\n",
+        "            <col class=\"schema-col-extra\">\n",
+        "          </colgroup>\n",
+        "          <thead>\n",
+        "            <tr>\n",
+        "              <th>Key</th>\n",
+        "              <th>Column</th>\n",
+        "              <th>Type</th>\n",
+        "              <th>Null</th>\n",
+        "              <th>Extra</th>\n",
+        "            </tr>\n",
+        "          </thead>\n",
+        "          <tbody>\n";
     foreach ($aColumns as $aColumn) {
         $sKey = "";
         $sKeyClass = "";
@@ -116,16 +119,16 @@ foreach ($aTables as $sTableName => $aColumns) {
             $sKey = "UQ";
         }
         $sColumnId = "column-" . preg_replace("/[^a-zA-Z0-9_-]/", "-", $sTableName . "-" . $aColumn["COLUMN_NAME"]);
-        echo "            <tr id=\"" . htmlspecialchars($sColumnId, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n"
-            . "              <td class=\"schema-key" . $sKeyClass . "\">" . $sKey . "</td>\n"
-            . "              <td>" . htmlspecialchars($aColumn["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . str_replace("…", "&hellip;", htmlspecialchars($sColumnTypeDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")) . "</td>\n"
-            . "              <td class=\"schema-null\">" . ($aColumn["IS_NULLABLE"] == "YES" ? "Yes" : "No") . "</td>\n"
-            . "              <td>" . htmlspecialchars($aColumn["EXTRA"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "            </tr>\n";
+        echo "            <tr id=\"" . htmlspecialchars($sColumnId, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n",
+            "              <td class=\"schema-key" . $sKeyClass . "\">" . $sKey . "</td>\n",
+            "              <td>" . htmlspecialchars($aColumn["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . str_replace("…", "&hellip;", htmlspecialchars($sColumnTypeDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")) . "</td>\n",
+            "              <td class=\"schema-null\">" . ($aColumn["IS_NULLABLE"] == "YES" ? "Yes" : "No") . "</td>\n",
+            "              <td>" . htmlspecialchars($aColumn["EXTRA"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "            </tr>\n";
     }
-    echo "          </tbody>\n"
-        . "        </table>\n";
+    echo "          </tbody>\n",
+        "        </table>\n";
 }
 
 ?>
@@ -185,11 +188,11 @@ foreach ($aRelations as $aRelation) {
         . "\" data-source-column=\"" . htmlspecialchars($aRelation["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")
         . "\" data-target-table=\"" . htmlspecialchars($aRelation["REFERENCED_TABLE_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")
         . "\" data-target-column=\"" . htmlspecialchars($aRelation["REFERENCED_COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\""
-        . $sRouteAttributes . ">\n"
-        . "        <td>" . htmlspecialchars($aRelation["CONSTRAINT_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-        . "        <td>" . htmlspecialchars($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-        . "        <td>" . htmlspecialchars($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-        . "      </tr>\n";
+        . $sRouteAttributes . ">\n",
+        "        <td>" . htmlspecialchars($aRelation["CONSTRAINT_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td>" . htmlspecialchars($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td>" . htmlspecialchars($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "      </tr>\n";
 }
 
 ?>

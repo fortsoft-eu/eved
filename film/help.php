@@ -14,7 +14,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo htmlspecialchars(getPageTitleText("Film Help", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
@@ -23,7 +22,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderFilmMenu(); ?>
+<?php
+
+renderFilmMenu();
+
+?>
   </p>
   <h1>Film Help</h1>
   <h2>US English</h2>
@@ -439,7 +442,7 @@ $iTime = sendPageHeaders();
     <dt>Grid obrázků a prohlížeč obrázků</dt>
     <dd>
       <p>Grid je responsivní CSS mřížka se čtvercovými miniaturami. Každá dlaždice ukazuje obrázek a číselný overlay odvozený z posledních čtyř číslic základního názvu souboru. V režimu Contain a Colorized vidí povolené IP adresy barevná pozadí dlaždic: public je zelené, private světle žluté a internal oranžově pruhované. Režim Cover tyto podkladové signály schová, protože obrázek vyplní celý čtverec.</p>
-      <p>Kliknutí na miniaturu otevře aktuálně vykreslenou sadu obrázků v překryvném prohlížeči obrázků od kliknutého snímku. Prohlížeč dostane viditelné obrázky v pořadí DOM, nepřetáčí se z posledního obrázku zpět na první, používá fade přechod, automaticky otevírá pás miniatur a kolečko myši bere jako navigaci předchozí/další. Ovládání klávesnicí zajišťuje prohlížeč: Escape zavře, Delete nebo Backspace také zavřou, Page Up a šipky vlevo/nahoru jdou na předchozí obrázek a Page Down a šipky vpravo/dolů jdou na další obrázek. Zoom obrázků je pro tuto galerii vypnutý.</p>
+      <p>Kliknutí na miniaturu otevře aktuálně vykreslenou sadu obrázků v překryvném prohlížeči obrázků od kliknutého snímku. Prohlížeč dostane viditelné obrázky v pořadí DOM, nepřetáčí se z posledního obrázku zpět na první, používá fade přecho d, automaticky otevírá pás miniatur a kolečko myši bere jako navigaci předchozí/další. Ovládání klávesnicí zajišťuje prohlížeč: Escape zavře, Delete nebo Backspace také zavřou, Page Up a šipky vlevo/nahoru jdou na předchozí obrázek a Page Down a šipky vpravo/dolů jdou na další obrázek. Zoom obrázků je pro tuto galerii vypnutý.</p>
       <ul>
         <li><strong>Pořadí:</strong> Pořadí v prohlížeči odpovídá pořadí vykresleného gridu.</li>
         <li><strong>Popisek:</strong> Základní název souboru se používá jako title i caption.</li>

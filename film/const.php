@@ -18,7 +18,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo htmlspecialchars(getPageTitleText("Defined PHP Constants", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
@@ -27,7 +26,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderFilmMenu(); ?>
+<?php
+
+renderFilmMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="constants-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -69,12 +72,12 @@ foreach ($aConstants as $sGroup => $aGroupConstants) {
         } else {
             $sValue = (string)$mValue;
         }
-        echo "      <tr>\n"
-            . "        <td style=\"vertical-align: top;\">" . htmlspecialchars($sGroup, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td style=\"vertical-align: top;\">" . htmlspecialchars($sName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . htmlspecialchars($sValue, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td style=\"vertical-align: top;\">" . htmlspecialchars(gettype($mValue), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "      </tr>\n";
+        echo "      <tr>\n",
+            "        <td style=\"vertical-align: top;\">" . htmlspecialchars($sGroup, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td style=\"vertical-align: top;\">" . htmlspecialchars($sName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . htmlspecialchars($sValue, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td style=\"vertical-align: top;\">" . htmlspecialchars(gettype($mValue), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "      </tr>\n";
     }
 }
 

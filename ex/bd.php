@@ -43,7 +43,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT p.subject_id, p.birth_date, p.birthday_served_at FROM ex_persons AS p INNER JOIN ex_subjects AS s ON s.id = p.subject_id WHERE p.subject_id = :subject_id AND s.subject_type = 'person' FOR UPDATE");
@@ -160,7 +159,6 @@ if ($sBdPostAction == "update_subject_portal_user") {
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id, subject_type FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
@@ -219,7 +217,6 @@ if ($sBdPostAction == "update_subject") {
     if ($sBirthNumber === false) {
         sendJsonAndExit(array("success" => false, "message" => "Birth number must contain 9 or 10 digits."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id, subject_type FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
@@ -234,13 +231,11 @@ if ($sBdPostAction == "update_subject") {
             sendJsonAndExit(array("success" => false, "message" => "Subject type cannot be changed."), 409);
         }
         $sEffectiveSubjectType = (string)$aSubjectRow["subject_type"];
-
         $oStatement = $oPdo->prepare("UPDATE ex_subjects SET is_active = :is_active WHERE id = :subject_id");
         $oStatement->execute(array(
             "is_active" => payloadFlag($aPayload, "is_active"),
             "subject_id" => $iSubjectId
         ));
-
         $sSubjectName = payloadValue($aPayload, "subject_name_value");
         if ($sEffectiveSubjectType == "person" || $sSubjectName == "") {
             $oStatement = $oPdo->prepare("DELETE FROM ex_subject_names WHERE subject_id = :subject_id");
@@ -249,7 +244,6 @@ if ($sBdPostAction == "update_subject") {
             $oStatement = $oPdo->prepare("INSERT INTO ex_subject_names (subject_id, name) VALUES (:subject_id, :name) ON DUPLICATE KEY UPDATE name = VALUES(name)");
             $oStatement->execute(array("subject_id" => $iSubjectId, "name" => $sSubjectName));
         }
-
         if ($sEffectiveSubjectType != "person") {
             $oStatement = $oPdo->prepare("DELETE FROM ex_persons WHERE subject_id = :subject_id");
             $oStatement->execute(array("subject_id" => $iSubjectId));
@@ -290,9 +284,7 @@ if ($sBdPostAction == "update_subject") {
                 }
             }
         }
-
         $oPdo->commit();
-
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
@@ -310,14 +302,12 @@ if ($sBdPostAction == "update_subject_nickname") {
     $sNote = getPostedTrimmedValue("note");
     $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
     $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
-
     if ($iNicknameId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid nickname."), 400);
     }
     if ($sNickname == "") {
         sendJsonAndExit(array("success" => false, "message" => "Nickname is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_nicknames WHERE id = :id FOR UPDATE");
@@ -354,14 +344,12 @@ if ($sBdPostAction == "create_subject_nickname") {
     $sNote = getPostedTrimmedValue("note");
     $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
     $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
-
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
     if ($sNickname == "") {
         sendJsonAndExit(array("success" => false, "message" => "Nickname is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
@@ -413,7 +401,6 @@ if ($sBdPostAction == "update_subject_address") {
     if ($sCountry != "") {
         $sCountry = strtoupper($sCountry);
     }
-
     if ($iAddressId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
     }
@@ -436,7 +423,6 @@ if ($sBdPostAction == "update_subject_address") {
     if ($sOrganizationName == "" && $sDepartmentName == "" && $sCareOf == "" && $sStreetName == "" && $sHouseNumber == "" && $sEvidenceNumber == "" && $sOrientationNumber == "" && $sOrientationSuffix == "" && $sAddressLine2 == "" && $sCity == "" && $sCityPart == "" && $sPostalCode == "" && $sRegion == "" && $sCountry == "" && $sNote == "") {
         sendJsonAndExit(array("success" => false, "message" => "Address is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_addresses WHERE id = :id FOR UPDATE");
@@ -502,7 +488,6 @@ if ($sBdPostAction == "create_subject_address") {
     if ($sCountry != "") {
         $sCountry = strtoupper($sCountry);
     }
-
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
@@ -525,7 +510,6 @@ if ($sBdPostAction == "create_subject_address") {
     if ($sOrganizationName == "" && $sDepartmentName == "" && $sCareOf == "" && $sStreetName == "" && $sHouseNumber == "" && $sEvidenceNumber == "" && $sOrientationNumber == "" && $sOrientationSuffix == "" && $sAddressLine2 == "" && $sCity == "" && $sCityPart == "" && $sPostalCode == "" && $sRegion == "" && $sCountry == "" && $sNote == "") {
         sendJsonAndExit(array("success" => false, "message" => "Address is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
@@ -571,14 +555,12 @@ if ($sBdPostAction == "update_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     $sGroupName = getPostedTrimmedValue("name");
-
     if ($iSubjectId < 1 || $iGroupId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid group link."), 400);
     }
     if ($sGroupName == "") {
         sendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
@@ -617,14 +599,12 @@ if ($sBdPostAction == "update_subject_group") {
 if ($sBdPostAction == "create_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sGroupName = getPostedTrimmedValue("name");
-
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
     if ($sGroupName == "") {
         sendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
@@ -670,14 +650,12 @@ if ($sBdPostAction == "update_subject_note") {
     $sNoteText = getPostedTrimmedValue("note_text");
     $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
     $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
-
     if ($iNoteId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid note."), 400);
     }
     if ($sNoteText == "") {
         sendJsonAndExit(array("success" => false, "message" => "Note text is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_notes WHERE id = :id FOR UPDATE");
@@ -705,14 +683,12 @@ if ($sBdPostAction == "create_subject_note") {
     $sNoteText = getPostedTrimmedValue("note_text");
     $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
     $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
-
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
     if ($sNoteText == "") {
         sendJsonAndExit(array("success" => false, "message" => "Note text is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
@@ -739,7 +715,6 @@ if ($sBdPostAction == "delete_subject") {
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
@@ -766,7 +741,6 @@ if ($sBdPostAction == "delete_subject_contact") {
     if ($iSubjectContactId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid contact link."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_contacts WHERE id = :id FOR UPDATE");
@@ -794,7 +768,6 @@ if ($sBdPostAction == "delete_subject_nickname") {
     if ($iNicknameId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid nickname."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_nicknames WHERE id = :id FOR UPDATE");
@@ -822,7 +795,6 @@ if ($sBdPostAction == "delete_subject_address") {
     if ($iAddressId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_addresses WHERE id = :id FOR UPDATE");
@@ -851,7 +823,6 @@ if ($sBdPostAction == "delete_subject_group") {
     if ($iSubjectId < 1 || $iGroupId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid group link."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
@@ -878,7 +849,6 @@ if ($sBdPostAction == "delete_subject_note") {
     if ($iNoteId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid note."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_notes WHERE id = :id FOR UPDATE");
@@ -909,7 +879,6 @@ if ($sBdPostAction == "create_contact") {
     $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
     $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
     $aContactType = getContactTypeById($iContactTypeId, $oPdo, true);
-
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
     }
@@ -923,7 +892,6 @@ if ($sBdPostAction == "create_contact") {
     if ($sContactValue == "") {
         sendJsonAndExit(array("success" => false, "message" => "Contact value is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
@@ -932,7 +900,6 @@ if ($sBdPostAction == "create_contact") {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
-
         $oStatement = $oPdo->prepare("SELECT id FROM ex_contacts WHERE contact_type_id = :contact_type_id AND contact_value = :contact_value FOR UPDATE");
         $oStatement->execute(array("contact_type_id" => $iContactTypeId, "contact_value" => $sContactValue));
         $iContactId = (int)$oStatement->fetchColumn();
@@ -941,14 +908,12 @@ if ($sBdPostAction == "create_contact") {
             $oStatement->execute(array("contact_type_id" => $iContactTypeId, "contact_value" => $sContactValue));
             $iContactId = (int)$oPdo->lastInsertId();
         }
-
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subject_contacts WHERE subject_id = :subject_id AND contact_id = :contact_id");
         $oStatement->execute(array("subject_id" => $iSubjectId, "contact_id" => $iContactId));
         if ($oStatement->fetch(PDO::FETCH_ASSOC)) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "This contact is already assigned to the subject."), 409);
         }
-
         $oStatement = $oPdo->prepare("INSERT INTO ex_subject_contacts (subject_id, contact_id, is_primary, is_active, note) VALUES (:subject_id, :contact_id, :is_primary, :is_active, :note)");
         $oStatement->execute(array(
             "subject_id" => $iSubjectId,
@@ -958,7 +923,6 @@ if ($sBdPostAction == "create_contact") {
             "note" => $sNote != "" ? $sNote : null
         ));
         $oPdo->commit();
-
         $aResponse = bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
@@ -981,7 +945,6 @@ if ($sBdPostAction == "update_contact") {
     $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
     $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
     $aContactType = getContactTypeById($iContactTypeId, $oPdo, true);
-
     if ($iSubjectContactId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid contact link."), 400);
     }
@@ -995,7 +958,6 @@ if ($sBdPostAction == "update_contact") {
     if ($sContactValue == "") {
         sendJsonAndExit(array("success" => false, "message" => "Contact value is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $aUpdatedContact = updateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId, $sContactValue, $aContactType);
@@ -1003,7 +965,6 @@ if ($sBdPostAction == "update_contact") {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Contact link was not found."), 404);
         }
-
         $oStatement = $oPdo->prepare("UPDATE ex_subject_contacts SET is_primary = :is_primary, is_active = :is_active, note = :note WHERE id = :id");
         $oStatement->execute(array(
             "is_primary" => $iIsPrimary,
@@ -1012,7 +973,6 @@ if ($sBdPostAction == "update_contact") {
             "id" => $iSubjectContactId
         ));
         $oPdo->commit();
-
         $aResponse = bdGetUpdatedSubjectResponse($oPdo, (int)$aUpdatedContact["subject_id"], $aBirthdaySettings, $blCanEdit);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
@@ -1085,7 +1045,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Birthdays", $aAllowedIps)); ?></title>
@@ -1095,7 +1054,11 @@ $iTime = sendPageHeaders();
 </head>
 <body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-date-input-format="<?php echo html($sDateInputFormat); ?>" data-date-input-pattern="<?php echo html($sDateInputPattern); ?>">
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-birthdays-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -1122,7 +1085,11 @@ $iTime = sendPageHeaders();
         <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aBirthdaySettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aBirthdaySettings["show_czechia_country"] && $aBirthdaySettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aBirthdaySettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
         <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aBirthdaySettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aBirthdaySettings["show_czechia_country"] && $aBirthdaySettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aBirthdaySettings["show_czechia_country"] ? "" : " disabled"); ?>> Show &#268;esk&aacute; republika instead of &#268;esko</label>
       </div>
-      <?php echo renderSettingsScopeNote(); ?>
+<?php
+
+echo renderSettingsScopeNote();
+
+?>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Save</button>
         <button type="button" class="confirm-dialog-button js-index-settings-cancel">Cancel</button>
@@ -1132,20 +1099,15 @@ $iTime = sendPageHeaders();
 <?php
 
 echo "  <datalist id=\"nx-group-list\">\n";
-
 foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . html($aGroup["name"]) . "\"></option>\n";
 }
-
-echo "  </datalist>\n"
-    . "  <select id=\"nx-contact-type-list\" hidden>\n";
-
+echo "  </datalist>\n",
+    "  <select id=\"nx-contact-type-list\" hidden>\n";
 foreach ($aContactTypes as $aContactType) {
     echo "    <option value=\"" . html($aContactType["id"]) . "\" data-contact-type=\"" . html($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . html($aContactType["is_active"]) . "\">" . html($aContactType["name"]) . "</option>\n";
 }
-
 echo "  </select>\n";
-
 if (!$aBirthdayRows) {
     echo "  <p>No visible records found.</p>\n";
 } else {
@@ -1176,13 +1138,12 @@ if (!$aBirthdayRows) {
     foreach ($aBirthdayRows as $aRow) {
         echo bdRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aBirthdaySettings);
     }
-
-    echo "    </tbody>\n"
-        . "  </table>\n";
+    echo "    </tbody>\n",
+        "  </table>\n";
 }
 
-echo renderFilterFocusButton()
-    . renderAdminScript($sBaseUrl);
+echo renderFilterFocusButton(),
+    renderAdminScript($sBaseUrl);
 
 ?>
 </body>

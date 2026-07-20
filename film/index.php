@@ -362,18 +362,18 @@ if ($oPdo) {
 
 if ($oPdo) {
     if ($aCurrent) {
-        echo "        <div class=\"navigation\">\n"
-            . "          <div class=\"breadcrumb\">\n";
+        echo "        <div class=\"navigation\">\n",
+            "          <div class=\"breadcrumb\">\n";
         $aModes = array("All", "OK", "Public", "Private", "Internal", "Colorized");
         if ($sVisibility == "all") {
-            echo "            <form method=\"get\" action=\"" . $sBaseUrl . "\" enctype=\"application/x-www-form-urlencoded\">\n"
-                . "              <select class=\"select-like-btn js-gallery-select\" name=\"mode\" style=\"width: 85px;\">\n";
+            echo "            <form method=\"get\" action=\"" . $sBaseUrl . "\" enctype=\"application/x-www-form-urlencoded\">\n",
+                "              <select class=\"select-like-btn js-gallery-select\" name=\"mode\" style=\"width: 85px;\">\n";
             for ($iI = 0; $iI < 6; $iI++) {
                 echo "                <option value=\"" . $iI . "\"" . ($_SESSION["film"]["gallery"]["mode"] == $iI ? " selected" : "") . ">" . $aModes[$iI] . "</option>\n";
             }
-            echo "              </select>\n"
-                . "              <input type=\"hidden\" name=\"id\" value=\"" . (int)$aCurrent["id"] . "\">\n"
-                . "            </form>\n";
+            echo "              </select>\n",
+                "              <input type=\"hidden\" name=\"id\" value=\"" . (int)$aCurrent["id"] . "\">\n",
+                "            </form>\n";
         }
 
 ?>
@@ -413,31 +413,31 @@ if ($oPdo) {
 
         }
 
-        echo "          </div>\n"
-            . "          <div class=\"nav-arrows\">\n"
-            . "            <div class=\"btn-group btn-group\" role=\"group\">\n";
+        echo "          </div>\n",
+            "          <div class=\"nav-arrows\">\n",
+            "            <div class=\"btn-group btn-group\" role=\"group\">\n";
 
         if ($sJoinedPrev) {
-            echo "              <a class=\"btn btn-default\" href=\"" . $sBaseUrl . "?id=" . (int)$aPrevious["id"] . "\" title=\"" . htmlspecialchars($sJoinedPrev)
-                . "\" role=\"button\"><span class=\"glyphicon glyphicon-menu-left\" aria-hidden=\"true\"></span></a>\n";
+            echo "              <a class=\"btn btn-default\" href=\"" . $sBaseUrl . "?id=" . (int)$aPrevious["id"] . "\" title=\"" . htmlspecialchars($sJoinedPrev),
+                "\" role=\"button\"><span class=\"glyphicon glyphicon-menu-left\" aria-hidden=\"true\"></span></a>\n";
         } else {
             echo "              <a class=\"btn btn-default disabled\" href=\"" . $sBaseUrl . "\" role=\"button\"><span class=\"glyphicon glyphicon-menu-left\" aria-hidden=\"true\"></span></a>\n";
         }
         if ($sJoinedNext) {
-            echo "              <a class=\"btn btn-default\" href=\"" . $sBaseUrl . "?id=" . (int)$aNext["id"] . "\" title=\"" . htmlspecialchars($sJoinedNext)
-                . "\" role=\"button\"><span class=\"glyphicon glyphicon-menu-right\" aria-hidden=\"true\"></span></a>\n";
+            echo "              <a class=\"btn btn-default\" href=\"" . $sBaseUrl . "?id=" . (int)$aNext["id"] . "\" title=\"" . htmlspecialchars($sJoinedNext),
+                "\" role=\"button\"><span class=\"glyphicon glyphicon-menu-right\" aria-hidden=\"true\"></span></a>\n";
         } else {
             echo "              <a class=\"btn btn-default disabled\" href=\"" . $sBaseUrl . "\" role=\"button\"><span class=\"glyphicon glyphicon-menu-right\" aria-hidden=\"true\"></span></a>\n";
         }
 
-        echo "            </div>\n"
-            . "          </div>\n"
-            . "        </div>\n";
+        echo "            </div>\n",
+            "          </div>\n",
+            "        </div>\n";
     }
 }
 
-echo "        <a id=\"main-content\"></a>\n"
-    . "        <div class=\"main-content\" id=\"main-content-gallery\">\n";
+echo "        <a id=\"main-content\"></a>\n",
+    "        <div class=\"main-content\" id=\"main-content-gallery\">\n";
 
 if ($sError) {
     echo "<p><strong>Error:</strong> " . htmlspecialchars($sError) . "</p>\n";
@@ -499,8 +499,8 @@ if ($oPdo) {
                     break;
             }
             $sBaseName = htmlspecialchars(pathinfo($sFileName, PATHINFO_FILENAME));
-            echo "            <figure>\n"
-                . "              <div class=\"thumb";
+            echo "            <figure>\n",
+                "              <div class=\"thumb";
             if ($_SESSION["film"]["gallery"]["cover"]) {
                 echo " thumb-cover";
             } else {
@@ -519,11 +519,11 @@ if ($oPdo) {
                     }
                 }
             }
-            echo "\">\n"
-                . "                <a href=\"" . $sBaseUrl . "?img=" . $sBaseName . "\" data-fancybox=\"gallery\" data-caption=\"" . $sBaseName . "\" title=\"" . $sBaseName . "\">\n"
-                . "                  <img src=\"" . $sBaseUrl . "?img=" . $sBaseName . "\" alt=\"\">\n"
-                . "                </a>\n"
-                . "                <div class=\"overlay-text\">" . intval(substr($sBaseName, -4)) . ".</div>\n";
+            echo "\">\n",
+                "                <a href=\"" . $sBaseUrl . "?img=" . $sBaseName . "\" data-fancybox=\"gallery\" data-caption=\"" . $sBaseName . "\" title=\"" . $sBaseName . "\">\n",
+                "                  <img src=\"" . $sBaseUrl . "?img=" . $sBaseName . "\" alt=\"\">\n",
+                "                </a>\n",
+                "                <div class=\"overlay-text\">" . intval(substr($sBaseName, -4)) . ".</div>\n";
             if ($sVisibility != "public" && !$_SESSION["film"]["gallery"]["cover"] && $_SESSION["film"]["gallery"]["mode"] == 5) {
 
 ?>
@@ -540,8 +540,8 @@ if ($oPdo) {
 <?php
 
             }
-            echo "              </div>\n"
-                . "            </figure>\n";
+            echo "              </div>\n",
+                "            </figure>\n";
         }
         echo "          </section>\n";
     } else {
@@ -565,13 +565,13 @@ if ($oPdo) {
         }
         if ($blFirefoxBrowser && $blEnglishLanguage && isAllowedIp($aAllowedIps)) {
             printPhpFileLinks($sBaseUrl);
-            echo "          <pre>"
-               . rtrim(getRequestPlainTextInfo())
-               . "</pre>\n";
+            echo "          <pre>",
+                rtrim(getRequestPlainTextInfo()),
+                "</pre>\n";
         } else {
-            echo "          <div id=\"camera-image\">\n"
-           . "            <img src=\"" . $sBaseUrl . "gfx/camera.png\" width=\"1535\" height=\"1025\" alt=\"Praktica MTL 3 — 35 mm single-lens reflex (SLR) film camera by VEB Pentacon Dresden\">\n"
-           . "          </div>\n";
+            echo "          <div id=\"camera-image\">\n",
+                "            <img src=\"" . $sBaseUrl . "gfx/camera.png\" width=\"1535\" height=\"1025\" alt=\"Praktica MTL 3 — 35 mm single-lens reflex (SLR) film camera by VEB Pentacon Dresden\">\n",
+                "          </div>\n";
         }
     }
 }

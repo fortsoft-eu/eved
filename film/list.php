@@ -30,7 +30,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo htmlspecialchars(getPageTitleText("Film Scans Overview", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
@@ -38,7 +37,6 @@ $iTime = sendPageHeaders();
   <link href="<?php echo $sBaseUrl; ?>css/admin.css" rel="stylesheet" type="text/css">
 </head>
 <body>
-
 <?php
 
 if ($sError) {
@@ -46,9 +44,10 @@ if ($sError) {
 } elseif (!$aRows) {
     echo "  <p>No records found in <code>fs_film_scans</code>.</p>\n";
 } else {
+echo "  <p class=\"admin-controls\">\n";
+renderFilmMenu();
+
 ?>
-  <p class="admin-controls">
-<?php renderFilmMenu(); ?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="film-scans-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -107,8 +106,8 @@ if ($sError) {
         $sScanDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", htmlspecialchars($sScanDateDisplay, ENT_QUOTES, "UTF-8"));
 
         $sOrderNumber = (string)($aRow["order_no"] ?? "");
-        echo "      <tr data-order-id=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\" data-order-no=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\">\n"
-            . "      <td style=\"text-align: right;\">" . htmlspecialchars((string)$aRow["archive_no"], ENT_QUOTES, "UTF-8") . "</td>\n";
+        echo "      <tr data-order-id=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\" data-order-no=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\">\n",
+            "      <td style=\"text-align: right;\">" . htmlspecialchars((string)$aRow["archive_no"], ENT_QUOTES, "UTF-8") . "</td>\n";
         renderCell($sFolderName, false);
         renderCell($aRow["film_stock"], !$blFilmStockOk);
         renderCell($aRow["cartridge"], !$blCartridgeOk);
@@ -119,8 +118,8 @@ if ($sError) {
         echo "      </tr>\n";
     }
 
-    echo "    </tbody>\n"
-        . "  </table>\n";
+    echo "    </tbody>\n",
+        "  </table>\n";
 }
 
 ?>

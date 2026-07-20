@@ -220,7 +220,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Contacts", $aAllowedIps)); ?></title>
@@ -230,7 +229,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-contacts-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -244,7 +247,11 @@ $iTime = sendPageHeaders();
     <input type="hidden" name="action" value="reset_full_list_complex_filter">
     <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
   </form>
-  <?php echo renderCountryDatalist(); ?>
+<?php
+
+echo renderCountryDatalist();
+
+?>
   <div class="confirm-dialog complex-filter-dialog" id="complex-filter-dialog" hidden>
     <form class="confirm-dialog-box complex-filter-form" method="post" action="<?php echo $sBaseUrl; ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_full_list_complex_filter">
@@ -280,12 +287,12 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
     $sComplexValue = isset($aCondition["value"]) ? (string)$aCondition["value"] : "";
     $blComplexNeedsValue = $sComplexOperator == "" || !empty($aFullListComplexFilterOperators[$sComplexOperator]["needs_value"]);
     $blComplexOperatorHidden = $sComplexValueType == "boolean";
-    echo "          <div class=\"complex-filter-row js-complex-filter-row\">\n"
-        . "            <select name=\"complex_filter_field[]\" class=\"js-complex-filter-field\">" . renderFullListComplexFilterFieldOptions($aFullListComplexFilterFields, $sComplexField) . "</select>\n"
-        . "            <select name=\"complex_filter_operator[]\" class=\"js-complex-filter-operator\"" . ($blComplexOperatorHidden ? " disabled aria-hidden=\"true\" tabindex=\"-1\"" : "") . ">" . renderFullListComplexFilterOperatorOptions($aFullListComplexFilterOperators, $sComplexOperator, $sComplexField != "" ? $aFullListComplexFilterFields[$sComplexField] : null) . "</select>\n"
-        . "            <input type=\"text\" name=\"complex_filter_value[]\" class=\"js-complex-filter-value\" value=\"" . html($sComplexValue) . "\" autocomplete=\"off\"" . ($blComplexNeedsValue ? "" : " disabled") . ">\n"
-        . "            <button type=\"button\" class=\"complex-filter-remove js-complex-filter-remove\" title=\"Remove condition\" aria-label=\"Remove condition\">&times;</button>\n"
-        . "          </div>\n";
+    echo "          <div class=\"complex-filter-row js-complex-filter-row\">\n",
+        "            <select name=\"complex_filter_field[]\" class=\"js-complex-filter-field\">" . renderFullListComplexFilterFieldOptions($aFullListComplexFilterFields, $sComplexField) . "</select>\n",
+        "            <select name=\"complex_filter_operator[]\" class=\"js-complex-filter-operator\"" . ($blComplexOperatorHidden ? " disabled aria-hidden=\"true\" tabindex=\"-1\"" : "") . ">" . renderFullListComplexFilterOperatorOptions($aFullListComplexFilterOperators, $sComplexOperator, $sComplexField != "" ? $aFullListComplexFilterFields[$sComplexField] : null) . "</select>\n",
+        "            <input type=\"text\" name=\"complex_filter_value[]\" class=\"js-complex-filter-value\" value=\"" . html($sComplexValue) . "\" autocomplete=\"off\"" . ($blComplexNeedsValue ? "" : " disabled") . ">\n",
+        "            <button type=\"button\" class=\"complex-filter-remove js-complex-filter-remove\" title=\"Remove condition\" aria-label=\"Remove condition\">&times;</button>\n",
+        "          </div>\n";
 }
 
 ?>
@@ -318,7 +325,11 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
         <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aIndexSettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aIndexSettings["show_czechia_country"] && $aIndexSettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aIndexSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
         <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aIndexSettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aIndexSettings["show_czechia_country"] && $aIndexSettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aIndexSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show Česká republika instead of Česko</label>
       </div>
-      <?php echo renderSettingsScopeNote(); ?>
+<?php
+
+echo renderSettingsScopeNote();
+
+?>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Save</button>
         <button type="button" class="confirm-dialog-button js-index-settings-cancel">Cancel</button>
@@ -330,7 +341,6 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
 if (!$aRows) {
     echo "  <p>No visible records found.</p>\n";
 } else {
-
 echo renderPageThrobber();
 
 ?>
@@ -358,13 +368,11 @@ echo renderPageThrobber();
     foreach ($aRows as $aRow) {
         echo renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aIndexSettings);
     }
-
-    echo "    </tbody>\n"
-        . "  </table>\n";
+    echo "    </tbody>\n",
+        "  </table>\n";
 }
-
-echo renderFilterFocusButton()
-    . renderAdminScript($sBaseUrl);
+echo renderFilterFocusButton(),
+    renderAdminScript($sBaseUrl);
 
 ?>
 </body>

@@ -6,20 +6,18 @@ include "main.php";
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
 requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
-
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("ex_csrf_token", true);
 }
 
-
 if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] == "POST") {
     sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
-
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_contact_type") {
     $sName = getPostedTrimmedValue("name");
@@ -27,7 +25,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     if ($sName == "") {
         sendJsonAndExit(array("success" => false, "message" => "Contact type name is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $sContactType = generateContactTypeKey($oPdo, $sName);
@@ -56,7 +53,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
 }
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_contact_type") {
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
     $sName = getPostedTrimmedValue("name");
@@ -67,7 +63,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     if ($sName == "") {
         sendJsonAndExit(array("success" => false, "message" => "Contact type name is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_contact_types WHERE id = :id FOR UPDATE");
@@ -98,13 +93,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
 }
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_contact_type") {
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
     if ($iContactTypeId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid contact type."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_contact_types WHERE id = :id FOR UPDATE");
@@ -133,14 +126,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
 }
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "move_contact_type") {
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
     $sDirection = isset($_POST["direction"]) ? (string)$_POST["direction"] : "";
     if ($iContactTypeId < 1 || ($sDirection != "up" && $sDirection != "down")) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid order change."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         moveContactTypeOrder($oPdo, $iContactTypeId, $sDirection);
@@ -154,7 +145,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "merge_contact_types") {
     $iTargetContactTypeId = isset($_POST["target_contact_type_id"]) ? (int)$_POST["target_contact_type_id"] : 0;
@@ -175,7 +165,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     if (!$aSourceContactTypeIds) {
         sendJsonAndExit(array("success" => false, "message" => "Select at least one source contact type."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
 
@@ -203,11 +192,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
                 sendJsonAndExit(array("success" => false, "message" => "Source contact type was not found."), 404);
             }
         }
-
         foreach ($aSourceContactTypeIds as $iSourceContactTypeId) {
             mergeContactTypeContacts($oPdo, $iTargetContactTypeId, $iSourceContactTypeId);
         }
-
         if ($blDeleteSourceContactTypes) {
             $aSourcePlaceholders = array();
             $aSourceParams = array();
@@ -220,7 +207,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             $oStatement->execute($aSourceParams);
             normalizeContactTypeOrder($oPdo);
         }
-
         $oPdo->commit();
         sendJsonAndExit(array(
             "success" => true,
@@ -239,7 +225,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
 }
 
-
 $aContactTypes = array();
 try {
     $aContactTypes = fetchContactTypeAdminRows($oPdo);
@@ -247,7 +232,6 @@ try {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
-
 $iTime = sendPageHeaders();
 
 ?>
@@ -259,7 +243,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Contact Types", $aAllowedIps)); ?></title>
@@ -269,7 +252,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-contact-types-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -301,10 +288,11 @@ foreach ($aContactTypes as $aContactType) {
     echo renderContactTypeAdminRow($aContactType, $blCanEdit);
 }
 
-echo "    </tbody>\n"
-    . "  </table>\n"
-    . renderFilterFocusButton()
-    . renderAdminScript($sBaseUrl);
+echo "    </tbody>\n",
+    "  </table>\n",
+    renderFilterFocusButton(),
+    renderAdminScript($sBaseUrl);
+
 ?>
 </body>
 </html>

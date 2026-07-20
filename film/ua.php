@@ -31,7 +31,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo htmlspecialchars(getPageTitleText("Film Access Log", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
@@ -40,7 +39,11 @@ $iTime = sendPageHeaders();
 </head>
 <body>
   <p class="admin-controls">
-<?php renderFilmMenu(); ?>
+<?php
+
+renderFilmMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="film-ua-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
@@ -164,29 +167,29 @@ if (!$aRows) {
         $sTimestamp = substr($sTimestampRaw, 0, 19);
         $sTimestamp = htmlspecialchars($sTimestamp, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
 
-        echo "      <tr>\n"
-            . "        <td title=\"" . htmlspecialchars($sTimestampRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . $sTimestamp . "</td>\n"
-            . "        <td>" . htmlspecialchars((string)$aRow["ip_address"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td>" . htmlspecialchars(strtoupper((string)$aRow["x_geo_continent_code"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td>" . ($sCountry != "" ? $sCountry : "<em>&mdash;</em>") . "</td>\n"
-            . "        <td class=\"js-user-agent\" data-user-agent=\"" . htmlspecialchars($sUserAgentRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-browser-name=\"" . htmlspecialchars((string)$aRow["browser_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-browser-version=\"" . htmlspecialchars((string)$aRow["browser_version"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-os-name=\"" . htmlspecialchars((string)$aRow["os_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-os-version=\"" . htmlspecialchars((string)$aRow["os_version"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-platform-type=\"" . htmlspecialchars((string)$aRow["platform_type"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-device-vendor=\"" . htmlspecialchars((string)$aRow["device_vendor"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-device-model=\"" . htmlspecialchars((string)$aRow["device_model"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . htmlspecialchars($sUserAgentTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars($sUserAgent, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td>" . ($sFilmRoll != "" ? htmlspecialchars($sFilmRoll, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n"
-            . "        <td>" . ($aRow["requested_img"] !== null ? htmlspecialchars((string)$aRow["requested_img"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n"
-            . "        <td title=\"" . htmlspecialchars($sGpuRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . ($sGpu != "" ? htmlspecialchars($sGpu, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n"
-            . "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["fonts"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars((string)$aRow["fonts"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td>" . ($sScreenResolution != "" ? $sScreenResolution : "<em>&mdash;</em>") . "</td>\n"
-            . "        <td>" . ($sScreenPhysical != "" ? $sScreenPhysical : "<em>&mdash;</em>") . "</td>\n"
-            . "        <td>" . htmlspecialchars((string)$aRow["color_depth"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td>" . htmlspecialchars((string)$aRow["timezone"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td>" . htmlspecialchars((string)$aRow["language"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td>" . htmlspecialchars((string)$aRow["platform"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["plugins"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars((string)$aRow["plugins"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["mime_types"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars((string)$aRow["mime_types"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"
-            . "      </tr>\n";
+        echo "      <tr>\n",
+            "        <td title=\"" . htmlspecialchars($sTimestampRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . $sTimestamp . "</td>\n",
+            "        <td>" . htmlspecialchars((string)$aRow["ip_address"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td>" . htmlspecialchars(strtoupper((string)$aRow["x_geo_continent_code"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td>" . ($sCountry != "" ? $sCountry : "<em>&mdash;</em>") . "</td>\n",
+            "        <td class=\"js-user-agent\" data-user-agent=\"" . htmlspecialchars($sUserAgentRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-browser-name=\"" . htmlspecialchars((string)$aRow["browser_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-browser-version=\"" . htmlspecialchars((string)$aRow["browser_version"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-os-name=\"" . htmlspecialchars((string)$aRow["os_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-os-version=\"" . htmlspecialchars((string)$aRow["os_version"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-platform-type=\"" . htmlspecialchars((string)$aRow["platform_type"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-device-vendor=\"" . htmlspecialchars((string)$aRow["device_vendor"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-device-model=\"" . htmlspecialchars((string)$aRow["device_model"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . htmlspecialchars($sUserAgentTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars($sUserAgent, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td>" . ($sFilmRoll != "" ? htmlspecialchars($sFilmRoll, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
+            "        <td>" . ($aRow["requested_img"] !== null ? htmlspecialchars((string)$aRow["requested_img"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
+            "        <td title=\"" . htmlspecialchars($sGpuRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . ($sGpu != "" ? htmlspecialchars($sGpu, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
+            "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["fonts"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars((string)$aRow["fonts"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td>" . ($sScreenResolution != "" ? $sScreenResolution : "<em>&mdash;</em>") . "</td>\n",
+            "        <td>" . ($sScreenPhysical != "" ? $sScreenPhysical : "<em>&mdash;</em>") . "</td>\n",
+            "        <td>" . htmlspecialchars((string)$aRow["color_depth"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td>" . htmlspecialchars((string)$aRow["timezone"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td>" . htmlspecialchars((string)$aRow["language"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td>" . htmlspecialchars((string)$aRow["platform"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["plugins"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars((string)$aRow["plugins"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["mime_types"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars((string)$aRow["mime_types"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "      </tr>\n";
     }
 
-    echo "    </tbody>\n"
-        . "  </table>\n";
+    echo "    </tbody>\n",
+        "  </table>\n";
 }
 
 ?>

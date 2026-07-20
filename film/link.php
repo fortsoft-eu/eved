@@ -166,7 +166,6 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo htmlspecialchars(getPageTitleText("Assign Film to Lab Bag", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
@@ -193,8 +192,7 @@ echo "  </p>\n";
 <?php
 
 foreach ($aFilms as $aFilm) {
-    echo "        <option value=\"" . htmlspecialchars((string)$aFilm["id"], ENT_QUOTES, "UTF-8") . "\">"
-        . formatFilmOptionLabel($aFilm) . "</option>\n";
+    echo "        <option value=\"" . htmlspecialchars((string)$aFilm["id"], ENT_QUOTES, "UTF-8") . "\">" . formatFilmOptionLabel($aFilm) . "</option>\n";
 
 }
 
@@ -210,8 +208,7 @@ echo "      </select>\n";
 foreach ($aOrders as $aOrder) {
     $sLabel = formatOrderOptionLabel($aOrder);
     $blSelected = $iLastBagId !== null && $aOrder["id"] === $iLastBagId;
-    echo "        <option value=\"" . htmlspecialchars((string)$aOrder["id"], ENT_QUOTES, "UTF-8") . "\"" . ($blSelected ? " selected" : "") . ">"
-        . $sLabel . "</option>\n";
+    echo "        <option value=\"" . htmlspecialchars((string)$aOrder["id"], ENT_QUOTES, "UTF-8") . "\"" . ($blSelected ? " selected" : "") . ">" . $sLabel . "</option>\n";
 
 }
 

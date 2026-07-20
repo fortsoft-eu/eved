@@ -122,17 +122,33 @@ $iTime = sendPageHeaders();
   <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
-<?php echo $sDatabaseFormsHtml; ?>
+<?php
+
+echo $sDatabaseFormsHtml;
+
+?>
   <p class="admin-controls">
-<?php renderMenu(); ?>
+<?php
+
+renderMenu();
+
+?>
     <label for="table-filter">Filter:</label>
     <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-database-table" value="">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
-<?php echo $sDatabaseToolbarHtml; ?>
+<?php
+
+echo $sDatabaseToolbarHtml;
+
+?>
   </p>
-<?php renderMessage(); ?>
+<?php
+
+renderMessage();
+
+?>
   <table id="kf-database-table" class="table-filter-target">
     <thead>
       <tr>
@@ -144,10 +160,10 @@ $iTime = sendPageHeaders();
 <?php
 
 foreach ($aTables as $aTable) {
-    echo "      <tr>\n"
-        . "        <td class=\"database-table-name\">" . html($aTable[0]) . "</td>\n"
-        . "        <td class=\"database-structure-cell\">" . formatDatabaseStructureHtml($aTable[1]) . "</td>\n"
-        . "      </tr>\n";
+    echo "      <tr>\n",
+        "        <td class=\"database-table-name\">" . html($aTable[0]) . "</td>\n",
+        "        <td class=\"database-structure-cell\">" . formatDatabaseStructureHtml($aTable[1]) . "</td>\n",
+        "      </tr>\n";
 }
 
 if (!$aTables) {
@@ -159,8 +175,8 @@ if (!$aTables) {
   </table>
 <?php
 
-echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
-    . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
-    . "</body>\n"
-    . "</html>\n";
+echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n",
+    "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n",
+    "</body>\n",
+    "</html>\n";
 
