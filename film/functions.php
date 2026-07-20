@@ -359,7 +359,7 @@ function getRequestPlainTextInfo() {
     if (isset($_SESSION)) {
         foreach ($_SESSION as $sKey => $mValue) {
             if (is_array($mValue)) {
-                $mValue = print_r($mValue, true);
+                $mValue = dumpVar($mValue);
             }
             $sOutput .= $sKey . ": " . $mValue . "\n";
         }
@@ -368,7 +368,7 @@ function getRequestPlainTextInfo() {
     $sOutput .= "<b>PHP \$_COOKIE array</b>\n";
     foreach ($_COOKIE as $sKey => $mValue) {
         if (is_array($mValue)) {
-            $mValue = print_r($mValue, true);
+            $mValue = dumpVar($mValue);
         }
         $sOutput .= $sKey . ": " . $mValue . "\n";
     }
@@ -631,4 +631,3 @@ function formatFilmUaGpu($sGpuInfo) {
     $sFriendly = preg_replace("#\\s+vs_[0-9_]+.*$#i", "", $sFriendly);
     return trim($sFriendly);
 }
-

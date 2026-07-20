@@ -1009,3 +1009,96 @@ function sendPhpInfoAndExit($sStyleNonce) {
     echo addPhpInfoStyleAttributes(ob_get_clean(), $sStyleNonce);
     exit;
 }
+
+function dumpVar($mVar) {
+    return formatDumpVarValue($mVar, 0);
+}
+
+function formatDumpVarValue($mVar, $iLevel) {
+    if (is_array($mVar)) {
+        return formatDumpVarArray($mVar, $iLevel);
+    }
+    if (is_object($mVar)) {
+        return formatDumpVarObject($mVar, $iLevel);
+    }
+    if (is_bool($mVar)) {
+        return "<span style=\"font-weight: bold !important;\">" . ($mVar ? "true" : "false") . "</span>";
+    }
+    if ($mVar === null) {
+        return "<span style=\"color: #808 !important; font-weight: bold !important; font-style: italic !important;\">null</span>";
+    }
+    if (is_int($mVar)) {
+        return "<span style=\"color: #888 !important;\">int:</span> <span style=\"color: #088 !important; font-weight: bold !important;\">" . htmlspecialchars((string)$mVar, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</span>";
+    }
+    if (is_float($mVar)) {
+        return "<span style=\"color: #888 !important;\">float:</span> <span style=\"color: #080 !important; font-weight: bold !important;\">" . htmlspecialchars((string)$mVar, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</span>";
+    }
+    return "<span style=\"color: #080 !important;\">\"" . htmlspecialchars((string)$mVar, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"</span>";
+}
+
+function formatDumpVarArray($aArray, $iLevel) {
+    if (!$aArray) {
+        return "<span style=\"font-weight: bold !important; color: #F0F !important;\">Array</span><span style=\"color: #000 !important;\">()</span>";
+    }
+    $sOutput = "<span style=\"font-weight: bold !important; color: #F0F !important;\">Array</span><span style=\"color: #000 !important;\">(" . count($aArray) . ")</span>\n";
+    $sOutput .= getDumpVarIndentation($iLevel) . "<span style=\"color: #000 !important;\">(</span>\n";
+    foreach ($aArray as $mKey => $mValue) {
+        $sOutput .= getDumpVarIndentation($iLevel + 1) . formatDumpVarKey($mKey);
+        if (is_array($mValue) || is_object($mValue)) {
+            $sOutput .= formatDumpVarValue($mValue, $iLevel + 1);
+        } else {
+            $sOutput .= formatDumpVarValue($mValue, $iLevel + 1) . "\n";
+        }
+    }
+    $sOutput .= getDumpVarIndentation($iLevel) . "<span style=\"color: #000 !important;\">)</span>\n";
+    return $sOutput;
+}
+
+function formatDumpVarObject($oObject, $iLevel) {
+    $aProperties = get_object_vars($oObject);
+    $sClassName = htmlspecialchars(get_class($oObject), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    if (!$aProperties) {
+        return "<span style=\"color: #000 !important;\">" . $sClassName . " </span><span style=\"font-weight: bold !important; color: #F00 !important;\">Object</span><span style=\"color: #000 !important;\">()</span>";
+    }
+    $sOutput = "<span style=\"color: #000 !important;\">" . $sClassName . " </span><span style=\"font-weight: bold !important; color: #F00 !important;\">Object</span><span style=\"color: #000 !important;\">(" . count($aProperties) . ")</span>\n";
+    $sOutput .= getDumpVarIndentation($iLevel) . "<span style=\"color: #000 !important;\">(</span>\n";
+    foreach ($aProperties as $sKey => $mValue) {
+        $sOutput .= getDumpVarIndentation($iLevel + 1) . formatDumpVarKey($sKey);
+        if (is_array($mValue) || is_object($mValue)) {
+            $sOutput .= formatDumpVarValue($mValue, $iLevel + 1);
+        } else {
+            $sOutput .= formatDumpVarValue($mValue, $iLevel + 1) . "\n";
+        }
+    }
+    $sOutput .= getDumpVarIndentation($iLevel) . "<span style=\"color: #000 !important;\">)</span>\n";
+    return $sOutput;
+}
+
+function formatDumpVarKey($mKey) {
+    $sKey = htmlspecialchars((string)$mKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    if ($sKey != "" && $sKey[0] == "_") {
+        return "<span style=\"color: #BBB !important;\">[" . $sKey . "] => </span>";
+    }
+    if (strpos($sKey, "__") !== false) {
+        return "<span style=\"color: #000 !important;\">[</span><span style=\"font-weight: bold !important; color: #00F !important;\">" . $sKey . "</span><span style=\"color: #000 !important;\">] => </span>";
+    }
+    return "<span style=\"color: #000 !important;\">[" . $sKey . "] => </span>";
+}
+
+function getDumpVarIndentation($mVar) {
+    $iIndentation = 3;
+    if ($iIndentation > 4) {
+        $iIndentation = 4;
+    } elseif ($iIndentation < 1) {
+        $iIndentation = 1;
+    }
+    $sIndentation = str_pad(" ", $iIndentation);
+    $sOutput = "";
+    if (is_string($mVar)) {
+        $mVar = strlen($mVar) / 2;
+    }
+    for ($iI = 0; $iI < $mVar; $iI++) {
+        $sOutput .= $sIndentation;
+    }
+    return $sOutput;
+}
