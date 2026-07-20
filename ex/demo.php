@@ -584,7 +584,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-subjects-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="subjects-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -684,12 +684,12 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
   </div>
 <?php
 
-echo "  <datalist id=\"nx-group-list\">\n";
+echo "  <datalist id=\"group-list\">\n";
 foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . html($aGroup["name"]) . "\"></option>\n";
 }
 echo "  </datalist>\n",
-    "  <select id=\"nx-contact-type-list\" hidden>\n";
+    "  <select id=\"contact-type-list\" hidden>\n";
 foreach ($aContactTypes as $aContactType) {
     echo "    <option value=\"" . html($aContactType["id"]) . "\" data-contact-type=\"" . html($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . html($aContactType["is_active"]) . "\">" . html($aContactType["name"]) . "</option>\n";
 }
@@ -700,10 +700,10 @@ if (!$aRows) {
     echo renderPageThrobber();
 
 ?>
-  <table id="nx-subjects-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
+  <table id="subjects-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
-        <th class="nx-subject-type-column">Type</th>
+        <th class="subject-type-column">Type</th>
         <th>Name</th>
         <th>First Name</th>
         <th>Last Name</th>
@@ -726,13 +726,13 @@ if (!$aRows) {
         $sPortalJson = htmlspecialchars(json_encode($aDummySubjectPortals[$iSubjectId], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
         $sRowHtml = renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, true, $aHiddenInactive, $aFullListSettings);
         $sRowHtml = str_replace(
-            "class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . html($iSubjectId) . "\"",
-            "class=\"nx-item-action js-edit-subject\" data-subject-id=\"" . html($iSubjectId) . "\" data-test-subject=\"" . $sSubjectJson . "\"",
+            "class=\"item-action js-edit-subject\" data-subject-id=\"" . html($iSubjectId) . "\"",
+            "class=\"item-action js-edit-subject\" data-subject-id=\"" . html($iSubjectId) . "\" data-test-subject=\"" . $sSubjectJson . "\"",
             $sRowHtml
         );
         $sRowHtml = str_replace(
-            "class=\"nx-item-action js-edit-subject-portal\" data-subject-id=\"" . html($iSubjectId) . "\"",
-            "class=\"nx-item-action js-edit-subject-portal\" data-subject-id=\"" . html($iSubjectId) . "\" data-test-subject-portal=\"" . $sPortalJson . "\"",
+            "class=\"item-action js-edit-subject-portal\" data-subject-id=\"" . html($iSubjectId) . "\"",
+            "class=\"item-action js-edit-subject-portal\" data-subject-id=\"" . html($iSubjectId) . "\" data-test-subject-portal=\"" . $sPortalJson . "\"",
             $sRowHtml
         );
         echo $sRowHtml;

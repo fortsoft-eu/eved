@@ -294,7 +294,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-groups-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="groups-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -306,15 +306,15 @@ if ($blCanEdit) {
 
 ?>
   </p>
-  <table id="nx-groups-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-permissions="<?php echo htmlspecialchars(json_encode($aPortalPermissions), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="groups-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-permissions="<?php echo htmlspecialchars(json_encode($aPortalPermissions), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th>Name</th>
-        <th class="nx-admin-subjects-column">Subjects</th>
-        <th class="nx-admin-permissions-column">Permissions</th>
-        <th class="nx-admin-action-column">Order</th>
-        <th class="nx-admin-action-column"></th>
-        <th class="nx-admin-action-column"></th>
+        <th class="admin-subjects-column">Subjects</th>
+        <th class="admin-permissions-column">Permissions</th>
+        <th class="admin-action-column">Order</th>
+        <th class="admin-action-column"></th>
+        <th class="admin-action-column"></th>
       </tr>
     </thead>
     <tbody>

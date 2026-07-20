@@ -1058,7 +1058,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-birthdays-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="birthdays-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -1096,12 +1096,12 @@ echo renderSettingsScopeNote();
   </div>
 <?php
 
-echo "  <datalist id=\"nx-group-list\">\n";
+echo "  <datalist id=\"group-list\">\n";
 foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . html($aGroup["name"]) . "\"></option>\n";
 }
 echo "  </datalist>\n",
-    "  <select id=\"nx-contact-type-list\" hidden>\n";
+    "  <select id=\"contact-type-list\" hidden>\n";
 foreach ($aContactTypes as $aContactType) {
     echo "    <option value=\"" . html($aContactType["id"]) . "\" data-contact-type=\"" . html($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . html($aContactType["is_active"]) . "\">" . html($aContactType["name"]) . "</option>\n";
 }
@@ -1111,23 +1111,23 @@ if (!$aBirthdayRows) {
 } else {
 
 ?>
-  <table id="nx-birthdays-table" class="nx-contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
+  <table id="birthdays-table" class="contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
-        <th class="nx-column-hidden">Type</th>
-        <th class="nx-birthday-in-column">In</th>
+        <th class="column-hidden">Type</th>
+        <th class="birthday-in-column">In</th>
         <th>Name</th>
-        <th class="nx-column-hidden">First Name</th>
-        <th class="nx-column-hidden">Last Name</th>
-        <th class="nx-column-step-one">Birth Name</th>
-        <th class="nx-column-hidden">Birth Number</th>
-        <th class="nx-column-step-two" style="overflow-wrap: normal; white-space: nowrap; word-break: normal;">Birth Date</th>
-        <th class="nx-column-hidden">Death Date</th>
-        <th class="nx-column-step-one">Nicknames</th>
+        <th class="column-hidden">First Name</th>
+        <th class="column-hidden">Last Name</th>
+        <th class="column-step-one">Birth Name</th>
+        <th class="column-hidden">Birth Number</th>
+        <th class="column-step-two" style="overflow-wrap: normal; white-space: nowrap; word-break: normal;">Birth Date</th>
+        <th class="column-hidden">Death Date</th>
+        <th class="column-step-one">Nicknames</th>
         <th>Addresses</th>
         <th>Contacts</th>
-        <th class="nx-column-step-three">Groups</th>
-        <th class="nx-column-step-three">Notes</th>
+        <th class="column-step-three">Groups</th>
+        <th class="column-step-three">Notes</th>
       </tr>
     </thead>
     <tbody>

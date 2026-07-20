@@ -258,12 +258,12 @@ table {
     row-gap: 5px;
 }
 
-.admin-controls .kf-menu {
+.admin-controls .menu {
     flex: 0 0 27px;
     width: 27px;
 }
 
-.admin-controls .kf-menu-button {
+.admin-controls .menu-button {
     height: 27px;
     width: 27px;
 }
@@ -301,12 +301,12 @@ table {
     margin-top: 0;
 }
 
-.kf-menu {
+.menu {
     display: inline-flex;
     position: relative;
 }
 
-.kf-menu-button {
+.menu-button {
     background: #F0F0F0;
     border: 1px solid #C0C0C0;
     box-sizing: border-box;
@@ -318,11 +318,11 @@ table {
     width: 27px;
 }
 
-.kf-menu-button:hover {
+.menu-button:hover {
     background: #DCDCE4;
 }
 
-.kf-menu-panel {
+.menu-panel {
     background: #F0F0F0;
     border: 1px solid #C0C0C0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -335,11 +335,11 @@ table {
     z-index: 7;
 }
 
-.kf-menu-panel[hidden] {
+.menu-panel[hidden] {
     display: none;
 }
 
-.kf-menu-link {
+.menu-link {
     align-items: center;
     color: #000;
     cursor: default;
@@ -350,28 +350,28 @@ table {
     white-space: nowrap;
 }
 
-.kf-menu-icon {
+.menu-icon {
     flex: 0 0 20px;
     font-size: inherit;
     text-align: center;
 }
 
-.kf-menu-text {
+.menu-text {
     display: inline-block;
 }
 
-.kf-menu-separator {
+.menu-separator {
     border-top: 1px solid #E5E5E5;
     display: block;
     margin: 8px 0;
 }
 
-.kf-menu-link-active,
-.kf-menu-link:hover {
+.menu-link-active,
+.menu-link:hover {
     background: #DCDCE4;
 }
 
-.kf-menu-link-active {
+.menu-link-active {
     font-weight: bold;
 }
 
@@ -420,19 +420,19 @@ table {
     vertical-align: top;
 }
 
-#kf-database-table {
+#database-table {
     table-layout: auto;
     width: 100%;
 }
 
-#kf-database-table td,
-#kf-database-table th {
+#database-table td,
+#database-table th {
     overflow-wrap: normal;
     white-space: nowrap;
     word-break: normal;
 }
 
-#kf-database-table .database-structure-cell {
+#database-table .database-structure-cell {
     white-space: pre;
 }
 
@@ -651,7 +651,7 @@ tr:nth-child(even) {
 }
 
 @media (max-width: 600px) {
-    .kf-menu-panel {
+    .menu-panel {
         max-width: calc(100vw - 16px);
     }
 
@@ -672,69 +672,69 @@ tr:nth-child(even) {
     }
 }
 
-.kf-edit-dialog label {
+.edit-dialog label {
     display: block;
     font-weight: bold;
     margin: 10px 16px 4px;
 }
 
-.kf-edit-dialog input[type="date"],
-.kf-edit-dialog input[type="email"],
-.kf-edit-dialog input[type="text"],
-.kf-edit-dialog select {
+.edit-dialog input[type="date"],
+.edit-dialog input[type="email"],
+.edit-dialog input[type="text"],
+.edit-dialog select {
     box-sizing: border-box;
     margin: 0 16px;
     width: calc(100% - 32px);
 }
 
-.kf-edit-dialog .confirm-dialog-actions {
+.edit-dialog .confirm-dialog-actions {
     padding-top: 16px;
 }
 
-.kf-edit-dialog input[type="checkbox"] {
+.edit-dialog input[type="checkbox"] {
     margin: 0 6px 0 0;
     width: auto;
 }
 
-.kf-edit-dialog .checkbox-grid {
+.edit-dialog .checkbox-grid {
     margin: 0 16px;
 }
 
-.kf-edit-dialog label.checkbox-label {
+.edit-dialog label.checkbox-label {
     font-weight: normal;
     margin: 4px 0 0;
 }
 
-#kf-transactions-table,
-#kf-types-table,
-#kf-debts-table {
+#transactions-table,
+#types-table,
+#debts-table {
     table-layout: auto;
     width: auto;
 }
 
-#kf-transactions-table td,
-#kf-transactions-table th,
-#kf-types-table td,
-#kf-types-table th,
-#kf-debts-table td,
-#kf-debts-table th {
+#transactions-table td,
+#transactions-table th,
+#types-table td,
+#types-table th,
+#debts-table td,
+#debts-table th {
     overflow-wrap: normal;
     white-space: nowrap;
     word-break: normal;
 }
 
-.kf-monthly-overview-table {
+.monthly-overview-table {
     table-layout: fixed;
 }
 
-.kf-monthly-overview-table td,
-.kf-monthly-overview-table th {
+.monthly-overview-table td,
+.monthly-overview-table th {
     overflow-wrap: anywhere;
     white-space: normal;
     word-break: normal;
 }
 
-.kf-monthly-overview-table td.numeric {
+.monthly-overview-table td.numeric {
     overflow-wrap: normal;
     white-space: nowrap;
 }
@@ -795,16 +795,16 @@ th.numeric {
     grid-row: 2;
 }
 
-.kf-amount-positive {
+.amount-positive {
     color: #080;
 }
 
-.kf-amount-negative,
-.kf-debt-total {
+.amount-negative,
+.debt-total {
     color: #F00;
 }
 
-.kf-amount-zero {
+.amount-zero {
     color: #000;
 }
 

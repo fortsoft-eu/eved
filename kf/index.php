@@ -102,7 +102,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-monthly-overview-tables" value="">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="monthly-overview-tables" value="">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -110,10 +110,10 @@ renderMenu();
 <?php
 
 renderMessage();
-echo "  <div id=\"kf-monthly-overview-tables\">\n";
+echo "  <div id=\"monthly-overview-tables\">\n";
 
 foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColumnGroup) {
-    echo "  <table id=\"kf-monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target kf-monthly-overview-table\">\n",
+    echo "  <table id=\"monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target monthly-overview-table\">\n",
         "    <thead>\n",
         "      <tr>\n",
         "        <th>Month</th>\n";
@@ -141,7 +141,7 @@ foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColum
             } else {
                 $fAmount = $fNet;
             }
-            $sAmountClass = $fAmount < 0 ? "kf-amount-negative" : ($fAmount > 0 ? "kf-amount-positive" : "kf-amount-zero");
+            $sAmountClass = $fAmount < 0 ? "amount-negative" : ($fAmount > 0 ? "amount-positive" : "amount-zero");
             echo "        <td class=\"numeric " . $sAmountClass . "\">" . html(formatAmount($fAmount)) . "</td>\n";
         }
         echo "      </tr>\n";

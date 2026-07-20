@@ -106,7 +106,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-transactions-table" value="">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="transactions-table" value="">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -117,7 +117,7 @@ echo $sToolbarHtml,
 renderMessage();
 
 ?>
-  <table id="kf-transactions-table" class="table-filter-target">
+  <table id="transactions-table" class="table-filter-target">
     <thead>
       <tr>
         <th>Date</th>
@@ -136,7 +136,7 @@ echo "      </tr>\n",
     "    <tbody>\n";
 
 foreach ($aRows as $aRow) {
-    $sAmountClass = $aRow["amount"] < 0 ? "kf-amount-negative" : ($aRow["amount"] > 0 ? "kf-amount-positive" : "kf-amount-zero");
+    $sAmountClass = $aRow["amount"] < 0 ? "amount-negative" : ($aRow["amount"] > 0 ? "amount-positive" : "amount-zero");
     $sActionCell = "";
     if ($blCanEdit) {
         $sActionCell = "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"transaction-modal\" data-modal-title=\"Edit Transaction\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-transaction_date=\"" . html(formatDate($aRow["transaction_date"])) . "\" data-field-finance_type_id=\"" . (int)$aRow["finance_type_id"] . "\" data-field-amount=\"" . html(formatAmount(abs($aRow["amount"]))) . "\" data-field-counterparty=\"" . html($aRow["counterparty"]) . "\" data-field-note=\"" . html($aRow["note"]) . "\">Edit</button></td>\n";
@@ -162,7 +162,7 @@ if ($blCanEdit) {
 
 ?>
   <div id="transaction-modal" class="confirm-dialog" hidden>
-    <form method="post" class="confirm-dialog-box kf-edit-dialog">
+    <form method="post" class="confirm-dialog-box edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Transaction</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
         <input type="hidden" name="kf_csrf_token" value="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
         <input type="hidden" name="action" value="save_transaction">

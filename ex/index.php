@@ -235,7 +235,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-contacts-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="contacts-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -344,22 +344,22 @@ if (!$aRows) {
 echo renderPageThrobber();
 
 ?>
-  <table id="nx-contacts-table" class="nx-contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
+  <table id="contacts-table" class="contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
-        <th class="nx-column-hidden">Type</th>
+        <th class="column-hidden">Type</th>
         <th>Name</th>
-        <th class="nx-column-hidden">First Name</th>
-        <th class="nx-column-hidden">Last Name</th>
-        <th class="nx-column-step-one">Birth Name</th>
-        <th class="nx-column-hidden">Birth Number</th>
-        <th class="nx-column-step-two" style="overflow-wrap: normal; white-space: nowrap; word-break: normal;">Birth Date</th>
-        <th class="nx-column-hidden">Death Date</th>
-        <th class="nx-column-step-one">Nicknames</th>
+        <th class="column-hidden">First Name</th>
+        <th class="column-hidden">Last Name</th>
+        <th class="column-step-one">Birth Name</th>
+        <th class="column-hidden">Birth Number</th>
+        <th class="column-step-two" style="overflow-wrap: normal; white-space: nowrap; word-break: normal;">Birth Date</th>
+        <th class="column-hidden">Death Date</th>
+        <th class="column-step-one">Nicknames</th>
         <th>Addresses</th>
         <th>Contacts</th>
-        <th class="nx-column-step-three">Groups</th>
-        <th class="nx-column-step-three">Notes</th>
+        <th class="column-step-three">Groups</th>
+        <th class="column-step-three">Notes</th>
       </tr>
     </thead>
     <tbody>

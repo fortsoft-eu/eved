@@ -376,12 +376,12 @@ table {
     row-gap: 5px;
 }
 
-.admin-controls .ex-menu {
+.admin-controls .menu {
     flex: 0 0 27px;
     width: 27px;
 }
 
-.admin-controls .ex-menu-button {
+.admin-controls .menu-button {
     height: 27px;
     width: 27px;
 }
@@ -452,12 +452,12 @@ table {
     margin-left: 8px;
 }
 
-.ex-menu {
+.menu {
     display: inline-flex;
     position: relative;
 }
 
-.ex-menu-button {
+.menu-button {
     background: #F0F0F0;
     border: 1px solid #C0C0C0;
     box-sizing: border-box;
@@ -469,11 +469,11 @@ table {
     width: 27px;
 }
 
-.ex-menu-button:hover {
+.menu-button:hover {
     background: #DCDCE4;
 }
 
-.ex-menu-panel {
+.menu-panel {
     background: #F0F0F0;
     border: 1px solid #C0C0C0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -486,11 +486,11 @@ table {
     z-index: 7;
 }
 
-.ex-menu-panel[hidden] {
+.menu-panel[hidden] {
     display: none;
 }
 
-.ex-menu-link {
+.menu-link {
     align-items: center;
     color: #000;
     cursor: default;
@@ -501,28 +501,28 @@ table {
     white-space: nowrap;
 }
 
-.ex-menu-icon {
+.menu-icon {
     flex: 0 0 20px;
     font-size: inherit;
     text-align: center;
 }
 
-.ex-menu-text {
+.menu-text {
     display: inline-block;
 }
 
-.ex-menu-separator {
+.menu-separator {
     border-top: 1px solid #E5E5E5;
     display: block;
     margin: 8px 0;
 }
 
-.ex-menu-link-active,
-.ex-menu-link:hover {
+.menu-link-active,
+.menu-link:hover {
     background: #DCDCE4;
 }
 
-.ex-menu-link-active {
+.menu-link-active {
     font-weight: bold;
 }
 
@@ -743,7 +743,7 @@ table {
 }
 
 @media (max-width: 600px) {
-    .ex-menu-panel {
+    .menu-panel {
         max-width: calc(100vw - 16px);
     }
 
@@ -1068,50 +1068,50 @@ body.phpinfo-page .admin-controls {
     }
 }
 
-.nx-contacts-table td,
-.nx-contacts-table th {
+.contacts-table td,
+.contacts-table th {
     white-space: normal;
 }
 
-#nx-contacts-table thead th,
-#nx-birthdays-table thead th,
-#nx-interactions-table thead th {
+#contacts-table thead th,
+#birthdays-table thead th,
+#interactions-table thead th {
     overflow-wrap: normal;
     white-space: nowrap;
     word-break: normal;
 }
 
-.nx-invalid-birth-number {
+.invalid-birth-number {
     background-color: #FFF9C4;
     color: #D00;
 }
 
-.nx-invalid-contact-value {
+.invalid-contact-value {
     background-color: #FFF9C4;
     color: #D00;
 }
 
-.nx-contacts-table .nx-column-hidden,
-.nx-contacts-table .nx-column-step-one,
-.nx-contacts-table .nx-column-step-three,
-.nx-contacts-table .nx-column-step-two {
+.contacts-table .column-hidden,
+.contacts-table .column-step-one,
+.contacts-table .column-step-three,
+.contacts-table .column-step-two {
     display: none;
 }
 
 @media (min-width: 1100px) {
-    .nx-contacts-table .nx-column-step-one {
+    .contacts-table .column-step-one {
         display: table-cell;
     }
 }
 
 @media (min-width: 1350px) {
-    .nx-contacts-table .nx-column-step-two {
+    .contacts-table .column-step-two {
         display: table-cell;
     }
 }
 
 @media (min-width: 1600px) {
-    .nx-contacts-table .nx-column-step-three {
+    .contacts-table .column-step-three {
         display: table-cell;
     }
 }
@@ -1262,25 +1262,25 @@ body.phpinfo-page .admin-controls {
     stroke-width: 1.5;
 }
 
-.nx-contact-list {
+.contact-list {
     display: grid;
     gap: 0;
 }
 
-.nx-contact-item,
-.nx-subject-item {
+.contact-item,
+.subject-item {
 }
 
-.nx-list-item-actions {
+.list-item-actions {
     white-space: nowrap;
 }
 
-.nx-add-item-row {
+.add-item-row {
     text-align: left;
     white-space: nowrap;
 }
 
-.nx-item-action {
+.item-action {
     border: 0;
     color: inherit;
     display: inline-block;
@@ -1291,12 +1291,12 @@ body.phpinfo-page .admin-controls {
     vertical-align: top;
 }
 
-.nx-item-action:hover {
+.item-action:hover {
     background: transparent;
     text-decoration: none;
 }
 
-.nx-contacts-table .nx-birthday-in-column {
+.contacts-table .birthday-in-column {
     overflow-wrap: normal;
     text-align: right;
     white-space: nowrap;
@@ -1304,14 +1304,14 @@ body.phpinfo-page .admin-controls {
     word-break: normal;
 }
 
-.nx-subject-date-age {
+.subject-date-age {
     color: #666;
     display: block;
     line-height: 1.5;
     white-space: nowrap;
 }
 
-.nx-admin-action-column {
+.admin-action-column {
     box-sizing: border-box;
     max-width: 5.5em;
     min-width: 5.5em;
@@ -1322,8 +1322,8 @@ body.phpinfo-page .admin-controls {
     word-break: normal;
 }
 
-#nx-groups-table td:nth-child(3),
-.nx-admin-permissions-column {
+#groups-table td:nth-child(3),
+.admin-permissions-column {
     box-sizing: border-box;
     max-width: 6.5em;
     min-width: 3em;
@@ -1333,48 +1333,48 @@ body.phpinfo-page .admin-controls {
     word-break: normal;
 }
 
-#nx-contact-types-table,
-#nx-external-libraries-table,
-#nx-groups-table {
+#contact-types-table,
+#external-libraries-table,
+#groups-table {
     table-layout: auto;
     width: auto;
 }
 
-#nx-contact-types-table td,
-#nx-contact-types-table th,
-#nx-external-libraries-table td,
-#nx-external-libraries-table th,
-#nx-groups-table td,
-#nx-groups-table th {
+#contact-types-table td,
+#contact-types-table th,
+#external-libraries-table td,
+#external-libraries-table th,
+#groups-table td,
+#groups-table th {
     overflow-wrap: normal;
     white-space: nowrap;
     word-break: normal;
 }
 
-#nx-contact-types-table td:first-child,
-#nx-contact-types-table th:first-child,
-#nx-groups-table td:first-child,
-#nx-groups-table th:first-child {
+#contact-types-table td:first-child,
+#contact-types-table th:first-child,
+#groups-table td:first-child,
+#groups-table th:first-child {
     overflow-wrap: normal;
     white-space: nowrap;
     width: auto;
     word-break: normal;
 }
 
-#nx-contact-types-table td:first-child,
-#nx-contact-types-table th:first-child {
+#contact-types-table td:first-child,
+#contact-types-table th:first-child {
     min-width: 3em;
     width: 6.5em;
 }
 
-#nx-groups-table td:first-child,
-#nx-groups-table th:first-child {
+#groups-table td:first-child,
+#groups-table th:first-child {
     min-width: 3em;
     width: 6.5em;
 }
 
-#nx-groups-table td:nth-child(2),
-.nx-admin-subjects-column {
+#groups-table td:nth-child(2),
+.admin-subjects-column {
     box-sizing: border-box;
     max-width: 6.5em;
     min-width: 6.5em;
@@ -1385,16 +1385,16 @@ body.phpinfo-page .admin-controls {
     word-break: normal;
 }
 
-#nx-groups-table td:nth-child(2),
-#nx-groups-table th:nth-child(2),
-#nx-groups-table td:nth-child(5),
-#nx-groups-table th:nth-child(5) {
+#groups-table td:nth-child(2),
+#groups-table th:nth-child(2),
+#groups-table td:nth-child(5),
+#groups-table th:nth-child(5) {
     min-width: 3em;
 }
 
-#nx-contact-types-table td:nth-child(2),
-#nx-contact-types-table td:nth-child(3),
-.nx-admin-small-column {
+#contact-types-table td:nth-child(2),
+#contact-types-table td:nth-child(3),
+.admin-small-column {
     box-sizing: border-box;
     max-width: 5.5em;
     min-width: 5.5em;
@@ -1405,48 +1405,48 @@ body.phpinfo-page .admin-controls {
     word-break: normal;
 }
 
-#nx-contact-types-table td:nth-child(2),
-#nx-contact-types-table th:nth-child(2) {
+#contact-types-table td:nth-child(2),
+#contact-types-table th:nth-child(2) {
     text-align: right;
 }
 
-#nx-contact-types-table td:nth-child(3),
-#nx-contact-types-table th:nth-child(3) {
+#contact-types-table td:nth-child(3),
+#contact-types-table th:nth-child(3) {
     text-align: left;
 }
 
-#nx-contact-types-table td:nth-child(2),
-#nx-contact-types-table th:nth-child(2),
-#nx-contact-types-table td:nth-child(3),
-#nx-contact-types-table th:nth-child(3),
-#nx-contact-types-table td:nth-child(5),
-#nx-contact-types-table th:nth-child(5) {
+#contact-types-table td:nth-child(2),
+#contact-types-table th:nth-child(2),
+#contact-types-table td:nth-child(3),
+#contact-types-table th:nth-child(3),
+#contact-types-table td:nth-child(5),
+#contact-types-table th:nth-child(5) {
     min-width: 3em;
 }
 
-.nx-add-item-row .nx-add-item-action,
-.nx-add-item-row .nx-copy-action,
-.nx-add-item-row .nx-hidden-inactive-indicator {
+.add-item-row .add-item-action,
+.add-item-row .copy-action,
+.add-item-row .hidden-inactive-indicator {
     margin-left: 0;
 }
 
-.nx-add-item-action {
+.add-item-action {
     margin-left: 1px;
 }
 
-.nx-hidden-inactive-indicator {
+.hidden-inactive-indicator {
     display: inline-block;
     margin-left: 1px;
     vertical-align: top;
 }
 
-.nx-contact-item-inactive,
-.nx-subject-item-inactive {
+.contact-item-inactive,
+.subject-item-inactive {
     color: #D00;
 }
 
-.nx-contact-copy,
-.nx-copy-action {
+.contact-copy,
+.copy-action {
     display: inline-block;
     font-size: inherit;
     margin-left: 0;
@@ -1454,7 +1454,7 @@ body.phpinfo-page .admin-controls {
     vertical-align: top;
 }
 
-.nx-contact-link {
+.contact-link {
     display: inline-block;
     font-size: inherit;
     margin-left: 1px;
@@ -1462,116 +1462,116 @@ body.phpinfo-page .admin-controls {
     vertical-align: top;
 }
 
-.nx-contact-copy:hover,
-.nx-contact-link:hover,
-.nx-copy-action:hover {
+.contact-copy:hover,
+.contact-link:hover,
+.copy-action:hover {
     text-decoration: none;
 }
 
-.nx-copy-action-box {
+.copy-action-box {
     display: inline-block;
     text-align: right;
     vertical-align: top;
     width: 1.35em;
 }
 
-.nx-contact-edit,
-.nx-subject-item-edit {
+.contact-edit,
+.subject-item-edit {
     margin: 0 6px 2px 0;
     padding: 0 6px;
 }
 
-.nx-contact-flags {
+.contact-flags {
     color: #666;
     font-size: inherit;
 }
 
-.nx-contact-flags span:not(:empty),
-.nx-subject-item-flags span:not(:empty) {
+.contact-flags span:not(:empty),
+.subject-item-flags span:not(:empty) {
     display: inline-block;
     margin-left: 1px;
     vertical-align: top;
 }
 
-.nx-subject-item-list {
+.subject-item-list {
     display: grid;
     gap: 0;
 }
 
-.nx-subject-address-main-value {
+.subject-address-main-value {
     background: #FFF9C4;
     color: #0070E7;
 }
 
-.nx-subject-note-source {
+.subject-note-source {
     display: none;
 }
 
-.nx-subject-type-column {
+.subject-type-column {
     display: none;
 }
 
-.nx-subject-row-active.nx-subject-row-type-organization > td {
+.subject-row-active.subject-row-type-organization > td {
     background: #F8F5FF;
 }
 
-.nx-subject-row-active.nx-subject-row-type-service > td {
+.subject-row-active.subject-row-type-service > td {
     background: #F7FFF8;
 }
 
-.nx-subject-row-active.nx-subject-row-type-other > td {
+.subject-row-active.subject-row-type-other > td {
     background: #FFFDF4;
 }
 
-.nx-subject-row-inactive > td {
+.subject-row-inactive > td {
     background: #FEE;
 }
 
-#nx-addresses-table .nx-address-cell {
+#addresses-table .address-cell {
     background: #FFF;
 }
 
-#nx-contacts-table .nx-contact-cell {
+#contacts-table .contact-cell {
     background: #FFF;
 }
 
-#nx-addresses-table tr:nth-child(even) > .nx-address-cell {
+#addresses-table tr:nth-child(even) > .address-cell {
     background: #F9F9F9;
 }
 
-#nx-contacts-table tr:nth-child(even) > .nx-contact-cell {
+#contacts-table tr:nth-child(even) > .contact-cell {
     background: #F9F9F9;
 }
 
-#nx-addresses-table .nx-address-subject-active.nx-address-subject-type-organization {
+#addresses-table .address-subject-active.address-subject-type-organization {
     background: #F8F5FF;
 }
 
-#nx-contacts-table .nx-contact-subject-active.nx-contact-subject-type-organization {
+#contacts-table .contact-subject-active.contact-subject-type-organization {
     background: #F8F5FF;
 }
 
-#nx-addresses-table .nx-address-subject-active.nx-address-subject-type-service {
+#addresses-table .address-subject-active.address-subject-type-service {
     background: #F7FFF8;
 }
 
-#nx-contacts-table .nx-contact-subject-active.nx-contact-subject-type-service {
+#contacts-table .contact-subject-active.contact-subject-type-service {
     background: #F7FFF8;
 }
 
-#nx-addresses-table .nx-address-subject-active.nx-address-subject-type-other {
+#addresses-table .address-subject-active.address-subject-type-other {
     background: #FFFDF4;
 }
 
-#nx-contacts-table .nx-contact-subject-active.nx-contact-subject-type-other {
+#contacts-table .contact-subject-active.contact-subject-type-other {
     background: #FFFDF4;
 }
 
-#nx-addresses-table .nx-address-subject-inactive {
+#addresses-table .address-subject-inactive {
     background: #FEE;
 }
 
-#nx-contacts-table .nx-contact-subject-inactive {
+#contacts-table .contact-subject-inactive {
     background: #FEE;
 }
 
@@ -1597,11 +1597,11 @@ body.phpinfo-page .admin-controls {
     margin: 16px;
 }
 
-.nx-admin-row-modal > td {
+.admin-row-modal > td {
     background: #EADFFF !important;
 }
 
-.nx-admin-row-saved > td {
+.admin-row-saved > td {
     animation: nxAdminRowSavedBlink 0.22s linear 6;
 }
 
@@ -1616,9 +1616,9 @@ body.phpinfo-page .admin-controls {
     }
 }
 
-.nx-contact-inactive-label,
-.nx-contact-item-inactive .nx-contact-flags,
-.nx-subject-item-inactive .nx-subject-item-flags {
+.contact-inactive-label,
+.contact-item-inactive .contact-flags,
+.subject-item-inactive .subject-item-flags {
     color: #D00;
 }
 

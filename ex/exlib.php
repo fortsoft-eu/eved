@@ -58,12 +58,12 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-external-libraries-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="external-libraries-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
   </p>
-  <table id="nx-external-libraries-table" class="table-filter-target consistency-table<?php echo getCondensedTableClass(); ?>">
+  <table id="external-libraries-table" class="table-filter-target consistency-table<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Permissions</th>

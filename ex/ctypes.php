@@ -258,7 +258,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-contact-types-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="contact-types-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -270,15 +270,15 @@ if ($blCanEdit) {
 
 ?>
   </p>
-  <table id="nx-contact-types-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
+  <table id="contact-types-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Name</th>
-        <th class="nx-admin-small-column">Contacts</th>
-        <th class="nx-admin-small-column">Active</th>
-        <th class="nx-admin-action-column">Order</th>
-        <th class="nx-admin-action-column"></th>
-        <th class="nx-admin-action-column"></th>
+        <th class="admin-small-column">Contacts</th>
+        <th class="admin-small-column">Active</th>
+        <th class="admin-action-column">Order</th>
+        <th class="admin-action-column"></th>
+        <th class="admin-action-column"></th>
       </tr>
     </thead>
     <tbody>

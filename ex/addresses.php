@@ -353,7 +353,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-addresses-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="addresses-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -393,7 +393,7 @@ if (count($aAddressRows) > 0) {
 }
 
 ?>
-  <table id="nx-addresses-table" class="nx-contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
+  <table id="addresses-table" class="contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Address</th>
@@ -448,7 +448,7 @@ if (!$aAddressRows) {
         <div class="subject-address-field"><label for="shared-city-part">City Part</label><input type="text" id="shared-city-part" name="city_part"></div>
         <div class="subject-address-field"><label for="shared-postal-code">Postal Code</label><input type="text" id="shared-postal-code" name="postal_code"></div>
         <div class="subject-address-field"><label for="shared-region">Region</label><input type="text" id="shared-region" name="region"></div>
-        <div class="subject-address-field"><label for="shared-country">Country</label><input type="text" id="shared-country" name="country" list="nx-country-list"></div>
+        <div class="subject-address-field"><label for="shared-country">Country</label><input type="text" id="shared-country" name="country" list="country-list"></div>
       </div>
       <div class="subject-edit-error" hidden></div>
       <div class="confirm-dialog-actions">
@@ -505,7 +505,7 @@ foreach (getAddressTypes() as $sAddressType) {
         <div class="subject-address-field"><label for="subject-city-part">City Part</label><input type="text" id="subject-city-part" name="city_part"></div>
         <div class="subject-address-field"><label for="subject-postal-code">Postal Code</label><input type="text" id="subject-postal-code" name="postal_code"></div>
         <div class="subject-address-field"><label for="subject-region">Region</label><input type="text" id="subject-region" name="region"></div>
-        <div class="subject-address-field"><label for="subject-country">Country</label><input type="text" id="subject-country" name="country" list="nx-country-list"></div>
+        <div class="subject-address-field"><label for="subject-country">Country</label><input type="text" id="subject-country" name="country" list="country-list"></div>
         <div class="subject-address-field"><label for="subject-note">Note</label><input type="text" id="subject-note" name="note"></div>
       </div>
       <label class="checkbox-label"><input type="checkbox" name="is_primary" value="1"> Primary</label>

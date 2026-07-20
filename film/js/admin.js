@@ -141,26 +141,26 @@ function removeAdminClass(oElement, sClass) {
 
 function beginAdminSubjectRowEdit(oRow) {
     if (oRow) {
-        removeAdminClass(oRow, "nx-admin-row-saved");
-        addAdminClass(oRow, "nx-admin-row-modal");
+        removeAdminClass(oRow, "admin-row-saved");
+        addAdminClass(oRow, "admin-row-modal");
     }
 }
 
 function finishAdminSubjectRowEdit(oRow, blSaved) {
     if (oRow) {
-        removeAdminClass(oRow, "nx-admin-row-modal");
-        removeAdminClass(oRow, "nx-admin-row-saved");
+        removeAdminClass(oRow, "admin-row-modal");
+        removeAdminClass(oRow, "admin-row-saved");
         if (!blSaved) {
-            addAdminClass(oRow, "nx-admin-row-modal");
+            addAdminClass(oRow, "admin-row-modal");
             window.setTimeout(function () {
-                removeAdminClass(oRow, "nx-admin-row-modal");
+                removeAdminClass(oRow, "admin-row-modal");
             }, 1000);
             return;
         }
         oRow.offsetWidth;
-        addAdminClass(oRow, "nx-admin-row-saved");
+        addAdminClass(oRow, "admin-row-saved");
         window.setTimeout(function () {
-            removeAdminClass(oRow, "nx-admin-row-saved");
+            removeAdminClass(oRow, "admin-row-saved");
         }, 1400);
     }
 }

@@ -574,11 +574,11 @@ tr:nth-child(even) {
     background: #F9F9F9;
 }
 
-.nx-admin-row-modal > td {
+.admin-row-modal > td {
     background: #EADFFF !important;
 }
 
-.nx-admin-row-saved > td {
+.admin-row-saved > td {
     animation: nxAdminRowSavedBlink 0.22s linear 6;
 }
 

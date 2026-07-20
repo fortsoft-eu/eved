@@ -116,7 +116,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-types-table" value="">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="types-table" value="">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -128,7 +128,7 @@ echo $sToolbarHtml,
 renderMessage();
 
 ?>
-  <table id="kf-types-table" class="table-filter-target">
+  <table id="types-table" class="table-filter-target">
     <thead>
       <tr>
         <th>Kind</th>
@@ -169,7 +169,7 @@ if ($blCanEdit) {
 
 ?>
   <div id="type-modal" class="confirm-dialog" hidden>
-    <form method="post" class="confirm-dialog-box kf-edit-dialog">
+    <form method="post" class="confirm-dialog-box edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Type</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
         <input type="hidden" name="kf_csrf_token" value="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
         <input type="hidden" name="action" value="save_type">

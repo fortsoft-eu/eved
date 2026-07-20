@@ -1105,7 +1105,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="nx-subjects-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="subjects-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -1215,12 +1215,12 @@ echo renderSettingsScopeNote();
   </div>
 <?php
 
-echo "  <datalist id=\"nx-group-list\">\n";
+echo "  <datalist id=\"group-list\">\n";
 foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . html($aGroup["name"]) . "\"></option>\n";
 }
 echo "  </datalist>\n",
-    "  <select id=\"nx-contact-type-list\" hidden>\n";
+    "  <select id=\"contact-type-list\" hidden>\n";
 foreach ($aContactTypes as $aContactType) {
     echo "    <option value=\"" . html($aContactType["id"]) . "\" data-contact-type=\"" . html($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . html($aContactType["is_active"]) . "\">" . html($aContactType["name"]) . "</option>\n";
 }
@@ -1231,10 +1231,10 @@ if (!$aRows) {
     echo renderPageThrobber();
 
 ?>
-  <table id="nx-subjects-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
+  <table id="subjects-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
-        <th class="nx-subject-type-column">Type</th>
+        <th class="subject-type-column">Type</th>
         <th>Name</th>
         <th>First Name</th>
         <th>Last Name</th>

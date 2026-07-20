@@ -27,18 +27,18 @@ function renderMenu() {
         return;
     }
     $sCurrentPath = getCurrentMenuPath();
-    echo "    <span class=\"kf-menu\" data-kf-menu>\n"
-        . "      <button type=\"button\" class=\"kf-menu-button\" data-kf-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n"
-        . "      <span class=\"kf-menu-panel\" data-kf-menu-panel hidden>\n";
+    echo "    <span class=\"menu\" data-menu>\n",
+        "      <button type=\"button\" class=\"menu-button\" data-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n",
+        "      <span class=\"menu-panel\" data-menu-panel hidden>\n";
     foreach ($aItems as $aItem) {
         if ($aItem["separator"]) {
-            echo "        <span class=\"kf-menu-separator\"></span>\n";
+            echo "        <span class=\"menu-separator\"></span>\n";
             continue;
         }
-        $sClass = "kf-menu-link";
+        $sClass = "menu-link";
         $sCurrent = "";
         if ($aItem["path"] === $sCurrentPath) {
-            $sClass .= " kf-menu-link-active";
+            $sClass .= " menu-link-active";
             $sCurrent = " aria-current=\"page\"";
         }
         $sTitle = trim((string)$aItem["title"]);
@@ -46,10 +46,10 @@ function renderMenu() {
         $sTitleAttribute = $sTitle != "" ? " title=\"" . html($sTitle) . "\"" : "";
         $sTargetAttribute = $sTarget != "" ? " target=\"" . html($sTarget) . "\"" : "";
         $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
-        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"kf-menu-icon\" aria-hidden=\"true\">" . html($aItem["icon"]) . "</span><span class=\"kf-menu-text\">" . html($aItem["name"]) . "</span></a>\n";
+        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"menu-icon\" aria-hidden=\"true\">" . html($aItem["icon"]) . "</span><span class=\"menu-text\">" . html($aItem["name"]) . "</span></a>\n";
     }
-    echo "      </span>\n"
-        . "    </span>\n";
+    echo "      </span>\n",
+        "    </span>\n";
 }
 
 function setMessage($sMessage, $sType = "success") {

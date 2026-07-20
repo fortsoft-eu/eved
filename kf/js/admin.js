@@ -2,8 +2,8 @@
     "use strict";
 
     function closeMenu(oMenu) {
-        var oButton = oMenu ? oMenu.querySelector("[data-kf-menu-button]") : null;
-        var oPanel = oMenu ? oMenu.querySelector("[data-kf-menu-panel]") : null;
+        var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
+        var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
         if (oPanel) {
             oPanel.hidden = true;
         }
@@ -13,11 +13,11 @@
     }
 
     function setupMenu() {
-        var aMenus = document.querySelectorAll("[data-kf-menu]");
+        var aMenus = document.querySelectorAll("[data-menu]");
         for (var iI = 0; iI < aMenus.length; iI += 1) {
             (function (oMenu) {
-                var oButton = oMenu.querySelector("[data-kf-menu-button]");
-                var oPanel = oMenu.querySelector("[data-kf-menu-panel]");
+                var oButton = oMenu.querySelector("[data-menu-button]");
+                var oPanel = oMenu.querySelector("[data-menu-panel]");
                 if (!oButton || !oPanel) {
                     return;
                 }
@@ -30,7 +30,7 @@
             })(aMenus[iI]);
         }
         document.addEventListener("click", function (oEvent) {
-            if (oEvent.target.closest && oEvent.target.closest("[data-kf-menu]")) {
+            if (oEvent.target.closest && oEvent.target.closest("[data-menu]")) {
                 return;
             }
             for (var iI = 0; iI < aMenus.length; iI += 1) {
