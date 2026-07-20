@@ -53,17 +53,3 @@ CREATE TABLE `kf_fin_trans` (
   KEY `ix_kf_fin_trans_type` (`finance_type_id`),
   CONSTRAINT `fk_kf_fin_trans_type` FOREIGN KEY (`finance_type_id`) REFERENCES `kf_fin_types` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
-CREATE TABLE `kf_menu` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `path` varchar(255) NOT NULL,
-  `icon` varchar(16) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `title` varchar(255) NOT NULL,
-  `target` varchar(32) NOT NULL,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `order` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `ux_kf_menu_path` (`path`),
-  KEY `ix_kf_menu_order` (`order`,`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;

@@ -56,20 +56,6 @@ CREATE TABLE `ex_group_permissions` (
   CONSTRAINT `fk_ex_group_permissions_permission` FOREIGN KEY (`permission_id`) REFERENCES `ex_permissions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
-CREATE TABLE `ex_menu` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `path` varchar(255) NOT NULL,
-  `icon` varchar(16) NOT NULL DEFAULT '',
-  `name` varchar(100) NOT NULL,
-  `title` varchar(255) NOT NULL DEFAULT '',
-  `target` varchar(32) NOT NULL DEFAULT '',
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `order` int(11) NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `fs_menu_path_unique` (`path`),
-  KEY `fs_menu_order_idx` (`order`,`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
 CREATE TABLE `ex_subjects` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `subject_type` enum('person','organization','service','other') NOT NULL,
