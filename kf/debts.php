@@ -6,9 +6,11 @@ include "main.php";
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "kf");
 requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
 
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
@@ -23,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $sEmail = getPostedTrimmedValue("email");
         if (($sFirstName == "" && $sLastName == "") || $fAmount === null) {
             setMessage("The debt could not be saved. Name and amount are required.", "error");
-            redirect("debts.php");
+            redirect(getCurrentScriptName());
         }
         if ($iId > 0) {
             $oStatement = $oPdo->prepare("UPDATE kf_debts SET first_name = :first_name, last_name = :last_name, amount = :amount, account_number = :account_number, email = :email WHERE id = :id");
@@ -47,7 +49,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ));
             setMessage("Debt added.");
         }
-        redirect("debts.php");
+        redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_debt") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         if ($iId > 0) {
@@ -55,9 +57,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $oStatement->execute(array("id" => $iId));
             setMessage("Debt deleted.");
         }
-        redirect("debts.php");
+        redirect(getCurrentScriptName());
     }
 }
+
 
 $aRows = array();
 $oStatement = $oPdo->query("SELECT id, first_name, last_name, amount, account_number, email FROM kf_debts ORDER BY last_name ASC, first_name ASC, id ASC");
@@ -65,10 +68,12 @@ while ($aRow = $oStatement->fetch()) {
     $aRows[] = $aRow;
 }
 
+
 $sToolbarHtml = "";
 if ($blCanEdit) {
     $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-debt\" data-modal-target=\"debt-modal\" data-modal-title=\"New Debt\" data-field-id=\"\" data-field-first_name=\"\" data-field-last_name=\"\" data-field-amount=\"\" data-field-account_number=\"\" data-field-email=\"\">New</button>\n";
 }
+
 
 $sTitle = getPageTitle("Debts");
 $iTime = sendPageHeaders();
@@ -93,9 +98,13 @@ $iTime = sendPageHeaders();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
-<?php echo $sToolbarHtml; ?>
-  </p>
-<?php renderMessage(); ?>
+<?php
+
+echo $sToolbarHtml,
+    "  </p>\n";
+renderMessage();
+
+?>
   <table id="kf-debts-table" class="table-filter-target">
     <thead>
       <tr>
@@ -104,13 +113,15 @@ $iTime = sendPageHeaders();
         <th class="numeric">Amount</th>
         <th>Account Number</th>
         <th>Email</th>
-<?php if ($blCanEdit) { ?>
-        <th></th>
-<?php } ?>
-      </tr>
-    </thead>
-    <tbody>
 <?php
+
+if ($blCanEdit) {
+    echo "        <th></th>\n";
+}
+
+echo "      </tr>\n",
+    "    </thead>\n",
+    "    <tbody>\n";
 
 $fTotal = 0;
 foreach ($aRows as $aRow) {
@@ -119,14 +130,14 @@ foreach ($aRows as $aRow) {
     if ($blCanEdit) {
         $sActionCell = "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"debt-modal\" data-modal-title=\"Edit Debt\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-first_name=\"" . html($aRow["first_name"]) . "\" data-field-last_name=\"" . html($aRow["last_name"]) . "\" data-field-amount=\"" . html(formatAmount($aRow["amount"])) . "\" data-field-account_number=\"" . html($aRow["account_number"]) . "\" data-field-email=\"" . html($aRow["email"]) . "\">Edit</button></td>\n";
     }
-    echo "      <tr>\n"
-        . "        <td>" . htmlValue($aRow["first_name"]) . "</td>\n"
-        . "        <td>" . htmlValue($aRow["last_name"]) . "</td>\n"
-        . "        <td class=\"numeric\">" . html(formatAmount($aRow["amount"])) . "</td>\n"
-        . "        <td>" . htmlValue($aRow["account_number"]) . "</td>\n"
-        . "        <td>" . ($aRow["email"] != "" ? "<a href=\"mailto:" . html($aRow["email"]) . "\">" . html($aRow["email"]) . "</a>" : htmlValue("")) . "</td>\n"
-        . $sActionCell
-        . "      </tr>\n";
+    echo "      <tr>\n",
+        "        <td>" . htmlValue($aRow["first_name"], "&mdash;") . "</td>\n",
+        "        <td>" . htmlValue($aRow["last_name"], "&mdash;") . "</td>\n",
+        "        <td class=\"numeric\">" . html(formatAmount($aRow["amount"])) . "</td>\n",
+        "        <td>" . htmlValue($aRow["account_number"], "&mdash;") . "</td>\n",
+        "        <td>" . ($aRow["email"] != "" ? "<a href=\"mailto:" . html($aRow["email"]) . "\">" . html($aRow["email"]) . "</a>" : htmlValue("", "&mdash;")) . "</td>\n",
+        $sActionCell,
+        "      </tr>\n";
 }
 
 if ($aRows) {
@@ -135,11 +146,12 @@ if ($aRows) {
     echo "      <tr><td colspan=\"" . ($blCanEdit ? 6 : 5) . "\">No debts found.</td></tr>\n";
 }
 
-?>
-    </tbody>
-  </table>
+echo "    </tbody>\n",
+    "  </table>\n";
 
-<?php if ($blCanEdit) { ?>
+if ($blCanEdit) {
+
+?>
   <div id="debt-modal" class="confirm-dialog" hidden>
     <form method="post" class="confirm-dialog-box kf-edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Debt</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
@@ -164,10 +176,11 @@ if ($aRows) {
     </form>
   </div>
 <?php
+
 }
 
-echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n"
-    . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n"
-    . "</body>\n"
-    . "</html>\n";
-
+?>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+</body>
+</html>

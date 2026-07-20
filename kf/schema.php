@@ -5,6 +5,7 @@ include "main.php";
 
 requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
 
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
@@ -24,7 +25,6 @@ try {
         }
         $aTables[$aRow["TABLE_NAME"]][] = $aRow;
     }
-
     $oStatement = $oPdo->query("SELECT CONSTRAINT_NAME, TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'kf\\_%' AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION");
     while ($aRow = $oStatement->fetch()) {
         if (!preg_match("/^kf_[A-Za-z0-9_]+$/", $aRow["TABLE_NAME"])
@@ -39,11 +39,13 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
+
 $aSchemaRelationRoutes = array(
     "kf_fin_groups.group_type_id>kf_fin_types.id" => array("source" => "right", "target" => "left", "curve" => "36", "target-y" => "-10"),
     "kf_fin_groups.member_type_id>kf_fin_types.id" => array("source" => "right", "target" => "left", "curve" => "54", "target-y" => "10"),
     "kf_fin_trans.finance_type_id>kf_fin_types.id" => array("source" => "left", "target" => "right", "curve" => "72")
 );
+
 
 $sTitle = getPageTitle("Database Schema");
 $iTime = sendPageHeaders();
@@ -65,11 +67,7 @@ $iTime = sendPageHeaders();
 <?php
 
 renderMenu();
-
-?>
-  </p>
-<?php
-
+echo "  </p>\n";
 renderMessage();
 
 ?>
@@ -125,23 +123,22 @@ foreach ($aTables as $sTableName => $aColumns) {
             $sKey = "IX";
         }
         $sColumnId = "column-" . preg_replace("/[^a-zA-Z0-9_-]/", "-", $sTableName . "-" . $aColumn["COLUMN_NAME"]);
-        echo "            <tr id=\"" . html($sColumnId) . "\">\n"
-            . "              <td class=\"schema-key" . $sKeyClass . "\">" . html($sKey) . "</td>\n"
-            . "              <td>" . html($aColumn["COLUMN_NAME"]) . "</td>\n"
-            . "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . str_replace("…", "&hellip;", html($sColumnTypeDisplay)) . "</td>\n"
-            . "              <td class=\"schema-null\">" . ($aColumn["IS_NULLABLE"] == "YES" ? "Yes" : "No") . "</td>\n"
-            . "              <td>" . html($aColumn["EXTRA"]) . "</td>\n"
-            . "            </tr>\n";
+        echo "            <tr id=\"" . html($sColumnId) . "\">\n",
+            "              <td class=\"schema-key" . $sKeyClass . "\">" . html($sKey) . "</td>\n",
+            "              <td>" . html($aColumn["COLUMN_NAME"]) . "</td>\n",
+            "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . str_replace("…", "&hellip;", html($sColumnTypeDisplay)) . "</td>\n",
+            "              <td class=\"schema-null\">" . ($aColumn["IS_NULLABLE"] == "YES" ? "Yes" : "No") . "</td>\n",
+            "              <td>" . html($aColumn["EXTRA"]) . "</td>\n",
+            "            </tr>\n";
     }
-    echo "          </tbody>\n"
-        . "        </table>\n";
+    echo "          </tbody>\n",
+        "        </table>\n";
 }
 
 ?>
       </div>
     </div>
   </div>
-
   <table class="schema-relations">
     <thead>
       <tr>
@@ -208,9 +205,6 @@ if (!$aRelations) {
 ?>
     </tbody>
   </table>
-<?php
-
-echo "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n",
-    "</body>\n",
-    "</html>\n";
-
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+</body>
+</html>

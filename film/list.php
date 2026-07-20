@@ -45,7 +45,7 @@ if ($sError) {
     echo "  <p>No records found in <code>fs_film_scans</code>.</p>\n";
 } else {
 echo "  <p class=\"admin-controls\">\n";
-renderFilmMenu();
+renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
@@ -75,7 +75,6 @@ renderFilmMenu();
         $blArchiveOk = false;
         $blFilmStockOk = false;
         $blCartridgeOk = false;
-
         if ($sFolderName) {
             $aParts = preg_split("/\s+/", $sFolderName);
             if (is_array($aParts) && count($aParts) >= 4) {
@@ -89,12 +88,10 @@ renderFilmMenu();
                 $blCartridgeOk = ((string)$aRow["cartridge"] == $sCartridgeFromFolder);
             }
         }
-
         $mExposureValue = $aRow["exposure_index"];
         if (!$mExposureValue) {
             $mExposureValue = "unknown";
         }
-
         $sScanDateRaw = isset($aRow["scanned_at"]) ? substr((string)$aRow["scanned_at"], 0, 16) : "";
         $sPushPull = formatPushPull($aRow["push_pull"]);
         $blScanError = false;
@@ -104,7 +101,6 @@ renderFilmMenu();
             $blScanError = true;
         }
         $sScanDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", htmlspecialchars($sScanDateDisplay, ENT_QUOTES, "UTF-8"));
-
         $sOrderNumber = (string)($aRow["order_no"] ?? "");
         echo "      <tr data-order-id=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\" data-order-no=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\">\n",
             "      <td style=\"text-align: right;\">" . htmlspecialchars((string)$aRow["archive_no"], ENT_QUOTES, "UTF-8") . "</td>\n";
@@ -118,11 +114,11 @@ renderFilmMenu();
         echo "      </tr>\n";
     }
 
-    echo "    </tbody>\n",
-        "  </table>\n";
 }
 
 ?>
+    </tbody>
+  </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>

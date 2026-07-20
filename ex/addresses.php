@@ -6,9 +6,11 @@ include "main.php";
 requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
 
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
 
 $aAddressesSettingsDefaults = array(
     "show_inactive_addresses" => 0,
@@ -19,6 +21,7 @@ $aAddressSettings = array();
 if (!isset($_SESSION["ex_addresses_settings"]) || !is_array($_SESSION["ex_addresses_settings"])) {
     $_SESSION["ex_addresses_settings"] = array();
 }
+
 foreach ($aAddressesSettingsDefaults as $sAddressSettingName => $iAddressSettingDefault) {
     if (isset($_SESSION["ex_addresses_settings"][$sAddressSettingName])) {
         $aAddressSettings[$sAddressSettingName] = (int)$_SESSION["ex_addresses_settings"][$sAddressSettingName] == 1 ? 1 : 0;
@@ -27,11 +30,9 @@ foreach ($aAddressesSettingsDefaults as $sAddressSettingName => $iAddressSetting
     }
 }
 $aAddressSettings = applyCountrySettings($aAddressSettings);
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("ex_csrf_token", true);
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "get_subject") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -51,7 +52,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -81,7 +81,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     if (!$sBirthNumber) {
         sendJsonAndExit(array("success" => false, "message" => "Birth number must contain 9 or 10 digits."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id, subject_type FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
@@ -110,7 +109,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             $oStatement = $oPdo->prepare("INSERT INTO ex_subject_names (subject_id, name) VALUES (:subject_id, :name) ON DUPLICATE KEY UPDATE name = VALUES(name)");
             $oStatement->execute(array("subject_id" => $iSubjectId, "name" => $sSubjectName));
         }
-
         if ($sEffectiveSubjectType != "person") {
             $oStatement = $oPdo->prepare("DELETE FROM ex_persons WHERE subject_id = :subject_id");
             $oStatement->execute(array("subject_id" => $iSubjectId));
@@ -161,7 +159,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_addresses_settings") {
     foreach ($aAddressesSettingsDefaults as $sAddressSettingName => $iAddressSettingDefault) {
         $aAddressSettings[$sAddressSettingName] = isset($_POST[$sAddressSettingName]) && (string)$_POST[$sAddressSettingName] == "1" ? 1 : 0;
@@ -173,7 +170,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
     exit;
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_shared_address") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -211,7 +207,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_shared_address") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -243,7 +238,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject_address") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -309,7 +303,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_subject_address") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -330,6 +323,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
+
 
 $aAddressRows = addressesFetchRows($oPdo, $aAddressSettings);
 $sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aAddressRows) > 0);
@@ -422,6 +416,7 @@ foreach ($aAddressRows as $aAddressRow) {
         echo addressesRenderSubjectCell($aSubject, $sAddressFilterText, $blCanEdit) . "      </tr>\n";
     }
 }
+
 if (!$aAddressRows) {
     echo "      <tr>\n",
         "        <td colspan=\"2\">No visible records found.</td>\n",
@@ -540,9 +535,11 @@ foreach (getAddressTypes() as $sAddressType) {
 <?php
 
 echo renderCountryDatalist(),
-    renderFilterFocusButton(),
-    renderAdminScript($sBaseUrl);
+    renderEmojiData();
 
 ?>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

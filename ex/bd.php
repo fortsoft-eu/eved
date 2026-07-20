@@ -6,9 +6,11 @@ include "main.php";
 requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
 
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
 
 $aBirthdaySettingsDefaults = array(
     "show_inactive_subjects" => 0,
@@ -30,11 +32,9 @@ foreach ($aBirthdaySettingsDefaults as $sBirthdaySettingName => $iBirthdaySettin
     }
 }
 $aBirthdaySettings = applyCountrySettings($aBirthdaySettings);
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("ex_csrf_token", true);
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "mark_birthday_served") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if (!$blCanEdit) {
@@ -73,7 +73,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_bd_settings") {
     foreach ($aBirthdaySettingsDefaults as $sBirthdaySettingName => $iBirthdaySettingDefault) {
         $aBirthdaySettings[$sBirthdaySettingName] = isset($_POST[$sBirthdaySettingName]) && (string)$_POST[$sBirthdaySettingName] == "1" ? 1 : 0;
@@ -85,7 +84,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
     exit;
 }
-
 $sBdPostAction = $_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) ? (string)$_POST["action"] : "";
 $aBdEditActions = array(
     "get_subject",
@@ -118,7 +116,6 @@ if (in_array($sBdPostAction, $aBdCreateActions, true)) {
 if (!$blCanEdit && in_array($sBdPostAction, $aBdEditActions, true)) {
     sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
-
 if ($sBdPostAction == "get_subject") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
@@ -135,7 +132,6 @@ if ($sBdPostAction == "get_subject") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "get_subject_portal_user") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
@@ -152,7 +148,6 @@ if ($sBdPostAction == "get_subject_portal_user") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "update_subject_portal_user") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $aPermissionKeys = isset($_POST["permissions"]) && is_array($_POST["permissions"]) ? $_POST["permissions"] : array();
@@ -189,14 +184,12 @@ if ($sBdPostAction == "update_subject_portal_user") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "update_subject") {
     $sPayload = getPostedValue("subject_payload");
     $aPayload = $sPayload != "" ? json_decode($sPayload, true) : null;
     if (!is_array($aPayload)) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject data."), 400);
     }
-
     $iSubjectId = isset($aPayload["subject_id"]) ? (int)$aPayload["subject_id"] : 0;
     $sSubjectType = payloadValue($aPayload, "subject_type");
     $sBirthDate = payloadValue($aPayload, "birth_date");
@@ -294,7 +287,6 @@ if ($sBdPostAction == "update_subject") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "update_subject_nickname") {
     $iNicknameId = isset($_POST["nickname_id"]) ? (int)$_POST["nickname_id"] : 0;
     $sNickname = getPostedTrimmedValue("nickname");
@@ -336,7 +328,6 @@ if ($sBdPostAction == "update_subject_nickname") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "create_subject_nickname") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sNickname = getPostedTrimmedValue("nickname");
@@ -464,7 +455,6 @@ if ($sBdPostAction == "update_subject_address") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "create_subject_address") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sAddressType = getPostedTrimmedValue("address_type");
@@ -550,7 +540,6 @@ if ($sBdPostAction == "create_subject_address") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "update_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
@@ -595,7 +584,6 @@ if ($sBdPostAction == "update_subject_group") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "create_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sGroupName = getPostedTrimmedValue("name");
@@ -644,7 +632,6 @@ if ($sBdPostAction == "create_subject_group") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "update_subject_note") {
     $iNoteId = isset($_POST["note_id"]) ? (int)$_POST["note_id"] : 0;
     $sNoteText = getPostedTrimmedValue("note_text");
@@ -677,7 +664,6 @@ if ($sBdPostAction == "update_subject_note") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "create_subject_note") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sNoteText = getPostedTrimmedValue("note_text");
@@ -709,7 +695,6 @@ if ($sBdPostAction == "create_subject_note") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "delete_subject") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
@@ -735,7 +720,6 @@ if ($sBdPostAction == "delete_subject") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "delete_subject_contact") {
     $iSubjectContactId = isset($_POST["subject_contact_id"]) ? (int)$_POST["subject_contact_id"] : 0;
     if ($iSubjectContactId < 1) {
@@ -762,7 +746,6 @@ if ($sBdPostAction == "delete_subject_contact") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "delete_subject_nickname") {
     $iNicknameId = isset($_POST["nickname_id"]) ? (int)$_POST["nickname_id"] : 0;
     if ($iNicknameId < 1) {
@@ -789,7 +772,6 @@ if ($sBdPostAction == "delete_subject_nickname") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "delete_subject_address") {
     $iAddressId = isset($_POST["address_id"]) ? (int)$_POST["address_id"] : 0;
     if ($iAddressId < 1) {
@@ -816,7 +798,6 @@ if ($sBdPostAction == "delete_subject_address") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "delete_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
@@ -843,7 +824,6 @@ if ($sBdPostAction == "delete_subject_group") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "delete_subject_note") {
     $iNoteId = isset($_POST["note_id"]) ? (int)$_POST["note_id"] : 0;
     if ($iNoteId < 1) {
@@ -870,7 +850,6 @@ if ($sBdPostAction == "delete_subject_note") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "create_contact") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
@@ -936,7 +915,6 @@ if ($sBdPostAction == "create_contact") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($sBdPostAction == "update_contact") {
     $iSubjectContactId = isset($_POST["subject_contact_id"]) ? (int)$_POST["subject_contact_id"] : 0;
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
@@ -987,6 +965,7 @@ if ($sBdPostAction == "update_contact") {
     }
 }
 
+
 $aRows = array();
 $aContacts = array();
 $aContactTypes = array();
@@ -1013,8 +992,10 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
+
 $aHiddenInactive = getHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aBirthdaySettings);
 applySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $aNotes, $aBirthdaySettings);
+
 
 $aBirthdayRows = array();
 foreach ($aRows as $aRow) {
@@ -1032,8 +1013,9 @@ foreach ($aRows as $aRow) {
     $aRow["birthday_date"] = $aBirthdayInfo["birthday_date"];
     $aBirthdayRows[] = $aRow;
 }
-usort($aBirthdayRows, "bdCompareRows");
 
+
+usort($aBirthdayRows, "bdCompareRows");
 $iTime = sendPageHeaders();
 
 ?>
@@ -1141,10 +1123,11 @@ if (!$aBirthdayRows) {
     echo "    </tbody>\n",
         "  </table>\n";
 }
-
-echo renderFilterFocusButton(),
-    renderAdminScript($sBaseUrl);
+echo renderEmojiData();
 
 ?>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

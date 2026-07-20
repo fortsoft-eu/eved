@@ -934,11 +934,9 @@ function html($mValue) {
     return htmlspecialchars((string)$mValue, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
 }
 
-function htmlValue($mValue) {
-    global $sEmptyValueEmoji;
-
+function htmlValue($mValue, $sEmptyValue = "&#10134;") {
     $sValue = trim((string)$mValue);
-    return $sValue != "" ? html($sValue) : $sEmptyValueEmoji;
+    return $sValue != "" ? html($sValue) : $sEmptyValue;
 }
 
 function decodePostedBase64Value($sValue) {

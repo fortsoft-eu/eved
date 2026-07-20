@@ -5,6 +5,7 @@ include "main.php";
 
 requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
 
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
@@ -72,6 +73,7 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
+
 if (isset($_GET["download"])) {
     $sDownload = (string)$_GET["download"];
     if ($sDownload == "db.sql") {
@@ -91,6 +93,7 @@ if (isset($_GET["download"])) {
         sendDatabaseSqlAndExit($sFileName, $sBody);
     }
 }
+
 
 $sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $sSchemaDownloadUrl = $sScriptUrl . "?download=schema";
@@ -124,12 +127,8 @@ $iTime = sendPageHeaders();
 <body>
 <?php
 
-echo $sDatabaseFormsHtml;
-
-?>
-  <p class="admin-controls">
-<?php
-
+echo $sDatabaseFormsHtml,
+    "  <p class=\"admin-controls\">\n";
 renderMenu();
 
 ?>
@@ -140,12 +139,8 @@ renderMenu();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php
 
-echo $sDatabaseToolbarHtml;
-
-?>
-  </p>
-<?php
-
+echo $sDatabaseToolbarHtml,
+    "  </p>\n";
 renderMessage();
 
 ?>
@@ -173,10 +168,7 @@ if (!$aTables) {
 ?>
     </tbody>
   </table>
-<?php
-
-echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n",
-    "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n",
-    "</body>\n",
-    "</html>\n";
-
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+</body>
+</html>

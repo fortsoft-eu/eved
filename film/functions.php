@@ -289,7 +289,7 @@ function getFilmPhpFileLinkGroups() {
     return $aGroups;
 }
 
-function renderFilmMenu() {
+function renderMenu() {
     global $oPdo, $sBaseUrl, $sMenuEmoji;
 
     $aItems = getMenuItemsFromDatabase($oPdo);
@@ -297,9 +297,9 @@ function renderFilmMenu() {
         return;
     }
     $sCurrentPath = getCurrentMenuPath();
-    echo "    <span class=\"film-menu\" data-film-menu>\n"
-        . "      <button type=\"button\" class=\"film-menu-button\" data-film-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n"
-        . "      <span class=\"film-menu-panel\" data-film-menu-panel hidden>\n";
+    echo "    <span class=\"film-menu\" data-film-menu>\n",
+        "      <button type=\"button\" class=\"film-menu-button\" data-film-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n",
+        "      <span class=\"film-menu-panel\" data-film-menu-panel hidden>\n";
     foreach ($aItems as $aItem) {
         if ($aItem["separator"]) {
             echo "        <span class=\"film-menu-separator\"></span>\n";
@@ -318,8 +318,8 @@ function renderFilmMenu() {
         $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
         echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"film-menu-icon\" aria-hidden=\"true\">" . html($aItem["icon"]) . "</span><span class=\"film-menu-text\">" . html($aItem["name"]) . "</span></a>\n";
     }
-    echo "      </span>\n"
-        . "    </span>\n";
+    echo "      </span>\n",
+        "    </span>\n";
 }
 
 function printPhpFileLinks($sBaseUrl) {

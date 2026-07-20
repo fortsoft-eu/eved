@@ -287,12 +287,13 @@ if ($blCanEdit) {
 foreach ($aContactTypes as $aContactType) {
     echo renderContactTypeAdminRow($aContactType, $blCanEdit);
 }
-
 echo "    </tbody>\n",
     "  </table>\n",
-    renderFilterFocusButton(),
-    renderAdminScript($sBaseUrl);
+    renderEmojiData();
 
 ?>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

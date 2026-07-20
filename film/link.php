@@ -179,7 +179,7 @@ if ($sMessage) {
     echo "  <div class=\"message-box message-" . htmlspecialchars($sMessageType, ENT_QUOTES, "UTF-8") . "\" id=\"message-box\">" . $sMessage . "</div>\n";
 }
 echo "  <p class=\"admin-controls\">\n";
-renderFilmMenu();
+renderMenu();
 echo "  </p>\n";
 
 ?>
@@ -195,7 +195,6 @@ foreach ($aFilms as $aFilm) {
     echo "        <option value=\"" . htmlspecialchars((string)$aFilm["id"], ENT_QUOTES, "UTF-8") . "\">" . formatFilmOptionLabel($aFilm) . "</option>\n";
 
 }
-
 echo "      </select>\n";
 
 ?>
@@ -211,7 +210,6 @@ foreach ($aOrders as $aOrder) {
     echo "        <option value=\"" . htmlspecialchars((string)$aOrder["id"], ENT_QUOTES, "UTF-8") . "\"" . ($blSelected ? " selected" : "") . ">" . $sLabel . "</option>\n";
 
 }
-
 echo "      </select>\n";
 
 ?>
@@ -295,7 +293,6 @@ foreach ($aLinks as $aLink) {
 ?>
     </tbody>
   </table>
-
   <div class="confirm-dialog" id="film-unassign-confirm-dialog" hidden>
     <form class="confirm-dialog-box" method="post" action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES, "UTF-8"); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="film_csrf_token" value="<?php echo htmlspecialchars(getCsrfToken("film_csrf_token"), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
@@ -311,7 +308,6 @@ foreach ($aLinks as $aLink) {
       </div>
     </form>
   </div>
-
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>

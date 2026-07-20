@@ -24,7 +24,7 @@ $iTime = sendPageHeaders();
   <p class="admin-controls">
 <?php
 
-renderFilmMenu();
+renderMenu();
 
 ?>
   </p>

@@ -6,6 +6,7 @@ include "main.php";
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "kf");
 requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
 
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
@@ -27,7 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $aType = $oStatement->fetch();
         if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDate) || !$aType || $fAmount === null || $fAmount <= 0) {
             setMessage("The transaction could not be saved. Check the date, type, and amount.", "error");
-            redirect("transactions.php");
+            redirect(getCurrentScriptName());
         }
         $fSignedAmount = $aType["type_kind"] == "expense" ? -abs($fAmount) : abs($fAmount);
         if ($iId > 0) {
@@ -52,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ));
             setMessage("Transaction added.");
         }
-        redirect("transactions.php");
+        redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_transaction") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         if ($iId > 0) {
@@ -60,9 +61,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $oStatement->execute(array("id" => $iId));
             setMessage("Transaction deleted.");
         }
-        redirect("transactions.php");
+        redirect(getCurrentScriptName());
     }
 }
+
 
 $aRows = array();
 $oStatement = $oPdo->query("SELECT t.id, t.transaction_date, t.amount, t.counterparty, t.note, ft.id AS finance_type_id, ft.name AS type_name, ft.type_kind FROM kf_fin_trans t JOIN kf_fin_types ft ON ft.id = t.finance_type_id ORDER BY t.transaction_date DESC, t.id DESC");
@@ -70,10 +72,12 @@ while ($aRow = $oStatement->fetch()) {
     $aRows[] = $aRow;
 }
 
+
 $sToolbarHtml = "";
 if ($blCanEdit) {
     $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-transaction\" data-modal-target=\"transaction-modal\" data-modal-title=\"New Transaction\" data-field-id=\"\" data-field-transaction_date=\"" . html(date("Y-m-d")) . "\" data-field-finance_type_id=\"\" data-field-amount=\"\" data-field-counterparty=\"\" data-field-note=\"\">New</button>\n";
 }
+
 
 $sTitle = getPageTitle("Transactions");
 $iTime = sendPageHeaders();
@@ -93,6 +97,7 @@ $iTime = sendPageHeaders();
 <body>
   <p class="admin-controls">
 <?php
+
 renderMenu();
 
 ?>
@@ -103,12 +108,8 @@ renderMenu();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php
 
-echo $sToolbarHtml;
-
-?>
-  </p>
-<?php
-
+echo $sToolbarHtml,
+    "  </p>\n";
 renderMessage();
 
 ?>
@@ -123,18 +124,12 @@ renderMessage();
 <?php
 
 if ($blCanEdit) {
-
-?>
-        <th></th>
-<?php
-
+    echo "        <th></th>\n";
 }
 
-?>
-      </tr>
-    </thead>
-    <tbody>
-<?php
+echo "      </tr>\n",
+    "    </thead>\n",
+    "    <tbody>\n";
 
 foreach ($aRows as $aRow) {
     $sAmountClass = $aRow["amount"] < 0 ? "kf-amount-negative" : ($aRow["amount"] > 0 ? "kf-amount-positive" : "kf-amount-zero");
@@ -146,20 +141,18 @@ foreach ($aRows as $aRow) {
         "        <td class=\"nowrap\">" . html(formatDate($aRow["transaction_date"])) . "</td>\n",
         "        <td>" . html($aRow["type_name"]) . "</td>\n",
         "        <td class=\"numeric " . $sAmountClass . "\">" . html(formatAmount($aRow["amount"])) . "</td>\n",
-        "        <td>" . htmlValue($aRow["counterparty"]) . "</td>\n",
-        "        <td>" . htmlValue($aRow["note"]) . "</td>\n",
+        "        <td>" . htmlValue($aRow["counterparty"], "&mdash;") . "</td>\n",
+        "        <td>" . htmlValue($aRow["note"], "&mdash;") . "</td>\n",
         $sActionCell,
         "      </tr>\n";
 }
+
 if (!$aRows) {
     echo "      <tr><td colspan=\"" . ($blCanEdit ? 6 : 5) . "\">No transactions found.</td></tr>\n";
 }
 
-?>
-    </tbody>
-  </table>
-
-<?php
+echo "    </tbody>\n",
+    "  </table>\n";
 
 if ($blCanEdit) {
 
@@ -197,8 +190,8 @@ echo getFinanceTypeOptionsHtml();
 
 }
 
-echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n",
-    "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n",
-    "</body>\n",
-    "</html>\n";
-
+?>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+</body>
+</html>

@@ -23,7 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $aAllowedKinds = array("expense", "income", "group");
         if ($sName == "" || !in_array($sTypeKind, $aAllowedKinds, true)) {
             setMessage("The type could not be saved. Name and kind are required.", "error");
-            redirect("types.php");
+            redirect(getCurrentScriptName());
         }
         try {
             if ($iId > 0) {
@@ -36,7 +36,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $iId = (int)$oPdo->lastInsertId();
                 setMessage("Type added.");
             }
-
             $oStatement = $oPdo->prepare("DELETE FROM kf_fin_groups WHERE group_type_id = :group_type_id");
             $oStatement->execute(array("group_type_id" => $iId));
             if ($sTypeKind == "group" && isset($_POST["members"]) && is_array($_POST["members"])) {
@@ -52,7 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             error_log((string)$oException);
             setMessage("The type could not be saved. The name may already exist.", "error");
         }
-        redirect("types.php");
+        redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_type") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         if ($iId > 0) {
@@ -71,9 +70,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
             }
         }
-        redirect("types.php");
+        redirect(getCurrentScriptName());
     }
 }
+
 
 $aRows = array();
 $oStatement = $oPdo->query("SELECT ft.id, ft.name, ft.type_kind, GROUP_CONCAT(m.id ORDER BY m.name SEPARATOR ',') AS member_ids, GROUP_CONCAT(m.name ORDER BY m.name SEPARATOR ', ') AS member_names FROM kf_fin_types ft LEFT JOIN kf_fin_groups gi ON gi.group_type_id = ft.id LEFT JOIN kf_fin_types m ON m.id = gi.member_type_id GROUP BY ft.id, ft.name, ft.type_kind ORDER BY FIELD(ft.type_kind, 'income', 'expense', 'group'), ft.name ASC, ft.id ASC");
@@ -81,12 +81,13 @@ while ($aRow = $oStatement->fetch()) {
     $aRows[] = $aRow;
 }
 
-$aMemberTypes = $blCanEdit ? getFinanceTypes(false) : array();
 
+$aMemberTypes = $blCanEdit ? getFinanceTypes(false) : array();
 $sToolbarHtml = "";
 if ($blCanEdit) {
     $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-type\" data-modal-target=\"type-modal\" data-modal-title=\"New Type\" data-field-id=\"\" data-field-name=\"\" data-field-type_kind=\"expense\" data-field-members=\"\">New</button>\n";
 }
+
 
 $sTitle = getPageTitle("Income and Expense Types");
 $iTime = sendPageHeaders();
@@ -117,11 +118,8 @@ renderMenu();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php
 
-echo $sToolbarHtml;
-
-?>
-  </p>
-<?php
+echo $sToolbarHtml,
+    "  </p>\n";
 
 renderMessage();
 
@@ -135,18 +133,12 @@ renderMessage();
 <?php
 
 if ($blCanEdit) {
-
-?>
-        <th></th>
-<?php
+    echo "        <th></th>\n";
 
 }
-
-?>
-      </tr>
-    </thead>
-    <tbody>
-<?php
+echo "      </tr>\n",
+    "    </thead>\n",
+    "    <tbody>\n";
 
 foreach ($aRows as $aRow) {
     $sActionCell = "";
@@ -156,7 +148,7 @@ foreach ($aRows as $aRow) {
     echo "      <tr>\n",
         "        <td>" . html(ucfirst($aRow["type_kind"])) . "</td>\n",
         "        <td>" . html($aRow["name"]) . "</td>\n",
-        "        <td>" . htmlValue($aRow["member_names"]) . "</td>\n",
+        "        <td>" . htmlValue($aRow["member_names"], "&mdash;") . "</td>\n",
         $sActionCell,
         "      </tr>\n";
 }
@@ -165,11 +157,13 @@ if (!$aRows) {
     echo "      <tr><td colspan=\"" . ($blCanEdit ? 4 : 3) . "\">No types found.</td></tr>\n";
 }
 
-?>
-    </tbody>
-  </table>
+echo "    </tbody>\n",
+    "  </table>\n";
 
-<?php if ($blCanEdit) { ?>
+
+if ($blCanEdit) {
+
+?>
   <div id="type-modal" class="confirm-dialog" hidden>
     <form method="post" class="confirm-dialog-box kf-edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Type</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
@@ -189,9 +183,9 @@ if (!$aRows) {
           <div class="checkbox-grid">
 <?php
 
-foreach ($aMemberTypes as $aType) {
-    echo "            <label class=\"checkbox-label\"><input type=\"checkbox\" name=\"members[]\" value=\"" . (int)$aType["id"] . "\"> " . html($aType["name"]) . "</label>\n";
-}
+    foreach ($aMemberTypes as $aType) {
+        echo "            <label class=\"checkbox-label\"><input type=\"checkbox\" name=\"members[]\" value=\"" . (int)$aType["id"] . "\"> " . html($aType["name"]) . "</label>\n";
+    }
 
 ?>
           </div>
@@ -204,10 +198,11 @@ foreach ($aMemberTypes as $aType) {
     </form>
   </div>
 <?php
+
 }
 
-echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n",
-    "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n",
-    "</body>\n",
-    "</html>\n";
-
+?>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+</body>
+</html>

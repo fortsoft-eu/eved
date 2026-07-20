@@ -2,7 +2,9 @@
 
 include "main.php";
 
+
 requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
+
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -72,6 +74,7 @@ if ($aOverviewColumnGroup) {
     $aOverviewColumnGroups[] = $aOverviewColumnGroup;
 }
 
+
 $sTitle = getPageTitle("Income and Expenses");
 $iTime = sendPageHeaders();
 
@@ -103,10 +106,7 @@ renderMenu();
 <?php
 
 renderMessage();
-
-?>
-  <div id="kf-monthly-overview-tables">
-<?php
+echo "  <div id=\"kf-monthly-overview-tables\">\n";
 
 foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColumnGroup) {
     echo "  <table id=\"kf-monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target kf-monthly-overview-table\">\n",
@@ -119,13 +119,12 @@ foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColum
     echo "      </tr>\n",
         "    </thead>\n",
         "    <tbody>\n";
-
     foreach ($aMonths as $sMonth) {
         $fIncome = isset($aSummaryTotals[$sMonth]["income"]) ? $aSummaryTotals[$sMonth]["income"] : 0;
         $fExpense = isset($aSummaryTotals[$sMonth]["expense"]) ? $aSummaryTotals[$sMonth]["expense"] : 0;
         $fNet = $fIncome + $fExpense;
-        echo "      <tr data-month=\"" . html($sMonth) . "\">\n"
-            . "        <td class=\"nowrap\">" . html(monthLabel($sMonth)) . "</td>\n";
+        echo "      <tr data-month=\"" . html($sMonth) . "\">\n",
+            "        <td class=\"nowrap\">" . html(monthLabel($sMonth)) . "</td>\n";
         foreach ($aOverviewColumnGroup as $aOverviewColumn) {
             if ($aOverviewColumn["type"] == "type") {
                 $fAmount = isset($aTypeTotals[$sMonth][(int)$aOverviewColumn["id"]]) ? $aTypeTotals[$sMonth][(int)$aOverviewColumn["id"]] : 0;
@@ -143,21 +142,17 @@ foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColum
         }
         echo "      </tr>\n";
     }
-
     if (!$aMonths) {
         echo "      <tr><td colspan=\"" . (count($aOverviewColumnGroup) + 1) . "\">No transactions found.</td></tr>\n";
     }
-
     echo "    </tbody>\n",
         "  </table>\n";
 }
 
+echo "  </div>\n";
+
 ?>
-  </div>
-<?php
-
-echo "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"table-filter\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n",
-    "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n",
-    "</body>\n",
-    "</html>\n";
-
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+</body>
+</html>

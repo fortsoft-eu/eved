@@ -139,21 +139,6 @@ function renderEmojiData() {
     return $sHtml . "></span>\n";
 }
 
-function renderAdminReusableDialogs() {
-    return "  <div class=\"confirm-dialog\" id=\"admin-reusable-dialog\" data-reusable-dialog=\"1\" hidden></div>\n";
-}
-
-function renderAdminScript($sBaseUrl) {
-    return renderEmojiData()
-        . renderAdminReusableDialogs()
-        . "  <script type=\"text/javascript\" src=\"" . html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))) . "\"></script>\n";
-}
-
-function renderFilterFocusButton($sFilterInput = "table-filter") {
-    global $sFilterFocusEmoji;
-
-    return "  <button type=\"button\" class=\"filter-focus-button js-filter-focus\" data-filter-input=\"" . html($sFilterInput) . "\" title=\"Focus filter\" aria-label=\"Focus filter\">" . $sFilterFocusEmoji . " Filter</button>\n";
-}
 
 function renderPageThrobber() {
     global $sThrobberEmoji;
@@ -6636,8 +6621,10 @@ function diffRenderChangeList($aChanges) {
 }
 
 function diffRenderEntityTable($aRows, $aColumns) {
+    global $sEmptyValueEmoji;
+
     if (!$aRows) {
-        echo "  <p><em>&mdash;</em></p>\n";
+        echo "  <p>" . $sEmptyValueEmoji . "</p>\n";
         return;
     }
     echo "  <table class=\"consistency-table\">\n"
@@ -6661,8 +6648,10 @@ function diffRenderEntityTable($aRows, $aColumns) {
 }
 
 function diffRenderChangedEntityTable($aRows) {
+    global $sEmptyValueEmoji;
+
     if (!$aRows) {
-        echo "  <p><em>&mdash;</em></p>\n";
+        echo "  <p>" . $sEmptyValueEmoji . "</p>\n";
         return;
     }
     echo "  <table class=\"consistency-table\">\n"

@@ -5,9 +5,11 @@ include "main.php";
 
 requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
 
 $aChecks = array(
     array(
@@ -72,9 +74,9 @@ $aChecks = array(
     )
 );
 
+
 $blHasErrors = false;
 $blHasWarnings = false;
-
 try {
     foreach ($aChecks as $iCheckIndex => $aCheck) {
         $oStatement = $oPdo->prepare($aCheck["sql"]);
@@ -92,6 +94,7 @@ try {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
+
 
 $iTime = sendPageHeaders();
 
@@ -117,7 +120,6 @@ $iTime = sendPageHeaders();
 renderMenu();
 echo "  </p>\n",
     "  <h1>Database Consistency</h1>\n";
-
 if ($blHasErrors) {
     echo "  <p class=\"consistency-status consistency-status-error\">Database inconsistencies were found.</p>\n";
 } elseif ($blHasWarnings) {
@@ -130,7 +132,7 @@ foreach ($aChecks as $aCheck) {
     $aRows = isset($aCheck["rows"]) ? $aCheck["rows"] : array();
     echo "  <h2>" . html($aCheck["title"]) . " (" . count($aRows) . ")</h2>\n";
     if (!$aRows) {
-        echo "  <p><em>&mdash;</em></p>\n";
+        echo "  <p>" . $sEmptyValueEmoji . "</p>\n";
         continue;
     }
     $aColumns = array_keys($aRows[0]);
@@ -153,8 +155,11 @@ foreach ($aChecks as $aCheck) {
     echo "    </tbody>\n",
         "  </table>\n";
 }
-echo renderAdminScript($sBaseUrl);
+
+echo renderEmojiData();
 
 ?>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

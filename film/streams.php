@@ -15,7 +15,6 @@ foreach (stream_get_transports() as $sName) {
 foreach (stream_get_filters() as $sName) {
     $aStreams[] = array("Filter", $sName);
 }
-
 $iTime = sendPageHeaders();
 
 ?>
@@ -37,7 +36,7 @@ $iTime = sendPageHeaders();
   <p class="admin-controls">
 <?php
 
-renderFilmMenu();
+renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>

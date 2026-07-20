@@ -1,17 +1,18 @@
 <?php
 
-$iDefaultSelectedInfo = INFO_VARIABLES;
-$iDefaultSelectedCredits = CREDITS_GROUP;
-
 include "main.php";
+
+
+requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 
+$iDefaultSelectedInfo = INFO_VARIABLES;
+$iDefaultSelectedCredits = CREDITS_GROUP;
 $aInfoTypes = array(
     "INFO_GENERAL" => INFO_GENERAL,
     "INFO_CREDITS" => INFO_CREDITS,
@@ -125,8 +126,10 @@ foreach ($aCreditsTypes as $sKey => $iValue) {
   <iframe class="phpinfo-frame" name="phpinfo-frame" src="<?php echo htmlspecialchars($sDefaultFrameUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" title="PHP Info"></iframe>
 <?php
 
-echo renderAdminScript($sBaseUrl);
+echo renderEmojiData();
 
 ?>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

@@ -6,16 +6,17 @@ include "main.php";
 requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
 
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
 
 $aContactsSettingsDefaults = array(
     "show_inactive_contacts" => 0,
     "show_inactive_subjects" => 0
 );
 $aContactSettings = array();
-
 if (!isset($_SESSION["ex_contacts_settings"]) || !is_array($_SESSION["ex_contacts_settings"])) {
     $_SESSION["ex_contacts_settings"] = array();
 }
@@ -26,11 +27,9 @@ foreach ($aContactsSettingsDefaults as $sContactSettingName => $iContactSettingD
         $aContactSettings[$sContactSettingName] = $iContactSettingDefault;
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("ex_csrf_token", true);
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_contacts_settings") {
     foreach ($aContactsSettingsDefaults as $sContactSettingName => $iContactSettingDefault) {
         $aContactSettings[$sContactSettingName] = isset($_POST[$sContactSettingName]) && (string)$_POST[$sContactSettingName] == "1" ? 1 : 0;
@@ -41,7 +40,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
     exit;
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "get_subject") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -61,7 +59,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_subject") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -92,7 +89,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     if ($sBirthNumber === false) {
         sendJsonAndExit(array("success" => false, "message" => "Birth number must contain 9 or 10 digits."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id, subject_type FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
@@ -113,7 +109,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "is_active" => payloadFlag($aPayload, "is_active"),
             "subject_id" => $iSubjectId
         ));
-
         $sSubjectName = payloadValue($aPayload, "subject_name_value");
         if ($sEffectiveSubjectType == "person" || $sSubjectName == "") {
             $oStatement = $oPdo->prepare("DELETE FROM ex_subject_names WHERE subject_id = :subject_id");
@@ -163,7 +158,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
                 }
             }
         }
-
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "subject_id" => $iSubjectId, "reload_required" => true));
     } catch (Exception $oException) {
@@ -174,7 +168,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_shared_contact") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -231,7 +224,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_shared_contact") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -252,7 +244,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_subject_contact") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -273,7 +264,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_contact") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
@@ -348,6 +338,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
 }
 
+
 $aContactTypes = array();
 try {
     $aContactTypes = fetchContactTypes($oPdo, false);
@@ -356,6 +347,8 @@ try {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
+
+
 $sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aContactRows) > 0);
 $iTime = sendPageHeaders();
 
@@ -511,9 +504,11 @@ echo "      </select>\n";
   </div>
 <?php
 
-echo renderFilterFocusButton()
-    . renderAdminScript($sBaseUrl);
+echo renderEmojiData();
 
 ?>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

@@ -41,7 +41,7 @@ $iTime = sendPageHeaders();
   <p class="admin-controls">
 <?php
 
-renderFilmMenu();
+renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
@@ -187,12 +187,11 @@ if (!$aRows) {
             "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["mime_types"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars((string)$aRow["mime_types"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
             "      </tr>\n";
     }
-
-    echo "    </tbody>\n",
-        "  </table>\n";
 }
 
 ?>
+    </tbody>
+  </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/bowser-2.14.1/es5.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>

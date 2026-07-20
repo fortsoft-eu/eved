@@ -6,6 +6,7 @@ include "main.php";
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
 requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
@@ -14,20 +15,15 @@ if (!$oPdo) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("ex_csrf_token", true);
 }
-
-
 if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] == "POST") {
     sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
-
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "create_group") {
     $sName = getPostedTrimmedValue("name");
     $aPermissionKeys = isset($_POST["permissions"]) && is_array($_POST["permissions"]) ? $_POST["permissions"] : array();
     if ($sName == "") {
         sendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $iOrder = (int)$oPdo->query("SELECT COALESCE(MAX(`order`), 0) + 10 FROM ex_groups")->fetchColumn();
@@ -50,8 +46,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "update_group") {
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     $sName = getPostedTrimmedValue("name");
@@ -62,7 +56,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     if ($sName == "") {
         sendJsonAndExit(array("success" => false, "message" => "Group name is required."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_groups WHERE id = :id FOR UPDATE");
@@ -89,8 +82,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "delete_group") {
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     if ($iGroupId < 1) {
@@ -99,7 +90,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     if ($iGroupId === 1) {
         sendJsonAndExit(array("success" => false, "message" => "The portal access group cannot be deleted."), 409);
     }
-
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_groups WHERE id = :id FOR UPDATE");
@@ -124,15 +114,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "move_group") {
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     $sDirection = isset($_POST["direction"]) ? (string)$_POST["direction"] : "";
     if ($iGroupId < 1 || ($sDirection != "up" && $sDirection != "down")) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid order change."), 400);
     }
-
     try {
         $oPdo->beginTransaction();
         moveGroupOrder($oPdo, $iGroupId, $sDirection);
@@ -146,8 +133,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "merge_groups") {
     $iTargetGroupId = isset($_POST["target_group_id"]) ? (int)$_POST["target_group_id"] : 0;
     $aSourceGroupValues = isset($_POST["source_group_ids"]) && is_array($_POST["source_group_ids"]) ? $_POST["source_group_ids"] : array();
@@ -170,7 +155,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     if ($blDeleteSourceGroups && isset($aSourceGroupIdMap[1])) {
         sendJsonAndExit(array("success" => false, "message" => "The portal access group cannot be deleted."), 409);
     }
-
     try {
         $oPdo->beginTransaction();
 
@@ -198,7 +182,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
                 sendJsonAndExit(array("success" => false, "message" => "Source group was not found."), 404);
             }
         }
-
         $aTargetSubjectIds = array();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE group_id = :target_group_id FOR UPDATE");
         $oStatement->execute(array("target_group_id" => $iTargetGroupId));
@@ -213,7 +196,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             $aSourcePlaceholders[] = ":" . $sParam;
             $aSourceParams[$sParam] = $iSourceGroupId;
         }
-
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE group_id IN (" . implode(", ", $aSourcePlaceholders) . ") FOR UPDATE");
         $oStatement->execute($aSourceParams);
         $aMergeSubjectIds = array();
@@ -227,14 +209,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
                 $aTargetSubjectIds[$iSubjectId] = true;
             }
         }
-
         $aTargetPermissionIds = array();
         $oStatement = $oPdo->prepare("SELECT permission_id FROM ex_group_permissions WHERE group_id = :target_group_id AND is_allowed = 1 FOR UPDATE");
         $oStatement->execute(array("target_group_id" => $iTargetGroupId));
         while ($iPermissionId = $oStatement->fetchColumn()) {
             $aTargetPermissionIds[(int)$iPermissionId] = true;
         }
-
         $oStatement = $oPdo->prepare("SELECT permission_id FROM ex_group_permissions WHERE group_id IN (" . implode(", ", $aSourcePlaceholders) . ") AND is_allowed = 1 FOR UPDATE");
         $oStatement->execute($aSourceParams);
         $aMergePermissionIds = array();
@@ -248,7 +228,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
                 $aTargetPermissionIds[$iPermissionId] = true;
             }
         }
-
         if ($blDeleteSourceGroups) {
             $oStatement = $oPdo->prepare("DELETE FROM ex_subject_groups WHERE group_id IN (" . implode(", ", $aSourcePlaceholders) . ")");
             $oStatement->execute($aSourceParams);
@@ -257,7 +236,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             $oStatement = $oPdo->prepare("DELETE FROM ex_groups WHERE id IN (" . implode(", ", $aSourcePlaceholders) . ")");
             $oStatement->execute($aSourceParams);
         }
-
         $oPdo->commit();
         $aGroups = fetchGroupAdminRows($oPdo, $iTargetGroupId);
         $aGroup = count($aGroups) > 0 ? $aGroups[0] : null;
@@ -288,6 +266,7 @@ try {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
+
 
 $iTime = sendPageHeaders();
 
@@ -344,11 +323,13 @@ if ($blCanEdit) {
 foreach ($aGroups as $aGroup) {
     echo renderGroupAdminRow($aGroup, $blCanEdit);
 }
-
 echo "    </tbody>\n",
     "  </table>\n",
-    renderFilterFocusButton(),
-    renderAdminScript($sBaseUrl);
+    renderEmojiData();
+
 ?>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>
