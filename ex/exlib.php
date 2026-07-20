@@ -3,15 +3,16 @@
 include "main.php";
 
 
+requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
+
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 
 $aExternalLibraries = array();
 $sLibraryDirectory = __DIR__ . "/lib";
-
 if (is_dir($sLibraryDirectory)) {
     $oDirectory = new DirectoryIterator($sLibraryDirectory);
     foreach ($oDirectory as $oItem) {
@@ -27,10 +28,10 @@ if (is_dir($sLibraryDirectory)) {
         );
     }
 }
-
 usort($aExternalLibraries, function ($aLeft, $aRight) {
     return strcmp((string)$aLeft["name"], (string)$aRight["name"]);
 });
+
 
 $iTime = sendPageHeaders();
 
