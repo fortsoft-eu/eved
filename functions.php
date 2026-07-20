@@ -1005,7 +1005,7 @@ function getPostedTrimmedValue($sName, $sDefault = "") {
     return trim(getPostedValue($sName, $sDefault));
 }
 
-function schemaColumnTypeDisplay($sColumnType, $bShorten = true) {
+function schemaColumnTypeDisplay($sColumnType, $blShorten = true) {
     $sColumnType = (string)$sColumnType;
     if (preg_match("/^enum\\((.*)\\)$/i", $sColumnType, $aMatches)) {
         preg_match_all("/'((?:''|[^'])*)'/", $aMatches[1], $aEnumValues);
@@ -1013,7 +1013,7 @@ function schemaColumnTypeDisplay($sColumnType, $bShorten = true) {
         foreach ($aEnumValues[1] as $sEnumValue) {
             $aDisplayValues[] = "'" . $sEnumValue . "'";
         }
-        if ($bShorten && count($aDisplayValues) > 24) {
+        if ($blShorten && count($aDisplayValues) > 24) {
             $aShortValues = array_slice($aDisplayValues, 0, 12);
             $aShortValues[] = "…";
             $aShortValues[] = $aDisplayValues[count($aDisplayValues) - 1];

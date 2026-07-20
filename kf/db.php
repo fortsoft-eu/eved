@@ -5,7 +5,6 @@ include "main.php";
 
 requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
 
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
@@ -14,12 +13,13 @@ if (!$oPdo) {
 $aTables = array();
 try {
     $oStatement = $oPdo->query("SHOW TABLES");
-    while ($sTableName = $oStatement->fetchColumn()) {
-        if (!preg_match("/^kf_[A-Za-z0-9_]+$/", $sTableName)) {
+    $aTableNames = $oStatement->fetchAll(PDO::FETCH_COLUMN);
+    foreach ($aTableNames as $sTableName) {
+        if (!preg_match("/^kf_[a-zA-Z0-9_]+$/", $sTableName)) {
             continue;
         }
-        $oCreateStatement = $oPdo->query("SHOW CREATE TABLE `" . str_replace("`", "``", $sTableName) . "`");
-        $aTable = $oCreateStatement->fetch(PDO::FETCH_NUM);
+        $oStatement = $oPdo->query("SHOW CREATE TABLE `" . $sTableName . "`");
+        $aTable = $oStatement->fetch(PDO::FETCH_NUM);
         if (isset($aTable[0], $aTable[1])) {
             $aTable[1] = preg_replace("/\s+AUTO_INCREMENT=\d+\b/i", "", $aTable[1]);
             $aTables[] = $aTable;
@@ -73,7 +73,6 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
-
 if (isset($_GET["download"])) {
     $sDownload = (string)$_GET["download"];
     if ($sDownload == "db.sql") {
@@ -86,30 +85,17 @@ if (isset($_GET["download"])) {
             error_log((string)$oException);
             send500AndExit("Database error: " . $oException->getMessage());
         }
-        $aScriptNameParts = explode("/", trim((string)$_SERVER["SCRIPT_NAME"], "/"));
-        $sPrefix = isset($aScriptNameParts[0]) && $aScriptNameParts[0] != "" ? $aScriptNameParts[0] : "eved";
-        $sProject = isset($aScriptNameParts[1]) && $aScriptNameParts[1] != "" ? $aScriptNameParts[1] : "kf";
+        $aScriptNameParts = explode("/", $_SERVER["SCRIPT_NAME"]);
+        $sPrefix = $aScriptNameParts[1];
+        $sProject = $aScriptNameParts[2];
         $sFileName = $sPrefix . "_" . $sProject . "_" . $sDownload . "_" . date("Y-m-d_His", time()) . ".sql";
         sendDatabaseSqlAndExit($sFileName, $sBody);
     }
 }
 
-
 $sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $sSchemaDownloadUrl = $sScriptUrl . "?download=schema";
 $sBackupDownloadUrl = $sScriptUrl . "?download=backup";
-$sDatabaseFormsHtml = "  <form action=\"" . html($sScriptUrl) . "\" method=\"get\" id=\"database-schema-download-form\" hidden>\n"
-    . "    <input type=\"hidden\" name=\"download\" value=\"schema\">\n"
-    . "  </form>\n"
-    . "  <form action=\"" . html($sScriptUrl) . "\" method=\"get\" id=\"database-backup-download-form\" hidden>\n"
-    . "    <input type=\"hidden\" name=\"download\" value=\"backup\">\n"
-    . "  </form>\n";
-$sDatabaseToolbarHtml = "    <button type=\"submit\" form=\"database-schema-download-form\" class=\"button-link database-action-button\">Download schema</button>\n"
-    . "    <button type=\"button\" class=\"button-link database-action-button js-copy-link\" data-copy-link=\"" . html($sSchemaDownloadUrl) . "\">Copy schema link</button>\n"
-    . "    <button type=\"submit\" form=\"database-backup-download-form\" class=\"button-link database-action-button\">Download backup</button>\n"
-    . "    <button type=\"button\" class=\"button-link database-action-button js-copy-link\" data-copy-link=\"" . html($sBackupDownloadUrl) . "\">Copy backup link</button>\n";
-
-$sTitle = getPageTitle("Database Structure");
 $iTime = sendPageHeaders();
 
 ?>
@@ -123,32 +109,34 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html($sTitle); ?></title>
+  <title><?php echo htmlspecialchars(getPageTitleText("Database Structure", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
-  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css" rel="stylesheet" type="text/css">
 </head>
 <body>
+  <form action="<?php echo htmlspecialchars($sScriptUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="get" id="database-schema-download-form" hidden>
+    <input type="hidden" name="download" value="schema">
+  </form>
+  <form action="<?php echo htmlspecialchars($sScriptUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="get" id="database-backup-download-form" hidden>
+    <input type="hidden" name="download" value="backup">
+  </form>
+  <p class="admin-controls">
 <?php
 
-echo $sDatabaseFormsHtml,
-    "  <p class=\"admin-controls\">\n";
 renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="kf-database-table" value="">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="database-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
-<?php
-
-echo $sDatabaseToolbarHtml,
-    "  </p>\n";
-renderMessage();
-
-?>
-  <table id="kf-database-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
+    <button type="submit" form="database-schema-download-form" class="button-link database-action-button">Download schema</button>
+    <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo htmlspecialchars($sSchemaDownloadUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">Copy schema link</button>
+    <button type="submit" form="database-backup-download-form" class="button-link database-action-button">Download backup</button>
+    <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo htmlspecialchars($sBackupDownloadUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">Copy backup link</button>
+  </p>
+  <table id="database-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Table</th>
@@ -160,19 +148,15 @@ renderMessage();
 
 foreach ($aTables as $aTable) {
     echo "      <tr>\n",
-        "        <td class=\"database-table-name\">" . html($aTable[0]) . "</td>\n",
+        "        <td class=\"database-table-name\">" . htmlspecialchars($aTable[0], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
         "        <td class=\"database-structure-cell\">" . formatDatabaseStructureHtml($aTable[1]) . "</td>\n",
         "      </tr>\n";
-}
-
-if (!$aTables) {
-    echo "      <tr><td colspan=\"2\">No kf tables found.</td></tr>\n";
 }
 
 ?>
     </tbody>
   </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>
 </html>

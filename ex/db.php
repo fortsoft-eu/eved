@@ -3,7 +3,7 @@
 include "main.php";
 
 
-requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
+requireFullAccess($aAllowedIps, "ex", "ex_csrf_token");
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -51,15 +51,15 @@ try {
             if (!isset($aTableStates[$sTableName])) {
                 $aTableStates[$sTableName] = "visiting";
             }
-            $bDependencyAdded = false;
-            foreach ($aDependencies[$sTableName] as $sReferencedTableName => $bDependency) {
+            $blDependencyAdded = false;
+            foreach ($aDependencies[$sTableName] as $sReferencedTableName => $blDependency) {
                 if (!isset($aTableStates[$sReferencedTableName])) {
                     $aStack[] = $sReferencedTableName;
-                    $bDependencyAdded = true;
+                    $blDependencyAdded = true;
                     break;
                 }
             }
-            if ($bDependencyAdded) {
+            if ($blDependencyAdded) {
                 continue;
             }
             $aSortedTables[] = $aTableRows[$sTableName];
@@ -109,9 +109,9 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html(getPageTitleText("Database Structure", $aAllowedIps)); ?></title>
+  <title><?php echo htmlspecialchars(getPageTitleText("Database Structure", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css" rel="stylesheet" type="text/css">
 </head>
 <body>
   <form action="<?php echo htmlspecialchars($sScriptUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="get" id="database-schema-download-form" hidden>
@@ -127,7 +127,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="database-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="database-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -152,13 +152,11 @@ foreach ($aTables as $aTable) {
         "        <td class=\"database-structure-cell\">" . formatDatabaseStructureHtml($aTable[1]) . "</td>\n",
         "      </tr>\n";
 }
-echo "    </tbody>\n",
-    "  </table>\n",
-    renderEmojiData();
 
 ?>
+    </tbody>
+  </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
-  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>
 </html>

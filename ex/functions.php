@@ -6246,15 +6246,15 @@ function diffFetchDatabaseTables($oPdo) {
             if (!isset($aTableStates[$sTableName])) {
                 $aTableStates[$sTableName] = "visiting";
             }
-            $bDependencyAdded = false;
-            foreach ($aDependencies[$sTableName] as $sReferencedTableName => $bDependency) {
+            $blDependencyAdded = false;
+            foreach ($aDependencies[$sTableName] as $sReferencedTableName => $blDependency) {
                 if (!isset($aTableStates[$sReferencedTableName])) {
                     $aStack[] = $sReferencedTableName;
-                    $bDependencyAdded = true;
+                    $blDependencyAdded = true;
                     break;
                 }
             }
-            if ($bDependencyAdded) {
+            if ($blDependencyAdded) {
                 continue;
             }
             $aSortedTables[] = $aTableRows[$sTableName];
@@ -6400,7 +6400,7 @@ function diffBuildPersonRows($aDump) {
     }
     ksort($aIds, SORT_NUMERIC);
     $aRows = array();
-    foreach ($aIds as $sSubjectId => $bUsed) {
+    foreach ($aIds as $sSubjectId => $blUsed) {
         $aSubject = isset($aSubjects[$sSubjectId]) ? $aSubjects[$sSubjectId] : array();
         $aPerson = isset($aPersons[$sSubjectId]) ? $aPersons[$sSubjectId] : array();
         $sFallbackName = diffBuildSubjectFallbackName($sSubjectId, $aSubjectNames, $aNicknames, $aSubjectContacts, $aContacts);
@@ -6542,7 +6542,7 @@ function diffCompareTableRows($aBackupDump, $aCurrentDump) {
     }
     ksort($aNames, SORT_STRING);
     $aRows = array();
-    foreach ($aNames as $sTableName => $bUsed) {
+    foreach ($aNames as $sTableName => $blUsed) {
         $aBackupRows = isset($aBackupDump["tables"][$sTableName]) ? $aBackupDump["tables"][$sTableName]["rows"] : array();
         $aCurrentRows = isset($aCurrentDump["tables"][$sTableName]) ? $aCurrentDump["tables"][$sTableName]["rows"] : array();
         $aBackupMap = diffBuildTableRowMap($aBackupDump, $sTableName);
@@ -6584,7 +6584,7 @@ function diffCompareStructure($aBackupDump, $aCurrentDump) {
     }
     ksort($aNames, SORT_STRING);
     $aRows = array();
-    foreach ($aNames as $sTableName => $bUsed) {
+    foreach ($aNames as $sTableName => $blUsed) {
         if (!isset($aBackupDump["tables"][$sTableName])) {
             $aRows[] = array("table" => $sTableName, "difference" => "Table exists only in the current database.");
         } elseif (!isset($aCurrentDump["tables"][$sTableName])) {

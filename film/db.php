@@ -51,15 +51,15 @@ try {
             if (!isset($aTableStates[$sTableName])) {
                 $aTableStates[$sTableName] = "visiting";
             }
-            $bDependencyAdded = false;
-            foreach ($aDependencies[$sTableName] as $sReferencedTableName => $bDependency) {
+            $blDependencyAdded = false;
+            foreach ($aDependencies[$sTableName] as $sReferencedTableName => $blDependency) {
                 if (!isset($aTableStates[$sReferencedTableName])) {
                     $aStack[] = $sReferencedTableName;
-                    $bDependencyAdded = true;
+                    $blDependencyAdded = true;
                     break;
                 }
             }
-            if ($bDependencyAdded) {
+            if ($blDependencyAdded) {
                 continue;
             }
             $aSortedTables[] = $aTableRows[$sTableName];
