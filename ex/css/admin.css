@@ -512,6 +512,12 @@ table {
     display: inline-block;
 }
 
+.ex-menu-separator {
+    border-top: 1px solid #E5E5E5;
+    display: block;
+    margin: 8px 0;
+}
+
 .ex-menu-link-active,
 .ex-menu-link:hover {
     background: #DCDCE4;

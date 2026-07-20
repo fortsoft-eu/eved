@@ -3,8 +3,8 @@
 include "main.php";
 
 
-requireViewAccess($aAllowedIps);
-$blCanEdit = isFullAccessAllowed($aAllowedIps);
+requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
+$blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -32,7 +32,7 @@ foreach ($aBirthdaySettingsDefaults as $sBirthdaySettingName => $iBirthdaySettin
 $aBirthdaySettings = applyCountrySettings($aBirthdaySettings);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireCsrfToken();
+    requireNamedCsrfToken("ex_csrf_token", true);
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "mark_communication_served") {
@@ -1068,7 +1068,6 @@ foreach ($aRows as $aRow) {
 }
 usort($aBirthdayRows, "bdCompareRows");
 
-$sViewportContent = getLockedViewportContent();
 $sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aBirthdayRows) > 0);
 $iTime = sendPageHeaders();
 
@@ -1080,13 +1079,13 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo html($sViewportContent); ?>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Interactions", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-date-input-format="<?php echo html($sDateInputFormat); ?>" data-date-input-pattern="<?php echo html($sDateInputPattern); ?>">
@@ -1102,7 +1101,7 @@ $iTime = sendPageHeaders();
   <div class="confirm-dialog index-settings-dialog" id="index-settings-dialog" hidden>
     <form class="confirm-dialog-box index-settings-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_inter_settings">
-      <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken()); ?>">
+      <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
       <div class="confirm-dialog-header">
         <strong>Interaction Settings</strong>
         <button type="button" class="confirm-dialog-close js-index-settings-close" aria-label="Close">&times;</button>

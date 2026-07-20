@@ -88,7 +88,7 @@ $aSchemaRelationRoutes = array(
     "ex_subject_nicknames.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "24", "target-y" => "48", "via-x-offset" => "52"),
     "ex_subject_notes.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "44", "target-y" => "24", "via-x-offset" => "74"),
     "ex_users.subject_id>ex_subjects.id" => array("source" => "left", "target" => "left", "curve" => "70", "target-y" => "-24", "via-x-offset" => "-73"),
-    "ex_user_permissions.permission_id>ex_permissions.id" => array("source" => "left", "target" => "right", "curve" => "72", "target-y" => "18", "via-y-offset" => "210"),
+    "ex_user_permissions.permission_id>ex_permissions.id" => array("source" => "left", "target" => "right", "curve" => "72", "target-y" => "18", "via-y-offset" => "160"),
     "ex_user_permissions.user_id>ex_users.id" => array("source" => "left", "target" => "right", "curve" => "74")
 );
 
@@ -102,7 +102,7 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo html(getLockedViewportContent()); ?>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">

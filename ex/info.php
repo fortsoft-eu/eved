@@ -10,7 +10,7 @@ if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-requireFullAccess($aAllowedIps);
+requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 
 $aInfoTypes = array(
     "INFO_GENERAL" => INFO_GENERAL,
@@ -62,7 +62,7 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo html(getLockedViewportContent()); ?>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">

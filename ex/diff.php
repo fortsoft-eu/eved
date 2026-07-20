@@ -3,7 +3,7 @@
 include "main.php";
 
 
-requireFullAccess($aAllowedIps);
+requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -18,7 +18,7 @@ $blCompared = false;
 $blHasDifferences = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireCsrfToken();
+    requireNamedCsrfToken("ex_csrf_token", true);
     try {
         if (!isset($_FILES["database_backup"]) || !is_array($_FILES["database_backup"])) {
             $sUploadError = "No backup file was uploaded.";
@@ -86,7 +86,7 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Cervinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo html(getLockedViewportContent()); ?>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
@@ -100,7 +100,7 @@ $iTime = sendPageHeaders();
   </p>
   <h1>Database Difference</h1>
   <form action="<?php echo htmlspecialchars($sScriptUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken()); ?>">
+    <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
     <label for="database-backup">Database Backup</label>
     <input type="file" id="database-backup" name="database_backup" accept=".sql,application/sql,text/plain" required>
     <button type="submit">Compare Backup</button>

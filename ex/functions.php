@@ -1,78 +1,8 @@
 <?php
 
-function isViewAllowed($aAllowedIps) {
-    return isViewAllowedForProject($aAllowedIps, "ex");
-}
-
-function isFullAccessAllowed($aAllowedIps) {
-    return isFullAccessAllowedForProject($aAllowedIps, "ex");
-}
-
-function getCsrfToken() {
-    return getNamedCsrfToken("ex_csrf_token");
-}
-
-function resetCsrfToken() {
-    return resetNamedCsrfToken("ex_csrf_token");
-}
-
-function isCsrfTokenValid($sToken) {
-    return isNamedCsrfTokenValid("ex_csrf_token", $sToken);
-}
-
-function requireCsrfToken() {
-    requireNamedCsrfToken("ex_csrf_token", true);
-}
-
-function getCurrentUrlWithoutAuthAction() {
-    return getCurrentUrlWithoutAuthActionForToken("ex_csrf_token");
-}
-
-function getLogoutUrl() {
-    return getLogoutUrlForToken("ex_csrf_token");
-}
-
-function requireViewAccess($aAllowedIps) {
-    requireProjectViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
-}
-
-function requireFullAccess($aAllowedIps) {
-    requireProjectFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
-}
-
 function getMenuItems($oPdo) {
-    $aItems = array();
-    $sPathPrefix = getMenuPathPrefix();
-    if (!$oPdo) {
-        return $aItems;
-    }
     try {
-        $oStatement = $oPdo->prepare("SELECT id, path, icon, name, title, target, `order` AS menu_order FROM ex_menu WHERE is_active = 1 AND path LIKE :path_prefix ORDER BY `order` ASC, id ASC");
-        $oStatement->execute(array("path_prefix" => $sPathPrefix . "%"));
-        while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
-            $sPath = normalizeMenuPath(isset($aRow["path"]) ? $aRow["path"] : "");
-            if (strpos($sPath, $sPathPrefix) !== 0) {
-                continue;
-            }
-            $sRelativePath = substr($sPath, strlen($sPathPrefix));
-            if (strpos($sRelativePath, "..") !== false || preg_match("#(^|/)\\.#", $sRelativePath) || preg_match("#[^A-Za-z0-9/_\\.\\-]#", $sRelativePath)) {
-                continue;
-            }
-            $sName = trim((string)(isset($aRow["name"]) ? $aRow["name"] : ""));
-            if ($sName == "") {
-                $sName = $sRelativePath;
-            }
-            $aItems[] = array(
-                "id" => (int)$aRow["id"],
-                "path" => $sPath,
-                "relative_path" => $sRelativePath,
-                "icon" => (string)(isset($aRow["icon"]) ? $aRow["icon"] : ""),
-                "name" => $sName,
-                "title" => (string)(isset($aRow["title"]) ? $aRow["title"] : ""),
-                "target" => (string)(isset($aRow["target"]) ? $aRow["target"] : ""),
-                "order" => (int)$aRow["menu_order"]
-            );
-        }
+        return getMenuItemsFromDatabase($oPdo);
     } catch (Exception $oException) {
         error_log((string)$oException);
         return array();
@@ -88,9 +18,7 @@ function getCurrentMenuName($oPdo) {
         send500AndExit("Database error: " . $sError);
     }
     try {
-        $oStatement = $oPdo->prepare("SELECT name FROM ex_menu WHERE is_active = 1 AND path = :path LIMIT 1");
-        $oStatement->execute(array("path" => $sPath));
-        $sName = trim((string)$oStatement->fetchColumn());
+        $sName = getCurrentMenuNameFromDatabase($oPdo);
         if ($sName != "") {
             return $sName;
         }
@@ -113,6 +41,10 @@ function renderMenu() {
         . "      <button type=\"button\" class=\"ex-menu-button\" data-ex-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n"
         . "      <span class=\"ex-menu-panel\" data-ex-menu-panel hidden>\n";
     foreach ($aItems as $aItem) {
+        if ($aItem["separator"]) {
+            echo "        <span class=\"ex-menu-separator\"></span>\n";
+            continue;
+        }
         $sClass = "ex-menu-link";
         $sCurrent = "";
         $sIcon = trim((string)$aItem["icon"]);
@@ -240,7 +172,7 @@ function getRenderThrobberHtmlAttributes($blUseRenderThrobberLock) {
         $blIsThrobberLockTarget = isThrobberLockTarget($sUserAgent);
         $sAttributes = " data-render-throbber-lock-target=\"" . html($blIsThrobberLockTarget ? "html" : "body") . "\" data-render-throbber-lock-active=\"1\"";
         if ($blIsThrobberLockTarget) {
-            $sAttributes .= " data-render-throbber-zoom-lock=\"1\" data-render-throbber-viewport-content=\"" . html(getLockedViewportContent()) . "\"";
+            $sAttributes .= " data-render-throbber-zoom-lock=\"1\" data-render-throbber-viewport-content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\"";
         }
     }
     return $sAttributes;
@@ -3394,30 +3326,6 @@ function fetchSubjectPortalEditorData($oPdo, $iSubjectId) {
     );
 }
 
-function getPhpGeneratedStyleTag($sStyleNonce) {
-    global $sBaseUrl;
-
-    return "  <link href=\"" . htmlspecialchars($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" rel=\"stylesheet\" type=\"text/css\">\n";
-}
-
-function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
-    if (stripos($sHtml, "<html") !== false) {
-        return addPhpGeneratedViewportMeta($sHtml);
-    }
-    $sHtml = addPhpGeneratedStyleAttributes($sHtml, $sStyleNonce);
-    return "<!DOCTYPE html>\n"
-        . "<html lang=\"en-US\" dir=\"ltr\">\n"
-        . "<head>\n"
-        . "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
-        . "  <meta name=\"viewport\" content=\"" . html(getLockedViewportContent()) . "\">\n"
-        . "  <title>" . htmlspecialchars($sTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</title>\n"
-        . "</head>\n"
-        . "<body><div class=\"center\">\n"
-        . $sHtml
-        . "\n</div></body>\n"
-        . "</html>\n";
-}
-
 function getPhpGeneratedSelectedFlags($sName, $aTypes, $iDefaultValue) {
     $iSelected = 0;
     $aValues = array();
@@ -3436,25 +3344,6 @@ function getPhpGeneratedSelectedFlags($sName, $aTypes, $iDefaultValue) {
         $iSelected = $iDefaultValue;
     }
     return $iSelected;
-}
-
-function sendPhpGeneratedOutputAndExit($sType, $iSelect) {
-    global $aAllowedIps;
-
-    ob_start();
-    if ($sType == "credits") {
-        phpcredits($iSelect | CREDITS_FULLPAGE);
-    } else {
-        phpinfo($iSelect);
-    }
-    $sTitle = $sType == "credits" ? "PHP Credits" : "PHP Info";
-    $sTitle = getPageTitleText($sTitle, $aAllowedIps);
-    $sHtml = ob_get_clean();
-    $sStyleNonce = stripos($sHtml, "<html") !== false ? "" : base64_encode(random_bytes(16));
-    $sHtml = formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle);
-    sendPhpGeneratedHeaders($sStyleNonce);
-    echo $sHtml;
-    exit;
 }
 
 function addressesNormalizeKey($sValue) {

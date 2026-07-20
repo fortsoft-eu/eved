@@ -5,9 +5,7 @@ $iDefaultSelectedInfo = INFO_VARIABLES;
 include "main.php";
 
 
-if (!isAllowedIp($aAllowedIps)) {
-    send403AndExit();
-}
+requireFullAccess($aAllowedIps, "film", "film_csrf_token");
 
 if (isset($_GET["select"]) && preg_match("/^(info|credits)_\d+$/", $_GET["select"])) {
     list($sType, $iSelect) = explode("_", $_GET["select"], 2);
@@ -53,7 +51,7 @@ $iTime = sendPageHeaders();
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title>PHP Info and PHP Credits</title>
+  <title><?php echo htmlspecialchars(getPageTitleText("PHP Info and PHP Credits", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css" rel="stylesheet" type="text/css">
 </head>

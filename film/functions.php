@@ -241,6 +241,7 @@ function getFilmPhpFileLinkGroups() {
                 continue;
             }
             $sName = pathinfo($sFileName, PATHINFO_FILENAME);
+            $blTitleFromPage = false;
             $aLines = file($sFileName);
             if ($aLines) {
                 $blHtmlOutput = false;
@@ -251,15 +252,25 @@ function getFilmPhpFileLinkGroups() {
                         }
                         continue;
                     }
+                    if (preg_match('#<title>\s*<\?php\s+echo\s+htmlspecialchars\(getPageTitleText\("([^"]+)"#i', $sLine, $aMatches)) {
+                        $sName = trim($aMatches[1]);
+                        $blTitleFromPage = true;
+                        break;
+                    }
                     if (preg_match("#<title>([^<]+)</title>#i", $sLine, $aMatches)) {
                         $sName = trim($aMatches[1]);
+                        $blTitleFromPage = true;
                         break;
                     }
                 }
             }
             $sTitle = "";
             if ($sName) {
-                $sTitle = preg_replace("/\bphp\b/iu", "PHP", mb_strtoupper(mb_substr($sName, 0, 1, "UTF-8"), "UTF-8") . mb_strtolower(mb_substr($sName, 1, null, "UTF-8"), "UTF-8"));
+                if ($blTitleFromPage) {
+                    $sTitle = $sName;
+                } else {
+                    $sTitle = preg_replace("/\bphp\b/iu", "PHP", mb_strtoupper(mb_substr($sName, 0, 1, "UTF-8"), "UTF-8") . mb_strtolower(mb_substr($sName, 1, null, "UTF-8"), "UTF-8"));
+                }
             }
             $aGroup[] = array(
                 "file_name" => $sFileName,
@@ -279,29 +290,35 @@ function getFilmPhpFileLinkGroups() {
 }
 
 function renderFilmMenu() {
-    global $sBaseUrl, $sMenuEmoji, $sFilmMenuEmoji;
+    global $oPdo, $sBaseUrl, $sMenuEmoji;
 
-    $aGroups = getFilmPhpFileLinkGroups();
-    $sTitle = htmlspecialchars("Film Scans Gallery", ENT_QUOTES, "UTF-8");
-    $sLinks = "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-icon\" aria-hidden=\"true\">" . $sFilmMenuEmoji . "</span><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n"
-        . "        <span class=\"film-menu-separator\"></span>\n";
-    foreach ($aGroups as $iGroup => $aGroup) {
-        if ($iGroup > 0 && $sLinks != "" && count($aGroup) > 0) {
-            $sLinks .= "        <span class=\"film-menu-separator\"></span>\n";
-        }
-        foreach ($aGroup as $aItem) {
-            $sTitle = htmlspecialchars($aItem["title"], ENT_QUOTES, "UTF-8");
-            $sLinks .= "        <a class=\"film-menu-link\" href=\"" . htmlspecialchars($sBaseUrl . $aItem["file_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . $sTitle . "\"><span class=\"film-menu-icon\" aria-hidden=\"true\">" . $sFilmMenuEmoji . "</span><span class=\"film-menu-text\">" . $sTitle . "</span></a>\n";
-        }
-    }
-    if ($sLinks == "") {
+    $aItems = getMenuItemsFromDatabase($oPdo);
+    if (!$aItems) {
         return;
     }
+    $sCurrentPath = getCurrentMenuPath();
     echo "    <span class=\"film-menu\" data-film-menu>\n"
         . "      <button type=\"button\" class=\"film-menu-button\" data-film-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n"
-        . "      <span class=\"film-menu-panel\" data-film-menu-panel hidden>\n"
-        . $sLinks
-        . "      </span>\n"
+        . "      <span class=\"film-menu-panel\" data-film-menu-panel hidden>\n";
+    foreach ($aItems as $aItem) {
+        if ($aItem["separator"]) {
+            echo "        <span class=\"film-menu-separator\"></span>\n";
+            continue;
+        }
+        $sClass = "film-menu-link";
+        $sCurrent = "";
+        if ($aItem["path"] === $sCurrentPath) {
+            $sClass .= " film-menu-link-active";
+            $sCurrent = " aria-current=\"page\"";
+        }
+        $sTitle = trim((string)$aItem["title"]);
+        $sTarget = trim((string)$aItem["target"]);
+        $sTitleAttribute = $sTitle != "" ? " title=\"" . html($sTitle) . "\"" : "";
+        $sTargetAttribute = $sTarget != "" ? " target=\"" . html($sTarget) . "\"" : "";
+        $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
+        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"film-menu-icon\" aria-hidden=\"true\">" . html($aItem["icon"]) . "</span><span class=\"film-menu-text\">" . html($aItem["name"]) . "</span></a>\n";
+    }
+    echo "      </span>\n"
         . "    </span>\n";
 }
 
@@ -613,109 +630,5 @@ function formatFilmUaGpu($sGpuInfo) {
     $sFriendly = preg_replace("#\\s+(?:Direct3D|OpenGL|Vulkan|Metal)\\b.*$#i", "", $sFriendly);
     $sFriendly = preg_replace("#\\s+vs_[0-9_]+.*$#i", "", $sFriendly);
     return trim($sFriendly);
-}
-
-function send404AndExit() {
-    $sDate = gmdate("D, d M Y H:i:s", time());
-    $sHtml = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"
-        . "<html><head>\n"
-        . "<title>404 Not Found</title>\n"
-        . "</head><body>\n"
-        . "<h1>Not Found</h1>\n"
-        . "<p>The requested URL was not found on this server.</p>\n"
-        . "</body></html>\n";
-    http_response_code(404);
-    header("Content-Type: text/html; charset=utf-8", true);
-    header("Content-Language: en-US", true);
-    header("Content-Length: " . strlen($sHtml), true);
-    header("Last-Modified: " . $sDate . " GMT", true);
-    header("Expires: " . $sDate . " GMT", true);
-    header("Cache-Control: no-cache, must-revalidate, max-age=0", true);
-    header("Cache-Control: post-check=0, pre-check=0", false);
-    header("Pragma: no-cache", true);
-    header("X-Robots-Tag: noindex, nofollow", true);
-    sendSecurityHeaders();
-    echo $sHtml;
-    exit;
-}
-
-function getPhpGeneratedStyleTag($sStyleNonce) {
-    return "  <style type=\"text/css\" nonce=\"" . htmlspecialchars($sStyleNonce, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n"
-        . "    body {background-color: #fff; color: #222; font-family: sans-serif;}\n"
-        . "    pre {margin: 0; font-family: monospace;}\n"
-        . "    a {color: inherit;}\n"
-        . "    a:hover {text-decoration: none;}\n"
-        . "    table {border-collapse: collapse; border: 0; width: 934px; box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.2);}\n"
-        . "    .center {text-align: center;}\n"
-        . "    .center table {margin: 1em auto; text-align: left;}\n"
-        . "    .center th {text-align: center !important;}\n"
-        . "    td, th {border: 1px solid #666; font-size: 75%; vertical-align: baseline; padding: 4px 5px;}\n"
-        . "    th {position: sticky; top: 0; background: inherit;}\n"
-        . "    h1 {font-size: 150%;}\n"
-        . "    h2 {font-size: 125%;}\n"
-        . "    h2 > a {text-decoration: none;}\n"
-        . "    h2 > a:hover {text-decoration: underline;}\n"
-        . "    .p {text-align: left;}\n"
-        . "    .e {background-color: #ccf; width: 300px; font-weight: bold;}\n"
-        . "    .h {background-color: #99c; font-weight: bold;}\n"
-        . "    .v {background-color: #ddd; max-width: 300px; overflow-x: auto; word-wrap: normal;}\n"
-        . "    .v i {color: #999;}\n"
-        . "    img {float: right; border: 0;}\n"
-        . "    hr {width: 934px; background-color: #ccc; border: 0; height: 1px;}\n"
-        . "    :root {--php-dark-grey: #333; --php-dark-blue: #4F5B93; --php-medium-blue: #8892BF; --php-light-blue: #E2E4EF; --php-accent-purple: #793862;}\n"
-        . "    @media (prefers-color-scheme: dark) {\n"
-        . "      body {background: var(--php-dark-grey); color: var(--php-light-blue);}\n"
-        . "      .h td, td.e, th {border-color: #606A90;}\n"
-        . "      td {border-color: #505153;}\n"
-        . "      .e {background-color: #404A77;}\n"
-        . "      .h {background-color: var(--php-dark-blue);}\n"
-        . "      .v {background-color: var(--php-dark-grey);}\n"
-        . "      hr {background-color: #505153;}\n"
-        . "    }\n"
-        . "  </style>\n";
-}
-
-function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
-    $sHtml = addPhpGeneratedStyleAttributes($sHtml, $sStyleNonce);
-    if (stripos($sHtml, "<html") !== false) {
-        if (stripos($sHtml, "<style") === false && stripos($sHtml, "</head>") !== false) {
-            $sHtml = preg_replace("#</head>#i", getPhpGeneratedStyleTag($sStyleNonce) . "</head>", $sHtml, 1);
-        }
-        return addPhpGeneratedViewportMeta($sHtml);
-    }
-    return "<!DOCTYPE html>\n"
-        . "<html lang=\"en-US\" dir=\"ltr\">\n"
-        . "<head>\n"
-        . "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
-        . "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n"
-        . "  <title>" . htmlspecialchars($sTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</title>\n"
-        . getPhpGeneratedStyleTag($sStyleNonce)
-        . "</head>\n"
-        . "<body><div class=\"center\">\n"
-        . $sHtml
-        . "\n</div></body>\n"
-        . "</html>\n";
-}
-
-function sendPhpGeneratedOutputAndExit($sType, $iSelect) {
-    $sStyleNonce = base64_encode(random_bytes(16));
-    ob_start();
-    if ($sType == "credits") {
-        if ($iSelect > 0) {
-            phpcredits($iSelect | CREDITS_FULLPAGE);
-        } else {
-            phpcredits();
-        }
-    } else {
-        if ($iSelect > 0) {
-            phpinfo($iSelect);
-        } else {
-            phpinfo();
-        }
-    }
-    $sHtml = formatPhpGeneratedOutput(ob_get_clean(), $sStyleNonce, $sType == "credits" ? "PHP Credits" : "PHP Info");
-    sendPhpGeneratedHeaders($sStyleNonce);
-    echo $sHtml;
-    exit;
 }
 

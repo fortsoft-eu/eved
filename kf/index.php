@@ -2,7 +2,7 @@
 
 include "main.php";
 
-requireViewAccess($aAllowedIps);
+requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -82,7 +82,7 @@ $iTime = sendPageHeaders();
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
   <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">

@@ -2,8 +2,8 @@
 
 include "main.php";
 
-$blCanEdit = isFullAccessAllowed($aAllowedIps);
-requireViewAccess($aAllowedIps);
+$blCanEdit = isFullAccessAllowed($aAllowedIps, "kf");
+requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -11,8 +11,8 @@ if (!$oPdo) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireFullAccess($aAllowedIps);
-    requireCsrfToken();
+    requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
+    requireNamedCsrfToken("kf_csrf_token");
     $sAction = getPostedTrimmedValue("action");
 
     if ($sAction == "save_type") {
@@ -98,7 +98,7 @@ $iTime = sendPageHeaders();
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken()); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
   <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
@@ -153,7 +153,7 @@ if (!$aRows) {
   <div id="type-modal" class="confirm-dialog" hidden>
     <form method="post" class="confirm-dialog-box kf-edit-dialog">
       <div class="confirm-dialog-header"><strong data-modal-heading>Type</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
-        <input type="hidden" name="kf_csrf_token" value="<?php echo html(getCsrfToken()); ?>">
+        <input type="hidden" name="kf_csrf_token" value="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
         <input type="hidden" name="action" value="save_type">
         <input type="hidden" name="id" value="">
         <label for="type-name">Name</label>

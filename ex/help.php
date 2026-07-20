@@ -17,7 +17,7 @@ $iTime = sendPageHeaders();
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="<?php echo html(getLockedViewportContent()); ?>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
@@ -35,12 +35,12 @@ $iTime = sendPageHeaders();
   <dl class="portal-help-list">
     <dt>Menu and Page Titles</dt>
     <dd>
-      <p>The portal menu is rendered from active rows in <code>ex_menu</code>. Page names used in the browser title and in the page heading are resolved through the same menu metadata, so a missing active menu row is treated as a configuration error instead of being silently ignored.</p>
-      <p>Most pages are opened in the current window. Pages that are configured with a menu target, such as Demo Subjects, keep that behavior in the help link as well. The help text describes the visible page behavior, not the database menu administration itself.</p>
+      <p>The portal menu is rendered from active rows in <code>fs_menu</code>. Page names used in the browser title and in the page heading are resolved through the same menu metadata, so a missing active menu row is treated as a configuration error instead of being silently ignored.</p>
+      <p>Menu links and help links open the same portal pages in the current window. The help text describes the visible page behavior, not the database menu administration itself.</p>
       <ul>
-        <li><strong>Source:</strong> Active menu rows from <code>ex_menu</code>.</li>
+        <li><strong>Source:</strong> Active menu rows from <code>fs_menu</code>.</li>
         <li><strong>Current page:</strong> The active page name must exist in the menu.</li>
-        <li><strong>Targets:</strong> Menu targets such as a new window are preserved in the help links.</li>
+        <li><strong>Links:</strong> Menu and help links open the portal pages in the current window.</li>
       </ul>
     </dd>
     <dt>Access and Sign-in</dt>
@@ -296,9 +296,9 @@ $iTime = sendPageHeaders();
         <li><strong>Links:</strong> Point to the same portal pages shown in the menu.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>demo.php" target="_blank" rel="noopener noreferrer">Demo Subjects</a></dt>
+    <dt><a href="<?php echo $sBaseUrl; ?>demo.php">Demo Subjects</a></dt>
     <dd>
-      <p>Demo Subjects opens a standalone sample subject table in a new window from the menu. It uses hardcoded demonstration data instead of real database rows, so it can be used to exercise rendering and filtering behavior without changing production records.</p>
+      <p>Demo Subjects opens a standalone sample subject table. It uses hardcoded demonstration data instead of real database rows, so it can be used to exercise rendering and filtering behavior without changing production records.</p>
       <p>The page tests the subject table layout, responsive column hiding, quick filter, complex filter, settings, modals, action rendering, contact formatting, address formatting, copied text, and timestamp tooltip behavior. It deliberately mirrors enough of the real subject table to make UI regressions visible.</p>
       <p>Demo filtering uses its own session state and a reduced field model based on the sample data. Demo settings can affect inactive item visibility and shared country display choices, but the sample data itself is not stored in the database.</p>
       <ul>
@@ -314,12 +314,12 @@ $iTime = sendPageHeaders();
   <dl class="portal-help-list">
     <dt>Menu a názvy stránek</dt>
     <dd>
-      <p>Menu portálu se vykresluje z aktivních řádků v tabulce <code>ex_menu</code>. Ze stejných metadat se odvozuje název stránky v titulku prohlížeče a v hlavičce stránky, takže chybějící aktivní položka menu je konfigurační chyba a stránka ji neschovává.</p>
-      <p>Většina stránek se otevírá ve stejném okně. Stránky, které mají v menu nastavený samostatný target, například Demo Subjects, toto chování drží i v odkazu nápovědy. Nápověda popisuje viditelné chování stránek, nikoli administraci samotného menu.</p>
+      <p>Menu portálu se vykresluje z aktivních řádků v tabulce <code>fs_menu</code>. Ze stejných metadat se odvozuje název stránky v titulku prohlížeče a v hlavičce stránky, takže chybějící aktivní položka menu je konfigurační chyba a stránka ji neschovává.</p>
+      <p>Odkazy v menu i odkazy v nápovědě otevírají stejné portálové stránky ve stejném okně. Nápověda popisuje viditelné chování stránek, nikoli administraci samotného menu.</p>
       <ul>
-        <li><strong>Zdroj:</strong> Aktivní položky z tabulky <code>ex_menu</code>.</li>
+        <li><strong>Zdroj:</strong> Aktivní položky z tabulky <code>fs_menu</code>.</li>
         <li><strong>Aktuální stránka:</strong> Název aktivní stránky musí existovat v menu.</li>
-        <li><strong>Target:</strong> Otevírání do nového okna se drží i v odkazech nápovědy.</li>
+        <li><strong>Odkazy:</strong> Odkazy v menu i nápovědě otevírají portálové stránky ve stejném okně.</li>
       </ul>
     </dd>
     <dt>Přístup a přihlášení</dt>
@@ -575,9 +575,9 @@ $iTime = sendPageHeaders();
         <li><strong>Odkazy:</strong> Směřují na stejné portálové stránky, které jsou v menu.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>demo.php" target="_blank" rel="noopener noreferrer">Demo Subjects</a></dt>
+    <dt><a href="<?php echo $sBaseUrl; ?>demo.php">Demo Subjects</a></dt>
     <dd>
-      <p>Demo Subjects otevírá samostatnou ukázkovou tabulku subjektů v novém okně z menu. Používá pevně zadaná demonstrační data místo skutečných databázových řádků, takže se dá použít k ověření vykreslování a filtrování bez změn produkčních záznamů.</p>
+      <p>Demo Subjects otevírá samostatnou ukázkovou tabulku subjektů. Používá pevně zadaná demonstrační data místo skutečných databázových řádků, takže se dá použít k ověření vykreslování a filtrování bez změn produkčních záznamů.</p>
       <p>Stránka testuje rozložení tabulky subjektů, responsivní skrývání sloupců, rychlý filtr, komplexní filtr, nastavení, modály, vykreslení akcí, formátování kontaktů, formátování adres, kopírovaný text a chování timestamp tooltipů. Záměrně zrcadlí dost z reálné tabulky subjektů, aby byly vidět regrese v UI.</p>
       <p>Demo filtrování používá vlastní session stav a zjednodušený model polí podle ukázkových dat. Demo nastavení může ovlivnit viditelnost neaktivních položek a sdílené volby zobrazení státu, ale samotná ukázková data se do databáze neukládají.</p>
       <ul>

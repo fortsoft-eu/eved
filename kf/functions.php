@@ -1,76 +1,9 @@
 <?php
 
-function isAuthenticatedClient() {
-    return refreshAuthSession();
-}
-
-function isViewAllowed($aAllowedIps) {
-    return isViewAllowedForProject($aAllowedIps, "kf");
-}
-
-function isFullAccessAllowed($aAllowedIps) {
-    return isFullAccessAllowedForProject($aAllowedIps, "kf");
-}
-
-function getCurrentUrlWithoutAuthAction() {
-    return getCurrentUrlWithoutAuthActionForToken("kf_csrf_token");
-}
-
-function getLogoutUrl() {
-    return getLogoutUrlForToken("kf_csrf_token");
-}
-
-function getCsrfToken() {
-    return getNamedCsrfToken("kf_csrf_token");
-}
-
-function resetCsrfToken() {
-    return resetNamedCsrfToken("kf_csrf_token");
-}
-
-function isCsrfTokenValid($sToken) {
-    return isNamedCsrfTokenValid("kf_csrf_token", $sToken);
-}
-
-function requireCsrfToken() {
-    requireNamedCsrfToken("kf_csrf_token");
-}
-
-function requireViewAccess($aAllowedIps) {
-    requireProjectViewAccess($aAllowedIps, "kf", "kf_csrf_token");
-}
-
-function requireFullAccess($aAllowedIps) {
-    requireProjectFullAccess($aAllowedIps, "kf", "kf_csrf_token");
-}
-
 function getMenuItems() {
     global $oPdo;
 
-    $aItems = array();
-    if (!$oPdo) {
-        return $aItems;
-    }
-    $sPathPrefix = getMenuPathPrefix();
-    $oStatement = $oPdo->prepare("SELECT id, path, icon, name, title, target, `order` AS menu_order FROM kf_menu WHERE is_active = 1 AND path LIKE :path_prefix ORDER BY `order` ASC, id ASC");
-    $oStatement->execute(array("path_prefix" => $sPathPrefix . "%"));
-    while ($aRow = $oStatement->fetch()) {
-        $sPath = normalizeMenuPath($aRow["path"]);
-        if (strpos($sPath, $sPathPrefix) !== 0) {
-            continue;
-        }
-        $aItems[] = array(
-            "id" => (int)$aRow["id"],
-            "path" => $sPath,
-            "relative_path" => substr($sPath, strlen($sPathPrefix)),
-            "icon" => (string)$aRow["icon"],
-            "name" => (string)$aRow["name"],
-            "title" => (string)$aRow["title"],
-            "target" => (string)$aRow["target"],
-            "order" => (int)$aRow["menu_order"]
-        );
-    }
-    return $aItems;
+    return getMenuItemsFromDatabase($oPdo);
 }
 
 function getPageTitle($sFallbackTitle) {
@@ -81,9 +14,7 @@ function getPageTitle($sFallbackTitle) {
     if (!$oPdo) {
         return getPageTitleText($sTitle, $aAllowedIps);
     }
-    $oStatement = $oPdo->prepare("SELECT name FROM kf_menu WHERE is_active = 1 AND path = :path LIMIT 1");
-    $oStatement->execute(array("path" => getCurrentMenuPath()));
-    $sMenuTitle = trim((string)$oStatement->fetchColumn());
+    $sMenuTitle = getCurrentMenuNameFromDatabase($oPdo);
     $sTitle = $sMenuTitle != "" ? $sMenuTitle : $sFallbackTitle;
     return getPageTitleText($sTitle, $aAllowedIps);
 }
@@ -100,6 +31,10 @@ function renderMenu() {
         . "      <button type=\"button\" class=\"kf-menu-button\" data-kf-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n"
         . "      <span class=\"kf-menu-panel\" data-kf-menu-panel hidden>\n";
     foreach ($aItems as $aItem) {
+        if ($aItem["separator"]) {
+            echo "        <span class=\"kf-menu-separator\"></span>\n";
+            continue;
+        }
         $sClass = "kf-menu-link";
         $sCurrent = "";
         if ($aItem["path"] === $sCurrentPath) {

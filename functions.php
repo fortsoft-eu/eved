@@ -89,28 +89,82 @@ function sendPageHeaders($sStyleNonce = "") {
     return $iTime;
 }
 
-function addPhpGeneratedStyleAttributes($sHtml, $sStyleNonce) {
-    if ($sStyleNonce == "") {
-        return $sHtml;
-    }
-    $sNonce = htmlspecialchars($sStyleNonce, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-    return preg_replace_callback("#<style\\b([^>]*)>#i", function ($aMatches) use ($sNonce) {
-        $sAttributes = $aMatches[1];
-        if (!preg_match("#\\stype\\s*=#i", $sAttributes)) {
-            $sAttributes .= " type=\"text/css\"";
-        }
-        if (!preg_match("#\\snonce\\s*=#i", $sAttributes)) {
-            $sAttributes .= " nonce=\"" . $sNonce . "\"";
-        }
-        return "<style" . $sAttributes . ">";
-    }, $sHtml);
-}
-
 function addPhpGeneratedViewportMeta($sHtml) {
     if (preg_match("#<meta\\b[^>]*\\bname\\s*=\\s*([\"'])viewport\\1#i", $sHtml) || stripos($sHtml, "</head>") === false) {
         return $sHtml;
     }
-    return preg_replace("#</head>#i", "  <meta name=\"viewport\" content=\"" . html(getLockedViewportContent()) . "\">\n</head>", $sHtml, 1);
+    return preg_replace("#</head>#i", "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n</head>", $sHtml, 1);
+}
+
+function getPhpGeneratedStyleTag($sStyleNonce) {
+    global $sBaseUrl;
+
+    $sScriptDirectory = dirname((string)$_SERVER["SCRIPT_FILENAME"]);
+    return "  <link href=\"" . htmlspecialchars($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" rel=\"stylesheet\" type=\"text/css\">\n";
+}
+
+function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
+    if (stripos($sHtml, "<html") !== false) {
+        $sHtml = preg_replace("#<style\\b[^>]*>.*?</style>\\s*#is", "", $sHtml);
+        if (stripos($sHtml, "css/admin.css") === false && stripos($sHtml, "</head>") !== false) {
+            $sHtml = preg_replace("#</head>#i", getPhpGeneratedStyleTag($sStyleNonce) . "</head>", $sHtml, 1);
+        }
+        $sHtml = preg_replace_callback("#<body\\b([^>]*)>#i", function ($aMatches) {
+            $sAttributes = $aMatches[1];
+            if (preg_match("#\\bclass\\s*=\\s*([\"'])(.*?)\\1#i", $sAttributes, $aClassMatches)) {
+                if (strpos($aClassMatches[2], "php-generated-output") === false) {
+                    $sClass = trim($aClassMatches[2] . " php-generated-output");
+                    $sAttributes = preg_replace("#\\bclass\\s*=\\s*([\"'])(.*?)\\1#i", "class=" . $aClassMatches[1] . $sClass . $aClassMatches[1], $sAttributes, 1);
+                }
+            } else {
+                $sAttributes .= " class=\"php-generated-output\"";
+            }
+            return "<body" . $sAttributes . ">";
+        }, $sHtml, 1);
+        return addPhpGeneratedViewportMeta($sHtml);
+    }
+    $sTitle = htmlspecialchars($sTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    ob_start();
+    echo "<!DOCTYPE html>\n",
+        "<html lang=\"en-US\" dir=\"ltr\">\n",
+        "<head>\n",
+        "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n",
+        "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n",
+        "  <title>", $sTitle, "</title>\n",
+        getPhpGeneratedStyleTag($sStyleNonce),
+        "</head>\n",
+        "<body class=\"php-generated-output\"><div class=\"center\">\n",
+        $sHtml,
+        "\n</div></body>\n",
+        "</html>\n";
+    return ob_get_clean();
+}
+
+function sendPhpGeneratedOutputAndExit($sType, $iSelect) {
+    global $aAllowedIps;
+
+    ob_start();
+    if ($sType == "credits") {
+        if ($iSelect > 0) {
+            phpcredits($iSelect | CREDITS_FULLPAGE);
+        } else {
+            phpcredits();
+        }
+    } else {
+        if ($iSelect > 0) {
+            phpinfo($iSelect);
+        } else {
+            phpinfo();
+        }
+    }
+    $sTitle = $sType == "credits" ? "PHP Credits" : "PHP Info";
+    $sTitle = getPageTitleText($sTitle, $aAllowedIps);
+    $sHtml = ob_get_clean();
+    $sStyleNonce = stripos($sHtml, "<html") !== false ? "" : base64_encode(random_bytes(16));
+    $sHtml = formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle);
+    sendPhpGeneratedHeaders($sStyleNonce);
+    echo $sHtml;
+    exit;
 }
 
 function sendPhpGeneratedHeaders($sStyleNonce) {
@@ -262,6 +316,30 @@ function send403AndExit() {
     exit;
 }
 
+function send404AndExit() {
+    $sDate = gmdate("D, d M Y H:i:s", time());
+    $sHtml = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"
+        . "<html><head>\n"
+        . "<title>404 Not Found</title>\n"
+        . "</head><body>\n"
+        . "<h1>Not Found</h1>\n"
+        . "<p>The requested URL was not found on this server.</p>\n"
+        . "</body></html>\n";
+    http_response_code(404);
+    header("Content-Type: text/html; charset=utf-8", true);
+    header("Content-Language: en-US", true);
+    header("Content-Length: " . strlen($sHtml), true);
+    header("Last-Modified: " . $sDate . " GMT", true);
+    header("Expires: " . $sDate . " GMT", true);
+    header("Cache-Control: no-cache, must-revalidate, max-age=0", true);
+    header("Cache-Control: post-check=0, pre-check=0", false);
+    header("Pragma: no-cache", true);
+    header("X-Robots-Tag: noindex, nofollow", true);
+    sendSecurityHeaders();
+    echo $sHtml;
+    exit;
+}
+
 function send500AndExit($sMessage) {
     $sDate = gmdate("D, d M Y H:i:s", time());
     $sHtml = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"
@@ -285,18 +363,6 @@ function send500AndExit($sMessage) {
     sendSecurityHeaders();
     echo $sHtml;
     exit;
-}
-
-function getLockedViewportContent() {
-    return "width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no";
-}
-
-function isAjaxRequest() {
-    return isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
-}
-
-function getQuickTableFilterScriptName() {
-    return getCurrentScriptName();
 }
 
 function getCurrentScriptName() {
@@ -323,14 +389,58 @@ function encodeMenuPath($sPath) {
 }
 
 function getMenuPathPrefix() {
-    $sScriptFile = str_replace("\\", "/", (string)$_SERVER["SCRIPT_FILENAME"]);
-    $sScriptDirectory = dirname($sScriptFile);
-    return normalizeMenuPath(basename(dirname($sScriptDirectory)) . "/" . basename($sScriptDirectory)) . "/";
+    $sScriptName = isset($_SERVER["SCRIPT_NAME"]) ? (string)$_SERVER["SCRIPT_NAME"] : "";
+    $sScriptName = str_replace("\\", "/", $sScriptName);
+    $sScriptDirectory = dirname($sScriptName);
+    return "/" . normalizeMenuPath(basename($sScriptDirectory)) . "/";
 }
 
 function getCurrentMenuPath() {
     $sScriptName = getCurrentScriptName();
     return $sScriptName == "index.php" ? getMenuPathPrefix() : getMenuPathPrefix() . $sScriptName;
+}
+
+function getMenuItemsFromDatabase($oPdo) {
+    $aItems = array();
+    if (!$oPdo) {
+        return $aItems;
+    }
+    $sPathPrefix = getMenuPathPrefix();
+    $oStatement = $oPdo->prepare("SELECT id, path, icon, name, title, target, `order` AS menu_order FROM fs_menu WHERE is_active = 1 AND path LIKE :path_prefix ORDER BY `order` ASC, id ASC");
+    $oStatement->execute(array("path_prefix" => $sPathPrefix . "%"));
+    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        $sPath = "/" . normalizeMenuPath($aRow["path"]);
+        if (strpos($sPath, $sPathPrefix) !== 0) {
+            continue;
+        }
+        $blSeparator = $aRow["icon"] === null || $aRow["name"] === null || $aRow["title"] === null;
+        $sRelativePath = substr($sPath, strlen($sPathPrefix));
+        if (!$blSeparator && (strpos($sRelativePath, "..") !== false || preg_match("#(^|/)\\.#", $sRelativePath) || preg_match("#[^A-Za-z0-9/_\\.\\-]#", $sRelativePath))) {
+            continue;
+        }
+        $sName = $blSeparator ? "" : trim((string)$aRow["name"]);
+        if (!$blSeparator && $sName == "") {
+            $sName = $sRelativePath;
+        }
+        $aItems[] = array(
+            "id" => (int)$aRow["id"],
+            "path" => $sPath,
+            "relative_path" => $sRelativePath,
+            "icon" => $blSeparator ? "" : (string)$aRow["icon"],
+            "name" => $sName,
+            "title" => $blSeparator ? "" : (string)$aRow["title"],
+            "target" => isset($aRow["target"]) ? (string)$aRow["target"] : "",
+            "order" => (int)$aRow["menu_order"],
+            "separator" => $blSeparator
+        );
+    }
+    return $aItems;
+}
+
+function getCurrentMenuNameFromDatabase($oPdo) {
+    $oStatement = $oPdo->prepare("SELECT name FROM fs_menu WHERE is_active = 1 AND path = :path AND name IS NOT NULL ORDER BY `order` ASC, id ASC LIMIT 1");
+    $oStatement->execute(array("path" => getCurrentMenuPath()));
+    return trim((string)$oStatement->fetchColumn());
 }
 
 function getQuickTableFilterId($sFilterId) {
@@ -343,7 +453,7 @@ function getQuickTableFilterId($sFilterId) {
 }
 
 function getQuickTableFilterValue($sFilterId = "table-filter") {
-    $sScriptName = getQuickTableFilterScriptName();
+    $sScriptName = getCurrentScriptName();
     $sFilterId = getQuickTableFilterId($sFilterId);
     if (!isset($_SESSION["quick_table_filters"]) || !is_array($_SESSION["quick_table_filters"])) {
         return "";
@@ -361,14 +471,14 @@ function handleQuickTableFilterRequest() {
     if ($_SERVER["REQUEST_METHOD"] != "POST" || !isset($_POST["quick_table_filter_action"])) {
         return;
     }
-    if (!isAjaxRequest()) {
+    if (!(isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest")) {
         send403AndExit();
     }
     $sAction = (string)$_POST["quick_table_filter_action"];
     $sFilterId = isset($_POST["filter_id"]) ? (string)$_POST["filter_id"] : "table-filter";
     if ($sAction == "save") {
         $sValue = getPostedValue("filter_value");
-        $sScriptName = getQuickTableFilterScriptName();
+        $sScriptName = getCurrentScriptName();
         $sFilterId = getQuickTableFilterId($sFilterId);
         if (!isset($_SESSION["quick_table_filters"]) || !is_array($_SESSION["quick_table_filters"])) {
             $_SESSION["quick_table_filters"] = array();
@@ -380,7 +490,7 @@ function handleQuickTableFilterRequest() {
         session_write_close();
         sendJsonAndExit(array("success" => true));
     } elseif ($sAction == "reset") {
-        $sScriptName = getQuickTableFilterScriptName();
+        $sScriptName = getCurrentScriptName();
         $sFilterId = getQuickTableFilterId($sFilterId);
         if (isset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId])) {
             unset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId]);
@@ -441,15 +551,11 @@ function updateLastLogin($oPdo, $iUserId) {
 }
 
 function permissionArrayAllowsProjectView($aPermissions, $sProject) {
-    return !empty($aPermissions["portal.view"])
-        || !empty($aPermissions["portal.full"])
-        || !empty($aPermissions[$sProject . ".view"])
-        || !empty($aPermissions[$sProject . ".full"]);
+    return !empty($aPermissions["portal.view"]) || !empty($aPermissions["portal.full"]) || !empty($aPermissions[$sProject . ".view"]) || !empty($aPermissions[$sProject . ".full"]);
 }
 
 function permissionArrayAllowsProjectFull($aPermissions, $sProject) {
-    return !empty($aPermissions["portal.full"])
-        || !empty($aPermissions[$sProject . ".full"]);
+    return !empty($aPermissions["portal.full"]) || !empty($aPermissions[$sProject . ".full"]);
 }
 
 function setAuthSession($aUser, $aPermissions) {
@@ -485,41 +591,30 @@ function refreshAuthSession() {
 
     static $blRefreshed = false;
     static $blAuthenticated = false;
-
     if ($blRefreshed) {
         return $blAuthenticated;
     }
     $blRefreshed = true;
     $blAuthenticated = false;
-
-    if (!isset($_SESSION["auth"], $_SESSION["auth_user_id"])
-        || $_SESSION["auth"] !== true
-        || (int)$_SESSION["auth_user_id"] < 1) {
+    if (!isset($_SESSION["auth"], $_SESSION["auth_user_id"]) || $_SESSION["auth"] !== true || (int)$_SESSION["auth_user_id"] < 1) {
         clearAuthSession();
         return false;
     }
-
     if (!$oPdo) {
         clearAuthSession();
         return false;
     }
-
     try {
         $aUser = fetchPortalSessionUser($oPdo, (int)$_SESSION["auth_user_id"]);
-        if (!$aUser
-            || (int)$aUser["is_active"] != 1
-            || (int)$aUser["subject_active"] != 1
-            || !in_array((string)$aUser["subject_type"], array("person", "service"), true)) {
+        if (!$aUser || (int)$aUser["is_active"] != 1 || (int)$aUser["subject_active"] != 1 || !in_array((string)$aUser["subject_type"], array("person", "service"), true)) {
             clearAuthSession();
             return false;
         }
-
         $aPermissions = fetchUserEffectivePermissions($oPdo, (int)$aUser["id"], (int)$aUser["subject_id"]);
         if (!$aPermissions) {
             clearAuthSession();
             return false;
         }
-
         setAuthSession($aUser, $aPermissions);
         $blAuthenticated = true;
         return true;
@@ -531,31 +626,22 @@ function refreshAuthSession() {
 }
 
 function isPermissionAllowed($sPermissionKey) {
-    return refreshAuthSession()
-        && isset($_SESSION["permissions"])
-        && is_array($_SESSION["permissions"])
-        && !empty($_SESSION["permissions"][$sPermissionKey]);
+    return refreshAuthSession() && isset($_SESSION["permissions"]) && is_array($_SESSION["permissions"]) && !empty($_SESSION["permissions"][$sPermissionKey]);
 }
 
 function isProjectViewAllowed($sProject) {
-    return refreshAuthSession()
-        && isset($_SESSION["permissions"])
-        && is_array($_SESSION["permissions"])
-        && permissionArrayAllowsProjectView($_SESSION["permissions"], $sProject);
+    return refreshAuthSession() && isset($_SESSION["permissions"]) && is_array($_SESSION["permissions"]) && permissionArrayAllowsProjectView($_SESSION["permissions"], $sProject);
 }
 
 function isProjectFullAllowed($sProject) {
-    return refreshAuthSession()
-        && isset($_SESSION["permissions"])
-        && is_array($_SESSION["permissions"])
-        && permissionArrayAllowsProjectFull($_SESSION["permissions"], $sProject);
+    return refreshAuthSession() && isset($_SESSION["permissions"]) && is_array($_SESSION["permissions"]) && permissionArrayAllowsProjectFull($_SESSION["permissions"], $sProject);
 }
 
 function isViewAllowedForProject($aAllowedIps, $sProject) {
     return isTrustedClient($aAllowedIps) || isProjectViewAllowed($sProject);
 }
 
-function isFullAccessAllowedForProject($aAllowedIps, $sProject) {
+function isFullAccessAllowed($aAllowedIps, $sProject) {
     return isTrustedClient($aAllowedIps) || isProjectFullAllowed($sProject);
 }
 
@@ -574,10 +660,10 @@ function getPageTitleText($sTitle, $aAllowedIps) {
 }
 
 function getLoginMessageHtml($sMessage) {
-    return $sMessage != "" ? "    <p class=\"message-error login-message\">" . htmlspecialchars($sMessage, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</p>\n" : "";
+    return $sMessage ? "    <p class=\"message-error login-message\">" . htmlspecialchars($sMessage, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</p>\n" : "";
 }
 
-function getNamedCsrfToken($sTokenName) {
+function getCsrfToken($sTokenName) {
     if (!isset($_SESSION[$sTokenName]) || !is_string($_SESSION[$sTokenName]) || $_SESSION[$sTokenName] == "") {
         $_SESSION[$sTokenName] = bin2hex(random_bytes(32));
     }
@@ -598,15 +684,12 @@ function getPostedCsrfToken($sTokenName) {
     if (isset($_POST[$sTokenName])) {
         return (string)$_POST[$sTokenName];
     }
-    if (isset($_SERVER["HTTP_X_CSRF_TOKEN"])) {
-        return (string)$_SERVER["HTTP_X_CSRF_TOKEN"];
-    }
-    return "";
+    return isset($_SERVER["HTTP_X_CSRF_TOKEN"]) ? (string)$_SERVER["HTTP_X_CSRF_TOKEN"] : "";
 }
 
 function requireNamedCsrfToken($sTokenName, $blJsonResponse = false) {
     if (!isNamedCsrfTokenValid($sTokenName, getPostedCsrfToken($sTokenName))) {
-        if ($blJsonResponse && isAjaxRequest()) {
+        if ($blJsonResponse && (isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest")) {
             sendJsonAndExit(array("success" => false, "message" => "Invalid security token."), 403);
         }
         send403AndExit();
@@ -626,15 +709,12 @@ function getCurrentUrlWithoutAuthActionForToken($sTokenName) {
     if (count($aQuery) > 0) {
         $sResult .= "?" . http_build_query($aQuery, "", "&");
     }
-    if ($sResult == "") {
-        $sResult = "/";
-    }
-    return $sResult;
+    return $sResult == "" ? "/" : $sResult;
 }
 
 function getLogoutUrlForToken($sTokenName) {
-    $sUrl = getCurrentUrlWithoutAuthAction();
-    return $sUrl . (strpos($sUrl, "?") === false ? "?" : "&") . "logout=1&" . $sTokenName . "=" . rawurlencode(getNamedCsrfToken($sTokenName));
+    $sUrl = getCurrentUrlWithoutAuthActionForToken($sTokenName);
+    return $sUrl . (strpos($sUrl, "?") === false ? "?" : "&") . "logout=1&" . $sTokenName . "=" . rawurlencode(getCsrfToken($sTokenName));
 }
 
 function getLoginToken() {
@@ -649,21 +729,21 @@ function resetLoginToken() {
     return $_SESSION["login_token"];
 }
 
-function redirectLoginForm($sMessage = "") {
+function redirectLoginForm($sTokenName, $sMessage = "") {
     if ($sMessage != "") {
         $_SESSION["login_message"] = $sMessage;
     }
     resetLoginToken();
     sendSecurityHeaders();
-    header("Location: " . getCurrentUrlWithoutAuthAction(), true, 303);
+    header("Location: " . getCurrentUrlWithoutAuthActionForToken($sTokenName), true, 303);
     exit;
 }
 
-function redirectLoginForbidden() {
+function redirectLoginForbidden($sTokenName) {
     $_SESSION["login_cancel_forbidden"] = true;
     resetLoginToken();
     sendSecurityHeaders();
-    header("Location: " . getCurrentUrlWithoutAuthAction(), true, 303);
+    header("Location: " . getCurrentUrlWithoutAuthActionForToken($sTokenName), true, 303);
     exit;
 }
 
@@ -677,7 +757,7 @@ function getLoginDelaySeconds() {
     return $iDelay > 0 ? $iDelay : 0;
 }
 
-function renderLoginPageAndExit($sMessage = "") {
+function renderLoginPageAndExit($sTokenName, $sMessage = "") {
     global $sBaseUrl;
 
     if (isset($_SESSION["login_message"]) && is_string($_SESSION["login_message"])) {
@@ -688,47 +768,49 @@ function renderLoginPageAndExit($sMessage = "") {
     }
     $iTime = sendPageHeaders();
     $sScriptDirectory = dirname((string)$_SERVER["SCRIPT_FILENAME"]);
-    $sLoginScriptUrl = $sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime($sScriptDirectory . "/js/admin.js"));
-    $sAction = htmlspecialchars(getCurrentUrlWithoutAuthAction(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sLoginScriptUrl = htmlspecialchars($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime($sScriptDirectory . "/js/admin.js")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sFaviconUrl = htmlspecialchars($sBaseUrl . "favicon.ico", ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sAdminCssUrl = htmlspecialchars($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sAction = htmlspecialchars(getCurrentUrlWithoutAuthActionForToken($sTokenName), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     $sToken = htmlspecialchars(getLoginToken(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     $sMessageHtml = getLoginMessageHtml($sMessage);
-    echo "<!DOCTYPE html>\n"
-        . "<html lang=\"en-US\" dir=\"ltr\">\n"
-        . "<head>\n"
-        . "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
-        . "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n"
-        . "  <meta name=\"viewport\" content=\"" . html(getLockedViewportContent()) . "\">\n"
-        . "  <meta name=\"theme-color\" content=\"#FFD8BB\">\n"
-        . "  <link rel=\"icon\" href=\"" . htmlspecialchars($sBaseUrl . "favicon.ico", ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" type=\"image/x-icon\">\n"
-        . "  <link rel=\"shortcut icon\" href=\"" . htmlspecialchars($sBaseUrl . "favicon.ico", ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" type=\"image/x-icon\">\n"
-        . "  <title>Sign In</title>\n"
-        . "  <meta name=\"date\" content=\"" . gmdate("D, d M Y H:i:s", $iTime) . " GMT\">\n"
-        . "  <link href=\"" . htmlspecialchars($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" rel=\"stylesheet\" type=\"text/css\">\n"
-        . "</head>\n"
-        . "<body class=\"login-page\">\n"
-        . "  <div class=\"confirm-dialog login-dialog\">\n"
-        . "    <form class=\"confirm-dialog-box login-form\" method=\"post\" action=\"" . $sAction . "\" enctype=\"application/x-www-form-urlencoded\">\n"
-        . "      <input type=\"hidden\" name=\"login_token\" value=\"" . $sToken . "\">\n"
-        . "      <div class=\"confirm-dialog-header\">\n"
-        . "        <strong>Sign In</strong>\n"
-        . "        <button type=\"submit\" name=\"action\" value=\"cancel\" class=\"confirm-dialog-close\" aria-label=\"Close\" formnovalidate>&times;</button>\n"
-        . "      </div>\n"
-        . "      <div class=\"login-fields\">\n"
-        . "      <label for=\"login-user\">User Name</label>\n"
-        . "      <input type=\"text\" id=\"login-user\" name=\"user_name\" autocomplete=\"username\" required autofocus>\n"
-        . "      <label for=\"login-password\">Password</label>\n"
-        . "      <input type=\"password\" id=\"login-password\" name=\"password\" autocomplete=\"current-password\" required>\n"
-        . $sMessageHtml
-        . "      </div>\n"
-        . "      <div class=\"confirm-dialog-actions\">\n"
-        . "        <button type=\"submit\" name=\"action\" value=\"login\" class=\"confirm-dialog-button\">Login</button>\n"
-        . "        <button type=\"submit\" name=\"action\" value=\"cancel\" class=\"confirm-dialog-button\" formnovalidate>Cancel</button>\n"
-        . "      </div>\n"
-        . "    </form>\n"
-        . "  </div>\n"
-        . "  <script type=\"text/javascript\" src=\"" . htmlspecialchars($sLoginScriptUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"></script>\n"
-        . "</body>\n"
-        . "</html>\n";
+    echo "<!DOCTYPE html>\n",
+        "<html lang=\"en-US\" dir=\"ltr\">\n",
+        "<head>\n",
+        "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n",
+        "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n",
+        "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n",
+        "  <meta name=\"theme-color\" content=\"#FFD8BB\">\n",
+        "  <link rel=\"icon\" href=\"", $sFaviconUrl, "\" type=\"image/x-icon\">\n",
+        "  <link rel=\"shortcut icon\" href=\"", $sFaviconUrl, "\" type=\"image/x-icon\">\n",
+        "  <title>Sign In</title>\n",
+        "  <meta name=\"date\" content=\"", gmdate("D, d M Y H:i:s", $iTime), " GMT\">\n",
+        "  <link href=\"", $sAdminCssUrl, "\" rel=\"stylesheet\" type=\"text/css\">\n",
+        "</head>\n",
+        "<body class=\"login-page\">\n",
+        "  <div class=\"confirm-dialog login-dialog\">\n",
+        "    <form class=\"confirm-dialog-box login-form\" method=\"post\" action=\"", $sAction, "\" enctype=\"application/x-www-form-urlencoded\">\n",
+        "      <input type=\"hidden\" name=\"login_token\" value=\"", $sToken, "\">\n",
+        "      <div class=\"confirm-dialog-header\">\n",
+        "        <strong>Sign In</strong>\n",
+        "        <button type=\"submit\" name=\"action\" value=\"cancel\" class=\"confirm-dialog-close\" aria-label=\"Close\" formnovalidate>&times;</button>\n",
+        "      </div>\n",
+        "      <div class=\"login-fields\">\n",
+        "      <label for=\"login-user\">User Name</label>\n",
+        "      <input type=\"text\" id=\"login-user\" name=\"user_name\" autocomplete=\"username\" required autofocus>\n",
+        "      <label for=\"login-password\">Password</label>\n",
+        "      <input type=\"password\" id=\"login-password\" name=\"password\" autocomplete=\"current-password\" required>\n",
+        $sMessageHtml,
+        "      </div>\n",
+        "      <div class=\"confirm-dialog-actions\">\n",
+        "        <button type=\"submit\" name=\"action\" value=\"login\" class=\"confirm-dialog-button\">Login</button>\n",
+        "        <button type=\"submit\" name=\"action\" value=\"cancel\" class=\"confirm-dialog-button\" formnovalidate>Cancel</button>\n",
+        "      </div>\n",
+        "    </form>\n",
+        "  </div>\n",
+        "  <script type=\"text/javascript\" src=\"", $sLoginScriptUrl, "\"></script>\n",
+        "</body>\n",
+        "</html>\n";
     exit;
 }
 
@@ -742,10 +824,10 @@ function handleLoginPost($sTokenName) {
     $iDelay = getLoginDelaySeconds();
 
     if ($iDelay > 0) {
-        redirectLoginForm("Too many failed attempts. Try again later.");
+        redirectLoginForm($sTokenName, "Too many failed attempts. Try again later.");
     }
     if ($sToken == "" || $sSessionToken == "" || !hash_equals($sSessionToken, $sToken)) {
-        redirectLoginForm("Invalid sign-in request.");
+        redirectLoginForm($sTokenName, "Invalid sign-in request.");
     }
     $aUser = fetchPortalLoginUser($oPdo, $sUserName);
     $aPermissions = array();
@@ -764,23 +846,22 @@ function handleLoginPost($sTokenName) {
         unset($_SESSION["login_failures"], $_SESSION["login_last_failure"], $_SESSION["login_token"], $_SESSION["login_cancel_forbidden"]);
         updateLastLogin($oPdo, (int)$aUser["id"]);
         sendSecurityHeaders();
-        header("Location: " . getCurrentUrlWithoutAuthAction(), true, 303);
+        header("Location: " . getCurrentUrlWithoutAuthActionForToken($sTokenName), true, 303);
         exit;
     }
-
     $_SESSION["login_failures"] = isset($_SESSION["login_failures"]) ? (int)$_SESSION["login_failures"] + 1 : 1;
     $_SESSION["login_last_failure"] = time();
-    redirectLoginForm("Invalid user name or password.");
+    redirectLoginForm($sTokenName, "Invalid user name or password.");
 }
 
-function requireProjectViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse = false) {
+function requireViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse = false) {
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "logout") {
         requireNamedCsrfToken($sTokenName, $blJsonResponse);
         clearAuthSession();
         session_regenerate_id(true);
         resetNamedCsrfToken($sTokenName);
         sendSecurityHeaders();
-        header("Location: " . getCurrentUrlWithoutAuthAction(), true, 303);
+        header("Location: " . getCurrentUrlWithoutAuthActionForToken($sTokenName), true, 303);
         exit;
     }
     if (isset($_GET["logout"]) && refreshAuthSession()) {
@@ -792,7 +873,7 @@ function requireProjectViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonR
         session_regenerate_id(true);
         resetNamedCsrfToken($sTokenName);
         sendSecurityHeaders();
-        header("Location: " . getCurrentUrlWithoutAuthAction(), true, 303);
+        header("Location: " . getCurrentUrlWithoutAuthActionForToken($sTokenName), true, 303);
         exit;
     }
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "cancel") {
@@ -800,17 +881,17 @@ function requireProjectViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonR
             unset($_SESSION["login_cancel_forbidden"]);
             resetLoginToken();
             sendSecurityHeaders();
-            header("Location: " . getCurrentUrlWithoutAuthAction(), true, 303);
+            header("Location: " . getCurrentUrlWithoutAuthActionForToken($sTokenName), true, 303);
             exit;
         }
-        redirectLoginForbidden();
+        redirectLoginForbidden($sTokenName);
     }
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "login") {
         if (refreshAuthSession()) {
             unset($_SESSION["login_cancel_forbidden"]);
             resetLoginToken();
             sendSecurityHeaders();
-            header("Location: " . getCurrentUrlWithoutAuthAction(), true, 303);
+            header("Location: " . getCurrentUrlWithoutAuthActionForToken($sTokenName), true, 303);
             exit;
         }
         handleLoginPost($sTokenName);
@@ -824,7 +905,7 @@ function requireProjectViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonR
         if (isProjectViewAllowed($sProject)) {
             return;
         }
-        if ($blJsonResponse && isAjaxRequest()) {
+        if ($blJsonResponse && (isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest")) {
             sendJsonAndExit(array("success" => false, "message" => "Access is denied."), 403);
         }
         send403AndExit();
@@ -833,18 +914,18 @@ function requireProjectViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonR
         unset($_SESSION["login_cancel_forbidden"]);
         send403AndExit();
     }
-    if ($blJsonResponse && isAjaxRequest()) {
+    if ($blJsonResponse && (isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest")) {
         sendJsonAndExit(array("success" => false, "message" => "Sign-in is required."), 403);
     }
-    renderLoginPageAndExit();
+    renderLoginPageAndExit($sTokenName);
 }
 
-function requireProjectFullAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse = false) {
-    requireProjectViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse);
-    if (isFullAccessAllowedForProject($aAllowedIps, $sProject)) {
+function requireFullAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse = false) {
+    requireViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse);
+    if (isFullAccessAllowed($aAllowedIps, $sProject)) {
         return;
     }
-    if ($blJsonResponse && isAjaxRequest()) {
+    if ($blJsonResponse && (isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest")) {
         sendJsonAndExit(array("success" => false, "message" => "Full access is required."), 403);
     }
     send403AndExit();

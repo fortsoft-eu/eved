@@ -3,9 +3,7 @@
 include "main.php";
 
 
-if (!isAllowedIp($aAllowedIps)) {
-    send403AndExit();
-}
+requireFullAccess($aAllowedIps, "film", "film_csrf_token");
 
 $aRequestVariables = array(
     "GET" => $_GET,
@@ -30,7 +28,7 @@ $iTime = sendPageHeaders();
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title>PHP Request Variables</title>
+  <title><?php echo htmlspecialchars(getPageTitleText("PHP Request Variables", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css" rel="stylesheet" type="text/css">
 </head>

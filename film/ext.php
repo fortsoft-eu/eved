@@ -3,11 +3,9 @@
 include "main.php";
 
 
-if (!isAllowedIp($aAllowedIps)) {
-    send403AndExit();
-}
+requireFullAccess($aAllowedIps, "film", "film_csrf_token");
 
-$aLoadedExtensions = get_loaded_extensions();
+$aExtensions = get_loaded_extensions();
 
 $iTime = sendPageHeaders();
 
@@ -23,7 +21,7 @@ $iTime = sendPageHeaders();
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title>PHP Loaded Extensions</title>
+  <title><?php echo htmlspecialchars(getPageTitleText("PHP Loaded Extensions", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css" rel="stylesheet" type="text/css">
 </head>
@@ -46,7 +44,7 @@ $iTime = sendPageHeaders();
     <tbody>
 <?php
 
-foreach ($aLoadedExtensions as $iKey => $sExtensionName) {
+foreach ($aExtensions as $iKey => $sExtensionName) {
     echo "      <tr>\n"
         . "        <td style=\"text-align: right;\">" . $iKey . "</td>\n"
         . "        <td>" . htmlspecialchars($sExtensionName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n"

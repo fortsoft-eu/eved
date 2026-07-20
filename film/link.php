@@ -3,12 +3,14 @@
 include "main.php";
 
 
-if (!isAllowedIp($aAllowedIps)) {
-    send403AndExit();
-}
+requireFullAccess($aAllowedIps, "film", "film_csrf_token");
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    requireNamedCsrfToken("film_csrf_token");
 }
 
 $sMessage = "";
@@ -167,7 +169,7 @@ $iTime = sendPageHeaders();
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title>Assign Film to Lab Bag</title>
+  <title><?php echo htmlspecialchars(getPageTitleText("Assign Film to Lab Bag", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css" rel="stylesheet" type="text/css">
 </head>
@@ -184,6 +186,7 @@ echo "  </p>\n";
 ?>
   <div class="admin-top">
     <form method="post" action="<?php echo $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]); ?>" enctype="application/x-www-form-urlencoded">
+      <input type="hidden" name="film_csrf_token" value="<?php echo htmlspecialchars(getCsrfToken("film_csrf_token"), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
       <label for="film_id">Film Roll:</label>
       <select name="film_id" id="film_id" required>
         <option value="">– Choose film roll –</option>
@@ -298,6 +301,7 @@ foreach ($aLinks as $aLink) {
 
   <div class="confirm-dialog" id="film-unassign-confirm-dialog" hidden>
     <form class="confirm-dialog-box" method="post" action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES, "UTF-8"); ?>" enctype="application/x-www-form-urlencoded">
+      <input type="hidden" name="film_csrf_token" value="<?php echo htmlspecialchars(getCsrfToken("film_csrf_token"), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
       <input type="hidden" name="unassign" value="">
       <div class="confirm-dialog-header">
         <strong>Confirm Unassignment</strong>

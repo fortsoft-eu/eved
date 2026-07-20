@@ -17,7 +17,7 @@ $iTime = sendPageHeaders();
   <meta name="theme-color" content="#FFD8BB">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title>Film Help</title>
+  <title><?php echo htmlspecialchars(getPageTitleText("Film Help", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -42,12 +42,12 @@ $iTime = sendPageHeaders();
     </dd>
     <dt>Access</dt>
     <dd>
-      <p>Several menu pages are read-only public or semi-public administrative views, while sensitive diagnostics and write-capable tools are restricted to allowed IP addresses. Restricted pages return a forbidden response before rendering their tables or forms.</p>
-      <p>The most sensitive pages are the ones that expose request variables, PHP configuration, database server metadata, SQL exports, browser access logs, or assignment forms that write to the database.</p>
+      <p>The public gallery entry point and Photographic Equipment are public read-only pages. Other menu pages require either a trusted client or a signed-in user with the matching permission. Read-only administrative overviews use view access, while sensitive diagnostics and write-capable tools require full access.</p>
+      <p>The most sensitive pages are the ones that expose request variables, PHP configuration, database server metadata, SQL exports, browser access logs, schema metadata, or assignment forms that write to the database.</p>
       <ul>
         <li><strong>Write page:</strong> Assign Film to Lab Bag can update film roll assignments.</li>
-        <li><strong>Allowed IP diagnostics:</strong> PHP, request, database information, export, OPcache, constants, streams, and access-log pages.</li>
-        <li><strong>Read-only data pages:</strong> Equipment, film scan overview, photo lab orders, schema, and this help page do not modify data.</li>
+        <li><strong>Full access:</strong> PHP, request, database information, export, OPcache, constants, streams, schema, access-log pages, and the write page.</li>
+        <li><strong>View access:</strong> Film scan overview, photo lab orders, and this help page do not modify data.</li>
       </ul>
     </dd>
     <dt>Quick Filter</dt>
@@ -173,7 +173,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>link.php">Assign Film to Lab Bag</a></dt>
     <dd>
-      <p>Assign Film to Lab Bag is the maintenance page for linking scanned film rolls to photo lab orders. It is restricted to allowed IP addresses because it updates database rows.</p>
+      <p>Assign Film to Lab Bag is the maintenance page for linking scanned film rolls to photo lab orders. It is restricted to full access because it updates database rows.</p>
       <p>The form offers unassigned film rolls with archive numbers up to 990 and recent lab orders that have a bag number and were ordered within the last year. After a successful assignment, the selected bag is remembered in the session for the next assignment. The page redirects after POST so a refresh does not repeat the write.</p>
       <p>The detail panel shows the selected order's lab, bag number, order number, price, order date, return date, invoice date, film scan dates, and lab scan dates. The table below shows film rolls and their current assignment state. Unassigning is allowed only while the linked lab order is not older than one year.</p>
       <ul>
@@ -207,39 +207,39 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>ua.php">Film Access Log</a></dt>
     <dd>
-      <p>Film Access Log is an allowed-IP diagnostic page for recent film-access browser records. It reads the latest 100 rows from <code>fs_film_ua</code> and joins the requested film scan when available.</p>
+      <p>Film Access Log is a full-access diagnostic page for recent film-access browser records. It reads the latest 100 rows from <code>fs_film_ua</code> and joins the requested film scan when available.</p>
       <p>The table combines server-side request data with browser fingerprint details collected by the film pages. It shows IP address, geo headers, parsed user agent, requested film roll and image, GPU, fonts, screen data, timezone, language, platform, plugins, MIME types, and timestamp. Long values are clipped in cells but kept in title tooltips.</p>
       <ul>
         <li><strong>Rows:</strong> Latest 100 access-log records.</li>
         <li><strong>Details:</strong> Browser, device, GPU, fonts, screen, language, plugins, and MIME types.</li>
         <li><strong>Refresh:</strong> Optional auto-refresh every 5 minutes.</li>
-        <li><strong>Access:</strong> Restricted to allowed IP addresses.</li>
+        <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>const.php">Defined PHP Constants</a></dt>
     <dd>
-      <p>Defined PHP Constants lists constants returned by <code>get_defined_constants(true)</code>. It is an allowed-IP diagnostic page for checking PHP core, extension, and application constants visible in the current runtime.</p>
+      <p>Defined PHP Constants lists constants returned by <code>get_defined_constants(true)</code>. It is a full-access diagnostic page for checking PHP core, extension, and application constants visible in the current runtime.</p>
       <p>Values are converted to readable strings, including booleans, nulls, arrays, special float values, and <code>PHP_EOL</code>. The table keeps the constant group, name, value, and PHP type separate for easier filtering.</p>
       <ul>
         <li><strong>Columns:</strong> Group, constant, value, and type.</li>
         <li><strong>Filtering:</strong> Quick filter over all visible constants.</li>
-        <li><strong>Access:</strong> Restricted to allowed IP addresses.</li>
+        <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
     <dd>
-      <p>Database Structure is the allowed-IP SQL structure and export page for film-related tables. It includes tables whose names match <code>fs_film_*</code>, <code>fs_photo_*</code>, or <code>fs_flickr_*</code>, sorts them by foreign-key dependencies, and displays normalized <code>SHOW CREATE TABLE</code> output.</p>
+      <p>Database Structure is the full-access SQL structure and export page for film-related tables. It includes tables whose names match <code>fs_film_*</code>, <code>fs_photo_*</code>, or <code>fs_flickr_*</code>, sorts them by foreign-key dependencies, and displays normalized <code>SHOW CREATE TABLE</code> output.</p>
       <p>The page can download schema-only SQL or a backup containing structure and data. Copy buttons place direct schema and backup download URLs on the clipboard. The page reads metadata and table contents for export, but does not modify the database.</p>
       <ul>
         <li><strong>Scope:</strong> <code>fs_film_*</code>, <code>fs_photo_*</code>, and <code>fs_flickr_*</code> tables.</li>
         <li><strong>Export:</strong> Schema download and backup download.</li>
         <li><strong>Filtering:</strong> Quick filter over the structure table.</li>
-        <li><strong>Access:</strong> Restricted to allowed IP addresses.</li>
+        <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>dbinfo.php">Database Information</a></dt>
     <dd>
-      <p>Database Information is an allowed-IP diagnostic page for the current database connection. It queries server version, database name, server comment, character set, collation, SQL mode, time zone values, and PDO client/server attributes.</p>
+      <p>Database Information is a full-access diagnostic page for the current database connection. It queries server version, database name, server comment, character set, collation, SQL mode, time zone values, and PDO client/server attributes.</p>
       <p>This page is useful when comparing local, staging, and production environments because it shows both SQL-level values and PDO connection metadata in one table.</p>
       <ul>
         <li><strong>Data:</strong> Database server metadata and PDO attributes.</li>
@@ -249,17 +249,17 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>env.php">PHP Environment</a></dt>
     <dd>
-      <p>PHP Environment is an allowed-IP diagnostic page for high-level runtime information. It shows PHP version, SAPI, operating system, architecture, time zones, locale, loaded configuration files, PDO drivers, resource limits, and selected security-related configuration values.</p>
+      <p>PHP Environment is a full-access diagnostic page for high-level runtime information. It shows PHP version, SAPI, operating system, architecture, time zones, locale, loaded configuration files, PDO drivers, resource limits, and selected security-related configuration values.</p>
       <p>It is more curated than PHP Info and is easier to scan when the question is whether the runtime has the expected PHP version, limits, session settings, PDO drivers, or file-loading configuration.</p>
       <ul>
         <li><strong>Categories:</strong> PHP environment, configuration files, PDO, resource limits, and security configuration.</li>
         <li><strong>Filtering:</strong> Quick filter over category, name, and value.</li>
-        <li><strong>Access:</strong> Restricted to allowed IP addresses.</li>
+        <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>ext.php">PHP Loaded Extensions</a></dt>
     <dd>
-      <p>PHP Loaded Extensions lists the currently loaded PHP extensions from <code>get_loaded_extensions()</code>. It is an allowed-IP diagnostic page for confirming whether required extensions are available to this runtime.</p>
+      <p>PHP Loaded Extensions lists the currently loaded PHP extensions from <code>get_loaded_extensions()</code>. It is a full-access diagnostic page for confirming whether required extensions are available to this runtime.</p>
       <ul>
         <li><strong>Columns:</strong> Numeric row number and extension name.</li>
         <li><strong>Filtering:</strong> Quick filter over extension names.</li>
@@ -268,7 +268,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>info.php">PHP Info and PHP Credits</a></dt>
     <dd>
-      <p>PHP Info and PHP Credits is the full PHP diagnostic page. It is restricted to allowed IP addresses because it can expose detailed server and PHP configuration data.</p>
+      <p>PHP Info and PHP Credits is the full PHP diagnostic page. It is restricted to full access because it can expose detailed server and PHP configuration data.</p>
       <p>The selector can show PHP info sections such as general information, configuration, modules, environment, variables, license, or all info. It can also show PHP credits sections such as group, general, SAPI, modules, documentation, QA, or all credits. Output is loaded into an iframe by default and can be opened in a new window.</p>
       <ul>
         <li><strong>PHP Info:</strong> Selectable phpinfo sections.</li>
@@ -278,12 +278,12 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>ini.php">PHP Configuration Options</a></dt>
     <dd>
-      <p>PHP Configuration Options lists values returned by <code>ini_get_all()</code>. It is an allowed-IP diagnostic page for comparing global and local configuration values and checking each option's access level.</p>
+      <p>PHP Configuration Options lists values returned by <code>ini_get_all()</code>. It is a full-access diagnostic page for comparing global and local configuration values and checking each option's access level.</p>
       <p>Long string values are wrapped for table readability. The table is useful when a setting differs between the master configuration and the local runtime value used by this application.</p>
       <ul>
         <li><strong>Columns:</strong> Configuration option name, global value, local value, and access.</li>
         <li><strong>Filtering:</strong> Quick filter over all configuration rows.</li>
-        <li><strong>Access:</strong> Restricted to allowed IP addresses.</li>
+        <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>opcache.php">PHP OPcache Status</a></dt>
@@ -293,17 +293,17 @@ $iTime = sendPageHeaders();
       <ul>
         <li><strong>Data:</strong> OPcache status and configuration.</li>
         <li><strong>Fallback:</strong> Reports unavailable or disabled OPcache clearly.</li>
-        <li><strong>Access:</strong> Restricted to allowed IP addresses.</li>
+        <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>request.php">PHP Request Variables</a></dt>
     <dd>
-      <p>PHP Request Variables is an allowed-IP diagnostic page for the current request. It prints <code>$_GET</code>, <code>$_POST</code>, <code>$_FILES</code>, <code>$_SERVER</code>, <code>$_SESSION</code>, and <code>$_COOKIE</code> in a filterable table.</p>
+      <p>PHP Request Variables is a full-access diagnostic page for the current request. It prints <code>$_GET</code>, <code>$_POST</code>, <code>$_FILES</code>, <code>$_SERVER</code>, <code>$_SESSION</code>, and <code>$_COOKIE</code> in a filterable table.</p>
       <p>Because it can reveal session values, cookies, server paths, headers, and request data, it should remain restricted. Empty arrays are shown explicitly so it is clear that the source was checked.</p>
       <ul>
         <li><strong>Sources:</strong> GET, POST, FILES, SERVER, SESSION, and COOKIE.</li>
         <li><strong>Columns:</strong> Array, key, value, and type.</li>
-        <li><strong>Access:</strong> Restricted to allowed IP addresses.</li>
+        <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
@@ -319,7 +319,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>streams.php">PHP Stream Support</a></dt>
     <dd>
-      <p>PHP Stream Support lists stream wrappers, transports, and filters available in the current PHP runtime. It is restricted to allowed IP addresses and is useful when debugging file, URL, compression, or transport behavior.</p>
+      <p>PHP Stream Support lists stream wrappers, transports, and filters available in the current PHP runtime. It is restricted to full access and is useful when debugging file, URL, compression, or transport behavior.</p>
       <ul>
         <li><strong>Types:</strong> Wrapper, transport, and filter.</li>
         <li><strong>Filtering:</strong> Quick filter over stream support rows.</li>
@@ -352,12 +352,12 @@ $iTime = sendPageHeaders();
     </dd>
     <dt>Přístup</dt>
     <dd>
-      <p>Některé stránky menu jsou pouze čtecí veřejné nebo poloveřejné administrační přehledy, zatímco citlivá diagnostika a nástroje schopné zápisu jsou omezené na povolené IP adresy. Omezené stránky vrátí zakázaný přístup ještě před vykreslením tabulek nebo formulářů.</p>
-      <p>Nejcitlivější jsou stránky, které ukazují proměnné požadavku, konfiguraci PHP, metadata databázového serveru, SQL exporty, browser access log nebo přiřazovací formulář zapisující do databáze.</p>
+      <p>Veřejný vstup galerie a Photographic Equipment jsou veřejné pouze čtecí stránky. Ostatní stránky menu vyžadují buď trusted klienta, nebo přihlášeného uživatele s odpovídajícím oprávněním. Pouze čtecí administrační přehledy používají view přístup, zatímco citlivá diagnostika a nástroje schopné zápisu vyžadují full přístup.</p>
+      <p>Nejcitlivější jsou stránky, které ukazují proměnné požadavku, konfiguraci PHP, metadata databázového serveru, SQL exporty, browser access log, metadata schématu nebo přiřazovací formulář zapisující do databáze.</p>
       <ul>
         <li><strong>Zápisová stránka:</strong> Assign Film to Lab Bag může měnit přiřazení filmů.</li>
-        <li><strong>Diagnostika na IP:</strong> PHP, request, databázové informace, export, OPcache, konstanty, streamy a access log.</li>
-        <li><strong>Pouze čtecí stránky:</strong> Equipment, filmový přehled, laboratorní objednávky, schéma a tato nápověda data nemění.</li>
+        <li><strong>Full přístup:</strong> PHP, request, databázové informace, export, OPcache, konstanty, streamy, schéma, access log a zápisová stránka.</li>
+        <li><strong>View přístup:</strong> Filmový přehled, laboratorní objednávky a tato nápověda data nemění.</li>
       </ul>
     </dd>
     <dt>Rychlý filtr</dt>
@@ -483,7 +483,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>link.php">Assign Film to Lab Bag</a></dt>
     <dd>
-      <p>Assign Film to Lab Bag je údržbová stránka pro napojení naskenovaných filmů na laboratorní objednávky. Je omezená na povolené IP adresy, protože aktualizuje databázové řádky.</p>
+      <p>Assign Film to Lab Bag je údržbová stránka pro napojení naskenovaných filmů na laboratorní objednávky. Je omezená na full přístup, protože aktualizuje databázové řádky.</p>
       <p>Formulář nabízí nepřiřazené filmy s archivním číslem do 990 a nedávné laboratorní objednávky, které mají číslo sáčku a byly objednané během posledního roku. Po úspěšném přiřazení se vybraný sáček zapamatuje v session pro další přiřazování. Stránka po POSTu přesměruje, aby refresh neopakoval zápis.</p>
       <p>Detailní panel ukazuje laboratoř, číslo sáčku, číslo objednávky, cenu, datum objednání, datum vrácení, datum faktury, data scanů filmů a data laboratorních scanů vybrané objednávky. Tabulka pod formulářem ukazuje filmy a jejich aktuální přiřazení. Odebrání přiřazení je dovoleno jen u objednávky ne starší než jeden rok.</p>
       <ul>
@@ -517,39 +517,39 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>ua.php">Film Access Log</a></dt>
     <dd>
-      <p>Film Access Log je diagnostická stránka pro povolené IP adresy s posledními záznamy přístupů k filmům. Čte posledních 100 řádků z <code>fs_film_ua</code> a podle možnosti připojuje požadovaný filmový scan.</p>
+      <p>Film Access Log je diagnostická stránka s full přístupem pro poslední záznamy přístupů k filmům. Čte posledních 100 řádků z <code>fs_film_ua</code> a podle možnosti připojuje požadovaný filmový scan.</p>
       <p>Tabulka kombinuje serverová request data s browser fingerprint detaily sbíranými filmovými stránkami. Ukazuje IP adresu, geo hlavičky, parsovaný user agent, požadovaný film a obrázek, GPU, fonty, obrazovku, časové pásmo, jazyk, platformu, pluginy, MIME typy a timestamp. Dlouhé hodnoty jsou v buňkách zkrácené, ale zůstávají v title tooltipech.</p>
       <ul>
         <li><strong>Řádky:</strong> Posledních 100 záznamů access logu.</li>
         <li><strong>Detaily:</strong> Prohlížeč, zařízení, GPU, fonty, obrazovka, jazyk, pluginy a MIME typy.</li>
         <li><strong>Refresh:</strong> Volitelný auto-refresh každých 5 minut.</li>
-        <li><strong>Přístup:</strong> Omezeno na povolené IP adresy.</li>
+        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>const.php">Defined PHP Constants</a></dt>
     <dd>
-      <p>Defined PHP Constants vypisuje konstanty vrácené funkcí <code>get_defined_constants(true)</code>. Je to diagnostická stránka pro povolené IP adresy určená ke kontrole PHP core, extension a aplikačních konstant viditelných v aktuálním běhu.</p>
+      <p>Defined PHP Constants vypisuje konstanty vrácené funkcí <code>get_defined_constants(true)</code>. Je to diagnostická stránka s full přístupem určená ke kontrole PHP core, extension a aplikačních konstant viditelných v aktuálním běhu.</p>
       <p>Hodnoty se převádějí na čitelné řetězce, včetně boolean, null, polí, speciálních float hodnot a <code>PHP_EOL</code>. Tabulka odděluje skupinu konstanty, název, hodnotu a PHP typ pro snazší filtrování.</p>
       <ul>
         <li><strong>Sloupce:</strong> Skupina, konstanta, hodnota a typ.</li>
         <li><strong>Filtrování:</strong> Rychlý filtr přes všechny viditelné konstanty.</li>
-        <li><strong>Přístup:</strong> Omezeno na povolené IP adresy.</li>
+        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
     <dd>
-      <p>Database Structure je stránka s SQL strukturou a exportem filmových tabulek pro povolené IP adresy. Zahrnuje tabulky odpovídající <code>fs_film_*</code>, <code>fs_photo_*</code> nebo <code>fs_flickr_*</code>, řadí je podle závislostí cizích klíčů a zobrazuje normalizovaný výstup <code>SHOW CREATE TABLE</code>.</p>
+      <p>Database Structure je stránka s SQL strukturou a exportem filmových tabulek s full přístupem. Zahrnuje tabulky odpovídající <code>fs_film_*</code>, <code>fs_photo_*</code> nebo <code>fs_flickr_*</code>, řadí je podle závislostí cizích klíčů a zobrazuje normalizovaný výstup <code>SHOW CREATE TABLE</code>.</p>
       <p>Stránka umí stáhnout SQL pouze se schématem nebo zálohu obsahující strukturu i data. Kopírovací tlačítka ukládají do schránky přímé odkazy pro stažení schématu a zálohy. Stránka čte metadata a pro export i obsah tabulek, ale databázi neupravuje.</p>
       <ul>
         <li><strong>Rozsah:</strong> Tabulky <code>fs_film_*</code>, <code>fs_photo_*</code> a <code>fs_flickr_*</code>.</li>
         <li><strong>Export:</strong> Stažení schématu a stažení zálohy.</li>
         <li><strong>Filtrování:</strong> Rychlý filtr nad tabulkou struktury.</li>
-        <li><strong>Přístup:</strong> Omezeno na povolené IP adresy.</li>
+        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>dbinfo.php">Database Information</a></dt>
     <dd>
-      <p>Database Information je diagnostická stránka aktuálního databázového připojení pro povolené IP adresy. Dotazuje se na verzi serveru, název databáze, komentář serveru, znakovou sadu, collation, SQL mode, časové zóny a atributy PDO klienta a serveru.</p>
+      <p>Database Information je diagnostická stránka aktuálního databázového připojení s full přístupem. Dotazuje se na verzi serveru, název databáze, komentář serveru, znakovou sadu, collation, SQL mode, časové zóny a atributy PDO klienta a serveru.</p>
       <p>Stránka je užitečná při porovnání lokálního, staging a produkčního prostředí, protože v jedné tabulce ukazuje SQL hodnoty i metadata PDO připojení.</p>
       <ul>
         <li><strong>Data:</strong> Metadata databázového serveru a atributy PDO.</li>
@@ -559,17 +559,17 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>env.php">PHP Environment</a></dt>
     <dd>
-      <p>PHP Environment je diagnostická stránka s přehledem runtime pro povolené IP adresy. Ukazuje verzi PHP, SAPI, operační systém, architekturu, časové zóny, locale, načtené konfigurační soubory, PDO drivery, limity prostředků a vybrané bezpečnostní konfigurační hodnoty.</p>
+      <p>PHP Environment je diagnostická stránka s přehledem runtime s full přístupem. Ukazuje verzi PHP, SAPI, operační systém, architekturu, časové zóny, locale, načtené konfigurační soubory, PDO drivery, limity prostředků a vybrané bezpečnostní konfigurační hodnoty.</p>
       <p>Je stručnější než PHP Info a lépe se čte, když je potřeba ověřit verzi PHP, limity, session nastavení, PDO drivery nebo konfiguraci načítání souborů.</p>
       <ul>
         <li><strong>Kategorie:</strong> PHP environment, konfigurační soubory, PDO, resource limits a security configuration.</li>
         <li><strong>Filtrování:</strong> Rychlý filtr přes kategorii, název a hodnotu.</li>
-        <li><strong>Přístup:</strong> Omezeno na povolené IP adresy.</li>
+        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>ext.php">PHP Loaded Extensions</a></dt>
     <dd>
-      <p>PHP Loaded Extensions vypisuje aktuálně načtená PHP rozšíření z <code>get_loaded_extensions()</code>. Jde o diagnostickou stránku pro povolené IP adresy určenou ke kontrole, zda má runtime k dispozici potřebná rozšíření.</p>
+      <p>PHP Loaded Extensions vypisuje aktuálně načtená PHP rozšíření z <code>get_loaded_extensions()</code>. Jde o diagnostickou stránku s full přístupem určenou ke kontrole, zda má runtime k dispozici potřebná rozšíření.</p>
       <ul>
         <li><strong>Sloupce:</strong> Číslo řádku a název rozšíření.</li>
         <li><strong>Filtrování:</strong> Rychlý filtr přes názvy rozšíření.</li>
@@ -578,7 +578,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>info.php">PHP Info and PHP Credits</a></dt>
     <dd>
-      <p>PHP Info and PHP Credits je plná diagnostická stránka PHP. Je omezená na povolené IP adresy, protože může zobrazit detailní serverovou a PHP konfiguraci.</p>
+      <p>PHP Info and PHP Credits je plná diagnostická stránka PHP. Je omezená na full přístup, protože může zobrazit detailní serverovou a PHP konfiguraci.</p>
       <p>Selector umí zobrazit phpinfo sekce jako general information, configuration, modules, environment, variables, license nebo all info. Umí také zobrazit PHP credits sekce jako group, general, SAPI, modules, documentation, QA nebo all credits. Výstup se standardně načítá do iframe a lze ho otevřít i v novém okně.</p>
       <ul>
         <li><strong>PHP Info:</strong> Volitelné phpinfo sekce.</li>
@@ -588,12 +588,12 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>ini.php">PHP Configuration Options</a></dt>
     <dd>
-      <p>PHP Configuration Options vypisuje hodnoty vrácené funkcí <code>ini_get_all()</code>. Je to diagnostická stránka pro povolené IP adresy, která slouží k porovnání globálních a lokálních konfiguračních hodnot a kontrole access levelu každé volby.</p>
+      <p>PHP Configuration Options vypisuje hodnoty vrácené funkcí <code>ini_get_all()</code>. Je to diagnostická stránka s full přístupem, která slouží k porovnání globálních a lokálních konfiguračních hodnot a kontrole access levelu každé volby.</p>
       <p>Dlouhé textové hodnoty se zalamují kvůli čitelnosti tabulky. Stránka je užitečná, když se nastavení liší mezi master konfigurací a lokální runtime hodnotou použitou aplikací.</p>
       <ul>
         <li><strong>Sloupce:</strong> Název volby, globální hodnota, lokální hodnota a access.</li>
         <li><strong>Filtrování:</strong> Rychlý filtr přes všechny konfigurační řádky.</li>
-        <li><strong>Přístup:</strong> Omezeno na povolené IP adresy.</li>
+        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>opcache.php">PHP OPcache Status</a></dt>
@@ -603,17 +603,17 @@ $iTime = sendPageHeaders();
       <ul>
         <li><strong>Data:</strong> Stav a konfigurace OPcache.</li>
         <li><strong>Fallback:</strong> Nedostupná nebo vypnutá OPcache se vypíše srozumitelně.</li>
-        <li><strong>Přístup:</strong> Omezeno na povolené IP adresy.</li>
+        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>request.php">PHP Request Variables</a></dt>
     <dd>
-      <p>PHP Request Variables je diagnostická stránka aktuálního požadavku pro povolené IP adresy. Vypisuje <code>$_GET</code>, <code>$_POST</code>, <code>$_FILES</code>, <code>$_SERVER</code>, <code>$_SESSION</code> a <code>$_COOKIE</code> ve filtrovatelné tabulce.</p>
+      <p>PHP Request Variables je diagnostická stránka aktuálního požadavku s full přístupem. Vypisuje <code>$_GET</code>, <code>$_POST</code>, <code>$_FILES</code>, <code>$_SERVER</code>, <code>$_SESSION</code> a <code>$_COOKIE</code> ve filtrovatelné tabulce.</p>
       <p>Protože může odhalit session hodnoty, cookies, serverové cesty, hlavičky a data požadavku, má zůstat omezená. Prázdná pole se vypisují explicitně, aby bylo jasné, že zdroj byl zkontrolovaný.</p>
       <ul>
         <li><strong>Zdroje:</strong> GET, POST, FILES, SERVER, SESSION a COOKIE.</li>
         <li><strong>Sloupce:</strong> Pole, klíč, hodnota a typ.</li>
-        <li><strong>Přístup:</strong> Omezeno na povolené IP adresy.</li>
+        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
@@ -629,7 +629,7 @@ $iTime = sendPageHeaders();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>streams.php">PHP Stream Support</a></dt>
     <dd>
-      <p>PHP Stream Support vypisuje stream wrappers, transports a filters dostupné v aktuálním PHP runtime. Je omezený na povolené IP adresy a hodí se při ladění práce se soubory, URL, kompresí nebo transporty.</p>
+      <p>PHP Stream Support vypisuje stream wrappers, transports a filters dostupné v aktuálním PHP runtime. Je omezený na full přístup a hodí se při ladění práce se soubory, URL, kompresí nebo transporty.</p>
       <ul>
         <li><strong>Typy:</strong> Wrapper, transport a filter.</li>
         <li><strong>Filtrování:</strong> Rychlý filtr přes řádky stream support.</li>

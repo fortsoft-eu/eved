@@ -356,6 +356,12 @@ table {
     display: inline-block;
 }
 
+.kf-menu-separator {
+    border-top: 1px solid #E5E5E5;
+    display: block;
+    margin: 8px 0;
+}
+
 .kf-menu-link-active,
 .kf-menu-link:hover {
     background: #DCDCE4;
@@ -724,7 +730,6 @@ th.numeric {
 
 .schema-table td:nth-child(3),
 .schema-table th:nth-child(3) {
-    white-space: nowrap;
     width: 205px;
 }
 
