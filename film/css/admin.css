@@ -500,7 +500,7 @@ table {
 
 #database-table {
     table-layout: auto;
-    width: auto;
+    width: 100%;
 }
 
 #database-table td,
@@ -538,6 +538,12 @@ table {
 
 .database-structure-cell .sql-string {
     color: #A32929;
+}
+
+.database-structure-cell .sql-enum {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .ua-table td,

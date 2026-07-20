@@ -260,6 +260,11 @@ function formatDatabaseStructureHtml($sSql) {
     $sSql .= ";";
     $aParts = preg_split("/('(?:\\\\.|''|[^'\\\\])*'|`(?:``|[^`])*`)/", $sSql, -1, PREG_SPLIT_DELIM_CAPTURE);
     $sHtml = "";
+    $blEnumOpen = false;
+    $fFormatPlainSql = function ($sPart) {
+        $sEscapedPart = htmlspecialchars($sPart, ENT_NOQUOTES | ENT_SUBSTITUTE, "UTF-8");
+        return preg_replace("/\\b(ADD|ALTER|AUTO_INCREMENT|CASCADE|CHARACTER|CHARSET|CHECK|COLLATE|CONSTRAINT|CREATE|CURRENT_TIMESTAMP|DATABASE|DEFAULT|DELETE|ENGINE|ENUM|FOREIGN|KEY|NOT|NULL|ON|PRIMARY|REFERENCES|SET|TABLE|UNIQUE|UPDATE|USING|VALUES|INT|TINYINT|VARCHAR|TEXT|LONGTEXT|DATETIME|DATE|TIMESTAMP)\\b/i", "<span class=\"sql-keyword\">$1</span>", $sEscapedPart);
+    };
     foreach ($aParts as $sPart) {
         if ($sPart == "") {
             continue;
@@ -269,9 +274,34 @@ function formatDatabaseStructureHtml($sSql) {
         } elseif ($sPart[0] == "`") {
             $sHtml .= "<span class=\"sql-identifier\">" . htmlspecialchars($sPart, ENT_NOQUOTES | ENT_SUBSTITUTE, "UTF-8") . "</span>";
         } else {
-            $sEscapedPart = htmlspecialchars($sPart, ENT_NOQUOTES | ENT_SUBSTITUTE, "UTF-8");
-            $sHtml .= preg_replace("/\\b(ADD|ALTER|AUTO_INCREMENT|CASCADE|CHARACTER|CHARSET|CHECK|COLLATE|CONSTRAINT|CREATE|CURRENT_TIMESTAMP|DATABASE|DEFAULT|DELETE|ENGINE|ENUM|FOREIGN|KEY|NOT|NULL|ON|PRIMARY|REFERENCES|SET|TABLE|UNIQUE|UPDATE|USING|VALUES|INT|TINYINT|VARCHAR|TEXT|LONGTEXT|DATETIME|DATE|TIMESTAMP)\\b/i", "<span class=\"sql-keyword\">$1</span>", $sEscapedPart);
+            while ($sPart != "") {
+                if (!$blEnumOpen) {
+                    if (!preg_match("/\\benum\\s*\\(/i", $sPart, $aMatches, PREG_OFFSET_CAPTURE)) {
+                        $sHtml .= $fFormatPlainSql($sPart);
+                        break;
+                    }
+                    $iOffset = $aMatches[0][1];
+                    if ($iOffset > 0) {
+                        $sHtml .= $fFormatPlainSql(substr($sPart, 0, $iOffset));
+                    }
+                    $sHtml .= "<span class=\"sql-enum\">" . $fFormatPlainSql($aMatches[0][0]);
+                    $sPart = substr($sPart, $iOffset + strlen($aMatches[0][0]));
+                    $blEnumOpen = true;
+                    continue;
+                }
+                $iOffset = strpos($sPart, ")");
+                if ($iOffset === false) {
+                    $sHtml .= $fFormatPlainSql($sPart);
+                    break;
+                }
+                $sHtml .= $fFormatPlainSql(substr($sPart, 0, $iOffset + 1)) . "</span>";
+                $sPart = substr($sPart, $iOffset + 1);
+                $blEnumOpen = false;
+            }
         }
+    }
+    if ($blEnumOpen) {
+        $sHtml .= "</span>";
     }
     return $sHtml;
 }
