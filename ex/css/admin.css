@@ -701,6 +701,7 @@ table {
     white-space: pre;
 }
 
+.condensed-table .database-table-name,
 .condensed-table .database-structure-cell,
 .condensed-table .database-structure-cell pre {
     font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
@@ -708,6 +709,7 @@ table {
 }
 
 .database-table-name {
+    font-family: Consolas, "Courier New", monospace;
     vertical-align: top;
 }
 
