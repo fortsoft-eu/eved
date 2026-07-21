@@ -64,21 +64,22 @@ if (substr($sPath, -1) != "/") {
 $sBaseUrl = $sScheme . "://" . $sHost . $sPath;
 
 
-$sMenuEmoji            = "&#9776;";
-$sFilterFocusEmoji     = "&#128269;";
-$sAddEmoji             = "&#10133;";
-$sEditEmoji            = "&#128221;";
-$sDeleteEmoji          = "&#128465;&#65039;";
-$sCopyEmoji            = "&#128203;";
-$sCopySuccessEmoji     = "&#10004;&#65039;";
-$sCopyFailureEmoji     = "&#10060;&#65039;";
-$sEmptyValueEmoji      = "&#10134;";
-$sPrimaryEmoji         = "&#11088;";
-$sContactEmailEmoji    = "&#128231;";
-$sContactLandlineEmoji = "&#128222;";
-$sContactCellEmoji     = "&#128241;";
-$sContactFaxEmoji      = "&#128224;";
-$sContactPagerEmoji    = "&#128223;";
+$sMenuEmoji                 = "&#9776;";
+$sFilterFocusEmoji          = "&#128269;";
+$sAddEmoji                  = "&#10133;";
+$sEditEmoji                 = "&#128221;";
+$sDeleteEmoji               = "&#128465;&#65039;";
+$sCopyEmoji                 = "&#128203;";
+$sCopySuccessEmoji          = "&#10004;&#65039;";
+$sCopyFailureEmoji          = "&#10060;&#65039;";
+$sEmptyValueEmoji           = "&#10134;";
+$sPrimaryEmoji              = "&#11088;";
+$sSubscriptionServedEmoji   = "&#9745;&#65039;";
+$sContactEmailEmoji         = "&#128231;";
+$sContactLandlineEmoji      = "&#128222;";
+$sContactCellEmoji          = "&#128241;";
+$sContactFaxEmoji           = "&#128224;";
+$sContactPagerEmoji         = "&#128223;";
 
 
 $sError = "";

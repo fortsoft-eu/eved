@@ -118,6 +118,7 @@ select {
 }
 
 input[type="date"],
+input[type="datetime-local"],
 input[type="email"],
 input[type="number"],
 input[type="password"],
@@ -685,6 +686,7 @@ tr:nth-child(even) {
 }
 
 .edit-dialog input[type="date"],
+.edit-dialog input[type="datetime-local"],
 .edit-dialog input[type="email"],
 .edit-dialog input[type="text"],
 .edit-dialog select {
@@ -725,6 +727,7 @@ tr:nth-child(even) {
 .subject-edit-dialog input[type="text"],
 .subject-edit-dialog input[type="password"],
 .subject-edit-dialog input[type="date"],
+.subject-edit-dialog input[type="datetime-local"],
 .subject-edit-dialog select {
     box-sizing: border-box;
     margin: 0 16px;
@@ -768,12 +771,13 @@ tr:nth-child(even) {
     margin-right: 6px;
 }
 
-#transactions-table,
 #types-table {
     table-layout: auto;
     width: auto;
 }
 
+#transactions-table,
+#subscriptions-table,
 #debts-table {
     table-layout: auto;
     width: 100%;
@@ -781,6 +785,8 @@ tr:nth-child(even) {
 
 #transactions-table td,
 #transactions-table th,
+#subscriptions-table td,
+#subscriptions-table th,
 #types-table td,
 #types-table th,
 #debts-table td,
@@ -792,6 +798,14 @@ tr:nth-child(even) {
 
 .debt-movements-cell {
     vertical-align: top;
+}
+
+.subscription-in-column {
+    overflow-wrap: normal;
+    text-align: right;
+    white-space: nowrap;
+    width: 1px;
+    word-break: normal;
 }
 
 .debt-movements-heading {
@@ -881,7 +895,7 @@ th.numeric {
     vertical-align: top;
 }
 
-.schema-table[data-table="kf_fin_trans"] {
+.schema-table[data-table="kf_fin_transactions"] {
     grid-column: 3;
     grid-row: 1;
 }
@@ -891,9 +905,19 @@ th.numeric {
     grid-row: 2;
 }
 
-.schema-table[data-table="kf_menu"] {
+.schema-table[data-table="kf_debt_movements"] {
     grid-column: 2;
     grid-row: 2;
+}
+
+.schema-table[data-table="kf_subscriptions"] {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.schema-table[data-table="kf_menu"] {
+    grid-column: 2;
+    grid-row: 3;
 }
 
 .invalid-contact-value {
@@ -1002,10 +1026,10 @@ th.numeric {
 }
 
 .admin-row-saved > td {
-    animation: nxAdminRowSavedBlink 0.22s linear 6;
+    animation: adminRowSavedBlink 0.22s linear 6;
 }
 
-@keyframes nxAdminRowSavedBlink {
+@keyframes adminRowSavedBlink {
     0%,
     100% {
         background-color: transparent;

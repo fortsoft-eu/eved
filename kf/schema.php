@@ -14,26 +14,63 @@ if (!$oPdo) {
 $aTables = array();
 $aRelations = array();
 $aForeignKeys = array();
+$aDependencies = array();
 try {
     $oStatement = $oPdo->query("SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'kf\\_%' ORDER BY TABLE_NAME, ORDINAL_POSITION");
-    while ($aRow = $oStatement->fetch()) {
+    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
         if (!preg_match("/^kf_[A-Za-z0-9_]+$/", $aRow["TABLE_NAME"])) {
             continue;
         }
         if (!isset($aTables[$aRow["TABLE_NAME"]])) {
             $aTables[$aRow["TABLE_NAME"]] = array();
+            $aDependencies[$aRow["TABLE_NAME"]] = array();
         }
         $aTables[$aRow["TABLE_NAME"]][] = $aRow;
     }
     $oStatement = $oPdo->query("SELECT CONSTRAINT_NAME, TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME LIKE 'kf\\_%' AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION");
-    while ($aRow = $oStatement->fetch()) {
+    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
         if (!preg_match("/^kf_[A-Za-z0-9_]+$/", $aRow["TABLE_NAME"])
             || !preg_match("/^kf_[A-Za-z0-9_]+$/", $aRow["REFERENCED_TABLE_NAME"])) {
             continue;
         }
         $aRelations[] = $aRow;
         $aForeignKeys[$aRow["TABLE_NAME"] . "." . $aRow["COLUMN_NAME"]] = true;
+        if (isset($aDependencies[$aRow["TABLE_NAME"]], $aDependencies[$aRow["REFERENCED_TABLE_NAME"]])
+            && $aRow["TABLE_NAME"] !== $aRow["REFERENCED_TABLE_NAME"]) {
+            $aDependencies[$aRow["TABLE_NAME"]][$aRow["REFERENCED_TABLE_NAME"]] = true;
+        }
     }
+
+    $aSortedTables = array();
+    $aTableStates = array();
+    foreach (array_keys($aTables) as $sFirstTableName) {
+        $aStack = array($sFirstTableName);
+        while (count($aStack) > 0) {
+            $sTableName = end($aStack);
+            if (isset($aTableStates[$sTableName]) && $aTableStates[$sTableName] == "done") {
+                array_pop($aStack);
+                continue;
+            }
+            if (!isset($aTableStates[$sTableName])) {
+                $aTableStates[$sTableName] = "visiting";
+            }
+            $blDependencyAdded = false;
+            foreach ($aDependencies[$sTableName] as $sReferencedTableName => $blDependency) {
+                if (!isset($aTableStates[$sReferencedTableName])) {
+                    $aStack[] = $sReferencedTableName;
+                    $blDependencyAdded = true;
+                    break;
+                }
+            }
+            if ($blDependencyAdded) {
+                continue;
+            }
+            $aSortedTables[$sTableName] = $aTables[$sTableName];
+            $aTableStates[$sTableName] = "done";
+            array_pop($aStack);
+        }
+    }
+    $aTables = $aSortedTables;
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
@@ -43,11 +80,13 @@ try {
 $aSchemaRelationRoutes = array(
     "kf_fin_groups.group_type_id>kf_fin_types.id" => array("source" => "right", "target" => "left", "curve" => "36", "target-y" => "-10"),
     "kf_fin_groups.member_type_id>kf_fin_types.id" => array("source" => "right", "target" => "left", "curve" => "54", "target-y" => "10"),
-    "kf_fin_trans.finance_type_id>kf_fin_types.id" => array("source" => "left", "target" => "right", "curve" => "72")
+    "kf_fin_transactions.finance_type_id>kf_fin_types.id" => array("source" => "left", "target" => "right", "curve" => "72", "target-y" => "-10"),
+    "kf_debt_movements.debt_id>kf_debts.id" => array("source" => "left", "target" => "right", "curve" => "52"),
+    "kf_subscriptions.finance_type_id>kf_fin_types.id" => array("source" => "left", "target" => "right", "curve" => "72", "target-y" => "10")
 );
 
 
-$sTitle = getPageTitle("Database Schema");
+$sTitle = getPageTitleText("Database Schema", $aAllowedIps);
 $iTime = sendPageHeaders();
 
 ?>
@@ -63,7 +102,6 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
   <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
@@ -208,6 +246,7 @@ if (!$aRelations) {
 ?>
     </tbody>
   </table>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

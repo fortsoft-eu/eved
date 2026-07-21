@@ -4,7 +4,7 @@ include "main.php";
 
 
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "kf");
-requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
+requireViewAccess($aAllowedIps, "kf", "kf_csrf_token", true);
 
 
 if (!$oPdo) {
@@ -61,7 +61,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } elseif ($sAction == "delete_type") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         if ($iId > 0) {
-            $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_fin_trans WHERE finance_type_id = :id");
+            $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_fin_transactions WHERE finance_type_id = :id");
             $oStatement->execute(array("id" => $iId));
             if ((int)$oStatement->fetchColumn() > 0) {
                 if ($blJsonResponse) {
@@ -97,7 +97,7 @@ if ($blCanEdit) {
 }
 
 
-$sTitle = getPageTitle("Income and Expense Types");
+$sTitle = getPageTitleText("Income and Expense Types", $aAllowedIps);
 $iTime = sendPageHeaders();
 
 ?>
@@ -124,7 +124,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="types-table" value="">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="types-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -134,7 +134,7 @@ echo $sToolbarHtml,
     "  </p>\n";
 
 ?>
-  <table id="types-table" class="table-filter-target" data-member-types="<?php echo htmlspecialchars(json_encode($aMemberTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="types-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-member-types="<?php echo htmlspecialchars(json_encode($aMemberTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th>Kind</th>

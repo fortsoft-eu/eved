@@ -36,6 +36,33 @@
         return aHeaders;
     }
 
+    function getAdminEncodedFieldName(sName) {
+        if (sName.substring(sName.length - 2) == "[]") {
+            return sName.substring(0, sName.length - 2) + "_b64[]";
+        }
+        return sName + "_b64";
+    }
+
+    function encodeAdminPostValue(sValue) {
+        var sText = sValue === null || typeof sValue == "undefined" ? "" : String(sValue);
+        return window.btoa(unescape(encodeURIComponent(sText)));
+    }
+
+    function appendAdminEncodedValue(oData, sName, sValue) {
+        var sText = sValue === null || typeof sValue == "undefined" ? "" : String(sValue);
+        var blArrayField = sName.substring(sName.length - 2) == "[]";
+        try {
+            oData.append(getAdminEncodedFieldName(sName), encodeAdminPostValue(sText));
+            if (blArrayField) {
+                oData.append(sName, sText);
+            }
+            return;
+        } catch (oException) {
+            logAdminException(oException);
+        }
+        oData.append(sName, sText);
+    }
+
     function setAdminDialogError(oError, sMessage) {
         if (!oError) {
             return;
@@ -236,6 +263,69 @@
         return oDialog;
     }
 
+    function showAdminMessageDialog(sMessage, sTitle) {
+        var oDialog = prepareAdminReusableDialog();
+        var oForm;
+        var oHeader;
+        var oTitle;
+        var oClose;
+        var oText;
+        var oActions;
+        var oOk;
+        var closeOnEscape;
+        var closeDialog;
+        if (!oDialog) {
+            return;
+        }
+        oForm = document.createElement("form");
+        oHeader = document.createElement("div");
+        oTitle = document.createElement("strong");
+        oClose = document.createElement("button");
+        oText = document.createElement("p");
+        oActions = document.createElement("div");
+        oOk = document.createElement("button");
+        closeOnEscape = function (oEvent) {
+            if (oEvent.key == "Escape") {
+                closeDialog();
+            }
+        };
+        closeDialog = function () {
+            document.removeEventListener("keydown", closeOnEscape);
+            closeAdminDialogElement(oDialog);
+        };
+        oDialog.className = "confirm-dialog";
+        oForm.className = "confirm-dialog-box subject-edit-dialog";
+        oForm.method = "post";
+        oForm.action = window.location.href;
+        oHeader.className = "confirm-dialog-header";
+        oTitle.textContent = sTitle || "Message";
+        oClose.type = "button";
+        oClose.className = "confirm-dialog-close";
+        oClose.setAttribute("aria-label", "Close");
+        oClose.textContent = "\u00D7";
+        oText.textContent = sMessage || "";
+        oActions.className = "confirm-dialog-actions";
+        oOk.type = "submit";
+        oOk.className = "confirm-dialog-button";
+        oOk.textContent = "OK";
+        oHeader.appendChild(oTitle);
+        oHeader.appendChild(oClose);
+        oForm.appendChild(oHeader);
+        oForm.appendChild(oText);
+        oActions.appendChild(oOk);
+        oForm.appendChild(oActions);
+        oForm.addEventListener("submit", function (oEvent) {
+            oEvent.preventDefault();
+            closeDialog();
+        });
+        oClose.addEventListener("click", closeDialog);
+        oDialog.appendChild(oForm);
+        enableAdminDialogDrag(oDialog, oForm, oHeader);
+        document.addEventListener("keydown", closeOnEscape);
+        openAdminDialogElement(oDialog, closeDialog);
+        focusElement(oOk);
+    }
+
     function lockAdminModalScroll() {
         if (iAdminModalCount === 0) {
             sAdminBodyOverflow = document.body.style.overflow || "";
@@ -382,83 +472,174 @@
         }
     }
 
+    function setupFilterFocusButton() {
+        var oButton = document.querySelector(".js-filter-focus");
+        var oFilter;
+        var iScrollLeft;
+        if (!oButton) {
+            return;
+        }
+        oFilter = document.getElementById(oButton.getAttribute("data-filter-input") || "");
+        if (!oFilter) {
+            return;
+        }
+        oButton.addEventListener("click", function () {
+            iScrollLeft = 0;
+            window.scrollTo(iScrollLeft, 0);
+            window.setTimeout(function () {
+                focusElement(oFilter, true);
+                window.scrollTo(iScrollLeft, 0);
+            }, 0);
+        });
+    }
+
     function setupTableFilter() {
         var aFilters = document.querySelectorAll(".js-table-filter");
-        for (var iI = 0; iI < aFilters.length; iI += 1) {
-            (function (oFilter) {
-                var aOperatorButtons = document.querySelectorAll(".js-filter-operator[data-filter-input=\"" + oFilter.id + "\"]");
-                var aResetButtons = document.querySelectorAll(".js-filter-reset[data-filter-input=\"" + oFilter.id + "\"]");
 
-                function filterTable() {
-                    var oTable = document.getElementById(oFilter.getAttribute("data-table-filter"));
-                    var aExpression = buildFilterExpression(oFilter.value);
-                    var aRows;
-                    var aCells;
-                    var aTexts;
-                    var sRowText;
-                    var sDisplay;
-                    var iK;
-                    refreshFilterFocusButton(oFilter);
-                    if (!oTable) {
-                        return;
-                    }
-                    if (oTable.tBodies && oTable.tBodies.length == 1) {
-                        aRows = oTable.tBodies[0].rows;
-                    } else {
-                        aRows = oTable.querySelectorAll("tbody tr");
-                    }
-                    for (var iJ = 0; iJ < aRows.length; iJ += 1) {
-                        if (typeof aRows[iJ]._quickTableFilterText != "string") {
-                            aCells = aRows[iJ].cells ? aRows[iJ].cells : aRows[iJ].querySelectorAll("th, td");
-                            aTexts = [];
-                            for (iK = 0; iK < aCells.length; iK += 1) {
-                                aTexts.push(aCells[iK].textContent || "");
-                            }
-                            aRows[iJ]._quickTableFilterText = aTexts.join(" ");
-                        }
-                        sRowText = aRows[iJ]._quickTableFilterText;
-                        sDisplay = rowMatchesFilterExpression(sRowText, aExpression) ? "" : "none";
-                        if (aRows[iJ].style.display != sDisplay) {
-                            aRows[iJ].style.display = sDisplay;
-                        }
-                    }
-                }
+        function sendQuickTableFilterValue(oFilter, sAction) {
+            var oData;
+            if (!window.fetch || !window.FormData || !oFilter || !oFilter.id) {
+                return;
+            }
+            oData = new FormData();
+            oData.append("quick_table_filter_action", sAction);
+            oData.append("filter_id", oFilter.id);
+            if (sAction == "save") {
+                appendAdminEncodedValue(oData, "filter_value", oFilter.value);
+            }
+            window.fetch(window.location.href, {
+                "method": "POST",
+                "credentials": "same-origin",
+                "headers": getAdminAjaxHeaders(),
+                "body": oData
+            }).catch(function (oException) {
+                logAdminException(oException);
+            });
+        }
 
-                oFilter.addEventListener("input", filterTable);
-                for (var iL = 0; iL < aOperatorButtons.length; iL += 1) {
-                    aOperatorButtons[iL].addEventListener("click", function () {
-                        var sOperator = this.getAttribute("data-filter-operator") || "";
-                        var iStart = typeof oFilter.selectionStart == "number" ? oFilter.selectionStart : oFilter.value.length;
-                        var iEnd = typeof oFilter.selectionEnd == "number" ? oFilter.selectionEnd : oFilter.value.length;
-                        var sBefore = oFilter.value.substring(0, iStart).replace(/\s+$/, "");
-                        var sAfter = oFilter.value.substring(iEnd).replace(/^\s+/, "");
-                        var sPrefix = sBefore !== "" ? sBefore + " " : "";
-                        oFilter.value = sPrefix + sOperator + " " + sAfter;
-                        oFilter.focus();
-                        if (typeof oFilter.setSelectionRange == "function") {
-                            oFilter.setSelectionRange((sPrefix + sOperator + " ").length, (sPrefix + sOperator + " ").length);
-                        }
-                        filterTable();
-                    });
-                }
-                for (var iM = 0; iM < aResetButtons.length; iM += 1) {
-                    aResetButtons[iM].addEventListener("click", function () {
-                        oFilter.value = "";
-                        filterTable();
-                        oFilter.focus();
-                    });
-                }
-                var oFocus = document.querySelector(".js-filter-focus[data-filter-input=\"" + oFilter.id + "\"]");
-                if (oFocus) {
-                    oFocus.addEventListener("click", function () {
-                        oFilter.focus();
-                    });
-                }
+        function scheduleQuickTableFilterSave(oFilter) {
+            if (!window.setTimeout || !window.clearTimeout) {
+                sendQuickTableFilterValue(oFilter, "save");
+                return;
+            }
+            if (oFilter._quickTableFilterTimer) {
+                window.clearTimeout(oFilter._quickTableFilterTimer);
+            }
+            oFilter._quickTableFilterTimer = window.setTimeout(function () {
+                oFilter._quickTableFilterTimer = null;
+                sendQuickTableFilterValue(oFilter, "save");
+            }, 250);
+        }
+
+        function initializeTableFilter(oFilter) {
+            var aOperatorButtons = document.querySelectorAll(".js-filter-operator[data-filter-input=\"" + oFilter.id + "\"]");
+            var aResetButtons = document.querySelectorAll(".js-filter-reset[data-filter-input=\"" + oFilter.id + "\"]");
+            var iFilterTimer = null;
+
+            var filterTable = function () {
+                var oTable = document.getElementById(oFilter.getAttribute("data-table-filter"));
+                var aExpression = buildFilterExpression(oFilter.value);
+                var aRows;
+                var aCells;
+                var aTexts;
+                var sDisplay;
+                var sRowText;
+                var iK;
                 refreshFilterFocusButton(oFilter);
-                if (oFilter.value.replace(/^\s+|\s+$/g, "") !== "") {
-                    filterTable();
+                if (!oTable) {
+                    return;
                 }
-            })(aFilters[iI]);
+                if (oTable && oTable.tBodies && oTable.tBodies.length == 1) {
+                    aRows = oTable.tBodies[0].rows;
+                } else {
+                    aRows = oTable ? oTable.querySelectorAll("tbody tr") : [];
+                }
+                for (var iJ = 0; iJ < aRows.length; iJ += 1) {
+                    if (typeof aRows[iJ]._quickTableFilterText != "string") {
+                        aCells = aRows[iJ].cells ? aRows[iJ].cells : aRows[iJ].querySelectorAll("th, td");
+                        aTexts = [];
+                        for (iK = 0; iK < aCells.length; iK += 1) {
+                            aTexts.push(aCells[iK].textContent || "");
+                        }
+                        aRows[iJ]._quickTableFilterText = aTexts.join(" ");
+                    }
+                    sRowText = aRows[iJ]._quickTableFilterText;
+                    sDisplay = rowMatchesFilterExpression(sRowText, aExpression) ? "" : "none";
+                    if (aRows[iJ].style.display != sDisplay) {
+                        aRows[iJ].style.display = sDisplay;
+                    }
+                }
+            };
+
+            function scheduleFilterTable() {
+                if (!window.setTimeout || !window.clearTimeout) {
+                    filterTable();
+                    return;
+                }
+                if (iFilterTimer) {
+                    window.clearTimeout(iFilterTimer);
+                }
+                iFilterTimer = window.setTimeout(function () {
+                    iFilterTimer = null;
+                    filterTable();
+                }, 250);
+            }
+
+            function runFilterTable() {
+                if (iFilterTimer) {
+                    window.clearTimeout(iFilterTimer);
+                    iFilterTimer = null;
+                }
+                filterTable();
+            }
+
+            oFilter.addEventListener("input", function () {
+                scheduleFilterTable();
+                scheduleQuickTableFilterSave(oFilter);
+            });
+            for (var iI = 0; iI < aOperatorButtons.length; iI += 1) {
+                aOperatorButtons[iI].addEventListener("click", function () {
+                    var sOperator = this.getAttribute("data-filter-operator") || "";
+                    var iStart = typeof oFilter.selectionStart == "number" ? oFilter.selectionStart : oFilter.value.length;
+                    var iEnd = typeof oFilter.selectionEnd == "number" ? oFilter.selectionEnd : oFilter.value.length;
+                    var sBefore = oFilter.value.substring(0, iStart).replace(/\s+$/, "");
+                    var sAfter = oFilter.value.substring(iEnd).replace(/^\s+/, "");
+                    var sPrefix = sBefore !== "" ? sBefore + " " : "";
+                    oFilter.value = sPrefix + sOperator + " " + sAfter;
+                    oFilter.focus();
+                    if (typeof oFilter.setSelectionRange == "function") {
+                        oFilter.setSelectionRange((sPrefix + sOperator + " ").length, (sPrefix + sOperator + " ").length);
+                    }
+                    runFilterTable();
+                    scheduleQuickTableFilterSave(oFilter);
+                });
+            }
+            for (var iR = 0; iR < aResetButtons.length; iR += 1) {
+                aResetButtons[iR].addEventListener("click", function () {
+                    oFilter.value = "";
+                    runFilterTable();
+                    if (oFilter._quickTableFilterTimer) {
+                        window.clearTimeout(oFilter._quickTableFilterTimer);
+                        oFilter._quickTableFilterTimer = null;
+                    }
+                    sendQuickTableFilterValue(oFilter, "reset");
+                    oFilter.focus();
+                });
+            }
+            refreshFilterFocusButton(oFilter);
+            if (oFilter.value.replace(/^\s+|\s+$/g, "") !== "") {
+                scheduleFilterTable();
+            }
+            window.setTimeout(function () {
+                refreshFilterFocusButton(oFilter);
+            }, 0);
+            window.addEventListener("pageshow", function () {
+                refreshFilterFocusButton(oFilter);
+            });
+        }
+
+        for (var iI = 0; iI < aFilters.length; iI += 1) {
+            initializeTableFilter(aFilters[iI]);
         }
     }
 
@@ -776,6 +957,8 @@
         var oAddDebt = document.querySelector(".js-add-debt");
         var oTransactionsTable = document.getElementById("transactions-table");
         var oAddTransaction = document.querySelector(".js-add-transaction");
+        var oSubscriptionsTable = document.getElementById("subscriptions-table");
+        var oAddSubscription = document.querySelector(".js-add-subscription");
         var oTypesTable = document.getElementById("types-table");
         var oAddType = document.querySelector(".js-add-type");
         var oBox;
@@ -791,6 +974,10 @@
 
         function findAdminTransactionRowById(sTransactionId) {
             return sTransactionId && oTransactionsTable ? oTransactionsTable.querySelector("tbody tr[data-transaction-id=\"" + sTransactionId + "\"]") : null;
+        }
+
+        function findAdminSubscriptionRowById(sSubscriptionId) {
+            return sSubscriptionId && oSubscriptionsTable ? oSubscriptionsTable.querySelector("tbody tr[data-subscription-id=\"" + sSubscriptionId + "\"]") : null;
         }
 
         function findAdminTypeRowById(sTypeId) {
@@ -891,6 +1078,53 @@
             }
         }
 
+        function getSubscriptionRowStates() {
+            var aRows = oSubscriptionsTable ? oSubscriptionsTable.querySelectorAll("tbody tr[data-subscription-id]") : [];
+            var aStates = {};
+            var sSubscriptionId;
+            for (var iI = 0; iI < aRows.length; iI += 1) {
+                sSubscriptionId = aRows[iI].getAttribute("data-subscription-id") || "";
+                if (sSubscriptionId !== "") {
+                    aStates[sSubscriptionId] = aRows[iI];
+                }
+            }
+            return aStates;
+        }
+
+        function restoreSubscriptionRowStates(aStates) {
+            var aRows = oSubscriptionsTable ? oSubscriptionsTable.querySelectorAll("tbody tr[data-subscription-id]") : [];
+            var sSubscriptionId;
+            for (var iI = 0; iI < aRows.length; iI += 1) {
+                sSubscriptionId = aRows[iI].getAttribute("data-subscription-id") || "";
+                if (sSubscriptionId !== "" && aStates[sSubscriptionId] && window.copyAdminTableRowState) {
+                    window.copyAdminTableRowState(aStates[sSubscriptionId], aRows[iI]);
+                }
+                if (window.bindAdminTableRow) {
+                    window.bindAdminTableRow(aRows[iI]);
+                }
+            }
+        }
+
+        function replaceSubscriptionRows(sRowsHtml) {
+            var oBody = document.createElement("tbody");
+            var aStates = getSubscriptionRowStates();
+            if (!oSubscriptionsTable || !oSubscriptionsTable.querySelector("tbody")) {
+                return;
+            }
+            oBody.innerHTML = sRowsHtml || "";
+            oSubscriptionsTable.querySelector("tbody").innerHTML = oBody.innerHTML;
+            restoreSubscriptionRowStates(aStates);
+            refreshAdminTableFilter();
+        }
+
+        function removeSubscriptionRow(iSubscriptionId) {
+            var oCurrentRow = findAdminSubscriptionRowById(iSubscriptionId);
+            if (oCurrentRow && oCurrentRow.parentNode) {
+                oCurrentRow.parentNode.removeChild(oCurrentRow);
+                refreshAdminTableFilter();
+            }
+        }
+
         function getTypeRowStates() {
             var aRows = oTypesTable ? oTypesTable.querySelectorAll("tbody tr[data-type-id]") : [];
             var aStates = {};
@@ -939,7 +1173,7 @@
         }
 
         function getAdminModalRow(oElement) {
-            return oElement && oElement.closest ? oElement.closest("tr[data-debt-id], tr[data-transaction-id], tr[data-type-id]") : null;
+            return oElement && oElement.closest ? oElement.closest("tr[data-debt-id], tr[data-transaction-id], tr[data-subscription-id], tr[data-type-id]") : null;
         }
 
         function getCurrentAdminModalRow(oButton, oRow) {
@@ -950,6 +1184,9 @@
             }
             if (sClass.indexOf(" js-edit-transaction ") !== -1) {
                 return findAdminTransactionRowById(sId) || oRow;
+            }
+            if (sClass.indexOf(" js-edit-subscription ") !== -1) {
+                return findAdminSubscriptionRowById(sId) || oRow;
             }
             if (sClass.indexOf(" js-edit-type ") !== -1) {
                 return findAdminTypeRowById(sId) || oRow;
@@ -967,6 +1204,9 @@
             }
             if (sClass.indexOf(" js-edit-transaction ") !== -1) {
                 return "transaction-modal";
+            }
+            if (sClass.indexOf(" js-edit-subscription ") !== -1) {
+                return "subscription-modal";
             }
             if (sClass.indexOf(" js-edit-type ") !== -1) {
                 return "type-modal";
@@ -1542,6 +1782,359 @@
             finishTransactionDialog(oDialogData, oDialogData.save);
         }
 
+        function getSubscriptionFinanceTypes() {
+            var aTypes = [];
+            if (!oSubscriptionsTable) {
+                return aTypes;
+            }
+            try {
+                aTypes = JSON.parse(oSubscriptionsTable.getAttribute("data-finance-types") || "[]");
+            } catch (oException) {
+                logAdminException(oException);
+                aTypes = [];
+            }
+            return aTypes;
+        }
+
+        function getSubscriptionBillingPeriods() {
+            return [
+                {"id": "weekly", "name": "Weekly"},
+                {"id": "monthly", "name": "Monthly"},
+                {"id": "quarterly", "name": "Quarterly"},
+                {"id": "yearly", "name": "Yearly"},
+                {"id": "other", "name": "Other"}
+            ];
+        }
+
+        function createSubscriptionDialog(sTitle, oSubscriptionRow) {
+            var oDialogData = {};
+            var closeOnEscape;
+            oDialogData.dialog = prepareAdminReusableDialog();
+            oDialogData.form = document.createElement("form");
+            oDialogData.box = oDialogData.form;
+            oDialogData.header = document.createElement("div");
+            oDialogData.title = document.createElement("strong");
+            oDialogData.closeButton = document.createElement("button");
+            oDialogData.error = document.createElement("p");
+            oDialogData.actions = document.createElement("div");
+            oDialogData.save = document.createElement("button");
+            oDialogData.cancel = document.createElement("button");
+            if (!oDialogData.dialog) {
+                return null;
+            }
+            oDialogData.subscriptionRow = oSubscriptionRow || null;
+            oDialogData.subscriptionId = oSubscriptionRow ? (oSubscriptionRow.getAttribute("data-subscription-id") || "") : "";
+            oDialogData.closed = false;
+            closeOnEscape = function (oEvent) {
+                if (oEvent.key == "Escape") {
+                    oDialogData.close();
+                }
+            };
+            oDialogData.close = function (blSaved) {
+                if (oDialogData.closed) {
+                    return;
+                }
+                oDialogData.closed = true;
+                document.removeEventListener("keydown", closeOnEscape);
+                finishAdminSubjectRowEdit(findAdminSubscriptionRowById(oDialogData.subscriptionId) || oDialogData.subscriptionRow, blSaved === true);
+                closeAdminDialogElement(oDialogData.dialog);
+                focusElement(oAddSubscription);
+            };
+            oDialogData.dialog.className = "confirm-dialog";
+            oDialogData.form.className = "confirm-dialog-box subject-edit-dialog";
+            oDialogData.form.method = "post";
+            oDialogData.form.action = window.location.href;
+            oDialogData.header.className = "confirm-dialog-header";
+            oDialogData.title.textContent = sTitle;
+            oDialogData.closeButton.type = "button";
+            oDialogData.closeButton.className = "confirm-dialog-close";
+            oDialogData.closeButton.setAttribute("aria-label", "Close");
+            oDialogData.closeButton.textContent = "\u00D7";
+            oDialogData.error.className = "subject-edit-error";
+            oDialogData.error.style.display = "none";
+            oDialogData.actions.className = "confirm-dialog-actions";
+            oDialogData.save.type = "submit";
+            oDialogData.save.className = "confirm-dialog-button";
+            oDialogData.save.textContent = "Save";
+            oDialogData.cancel.type = "button";
+            oDialogData.cancel.className = "confirm-dialog-button";
+            oDialogData.cancel.textContent = "Cancel";
+            oDialogData.header.appendChild(oDialogData.title);
+            oDialogData.header.appendChild(oDialogData.closeButton);
+            oDialogData.form.appendChild(oDialogData.header);
+            oDialogData.cancel.addEventListener("click", function () {
+                oDialogData.close();
+            });
+            oDialogData.closeButton.addEventListener("click", function () {
+                oDialogData.close();
+            });
+            enableAdminDialogDrag(oDialogData.dialog, oDialogData.box, oDialogData.header);
+
+            document.addEventListener("keydown", closeOnEscape);
+            return oDialogData;
+        }
+
+        function appendSubscriptionHiddenField(oParent, sName, sValue) {
+            var oInput = document.createElement("input");
+            oInput.type = "hidden";
+            oInput.name = sName;
+            oInput.value = sValue || "";
+            oParent.appendChild(oInput);
+            return oInput;
+        }
+
+        function appendSubscriptionTextField(oParent, sLabel, sName, sValue) {
+            var oLabel = document.createElement("label");
+            var oInput = document.createElement("input");
+            oLabel.textContent = sLabel;
+            oInput.type = "text";
+            oInput.name = sName;
+            oInput.value = sValue || "";
+            oParent.appendChild(oLabel);
+            oParent.appendChild(oInput);
+            return oInput;
+        }
+
+        function appendSubscriptionDateTimeField(oParent, sLabel, sName, sValue) {
+            var oLabel = document.createElement("label");
+            var oInput = document.createElement("input");
+            oLabel.textContent = sLabel;
+            oInput.type = "datetime-local";
+            oInput.name = sName;
+            oInput.step = "60";
+            oInput.value = sValue || "";
+            oParent.appendChild(oLabel);
+            oParent.appendChild(oInput);
+            return oInput;
+        }
+
+        function appendSubscriptionTypeField(oParent, sSelectedValue) {
+            var aTypes = getSubscriptionFinanceTypes();
+            var oLabel = document.createElement("label");
+            var oSelect = document.createElement("select");
+            var oOption;
+            oLabel.textContent = "Type";
+            oSelect.name = "finance_type_id";
+            oSelect.required = true;
+            for (var iI = 0; iI < aTypes.length; iI += 1) {
+                oOption = document.createElement("option");
+                oOption.value = aTypes[iI].id || "";
+                oOption.textContent = (aTypes[iI].type_kind == "income" ? "Income: " : "Expense: ") + (aTypes[iI].name || "");
+                if (String(oOption.value) == String(sSelectedValue || "")) {
+                    oOption.selected = true;
+                }
+                oSelect.appendChild(oOption);
+            }
+            oParent.appendChild(oLabel);
+            oParent.appendChild(oSelect);
+            return oSelect;
+        }
+
+        function appendSubscriptionPeriodField(oParent, sSelectedValue) {
+            var aPeriods = getSubscriptionBillingPeriods();
+            var oLabel = document.createElement("label");
+            var oSelect = document.createElement("select");
+            var oOption;
+            oLabel.textContent = "Period";
+            oSelect.name = "billing_period";
+            oSelect.required = true;
+            for (var iI = 0; iI < aPeriods.length; iI += 1) {
+                oOption = document.createElement("option");
+                oOption.value = aPeriods[iI].id || "";
+                oOption.textContent = aPeriods[iI].name || "";
+                if (String(oOption.value) == String(sSelectedValue || "monthly")) {
+                    oOption.selected = true;
+                }
+                oSelect.appendChild(oOption);
+            }
+            oParent.appendChild(oLabel);
+            oParent.appendChild(oSelect);
+            return oSelect;
+        }
+
+        function appendSubscriptionActiveField(oParent, sValue) {
+            var oLabel = document.createElement("label");
+            var oInput = document.createElement("input");
+            oLabel.className = "checkbox-label";
+            oInput.type = "checkbox";
+            oInput.name = "is_active";
+            oInput.value = "1";
+            oInput.checked = String(sValue || "1") == "1";
+            oLabel.appendChild(oInput);
+            oLabel.appendChild(document.createTextNode("Active"));
+            oParent.appendChild(oLabel);
+            return oInput;
+        }
+
+        function finishSubscriptionDialog(oDialogData, oFocus) {
+            oDialogData.form.appendChild(oDialogData.error);
+            oDialogData.actions.appendChild(oDialogData.save);
+            oDialogData.actions.appendChild(oDialogData.cancel);
+            oDialogData.form.appendChild(oDialogData.actions);
+            oDialogData.dialog.appendChild(oDialogData.form);
+            if (!openAdminDialogElement(oDialogData.dialog, oDialogData.close)) {
+                return;
+            }
+            beginAdminSubjectRowEdit(findAdminSubscriptionRowById(oDialogData.subscriptionId) || oDialogData.subscriptionRow);
+            focusElement(findFirstAdminUserInput(oDialogData.form) || oFocus, true);
+        }
+
+        function submitSubscriptionDialog(oDialogData, oData) {
+            setAdminDialogError(oDialogData.error, "");
+            oDialogData.save.disabled = true;
+            appendAdminCsrfToken(oData);
+            fetch(window.location.href, {
+                "method": "POST",
+                "body": oData,
+                "credentials": "same-origin",
+                "headers": getAdminAjaxHeaders()
+            }).then(function (oResponse) {
+                return oResponse.json();
+            }).then(function (aData) {
+                if (!aData || !aData.success) {
+                    setAdminDialogError(oDialogData.error, aData && aData.message ? aData.message : "Subscription could not be saved.");
+                    oDialogData.save.disabled = false;
+                    return;
+                }
+                if (aData.rows_html) {
+                    replaceSubscriptionRows(aData.rows_html);
+                } else if (aData.subscription_deleted) {
+                    removeSubscriptionRow(aData.subscription_id);
+                }
+                oDialogData.close(true);
+            }).catch(function (oException) {
+                logAdminException(oException);
+                setAdminDialogError(oDialogData.error, "Subscription could not be saved.");
+                oDialogData.save.disabled = false;
+            });
+        }
+
+        function markSubscriptionServed(oButton, oRow) {
+            var oData;
+            var sDefaultMessage = "Subscription could not be marked served.";
+            if (!window.fetch || !window.FormData) {
+                showAdminMessageDialog(sDefaultMessage);
+                return;
+            }
+            if (oButton.disabled) {
+                return;
+            }
+            oData = new FormData();
+            oButton.disabled = true;
+            beginAdminSubjectRowEdit(oRow);
+            oData.append("action", "mark_subscription_served");
+            oData.append("id", oButton.getAttribute("data-subscription-id") || (oRow ? oRow.getAttribute("data-subscription-id") : ""));
+            appendAdminCsrfToken(oData);
+            fetch(window.location.href, {
+                "method": "POST",
+                "body": oData,
+                "credentials": "same-origin",
+                "headers": getAdminAjaxHeaders()
+            }).then(function (oResponse) {
+                return oResponse.text().then(function (sText) {
+                    var aData = null;
+                    var sMessage;
+                    if (sText) {
+                        try {
+                            aData = JSON.parse(sText);
+                        } catch (oException) {
+                            aData = null;
+                        }
+                    }
+                    if (aData) {
+                        return aData;
+                    }
+                    sMessage = (sText || "").replace(/<script[\s\S]*?<\/script>/gi, " ").replace(/<style[\s\S]*?<\/style>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ");
+                    sMessage = sMessage.replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+                    throw new Error(sMessage || sDefaultMessage);
+                });
+            }).then(function (aData) {
+                var oCurrentRow;
+                if (!aData || !aData.success) {
+                    oButton.disabled = false;
+                    finishAdminSubjectRowEdit(oRow, false);
+                    showAdminMessageDialog(aData && aData.message ? aData.message : sDefaultMessage);
+                    return;
+                }
+                if (aData.rows_html) {
+                    replaceSubscriptionRows(aData.rows_html);
+                }
+                oCurrentRow = findAdminSubscriptionRowById(aData.subscription_id || "");
+                finishAdminSubjectRowEdit(oCurrentRow || oRow, true);
+            }).catch(function (oException) {
+                logAdminException(oException);
+                oButton.disabled = false;
+                finishAdminSubjectRowEdit(oRow, false);
+                showAdminMessageDialog(oException && oException.message ? oException.message : sDefaultMessage);
+            });
+        }
+
+        function openSubscriptionAdminDialog(oRow) {
+            var blNewSubscription = !oRow;
+            var oDialogData = createSubscriptionDialog(blNewSubscription ? "New Subscription" : "Edit Subscription", oRow);
+            var oName;
+            var oType;
+            var oAmount;
+            var oPeriod;
+            var oNextDueAt;
+            var oCounterparty;
+            var oNote;
+            var oActive;
+            if (!oDialogData) {
+                return;
+            }
+            appendSubscriptionHiddenField(oDialogData.form, "id", blNewSubscription ? "" : (oRow.getAttribute("data-subscription-id") || ""));
+            oName = appendSubscriptionTextField(oDialogData.form, "Name", "name", oRow ? (oRow.getAttribute("data-name") || "") : "");
+            oName.required = true;
+            oType = appendSubscriptionTypeField(oDialogData.form, oRow ? (oRow.getAttribute("data-finance-type-id") || "") : "");
+            oAmount = appendSubscriptionTextField(oDialogData.form, "Amount", "amount", oRow ? (oRow.getAttribute("data-amount") || "") : "");
+            oAmount.required = true;
+            oPeriod = appendSubscriptionPeriodField(oDialogData.form, oRow ? (oRow.getAttribute("data-billing-period") || "") : "monthly");
+            oNextDueAt = appendSubscriptionDateTimeField(oDialogData.form, "Next Due", "next_due_at", oRow ? (oRow.getAttribute("data-next-due-at") || "") : "");
+            oCounterparty = appendSubscriptionTextField(oDialogData.form, "Counterparty", "counterparty", oRow ? (oRow.getAttribute("data-counterparty") || "") : "");
+            oNote = appendSubscriptionTextField(oDialogData.form, "Note", "note", oRow ? (oRow.getAttribute("data-note") || "") : "");
+            oActive = appendSubscriptionActiveField(oDialogData.form, oRow ? (oRow.getAttribute("data-is-active") || "1") : "1");
+            oDialogData.form.addEventListener("submit", function (oEvent) {
+                var oData = new FormData();
+                oEvent.preventDefault();
+                oData.append("action", "save_subscription");
+                oData.append("id", blNewSubscription ? "" : (oRow.getAttribute("data-subscription-id") || ""));
+                oData.append("name", oName.value);
+                oData.append("finance_type_id", oType.value);
+                oData.append("amount", oAmount.value);
+                oData.append("billing_period", oPeriod.value);
+                oData.append("next_due_at", oNextDueAt.value);
+                oData.append("counterparty", oCounterparty.value);
+                oData.append("note", oNote.value);
+                oData.append("is_active", oActive.checked ? "1" : "0");
+                submitSubscriptionDialog(oDialogData, oData);
+            });
+            finishSubscriptionDialog(oDialogData, oName);
+        }
+
+        function openSubscriptionDeleteDialog(oRow) {
+            var oDialogData = createSubscriptionDialog("Confirm Deletion", oRow);
+            var oText = document.createElement("p");
+            if (!oRow) {
+                return;
+            }
+            if (!oDialogData) {
+                return;
+            }
+            oDialogData.save.textContent = "Yes";
+            oDialogData.cancel.textContent = "No";
+            oText.textContent = "Delete this subscription?";
+            oDialogData.form.appendChild(oText);
+            oDialogData.form.addEventListener("submit", function (oEvent) {
+                var oData = new FormData();
+                oEvent.preventDefault();
+                oData.append("action", "delete_subscription");
+                oData.append("id", oRow.getAttribute("data-subscription-id") || "");
+                submitSubscriptionDialog(oDialogData, oData);
+            });
+            finishSubscriptionDialog(oDialogData, oDialogData.save);
+        }
+
         function getTypeMemberTypes() {
             var aTypes = [];
             if (!oTypesTable) {
@@ -1834,6 +2427,11 @@
                 openTransactionAdminDialog(null);
             });
         }
+        if (oAddSubscription) {
+            oAddSubscription.addEventListener("click", function () {
+                openSubscriptionAdminDialog(null);
+            });
+        }
         if (oAddType) {
             oAddType.addEventListener("click", function () {
                 openTypeAdminDialog(null);
@@ -1874,6 +2472,24 @@
                     openTransactionDeleteDialog(oButton.closest("tr[data-transaction-id]"));
                 } else {
                     openTransactionAdminDialog(oButton.closest("tr[data-transaction-id]"));
+                }
+            });
+        }
+        if (oSubscriptionsTable) {
+            oSubscriptionsTable.addEventListener("click", function (oEvent) {
+                var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".js-subscription-served, .js-edit-subscription, .js-delete-subscription") : null;
+                var oRow;
+                if (!oButton) {
+                    return;
+                }
+                oEvent.preventDefault();
+                oRow = oButton.closest("tr[data-subscription-id]");
+                if (oButton.className.indexOf("js-subscription-served") !== -1) {
+                    markSubscriptionServed(oButton, oRow);
+                } else if (oButton.className.indexOf("js-delete-subscription") !== -1) {
+                    openSubscriptionDeleteDialog(oRow);
+                } else {
+                    openSubscriptionAdminDialog(oRow);
                 }
             });
         }
@@ -2449,6 +3065,7 @@
     document.addEventListener("DOMContentLoaded", function () {
         setupMenu();
         setupMessages();
+        setupFilterFocusButton();
         setupTableFilter();
         setupSubjectSuggest();
         setupSettingsDialog();

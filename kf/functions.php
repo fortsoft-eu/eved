@@ -1,28 +1,18 @@
 <?php
 
-function getMenuItems() {
-    global $oPdo;
-
-    return getMenuItemsFromDatabase($oPdo);
-}
-
-function getPageTitle($sFallbackTitle) {
-    global $oPdo;
-    global $aAllowedIps;
-
-    $sTitle = $sFallbackTitle;
-    if (!$oPdo) {
-        return getPageTitleText($sTitle, $aAllowedIps);
+function getMenuItems($oPdo) {
+    try {
+        return getMenuItemsFromDatabase($oPdo);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        return array();
     }
-    $sMenuTitle = getCurrentMenuNameFromDatabase($oPdo);
-    $sTitle = $sMenuTitle != "" ? $sMenuTitle : $sFallbackTitle;
-    return getPageTitleText($sTitle, $aAllowedIps);
 }
 
 function renderMenu() {
-    global $sBaseUrl, $sMenuEmoji;
+    global $oPdo, $sBaseUrl, $sMenuEmoji;
 
-    $aItems = getMenuItems();
+    $aItems = getMenuItems($oPdo);
     if (!$aItems) {
         return;
     }
@@ -37,16 +27,17 @@ function renderMenu() {
         }
         $sClass = "menu-link";
         $sCurrent = "";
+        $sIcon = trim((string)$aItem["icon"]);
+        $sTitle = trim((string)$aItem["title"]);
+        $sTarget = trim((string)$aItem["target"]);
+        $sTitleAttribute = $sTitle != "" ? " title=\"" . html($sTitle) . "\"" : "";
+        $sTargetAttribute = $sTarget != "" && preg_match("#^(_blank|_self|_parent|_top|[A-Za-z][A-Za-z0-9_\\-]*)$#", $sTarget) ? " target=\"" . html($sTarget) . "\"" : "";
+        $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
         if ($aItem["path"] === $sCurrentPath) {
             $sClass .= " menu-link-active";
             $sCurrent = " aria-current=\"page\"";
         }
-        $sTitle = trim((string)$aItem["title"]);
-        $sTarget = trim((string)$aItem["target"]);
-        $sTitleAttribute = $sTitle != "" ? " title=\"" . html($sTitle) . "\"" : "";
-        $sTargetAttribute = $sTarget != "" ? " target=\"" . html($sTarget) . "\"" : "";
-        $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
-        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"menu-icon\" aria-hidden=\"true\">" . html($aItem["icon"]) . "</span><span class=\"menu-text\">" . html($aItem["name"]) . "</span></a>\n";
+        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"menu-icon\" aria-hidden=\"true\">" . html($sIcon) . "</span><span class=\"menu-text\">" . html($aItem["name"]) . "</span></a>\n";
     }
     echo "      </span>\n",
         "    </span>\n";
@@ -69,8 +60,13 @@ function getSettings() {
     $aSettings = array();
     if (!isset($_SESSION["kf_settings"]) || !is_array($_SESSION["kf_settings"])) {
         $_SESSION["kf_settings"] = array();
-        if (isset($_SESSION["kf_debts_settings"]) && is_array($_SESSION["kf_debts_settings"])) {
-            $_SESSION["kf_settings"] = $_SESSION["kf_debts_settings"];
+    }
+    if (isset($_SESSION["kf_debts_settings"]) && is_array($_SESSION["kf_debts_settings"])) {
+        foreach ($aSettingsDefaults as $sSettingName => $iSettingDefault) {
+            if (isset($_SESSION["kf_debts_settings"][$sSettingName])
+                && (!isset($_SESSION["kf_settings"][$sSettingName]) || (int)$_SESSION["kf_settings"][$sSettingName] == (int)$iSettingDefault)) {
+                $_SESSION["kf_settings"][$sSettingName] = (int)$_SESSION["kf_debts_settings"][$sSettingName] == 1 ? 1 : 0;
+            }
         }
     }
     foreach ($aSettingsDefaults as $sSettingName => $iSettingDefault) {
@@ -95,36 +91,29 @@ function saveSettings($aPayload) {
     return $aSettings;
 }
 
-function useEuropeanAmountFormat() {
-    $aSettings = getSettings();
-    return (int)$aSettings["use_european_amount_format"] == 1;
-}
-
-function getCurrentPagePath() {
-    $sPath = isset($_SERVER["REQUEST_URI"]) ? (string)parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH) : "";
-    return $sPath != "" ? $sPath : getCurrentScriptName();
-}
-
 function handleSettingsPost() {
+    global $sBaseUrl;
+
     if ($_SERVER["REQUEST_METHOD"] != "POST" || getPostedTrimmedValue("action") != "save_settings") {
         return;
     }
     requireNamedCsrfToken("kf_csrf_token");
     saveSettings($_POST);
     session_write_close();
-    redirect(getCurrentPagePath());
-}
-
-function renderSettingsButton() {
-    return "    <button type=\"button\" class=\"button-link js-index-settings-open\">Settings</button>\n";
+    $sScriptName = basename($_SERVER["SCRIPT_NAME"]);
+    redirect($sBaseUrl . ($sScriptName == "index.php" ? "" : $sScriptName));
 }
 
 function renderSettingsModal($aSettings = null) {
+    global $sBaseUrl;
+
     if (!is_array($aSettings)) {
         $aSettings = getSettings();
     }
+    $sScriptName = basename($_SERVER["SCRIPT_NAME"]);
+    $sAction = $sBaseUrl . ($sScriptName == "index.php" ? "" : $sScriptName);
     return "  <div class=\"confirm-dialog index-settings-dialog\" id=\"index-settings-dialog\" hidden>\n"
-        . "    <form class=\"confirm-dialog-box index-settings-form\" method=\"post\" action=\"" . html(getCurrentPagePath()) . "\" enctype=\"application/x-www-form-urlencoded\">\n"
+        . "    <form class=\"confirm-dialog-box index-settings-form\" method=\"post\" action=\"" . html($sAction) . "\" enctype=\"application/x-www-form-urlencoded\">\n"
         . "      <input type=\"hidden\" name=\"action\" value=\"save_settings\">\n"
         . "      <input type=\"hidden\" name=\"kf_csrf_token\" value=\"" . html(getCsrfToken("kf_csrf_token")) . "\">\n"
         . "      <div class=\"confirm-dialog-header\">\n"
@@ -159,10 +148,7 @@ function parseAmount($sValue) {
     return is_numeric($sValue) ? (float)$sValue : null;
 }
 
-function formatAmount($mAmount, $blUseEuropeanAmountFormat = null) {
-    if ($blUseEuropeanAmountFormat === null) {
-        $blUseEuropeanAmountFormat = useEuropeanAmountFormat();
-    }
+function formatAmount($mAmount, $blUseEuropeanAmountFormat = false) {
     $fAmount = round((float)$mAmount, 2);
     $sDecimalSeparator = $blUseEuropeanAmountFormat ? "," : ".";
     $sThousandsSeparator = $blUseEuropeanAmountFormat ? " " : ",";
@@ -170,7 +156,7 @@ function formatAmount($mAmount, $blUseEuropeanAmountFormat = null) {
     return $fAmount < 0 ? "−" . $sAmount : $sAmount;
 }
 
-function formatDebtAmount($mAmount, $blUseEuropeanAmountFormat = null) {
+function formatDebtAmount($mAmount, $blUseEuropeanAmountFormat = false) {
     return formatAmount($mAmount, $blUseEuropeanAmountFormat);
 }
 
@@ -388,7 +374,7 @@ function renderDebtAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmount
 }
 
 function fetchTransactionAdminRows($oPdo, $iTransactionId = 0) {
-    $sSql = "SELECT t.id, t.transaction_date, t.amount, t.counterparty, t.note, ft.id AS finance_type_id, ft.name AS type_name, ft.type_kind FROM kf_fin_trans t JOIN kf_fin_types ft ON ft.id = t.finance_type_id";
+    $sSql = "SELECT t.id, t.transaction_date, t.amount, t.counterparty, t.note, ft.id AS finance_type_id, ft.name AS type_name, ft.type_kind FROM kf_fin_transactions t JOIN kf_fin_types ft ON ft.id = t.finance_type_id";
     if ((int)$iTransactionId > 0) {
         $sSql .= " WHERE t.id = :id";
     }
@@ -402,28 +388,237 @@ function fetchTransactionAdminRows($oPdo, $iTransactionId = 0) {
     return $oStatement->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function renderTransactionAdminRow($aRow, $blShowActions = true) {
+function renderTransactionAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
     global $sEditEmoji, $sDeleteEmoji;
 
     $sAmountClass = $aRow["amount"] < 0 ? "amount-negative" : ($aRow["amount"] > 0 ? "amount-positive" : "amount-zero");
+    $sFormattedAmount = formatAmount($aRow["amount"], $blUseEuropeanAmountFormat);
+    $sFormattedAbsoluteAmount = formatAmount(abs($aRow["amount"]), $blUseEuropeanAmountFormat);
     $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-edit-transaction\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-transaction\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
-    return "      <tr data-transaction-id=\"" . (int)$aRow["id"] . "\" data-transaction-date=\"" . html(formatDate($aRow["transaction_date"])) . "\" data-finance-type-id=\"" . (int)$aRow["finance_type_id"] . "\" data-amount=\"" . html(formatAmount(abs($aRow["amount"]))) . "\" data-counterparty=\"" . html($aRow["counterparty"]) . "\" data-note=\"" . html($aRow["note"]) . "\">\n"
+    return "      <tr data-transaction-id=\"" . (int)$aRow["id"] . "\" data-transaction-date=\"" . html(formatDate($aRow["transaction_date"])) . "\" data-finance-type-id=\"" . (int)$aRow["finance_type_id"] . "\" data-amount=\"" . html($sFormattedAbsoluteAmount) . "\" data-counterparty=\"" . html($aRow["counterparty"]) . "\" data-note=\"" . html($aRow["note"]) . "\">\n"
         . "        <td class=\"nowrap\">" . html(formatDate($aRow["transaction_date"])) . "</td>\n"
         . "        <td>" . html($aRow["type_name"]) . "</td>\n"
-        . "        <td class=\"numeric " . $sAmountClass . "\">" . html(formatAmount($aRow["amount"])) . "</td>\n"
+        . "        <td class=\"numeric " . $sAmountClass . "\">" . html($sFormattedAmount) . "</td>\n"
         . "        <td>" . htmlValue($aRow["counterparty"], "&mdash;") . "</td>\n"
         . "        <td>" . htmlValue($aRow["note"], "&mdash;") . "</td>\n"
         . ($blShowActions ? "        <td class=\"admin-action-column\">" . $sActionCell . "</td>\n" : "")
         . "      </tr>\n";
 }
 
-function renderTransactionAdminRows($aRows, $blShowActions = true) {
+function renderTransactionAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
     $sHtml = "";
     foreach ($aRows as $aRow) {
-        $sHtml .= renderTransactionAdminRow($aRow, $blShowActions);
+        $sHtml .= renderTransactionAdminRow($aRow, $blShowActions, $blUseEuropeanAmountFormat);
     }
     if (!$aRows) {
         $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 6 : 5) . "\">No transactions found.</td></tr>\n";
+    }
+    return $sHtml;
+}
+
+function getSubscriptionBillingPeriods() {
+    return array(
+        "weekly" => "Weekly",
+        "monthly" => "Monthly",
+        "quarterly" => "Quarterly",
+        "yearly" => "Yearly",
+        "other" => "Other"
+    );
+}
+
+function getSubscriptionBillingPeriodLabel($sBillingPeriod) {
+    $aBillingPeriods = getSubscriptionBillingPeriods();
+    return isset($aBillingPeriods[$sBillingPeriod]) ? $aBillingPeriods[$sBillingPeriod] : $sBillingPeriod;
+}
+
+function isSubscriptionAnchoredBillingPeriod($sBillingPeriod) {
+    return in_array($sBillingPeriod, array("monthly", "quarterly", "yearly"), true);
+}
+
+function getSubscriptionBillingPeriodDateModifier($sBillingPeriod) {
+    $aModifiers = array(
+        "weekly" => "+1 week",
+        "monthly" => "+1 month",
+        "quarterly" => "+3 months",
+        "yearly" => "+1 year"
+    );
+    return isset($aModifiers[$sBillingPeriod]) ? $aModifiers[$sBillingPeriod] : "";
+}
+
+function parseSubscriptionDueAt($sDueAt) {
+    $sDueAt = str_replace("T", " ", trim((string)$sDueAt));
+    if (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/", $sDueAt, $aMatches)) {
+        $sDueAt .= " 00:00:00";
+    }
+    if (!preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2})(?::([0-9]{2})(?:\\.[0-9]{1,6})?)?$/", $sDueAt, $aMatches)) {
+        return null;
+    }
+    if (!checkdate((int)$aMatches[2], (int)$aMatches[3], (int)$aMatches[1])) {
+        return null;
+    }
+    if ((int)$aMatches[4] > 23 || (int)$aMatches[5] > 59 || (isset($aMatches[6]) && (int)$aMatches[6] > 59)) {
+        return null;
+    }
+    $sSecond = isset($aMatches[6]) && $aMatches[6] !== "" ? $aMatches[6] : "00";
+    $oDueAt = DateTimeImmutable::createFromFormat("!Y-m-d H:i:s", sprintf("%04d-%02d-%02d %02d:%02d:%02d", (int)$aMatches[1], (int)$aMatches[2], (int)$aMatches[3], (int)$aMatches[4], (int)$aMatches[5], (int)$sSecond));
+    return $oDueAt ? $oDueAt : null;
+}
+
+function formatSubscriptionDueAt($sDueAt) {
+    $oDueAt = parseSubscriptionDueAt($sDueAt);
+    return $oDueAt ? $oDueAt->format("Y-m-d H:i") : "";
+}
+
+function formatSubscriptionDueInput($sDueAt) {
+    $oDueAt = parseSubscriptionDueAt($sDueAt);
+    return $oDueAt ? $oDueAt->format("Y-m-d\\TH:i") : "";
+}
+
+function formatSubscriptionDueForDatabase($sDueAt) {
+    $oDueAt = parseSubscriptionDueAt($sDueAt);
+    return $oDueAt ? $oDueAt->format("Y-m-d H:i:s") : null;
+}
+
+function getSubscriptionBillingDayFromDueAt($sDueAt) {
+    $oDueAt = parseSubscriptionDueAt($sDueAt);
+    return $oDueAt ? (int)$oDueAt->format("j") : null;
+}
+
+function getSubscriptionBillingDayForSave($sNextDueAt, $sBillingPeriod, $aCurrentSubscription = null) {
+    if (!isSubscriptionAnchoredBillingPeriod($sBillingPeriod) || !parseSubscriptionDueAt($sNextDueAt)) {
+        return null;
+    }
+    if (is_array($aCurrentSubscription)
+        && formatSubscriptionDueInput($aCurrentSubscription["next_due_at"]) != ""
+        && substr(formatSubscriptionDueInput($aCurrentSubscription["next_due_at"]), 0, 10) == substr(formatSubscriptionDueInput($sNextDueAt), 0, 10)
+        && isset($aCurrentSubscription["billing_day"])
+        && (int)$aCurrentSubscription["billing_day"] >= 1
+        && (int)$aCurrentSubscription["billing_day"] <= 31) {
+        return (int)$aCurrentSubscription["billing_day"];
+    }
+    return getSubscriptionBillingDayFromDueAt($sNextDueAt);
+}
+
+function getSubscriptionDueAtAfterMonths($sDueAt, $iMonths, $iBillingDay = 0) {
+    $oDueAt = parseSubscriptionDueAt($sDueAt);
+    if (!$oDueAt) {
+        return "";
+    }
+    $iYear = (int)$oDueAt->format("Y");
+    $iMonth = (int)$oDueAt->format("n");
+    $iDay = (int)$oDueAt->format("j");
+    if ((int)$iBillingDay >= 1 && (int)$iBillingDay <= 31) {
+        $iDay = (int)$iBillingDay;
+    }
+    $iZeroBasedMonth = $iMonth - 1 + (int)$iMonths;
+    $iYear += (int)floor($iZeroBasedMonth / 12);
+    $iMonth = $iZeroBasedMonth % 12 + 1;
+    $oFirstDay = DateTimeImmutable::createFromFormat("!Y-m-d", sprintf("%04d-%02d-01", $iYear, $iMonth));
+    if (!$oFirstDay) {
+        return "";
+    }
+    $iMaxDay = (int)$oFirstDay->format("t");
+    if ($iDay > $iMaxDay) {
+        $iDay = $iMaxDay;
+    }
+    return sprintf("%04d-%02d-%02d %s", $iYear, $iMonth, $iDay, $oDueAt->format("H:i:s"));
+}
+
+function getSubscriptionNextDueAt($sNextDueAt, $sBillingPeriod, $iBillingDay = 0) {
+    if ($sBillingPeriod == "monthly") {
+        return getSubscriptionDueAtAfterMonths($sNextDueAt, 1, $iBillingDay);
+    }
+    if ($sBillingPeriod == "quarterly") {
+        return getSubscriptionDueAtAfterMonths($sNextDueAt, 3, $iBillingDay);
+    }
+    if ($sBillingPeriod == "yearly") {
+        return getSubscriptionDueAtAfterMonths($sNextDueAt, 12, $iBillingDay);
+    }
+    $sModifier = getSubscriptionBillingPeriodDateModifier($sBillingPeriod);
+    if ($sModifier == "") {
+        return "";
+    }
+    try {
+        $oNextDueAt = parseSubscriptionDueAt($sNextDueAt);
+        if (!$oNextDueAt) {
+            return "";
+        }
+        return $oNextDueAt->modify($sModifier)->format("Y-m-d H:i:s");
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        return "";
+    }
+}
+
+function formatSubscriptionDueInDays($sNextDueAt) {
+    $sNextDueAt = trim((string)$sNextDueAt);
+    if ($sNextDueAt == "") {
+        return "&mdash;";
+    }
+    try {
+        $oToday = new DateTimeImmutable("today");
+        $oNextDueAt = parseSubscriptionDueAt($sNextDueAt);
+        if (!$oNextDueAt) {
+            return "&mdash;";
+        }
+        $oNextDueDate = $oNextDueAt->setTime(0, 0, 0);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        return "&mdash;";
+    }
+    $iDays = (int)$oToday->diff($oNextDueDate)->format("%r%a");
+    return $iDays < 0 ? "&#8722;" . html(abs($iDays)) : html($iDays);
+}
+
+function fetchSubscriptionAdminRows($oPdo, $iSubscriptionId = 0) {
+    $sSql = "SELECT s.id, s.name, s.finance_type_id, s.amount, s.billing_period, s.billing_day, s.next_due_at, s.counterparty, s.note, s.is_active, ft.name AS type_name, ft.type_kind FROM kf_subscriptions s JOIN kf_fin_types ft ON ft.id = s.finance_type_id";
+    if ((int)$iSubscriptionId > 0) {
+        $sSql .= " WHERE s.id = :id";
+    }
+    $sSql .= " ORDER BY s.is_active DESC, s.next_due_at IS NULL ASC, s.next_due_at ASC, s.name ASC, s.id ASC";
+    if ((int)$iSubscriptionId > 0) {
+        $oStatement = $oPdo->prepare($sSql);
+        $oStatement->execute(array("id" => (int)$iSubscriptionId));
+    } else {
+        $oStatement = $oPdo->query($sSql);
+    }
+    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function renderSubscriptionAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
+    global $sEditEmoji, $sDeleteEmoji, $sSubscriptionServedEmoji;
+
+    $sAmountClass = $aRow["amount"] < 0 ? "amount-negative" : ($aRow["amount"] > 0 ? "amount-positive" : "amount-zero");
+    $sFormattedAmount = formatAmount($aRow["amount"], $blUseEuropeanAmountFormat);
+    $sNextDueAtDisplay = formatSubscriptionDueAt($aRow["next_due_at"]);
+    $sNextDueAtDisplay = $sNextDueAtDisplay != "" ? str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sNextDueAtDisplay)) : "&mdash;";
+    $sServedAction = "";
+    if ($blShowActions && trim((string)$aRow["next_due_at"]) != "" && getSubscriptionBillingPeriodDateModifier($aRow["billing_period"]) != "") {
+        $sServedAction = "<a class=\"item-action subscription-served-action js-subscription-served\" href=\"#\" data-subscription-id=\"" . (int)$aRow["id"] . "\" title=\"Mark subscription served\" aria-label=\"Mark subscription served\"><span class=\"copy-action-box\">" . $sSubscriptionServedEmoji . "</span></a>";
+    }
+    $sServedInCell = formatSubscriptionDueInDays($aRow["next_due_at"]) . ($sServedAction != "" ? "&#8288;" . $sServedAction : "");
+    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-edit-subscription\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-subscription\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
+    return "      <tr data-subscription-id=\"" . (int)$aRow["id"] . "\" data-name=\"" . html($aRow["name"]) . "\" data-finance-type-id=\"" . (int)$aRow["finance_type_id"] . "\" data-amount=\"" . html(formatAmount(abs($aRow["amount"]), $blUseEuropeanAmountFormat)) . "\" data-billing-period=\"" . html($aRow["billing_period"]) . "\" data-billing-day=\"" . html($aRow["billing_day"]) . "\" data-next-due-at=\"" . html(formatSubscriptionDueInput($aRow["next_due_at"])) . "\" data-counterparty=\"" . html($aRow["counterparty"]) . "\" data-note=\"" . html($aRow["note"]) . "\" data-is-active=\"" . ((int)$aRow["is_active"] == 1 ? "1" : "0") . "\">\n"
+        . "        <td class=\"subscription-in-column\">" . $sServedInCell . "</td>\n"
+        . "        <td>" . html($aRow["name"]) . "</td>\n"
+        . "        <td>" . html($aRow["type_name"]) . "</td>\n"
+        . "        <td class=\"numeric " . $sAmountClass . "\">" . html($sFormattedAmount) . "</td>\n"
+        . "        <td>" . html(getSubscriptionBillingPeriodLabel($aRow["billing_period"])) . "</td>\n"
+        . "        <td class=\"nowrap\">" . $sNextDueAtDisplay . "</td>\n"
+        . "        <td>" . htmlValue($aRow["counterparty"], "&mdash;") . "</td>\n"
+        . "        <td>" . htmlValue($aRow["note"], "&mdash;") . "</td>\n"
+        . "        <td>" . ((int)$aRow["is_active"] == 1 ? "Active" : "Inactive") . "</td>\n"
+        . ($blShowActions ? "        <td class=\"admin-action-column\">" . $sActionCell . "</td>\n" : "")
+        . "      </tr>\n";
+}
+
+function renderSubscriptionAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
+    $sHtml = "";
+    foreach ($aRows as $aRow) {
+        $sHtml .= renderSubscriptionAdminRow($aRow, $blShowActions, $blUseEuropeanAmountFormat);
+    }
+    if (!$aRows) {
+        $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 10 : 9) . "\">No subscriptions found.</td></tr>\n";
     }
     return $sHtml;
 }

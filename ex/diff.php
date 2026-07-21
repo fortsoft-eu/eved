@@ -3,7 +3,7 @@
 include "main.php";
 
 
-requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
+requireFullAccess($aAllowedIps, "ex", "ex_csrf_token");
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
@@ -18,7 +18,7 @@ $blCompared = false;
 $blHasDifferences = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("ex_csrf_token", true);
+    requireNamedCsrfToken("ex_csrf_token");
     try {
         if (!isset($_FILES["database_backup"]) || !is_array($_FILES["database_backup"])) {
             $sUploadError = "No backup file was uploaded.";

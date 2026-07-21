@@ -4,7 +4,7 @@ include "main.php";
 
 
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "kf");
-requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
+requireViewAccess($aAllowedIps, "kf", "kf_csrf_token", true);
 
 
 if (!$oPdo) {
@@ -14,6 +14,7 @@ if (!$oPdo) {
 
 handleSettingsPost();
 $aSettings = getSettings();
+$blUseEuropeanAmountFormat = (int)$aSettings["use_european_amount_format"] == 1;
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -39,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         $fSignedAmount = $aType["type_kind"] == "expense" ? -abs($fAmount) : abs($fAmount);
         if ($iId > 0) {
-            $oStatement = $oPdo->prepare("UPDATE kf_fin_trans SET transaction_date = :transaction_date, finance_type_id = :finance_type_id, amount = :amount, counterparty = :counterparty, note = :note WHERE id = :id");
+            $oStatement = $oPdo->prepare("UPDATE kf_fin_transactions SET transaction_date = :transaction_date, finance_type_id = :finance_type_id, amount = :amount, counterparty = :counterparty, note = :note WHERE id = :id");
             $oStatement->execute(array(
                 "transaction_date" => $sDate,
                 "finance_type_id" => $iFinanceTypeId,
@@ -49,10 +50,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "id" => $iId
             ));
             if ($blJsonResponse) {
-                sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit)));
+                sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
             }
         } else {
-            $oStatement = $oPdo->prepare("INSERT INTO kf_fin_trans (transaction_date, finance_type_id, amount, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :counterparty, :note)");
+            $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :counterparty, :note)");
             $oStatement->execute(array(
                 "transaction_date" => $sDate,
                 "finance_type_id" => $iFinanceTypeId,
@@ -62,18 +63,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             ));
             if ($blJsonResponse) {
                 $iId = (int)$oPdo->lastInsertId();
-                sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit)));
+                sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
             }
         }
         redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_transaction") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         if ($iId > 0) {
-            $oStatement = $oPdo->prepare("DELETE FROM kf_fin_trans WHERE id = :id");
+            $oStatement = $oPdo->prepare("DELETE FROM kf_fin_transactions WHERE id = :id");
             $oStatement->execute(array("id" => $iId));
         }
         if ($blJsonResponse) {
-            sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "transaction_deleted" => true, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit)));
+            sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "transaction_deleted" => true, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
         }
         redirect(getCurrentScriptName());
     }
@@ -90,7 +91,7 @@ if ($blCanEdit) {
 }
 
 
-$sTitle = getPageTitle("Transactions");
+$sTitle = getPageTitleText("Transactions", $aAllowedIps);
 $iTime = sendPageHeaders();
 
 ?>
@@ -117,18 +118,18 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="transactions-table" value="">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="transactions-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php
 
-echo renderSettingsButton(),
+echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">Settings</button>\n",
     $sToolbarHtml,
     "  </p>\n";
 
 ?>
-  <table id="transactions-table" class="table-filter-target" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="transactions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th>Date</th>
@@ -146,7 +147,7 @@ echo "      </tr>\n",
     "    </thead>\n",
     "    <tbody>\n";
 
-echo renderTransactionAdminRows($aRows, $blCanEdit),
+echo renderTransactionAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat),
     "    </tbody>\n",
     "  </table>\n";
 

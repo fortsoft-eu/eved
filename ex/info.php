@@ -3,7 +3,7 @@
 include "main.php";
 
 
-requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", true);
+requireFullAccess($aAllowedIps, "ex", "ex_csrf_token");
 
 
 if (!$oPdo) {

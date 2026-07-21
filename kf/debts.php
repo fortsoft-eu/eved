@@ -4,7 +4,7 @@ include "main.php";
 
 
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "kf");
-requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
+requireViewAccess($aAllowedIps, "kf", "kf_csrf_token", true);
 
 
 if (!$oPdo) {
@@ -204,7 +204,7 @@ if ($blCanEdit) {
 }
 
 
-$sTitle = getPageTitle("Debts");
+$sTitle = getPageTitleText("Debts", $aAllowedIps);
 $iTime = sendPageHeaders();
 
 ?>
@@ -227,18 +227,18 @@ $iTime = sendPageHeaders();
   <p class="admin-controls">
 <?php renderMenu(); ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="debts-table" value="">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="debts-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php
 
-echo renderSettingsButton(),
+echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">Settings</button>\n",
     $sToolbarHtml,
     "  </p>\n";
 
 ?>
-  <table id="debts-table" class="table-filter-target">
+  <table id="debts-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Subject</th>

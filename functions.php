@@ -492,7 +492,7 @@ function getQuickTableFilterId($sFilterId) {
 }
 
 function getQuickTableFilterValue($sFilterId = "table-filter") {
-    $sScriptName = getCurrentScriptName();
+    $sScriptName = getCurrentMenuPath();
     $sFilterId = getQuickTableFilterId($sFilterId);
     if (!isset($_SESSION["quick_table_filters"]) || !is_array($_SESSION["quick_table_filters"])) {
         return "";
@@ -517,7 +517,7 @@ function handleQuickTableFilterRequest() {
     $sFilterId = isset($_POST["filter_id"]) ? (string)$_POST["filter_id"] : "table-filter";
     if ($sAction == "save") {
         $sValue = getPostedValue("filter_value");
-        $sScriptName = getCurrentScriptName();
+        $sScriptName = getCurrentMenuPath();
         $sFilterId = getQuickTableFilterId($sFilterId);
         if (!isset($_SESSION["quick_table_filters"]) || !is_array($_SESSION["quick_table_filters"])) {
             $_SESSION["quick_table_filters"] = array();
@@ -529,7 +529,7 @@ function handleQuickTableFilterRequest() {
         session_write_close();
         sendJsonAndExit(array("success" => true));
     } elseif ($sAction == "reset") {
-        $sScriptName = getCurrentScriptName();
+        $sScriptName = getCurrentMenuPath();
         $sFilterId = getQuickTableFilterId($sFilterId);
         if (isset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId])) {
             unset($_SESSION["quick_table_filters"][$sScriptName][$sFilterId]);
