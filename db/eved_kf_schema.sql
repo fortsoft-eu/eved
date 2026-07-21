@@ -1,16 +1,25 @@
 CREATE TABLE `kf_debts` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `legacy_id` int(10) unsigned DEFAULT NULL,
-  `first_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci DEFAULT NULL,
-  `last_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci DEFAULT NULL,
-  `amount` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `account_number` varchar(255) DEFAULT NULL,
-  `email` varchar(255) DEFAULT NULL,
+  `ex_subjects_id` int(10) unsigned DEFAULT NULL,
+  `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci DEFAULT NULL,
   `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `ux_kf_debts_legacy_id` (`legacy_id`),
-  KEY `ix_kf_debts_name` (`last_name`,`first_name`,`id`)
+  KEY `ix_kf_debts_ex_subjects_id` (`ex_subjects_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE TABLE `kf_debt_movements` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `debt_id` int(10) unsigned NOT NULL,
+  `movement_date` date NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
+  PRIMARY KEY (`id`),
+  KEY `ix_kf_debt_movements_debt_date` (`debt_id`,`movement_date`,`id`),
+  KEY `ix_kf_debt_movements_date` (`movement_date`,`id`),
+  CONSTRAINT `fk_kf_debt_movements_debt` FOREIGN KEY (`debt_id`) REFERENCES `kf_debts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `kf_fin_types` (

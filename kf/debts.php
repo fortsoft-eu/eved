@@ -32,11 +32,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } elseif ($sAction == "save_debt") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         $iSubjectId = (int)getPostedTrimmedValue("ex_subjects_id", "0");
-        $fAmount = parseAmount(getPostedTrimmedValue("amount"));
         $sNote = getPostedTrimmedValue("note");
-        if ($iSubjectId < 1 || $fAmount === null) {
+        $sMovementDate = getPostedTrimmedValue("movement_date");
+        $fAmount = parseAmount(getPostedTrimmedValue("amount"));
+        $sMovementNote = getPostedTrimmedValue("movement_note");
+        if ($iSubjectId < 1 || ($iId < 1 && ($sMovementDate == "" || $fAmount === null))) {
             if ($blJsonResponse) {
-                sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved. Subject and amount are required."), 400);
+                sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved. Subject, movement date, and amount are required."), 400);
+            }
+            redirect(getCurrentScriptName());
+        }
+        if ($iId < 1 && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sMovementDate)) {
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved. Movement date must use YYYY-MM-DD."), 400);
             }
             redirect(getCurrentScriptName());
         }
@@ -46,36 +54,131 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             redirect(getCurrentScriptName());
         }
-        if ($iId > 0) {
-            $oStatement = $oPdo->prepare("UPDATE kf_debts SET ex_subjects_id = :ex_subjects_id, amount = :amount, note = :note WHERE id = :id");
-            $oStatement->execute(array(
-                "ex_subjects_id" => $iSubjectId > 0 ? $iSubjectId : null,
-                "amount" => $fAmount,
-                "note" => $sNote != "" ? $sNote : null,
-                "id" => $iId
-            ));
-            if ($blJsonResponse) {
-                $aDebtRows = fetchDebtAdminRows($oPdo, $iId);
-                if (!$aDebtRows) {
-                    sendJsonAndExit(array("success" => false, "message" => "Debt was not found."), 404);
+        try {
+            if ($iId > 0) {
+                $oStatement = $oPdo->prepare("UPDATE kf_debts SET ex_subjects_id = :ex_subjects_id, note = :note WHERE id = :id");
+                $oStatement->execute(array(
+                    "ex_subjects_id" => $iSubjectId > 0 ? $iSubjectId : null,
+                    "note" => $sNote != "" ? $sNote : null,
+                    "id" => $iId
+                ));
+                if ($blJsonResponse) {
+                    $aDebtRows = fetchDebtAdminRows($oPdo, $iId);
+                    if (!$aDebtRows) {
+                        sendJsonAndExit(array("success" => false, "message" => "Debt was not found."), 404);
+                    }
+                    sendJsonAndExit(array("success" => true, "debt_id" => $iId, "row_html" => renderDebtAdminRow($aDebtRows[0], $blCanEdit, $blUseEuropeanAmountFormat), "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
                 }
-                sendJsonAndExit(array("success" => true, "debt_id" => $iId, "row_html" => renderDebtAdminRow($aDebtRows[0], $blCanEdit, $blUseEuropeanAmountFormat), "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
-            }
-        } else {
-            $oStatement = $oPdo->prepare("INSERT INTO kf_debts (ex_subjects_id, amount, note) VALUES (:ex_subjects_id, :amount, :note)");
-            $oStatement->execute(array(
-                "ex_subjects_id" => $iSubjectId > 0 ? $iSubjectId : null,
-                "amount" => $fAmount,
-                "note" => $sNote != "" ? $sNote : null
-            ));
-            if ($blJsonResponse) {
+            } else {
+                $oPdo->beginTransaction();
+                $oStatement = $oPdo->prepare("INSERT INTO kf_debts (ex_subjects_id, note) VALUES (:ex_subjects_id, :note)");
+                $oStatement->execute(array(
+                    "ex_subjects_id" => $iSubjectId > 0 ? $iSubjectId : null,
+                    "note" => $sNote != "" ? $sNote : null
+                ));
                 $iId = (int)$oPdo->lastInsertId();
-                $aDebtRows = fetchDebtAdminRows($oPdo, $iId);
-                if (!$aDebtRows) {
+                $oStatement = $oPdo->prepare("INSERT INTO kf_debt_movements (debt_id, movement_date, amount, note) VALUES (:debt_id, :movement_date, :amount, :note)");
+                $oStatement->execute(array(
+                    "debt_id" => $iId,
+                    "movement_date" => $sMovementDate,
+                    "amount" => $fAmount,
+                    "note" => $sMovementNote != "" ? $sMovementNote : null
+                ));
+                $oPdo->commit();
+                if ($blJsonResponse) {
+                    $aDebtRows = fetchDebtAdminRows($oPdo, $iId);
+                    if (!$aDebtRows) {
+                        sendJsonAndExit(array("success" => false, "message" => "Debt was not found."), 404);
+                    }
+                    sendJsonAndExit(array("success" => true, "debt_id" => $iId, "row_html" => renderDebtAdminRow($aDebtRows[0], $blCanEdit, $blUseEuropeanAmountFormat), "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+                }
+            }
+        } catch (Exception $oException) {
+            error_log((string)$oException);
+            if ($oPdo->inTransaction()) {
+                $oPdo->rollBack();
+            }
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved."), 500);
+            }
+            send500AndExit("Database error: " . $oException->getMessage());
+        }
+        redirect(getCurrentScriptName());
+    } elseif ($sAction == "save_debt_movement") {
+        $iId = (int)getPostedTrimmedValue("id", "0");
+        $iDebtId = (int)getPostedTrimmedValue("debt_id", "0");
+        $sMovementDate = getPostedTrimmedValue("movement_date");
+        $fAmount = parseAmount(getPostedTrimmedValue("amount"));
+        $sNote = getPostedTrimmedValue("note");
+        if ($iDebtId < 1 || $sMovementDate == "" || $fAmount === null) {
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The debt movement could not be saved. Debt, date, and amount are required."), 400);
+            }
+            redirect(getCurrentScriptName());
+        }
+        if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sMovementDate)) {
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The debt movement could not be saved. Date must use YYYY-MM-DD."), 400);
+            }
+            redirect(getCurrentScriptName());
+        }
+        try {
+            $oStatement = $oPdo->prepare("SELECT id FROM kf_debts WHERE id = :id");
+            $oStatement->execute(array("id" => $iDebtId));
+            if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+                if ($blJsonResponse) {
                     sendJsonAndExit(array("success" => false, "message" => "Debt was not found."), 404);
                 }
-                sendJsonAndExit(array("success" => true, "debt_id" => $iId, "row_html" => renderDebtAdminRow($aDebtRows[0], $blCanEdit, $blUseEuropeanAmountFormat), "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+                redirect(getCurrentScriptName());
             }
+            if ($iId > 0) {
+                $oStatement = $oPdo->prepare("SELECT id FROM kf_debt_movements WHERE id = :id AND debt_id = :debt_id");
+                $oStatement->execute(array(
+                    "id" => $iId,
+                    "debt_id" => $iDebtId
+                ));
+                if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+                    if ($blJsonResponse) {
+                        sendJsonAndExit(array("success" => false, "message" => "Debt movement was not found."), 404);
+                    }
+                    redirect(getCurrentScriptName());
+                }
+                $oStatement = $oPdo->prepare("UPDATE kf_debt_movements SET movement_date = :movement_date, amount = :amount, note = :note WHERE id = :id AND debt_id = :debt_id");
+                $oStatement->execute(array(
+                    "movement_date" => $sMovementDate,
+                    "amount" => $fAmount,
+                    "note" => $sNote != "" ? $sNote : null,
+                    "id" => $iId,
+                    "debt_id" => $iDebtId
+                ));
+            } else {
+                $oStatement = $oPdo->prepare("INSERT INTO kf_debt_movements (debt_id, movement_date, amount, note) VALUES (:debt_id, :movement_date, :amount, :note)");
+                $oStatement->execute(array(
+                    "debt_id" => $iDebtId,
+                    "movement_date" => $sMovementDate,
+                    "amount" => $fAmount,
+                    "note" => $sNote != "" ? $sNote : null
+                ));
+            }
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => true, "debt_id" => $iDebtId, "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+            }
+        } catch (Exception $oException) {
+            error_log((string)$oException);
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The debt movement could not be saved."), 500);
+            }
+            send500AndExit("Database error: " . $oException->getMessage());
+        }
+        redirect(getCurrentScriptName());
+    } elseif ($sAction == "delete_debt_movement") {
+        $iId = (int)getPostedTrimmedValue("id", "0");
+        if ($iId > 0) {
+            $oStatement = $oPdo->prepare("DELETE FROM kf_debt_movements WHERE id = :id");
+            $oStatement->execute(array("id" => $iId));
+        }
+        if ($blJsonResponse) {
+            sendJsonAndExit(array("success" => true, "debt_movement_id" => $iId, "debt_movement_deleted" => true, "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
         }
         redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_debt") {
@@ -140,6 +243,7 @@ echo renderSettingsButton(),
       <tr>
         <th>Subject</th>
         <th class="numeric">Amount<span class="column-header-icon">&#128182;</span></th>
+        <th class="debt-movements-heading">Movements</th>
         <th>Account Number</th>
         <th>E-mail</th>
         <th>Phone</th>

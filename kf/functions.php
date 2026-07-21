@@ -269,8 +269,36 @@ function getDebtContactSelectSql() {
     return "SELECT sc.subject_id, SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN ct.contact_type = 'bankaccount' THEN c.contact_value END ORDER BY " . $sContactOrder . " SEPARATOR '\n'), '\n', 1) AS account_number, SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN ct.contact_type = 'bankaccount' THEN COALESCE(sc.note, '') END ORDER BY " . $sContactOrder . " SEPARATOR '\n'), '\n', 1) AS account_note, SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN ct.contact_type = 'bankaccount' THEN sc.is_primary END ORDER BY " . $sContactOrder . " SEPARATOR '\n'), '\n', 1) AS account_primary, SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN ct.contact_type = 'email' THEN c.contact_value END ORDER BY " . $sContactOrder . " SEPARATOR '\n'), '\n', 1) AS email, SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN ct.contact_type = 'email' THEN COALESCE(sc.note, '') END ORDER BY " . $sContactOrder . " SEPARATOR '\n'), '\n', 1) AS email_note, SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN ct.contact_type = 'email' THEN sc.is_primary END ORDER BY " . $sContactOrder . " SEPARATOR '\n'), '\n', 1) AS email_primary, SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN ct.contact_type IN ('landline', 'cell', 'fax', 'pager') THEN ct.contact_type END ORDER BY " . $sContactOrder . " SEPARATOR '\n'), '\n', 1) AS phone_type, SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN ct.contact_type IN ('landline', 'cell', 'fax', 'pager') THEN c.contact_value END ORDER BY " . $sContactOrder . " SEPARATOR '\n'), '\n', 1) AS phone, SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN ct.contact_type IN ('landline', 'cell', 'fax', 'pager') THEN COALESCE(sc.note, '') END ORDER BY " . $sContactOrder . " SEPARATOR '\n'), '\n', 1) AS phone_note, SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN ct.contact_type IN ('landline', 'cell', 'fax', 'pager') THEN sc.is_primary END ORDER BY " . $sContactOrder . " SEPARATOR '\n'), '\n', 1) AS phone_primary FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id INNER JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id WHERE ct.contact_type IN ('bankaccount', 'email', 'landline', 'cell', 'fax', 'pager') GROUP BY sc.subject_id";
 }
 
+function fetchDebtMovementRowsByDebtIds($oPdo, $aDebtIds) {
+    $aPlaceholders = array();
+    $aParams = array();
+    $aRowsByDebtId = array();
+    foreach ($aDebtIds as $iIndex => $iDebtId) {
+        $iDebtId = (int)$iDebtId;
+        if ($iDebtId < 1) {
+            continue;
+        }
+        $sParamName = "debt_id_" . $iIndex;
+        $aPlaceholders[] = ":" . $sParamName;
+        $aParams[$sParamName] = $iDebtId;
+    }
+    if (!$aPlaceholders) {
+        return array();
+    }
+    $oStatement = $oPdo->prepare("SELECT id, debt_id, movement_date, amount, note FROM kf_debt_movements WHERE debt_id IN (" . implode(", ", $aPlaceholders) . ") ORDER BY movement_date ASC, id ASC");
+    $oStatement->execute($aParams);
+    foreach ($oStatement->fetchAll(PDO::FETCH_ASSOC) as $aRow) {
+        $iDebtId = (int)$aRow["debt_id"];
+        if (!isset($aRowsByDebtId[$iDebtId])) {
+            $aRowsByDebtId[$iDebtId] = array();
+        }
+        $aRowsByDebtId[$iDebtId][] = $aRow;
+    }
+    return $aRowsByDebtId;
+}
+
 function fetchDebtAdminRows($oPdo, $iDebtId = 0) {
-    $sSql = "SELECT d.id, d.ex_subjects_id, s.subject_name, d.amount, d.note, dc.account_number, dc.account_note, dc.account_primary, dc.email, dc.email_note, dc.email_primary, dc.phone_type, dc.phone, dc.phone_note, dc.phone_primary FROM kf_debts AS d LEFT JOIN (" . getSubjectNameSelectSql() . ") AS s ON s.subject_id = d.ex_subjects_id LEFT JOIN (" . getDebtContactSelectSql() . ") AS dc ON dc.subject_id = d.ex_subjects_id";
+    $sSql = "SELECT d.id, d.ex_subjects_id, s.subject_name, d.note, dc.account_number, dc.account_note, dc.account_primary, dc.email, dc.email_note, dc.email_primary, dc.phone_type, dc.phone, dc.phone_note, dc.phone_primary FROM kf_debts AS d LEFT JOIN (" . getSubjectNameSelectSql() . ") AS s ON s.subject_id = d.ex_subjects_id LEFT JOIN (" . getDebtContactSelectSql() . ") AS dc ON dc.subject_id = d.ex_subjects_id";
     if ((int)$iDebtId > 0) {
         $sSql .= " WHERE d.id = :id";
     }
@@ -281,18 +309,60 @@ function fetchDebtAdminRows($oPdo, $iDebtId = 0) {
     } else {
         $oStatement = $oPdo->query($sSql);
     }
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aRows = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aDebtIds = array();
+    foreach ($aRows as $aRow) {
+        $aDebtIds[] = (int)$aRow["id"];
+    }
+    $aMovementRowsByDebtId = fetchDebtMovementRowsByDebtIds($oPdo, $aDebtIds);
+    foreach ($aRows as $iIndex => $aRow) {
+        $iCurrentDebtId = (int)$aRow["id"];
+        $aMovements = isset($aMovementRowsByDebtId[$iCurrentDebtId]) ? $aMovementRowsByDebtId[$iCurrentDebtId] : array();
+        $fAmount = 0.0;
+        foreach ($aMovements as $aMovement) {
+            $fAmount += (float)$aMovement["amount"];
+        }
+        $aRows[$iIndex]["amount"] = $fAmount;
+        $aRows[$iIndex]["debt_movements"] = $aMovements;
+    }
+    return $aRows;
+}
+
+function renderDebtMovementValues($aMovements, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
+    global $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji;
+
+    if (!$aMovements) {
+        return $sEmptyValueEmoji;
+    }
+    $sHtml = "<span class=\"debt-movements\">";
+    foreach ($aMovements as $aMovement) {
+        $fAmount = (float)$aMovement["amount"];
+        $sAmountClass = $fAmount < 0 ? "amount-negative" : ($fAmount > 0 ? "amount-positive" : "amount-zero");
+        $sFormattedAmount = formatDebtAmount($aMovement["amount"], $blUseEuropeanAmountFormat);
+        $sNote = trim((string)$aMovement["note"]);
+        $sActions = $blShowActions ? "<span class=\"list-item-actions\"><a href=\"#\" class=\"item-action js-edit-debt-movement\" title=\"Edit movement\" aria-label=\"Edit movement\">" . $sEditEmoji . "</a><a href=\"#\" class=\"item-action js-delete-debt-movement\" title=\"Delete movement\" aria-label=\"Delete movement\">" . $sDeleteEmoji . "</a></span>" : "";
+        $sHtml .= "<span class=\"debt-movement\" data-debt-movement-id=\"" . (int)$aMovement["id"] . "\" data-movement-date=\"" . html(formatDate($aMovement["movement_date"])) . "\" data-amount=\"" . html($sFormattedAmount) . "\" data-note=\"" . html($sNote) . "\">"
+            . "<span class=\"debt-movement-amount " . $sAmountClass . "\">" . html($sFormattedAmount) . "</span>"
+            . renderCopyAction($sFormattedAmount)
+            . "<span class=\"debt-movement-date\">" . html(formatDate($aMovement["movement_date"])) . "</span>"
+            . ($sNote != "" ? "<span class=\"contact-note\"> (" . html($sNote) . ")</span>" : "")
+            . $sActions
+            . "</span>";
+    }
+    return $sHtml . "</span>";
 }
 
 function renderDebtAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
-    global $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji;
+    global $sAddEmoji, $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji;
 
     $sFormattedAmount = formatDebtAmount($aRow["amount"], $blUseEuropeanAmountFormat);
+    $sAmountClass = (float)$aRow["amount"] < 0 ? "amount-negative" : ((float)$aRow["amount"] > 0 ? "amount-positive" : "amount-zero");
     $sSubjectId = (int)$aRow["ex_subjects_id"] > 0 && (string)$aRow["subject_name"] != "" ? (string)(int)$aRow["ex_subjects_id"] : "";
-    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-edit-debt\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-debt\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
+    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-add-debt-movement\" title=\"New movement\" aria-label=\"New movement\">" . $sAddEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-debt\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-debt\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
     return "      <tr data-debt-id=\"" . (int)$aRow["id"] . "\" data-ex-subjects-id=\"" . html($sSubjectId) . "\" data-subject-name=\"" . html($aRow["subject_name"]) . "\" data-amount=\"" . html($sFormattedAmount) . "\" data-note=\"" . html($aRow["note"]) . "\">\n"
         . "        <td><span class=\"subject-item-value\">" . htmlValue($aRow["subject_name"], $sEmptyValueEmoji) . "</span>" . renderCopyAction($aRow["subject_name"]) . "</td>\n"
-        . "        <td class=\"numeric\">" . html($sFormattedAmount) . renderCopyAction($sFormattedAmount) . "</td>\n"
+        . "        <td class=\"numeric " . $sAmountClass . "\">" . html($sFormattedAmount) . renderCopyAction($sFormattedAmount) . "</td>\n"
+        . "        <td class=\"debt-movements-cell\">" . renderDebtMovementValues($aRow["debt_movements"], $blShowActions, $blUseEuropeanAmountFormat) . "</td>\n"
         . "        <td>" . renderDebtContactValue("bankaccount", $aRow["account_number"], $aRow["account_note"], (int)$aRow["account_primary"] == 1) . "</td>\n"
         . "        <td>" . renderDebtContactValue("email", $aRow["email"], $aRow["email_note"], (int)$aRow["email_primary"] == 1) . "</td>\n"
         . "        <td>" . renderDebtContactValue($aRow["phone_type"], $aRow["phone"], $aRow["phone_note"], (int)$aRow["phone_primary"] == 1) . "</td>\n"
@@ -310,9 +380,9 @@ function renderDebtAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmount
     }
     if ($aRows) {
         $sFormattedTotal = formatDebtAmount($fTotal, $blUseEuropeanAmountFormat);
-        $sHtml .= "      <tr><td class=\"debt-total\">Total</td><td class=\"numeric debt-total\">" . html($sFormattedTotal) . renderCopyAction($sFormattedTotal) . "</td><td colspan=\"" . ($blShowActions ? 5 : 4) . "\"></td></tr>\n";
+        $sHtml .= "      <tr><td class=\"debt-total\">Total</td><td class=\"numeric debt-total\">" . html($sFormattedTotal) . renderCopyAction($sFormattedTotal) . "</td><td colspan=\"" . ($blShowActions ? 6 : 5) . "\"></td></tr>\n";
     } else {
-        $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 7 : 6) . "\">No debts found.</td></tr>\n";
+        $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 8 : 7) . "\">No debts found.</td></tr>\n";
     }
     return $sHtml;
 }

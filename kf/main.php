@@ -66,6 +66,7 @@ $sBaseUrl = $sScheme . "://" . $sHost . $sPath;
 
 $sMenuEmoji            = "&#9776;";
 $sFilterFocusEmoji     = "&#128269;";
+$sAddEmoji             = "&#10133;";
 $sEditEmoji            = "&#128221;";
 $sDeleteEmoji          = "&#128465;&#65039;";
 $sCopyEmoji            = "&#128203;";

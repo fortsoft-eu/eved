@@ -790,6 +790,40 @@ tr:nth-child(even) {
     word-break: normal;
 }
 
+.debt-movements-cell {
+    vertical-align: top;
+}
+
+.debt-movements-heading {
+    text-align: center;
+}
+
+.debt-movement {
+    display: block;
+}
+
+.debt-movement + .debt-movement {
+    margin-top: 2px;
+}
+
+.debt-movement-amount {
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+    min-width: 8em;
+    text-align: right;
+}
+
+.debt-movement-date {
+    color: #666;
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+    margin-left: 4px;
+}
+
+.list-item-actions {
+    white-space: nowrap;
+}
+
 .monthly-overview-table {
     table-layout: fixed;
 }
@@ -898,6 +932,12 @@ th.numeric {
     white-space: nowrap;
     width: 5.5em;
     word-break: normal;
+}
+
+#debts-table .admin-action-column {
+    max-width: 8em;
+    min-width: 8em;
+    width: 8em;
 }
 
 .contact-copy,

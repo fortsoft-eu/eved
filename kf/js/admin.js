@@ -785,6 +785,10 @@
             return sDebtId && oDebtsTable ? oDebtsTable.querySelector("tbody tr[data-debt-id=\"" + sDebtId + "\"]") : null;
         }
 
+        function getDebtMovementElement(oButton) {
+            return oButton && oButton.closest ? oButton.closest(".debt-movement") : null;
+        }
+
         function findAdminTransactionRowById(sTransactionId) {
             return sTransactionId && oTransactionsTable ? oTransactionsTable.querySelector("tbody tr[data-transaction-id=\"" + sTransactionId + "\"]") : null;
         }
@@ -941,7 +945,7 @@
         function getCurrentAdminModalRow(oButton, oRow) {
             var sId = oButton ? (oButton.getAttribute("data-field-id") || "") : "";
             var sClass = oButton ? (" " + oButton.className + " ") : "";
-            if (sClass.indexOf(" js-edit-debt ") !== -1 || sClass.indexOf(" js-delete-debt ") !== -1) {
+            if (sClass.indexOf(" js-edit-debt ") !== -1 || sClass.indexOf(" js-delete-debt ") !== -1 || sClass.indexOf(" js-add-debt-movement ") !== -1 || sClass.indexOf(" js-edit-debt-movement ") !== -1 || sClass.indexOf(" js-delete-debt-movement ") !== -1) {
                 return findAdminDebtRowById(sId) || oRow;
             }
             if (sClass.indexOf(" js-edit-transaction ") !== -1) {
@@ -1108,6 +1112,19 @@
             return oInput;
         }
 
+        function appendDebtDateField(oParent, sLabel, sName, sValue) {
+            var oLabel = document.createElement("label");
+            var oInput = document.createElement("input");
+            oLabel.textContent = sLabel;
+            oInput.type = "date";
+            oInput.name = sName;
+            oInput.value = sValue || "";
+            oInput.required = true;
+            oParent.appendChild(oLabel);
+            oParent.appendChild(oInput);
+            return oInput;
+        }
+
         function appendDebtSubjectField(oParent, oRow) {
             var oLabel = document.createElement("label");
             var oInput = document.createElement("input");
@@ -1157,7 +1174,7 @@
                 return oResponse.json();
             }).then(function (aData) {
                 if (!aData || !aData.success) {
-                    setAdminDialogError(oDialogData.error, aData && aData.message ? aData.message : "Debt could not be saved.");
+                    setAdminDialogError(oDialogData.error, aData && aData.message ? aData.message : (oDialogData.errorMessage || "Debt could not be saved."));
                     oDialogData.save.disabled = false;
                     return;
                 }
@@ -1169,7 +1186,7 @@
                 oDialogData.close(true);
             }).catch(function (oException) {
                 logAdminException(oException);
-                setAdminDialogError(oDialogData.error, "Debt could not be saved.");
+                setAdminDialogError(oDialogData.error, oDialogData.errorMessage || "Debt could not be saved.");
                 oDialogData.save.disabled = false;
             });
         }
@@ -1178,15 +1195,22 @@
             var blNewDebt = !oRow;
             var oDialogData = createDebtDialog(blNewDebt ? "New Debt" : "Edit Debt", oRow);
             var oSubject;
+            var oMovementDate;
             var oAmount;
             var oNote;
+            var oMovementNote;
             if (!oDialogData) {
                 return;
             }
             appendDebtHiddenField(oDialogData.form, "id", blNewDebt ? "" : (oRow.getAttribute("data-debt-id") || ""));
             oSubject = appendDebtSubjectField(oDialogData.form, oRow);
-            oAmount = appendDebtTextField(oDialogData.form, "Amount", "amount", oRow ? (oRow.getAttribute("data-amount") || "") : "");
             oNote = appendDebtTextField(oDialogData.form, "Note", "note", oRow ? (oRow.getAttribute("data-note") || "") : "");
+            if (blNewDebt) {
+                oMovementDate = appendDebtDateField(oDialogData.form, "Movement Date", "movement_date", new Date().toISOString().slice(0, 10));
+                oAmount = appendDebtTextField(oDialogData.form, "Amount", "amount", "");
+                oAmount.required = true;
+                oMovementNote = appendDebtTextField(oDialogData.form, "Movement Note", "movement_note", "");
+            }
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();
                 oEvent.preventDefault();
@@ -1194,11 +1218,69 @@
                 oData.append("id", blNewDebt ? "" : (oRow.getAttribute("data-debt-id") || ""));
                 oData.append("ex_subjects_id", oDialogData.form.querySelector("[name=\"ex_subjects_id\"]").value || "");
                 oData.append("subject_name", oSubject.value);
+                oData.append("note", oNote.value);
+                if (blNewDebt) {
+                    oData.append("movement_date", oMovementDate.value);
+                    oData.append("amount", oAmount.value);
+                    oData.append("movement_note", oMovementNote.value);
+                }
+                submitDebtDialog(oDialogData, oData);
+            });
+            finishDebtDialog(oDialogData, oSubject);
+        }
+
+        function openDebtMovementAdminDialog(oRow, oMovement) {
+            var blNewMovement = !oMovement;
+            var oDialogData = createDebtDialog(blNewMovement ? "New Debt Movement" : "Edit Debt Movement", oRow);
+            var oDate;
+            var oAmount;
+            var oNote;
+            if (!oRow || !oDialogData) {
+                return;
+            }
+            oDialogData.errorMessage = "Debt movement could not be saved.";
+            appendDebtHiddenField(oDialogData.form, "id", blNewMovement ? "" : (oMovement.getAttribute("data-debt-movement-id") || ""));
+            appendDebtHiddenField(oDialogData.form, "debt_id", oRow.getAttribute("data-debt-id") || "");
+            oDate = appendDebtDateField(oDialogData.form, "Date", "movement_date", blNewMovement ? new Date().toISOString().slice(0, 10) : (oMovement.getAttribute("data-movement-date") || ""));
+            oAmount = appendDebtTextField(oDialogData.form, "Amount", "amount", blNewMovement ? "" : (oMovement.getAttribute("data-amount") || ""));
+            oAmount.required = true;
+            oNote = appendDebtTextField(oDialogData.form, "Note", "note", blNewMovement ? "" : (oMovement.getAttribute("data-note") || ""));
+            oDialogData.form.addEventListener("submit", function (oEvent) {
+                var oData = new FormData();
+                oEvent.preventDefault();
+                oData.append("action", "save_debt_movement");
+                oData.append("id", blNewMovement ? "" : (oMovement.getAttribute("data-debt-movement-id") || ""));
+                oData.append("debt_id", oRow.getAttribute("data-debt-id") || "");
+                oData.append("movement_date", oDate.value);
                 oData.append("amount", oAmount.value);
                 oData.append("note", oNote.value);
                 submitDebtDialog(oDialogData, oData);
             });
-            finishDebtDialog(oDialogData, oSubject);
+            finishDebtDialog(oDialogData, oDate);
+        }
+
+        function openDebtMovementDeleteDialog(oRow, oMovement) {
+            var oDialogData = createDebtDialog("Confirm Deletion", oRow);
+            var oText = document.createElement("p");
+            if (!oRow || !oMovement) {
+                return;
+            }
+            if (!oDialogData) {
+                return;
+            }
+            oDialogData.errorMessage = "Debt movement could not be deleted.";
+            oDialogData.save.textContent = "Yes";
+            oDialogData.cancel.textContent = "No";
+            oText.textContent = "Delete this debt movement?";
+            oDialogData.form.appendChild(oText);
+            oDialogData.form.addEventListener("submit", function (oEvent) {
+                var oData = new FormData();
+                oEvent.preventDefault();
+                oData.append("action", "delete_debt_movement");
+                oData.append("id", oMovement.getAttribute("data-debt-movement-id") || "");
+                submitDebtDialog(oDialogData, oData);
+            });
+            finishDebtDialog(oDialogData, oDialogData.save);
         }
 
         function openDebtDeleteDialog(oRow) {
@@ -1759,15 +1841,25 @@
         }
         if (oDebtsTable) {
             oDebtsTable.addEventListener("click", function (oEvent) {
-                var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".js-edit-debt, .js-delete-debt") : null;
+                var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".js-add-debt-movement, .js-edit-debt-movement, .js-delete-debt-movement, .js-edit-debt, .js-delete-debt") : null;
+                var oRow;
+                var oMovement;
                 if (!oButton) {
                     return;
                 }
                 oEvent.preventDefault();
-                if (oButton.className.indexOf("js-delete-debt") !== -1) {
-                    openDebtDeleteDialog(oButton.closest("tr[data-debt-id]"));
+                oRow = oButton.closest("tr[data-debt-id]");
+                oMovement = getDebtMovementElement(oButton);
+                if (oButton.className.indexOf("js-add-debt-movement") !== -1) {
+                    openDebtMovementAdminDialog(oRow, null);
+                } else if (oButton.className.indexOf("js-edit-debt-movement") !== -1) {
+                    openDebtMovementAdminDialog(oRow, oMovement);
+                } else if (oButton.className.indexOf("js-delete-debt-movement") !== -1) {
+                    openDebtMovementDeleteDialog(oRow, oMovement);
+                } else if (oButton.className.indexOf("js-delete-debt") !== -1) {
+                    openDebtDeleteDialog(oRow);
                 } else {
-                    openDebtAdminDialog(oButton.closest("tr[data-debt-id]"));
+                    openDebtAdminDialog(oRow);
                 }
             });
         }
