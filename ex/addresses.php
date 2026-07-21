@@ -78,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     if ($sDeathDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDeathDate)) {
         sendJsonAndExit(array("success" => false, "message" => "Death date must use YYYY-MM-DD."), 400);
     }
-    if (!$sBirthNumber) {
+    if ($sBirthNumber === false) {
         sendJsonAndExit(array("success" => false, "message" => "Birth number must contain 9 or 10 digits."), 400);
     }
     try {
@@ -124,29 +124,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
                 "birth_date" => $sBirthDate != "" ? $sBirthDate : null,
                 "death_date" => $sDeathDate != "" ? $sDeathDate : null
             );
-            $blHasPersonValues = false;
-            foreach ($aPersonValues as $mValue) {
-                if ($mValue !== null) {
-                    $blHasPersonValues = true;
-                    break;
-                }
-            }
             $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_persons WHERE subject_id = :subject_id");
             $oStatement->execute(array("subject_id" => $iSubjectId));
             $blHasPersonRow = (bool)$oStatement->fetch(PDO::FETCH_ASSOC);
-            if ($blHasPersonValues || $blHasPersonRow) {
-                if ($blHasPersonRow && !$blHasPersonValues) {
-                    $oStatement = $oPdo->prepare("DELETE FROM ex_persons WHERE subject_id = :subject_id");
-                    $oStatement->execute(array("subject_id" => $iSubjectId));
-                } elseif ($blHasPersonRow) {
-                    $oStatement = $oPdo->prepare("UPDATE ex_persons SET title_before = :title_before, first_name = :first_name, middle_name = :middle_name, last_name = :last_name, title_after = :title_after, birth_name = :birth_name, birth_number = :birth_number, birth_date = :birth_date, death_date = :death_date WHERE subject_id = :subject_id");
-                    $aPersonValues["subject_id"] = $iSubjectId;
-                    $oStatement->execute($aPersonValues);
-                } else {
-                    $oStatement = $oPdo->prepare("INSERT INTO ex_persons (subject_id, title_before, first_name, middle_name, last_name, title_after, birth_name, birth_number, birth_date, death_date) VALUES (:subject_id, :title_before, :first_name, :middle_name, :last_name, :title_after, :birth_name, :birth_number, :birth_date, :death_date)");
-                    $aPersonValues["subject_id"] = $iSubjectId;
-                    $oStatement->execute($aPersonValues);
-                }
+            if ($blHasPersonRow) {
+                $oStatement = $oPdo->prepare("UPDATE ex_persons SET title_before = :title_before, first_name = :first_name, middle_name = :middle_name, last_name = :last_name, title_after = :title_after, birth_name = :birth_name, birth_number = :birth_number, birth_date = :birth_date, death_date = :death_date WHERE subject_id = :subject_id");
+                $aPersonValues["subject_id"] = $iSubjectId;
+                $oStatement->execute($aPersonValues);
+            } else {
+                $oStatement = $oPdo->prepare("INSERT INTO ex_persons (subject_id, title_before, first_name, middle_name, last_name, title_after, birth_name, birth_number, birth_date, death_date) VALUES (:subject_id, :title_before, :first_name, :middle_name, :last_name, :title_after, :birth_name, :birth_number, :birth_date, :death_date)");
+                $aPersonValues["subject_id"] = $iSubjectId;
+                $oStatement->execute($aPersonValues);
             }
         }
         $oPdo->commit();

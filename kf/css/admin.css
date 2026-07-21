@@ -881,6 +881,12 @@ th.numeric {
     text-decoration: none;
 }
 
+.column-header-icon {
+    display: inline-block;
+    margin-left: 1px;
+    vertical-align: top;
+}
+
 .admin-action-column {
     box-sizing: border-box;
     max-width: 5.5em;

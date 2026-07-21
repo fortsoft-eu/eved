@@ -111,6 +111,7 @@ function handleSettingsPost() {
     }
     requireNamedCsrfToken("kf_csrf_token");
     saveSettings($_POST);
+    session_write_close();
     redirect(getCurrentPagePath());
 }
 

@@ -139,7 +139,7 @@ echo renderSettingsButton(),
     <thead>
       <tr>
         <th>Subject</th>
-        <th class="numeric">Amount</th>
+        <th class="numeric">Amount<span class="column-header-icon">&#128182;</span></th>
         <th>Account Number</th>
         <th>E-mail</th>
         <th>Phone</th>
