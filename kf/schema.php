@@ -71,10 +71,9 @@ $iTime = sendPageHeaders();
 <?php
 
 renderMenu();
-echo "  </p>\n";
-renderMessage();
 
 ?>
+  </p>
   <p class="schema-unavailable-message"><strong>Database Schema: </strong>The database schema cannot be displayed on this device.</p>
   <div class="schema-diagram" id="schema-diagram">
     <div class="schema-canvas" id="schema-canvas">

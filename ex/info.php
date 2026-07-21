@@ -124,11 +124,6 @@ foreach ($aCreditsTypes as $sKey => $iValue) {
     </form>
   </div>
   <iframe class="phpinfo-frame" name="phpinfo-frame" src="<?php echo htmlspecialchars($sDefaultFrameUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" title="PHP Info"></iframe>
-<?php
-
-echo renderEmojiData();
-
-?>
   <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>

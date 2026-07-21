@@ -186,6 +186,8 @@ input[type="text"] {
     text-decoration: none;
 }
 
+.button-link-disabled,
+.button-link-disabled:hover,
 .button-link:disabled,
 .button-link:disabled:hover {
     background: #E6E6E6;
@@ -194,6 +196,10 @@ input[type="text"] {
     cursor: default;
     opacity: 1;
     text-decoration: none;
+}
+
+.button-link-disabled {
+    pointer-events: none;
 }
 
 .confirm-dialog {

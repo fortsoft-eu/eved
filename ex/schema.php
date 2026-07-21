@@ -183,7 +183,6 @@ foreach ($aTables as $sTableName => $aColumns) {
       </div>
     </div>
   </div>
-
   <table class="schema-relations">
     <thead>
       <tr>
@@ -242,11 +241,10 @@ foreach ($aRelations as $aRelation) {
         "        <td>" . htmlspecialchars($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
         "      </tr>\n";
 }
-echo "    </tbody>\n",
-    "  </table>\n",
-    renderEmojiData();
 
 ?>
+    </tbody>
+  </table>
   <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>

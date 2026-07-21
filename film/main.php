@@ -64,12 +64,13 @@ if (substr($sPath, -1) != "/") {
 $sBaseUrl = $sScheme . "://" . $sHost . $sPath;
 
 
-$sDirectory         = "./img";
-$sExtension         = ".avif";
-$iVisitTimeout      = 1200;
-$sFilterFocusEmoji  = "&#128269;";
-$sMenuEmoji         = "&#9776;";
-$sFilmMenuEmoji     = "&#127902;&#65039;";
+$sDirectory                     = "./img";
+$sExtension                     = ".avif";
+$iVisitTimeout                  = 1200;
+$blDatabaseBackupDownloadLogin  = true;
+$sFilterFocusEmoji              = "&#128269;";
+$sMenuEmoji                     = "&#9776;";
+$sFilmMenuEmoji                 = "&#127902;&#65039;";
 
 
 $sError = "";

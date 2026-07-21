@@ -292,6 +292,10 @@ table {
     width: 75px;
 }
 
+.admin-controls .js-index-settings-open {
+    width: 75px;
+}
+
 .admin-controls .database-action-button {
     flex: 0 0 130px;
 }
@@ -705,11 +709,72 @@ tr:nth-child(even) {
     margin: 4px 0 0;
 }
 
+.subject-edit-dialog {
+    max-height: calc(100vh - 48px);
+    max-width: 520px;
+    overflow: auto;
+}
+
+.subject-edit-dialog label {
+    display: block;
+    margin: 10px 16px 4px;
+}
+
+.subject-edit-dialog input[type="text"],
+.subject-edit-dialog input[type="password"],
+.subject-edit-dialog input[type="date"],
+.subject-edit-dialog select {
+    box-sizing: border-box;
+    margin: 0 16px;
+    width: calc(100% - 32px);
+}
+
+.subject-edit-dialog input[type="checkbox"] {
+    margin: 0 6px 0 16px;
+    width: auto;
+}
+
+.subject-edit-dialog label.checkbox-label {
+    font-weight: normal;
+}
+
+.subject-edit-dialog .confirm-dialog-actions {
+    padding-top: 16px;
+}
+
+.subject-edit-error {
+    color: #D00;
+    margin: 10px 16px 0;
+}
+
+.index-settings-form {
+    max-width: 420px;
+}
+
+.index-settings-options {
+    display: grid;
+    gap: 8px;
+    margin: 16px;
+}
+
+.index-settings-options label {
+    font-weight: normal;
+    margin-top: 0;
+}
+
+.index-settings-options input[type="checkbox"] {
+    margin-right: 6px;
+}
+
 #transactions-table,
-#types-table,
-#debts-table {
+#types-table {
     table-layout: auto;
     width: auto;
+}
+
+#debts-table {
+    table-layout: auto;
+    width: 100%;
 }
 
 #transactions-table td,
@@ -795,6 +860,82 @@ th.numeric {
     grid-row: 2;
 }
 
+.invalid-contact-value {
+    background-color: #FFF9C4;
+    color: #D00;
+}
+
+.item-action {
+    border: 0;
+    color: inherit;
+    display: inline-block;
+    font-size: inherit;
+    margin-left: 1px;
+    padding: 0;
+    text-decoration: none;
+    vertical-align: top;
+}
+
+.item-action:hover {
+    background: transparent;
+    text-decoration: none;
+}
+
+.admin-action-column {
+    box-sizing: border-box;
+    max-width: 5.5em;
+    min-width: 5.5em;
+    overflow-wrap: normal;
+    text-align: center;
+    white-space: nowrap;
+    width: 5.5em;
+    word-break: normal;
+}
+
+.contact-copy,
+.copy-action {
+    display: inline-block;
+    font-size: inherit;
+    margin-left: 0;
+    text-decoration: none;
+    vertical-align: top;
+}
+
+.contact-link {
+    display: inline-block;
+    font-size: inherit;
+    margin-left: 1px;
+    text-decoration: none;
+    vertical-align: top;
+}
+
+.contact-copy:hover,
+.contact-link:hover {
+    text-decoration: none;
+}
+
+.copy-action:hover {
+    text-decoration: none;
+}
+
+.copy-action-box {
+    display: inline-block;
+    text-align: right;
+    vertical-align: top;
+    width: 1.35em;
+}
+
+.contact-flags {
+    color: #666;
+    font-size: inherit;
+}
+
+.contact-flags span:not(:empty) {
+    display: inline-block;
+    margin-left: 1px;
+    vertical-align: top;
+}
+
 .amount-positive {
     color: #080;
 }
@@ -806,6 +947,25 @@ th.numeric {
 
 .amount-zero {
     color: #000;
+}
+
+.admin-row-modal > td {
+    background: #EADFFF !important;
+}
+
+.admin-row-saved > td {
+    animation: nxAdminRowSavedBlink 0.22s linear 6;
+}
+
+@keyframes nxAdminRowSavedBlink {
+    0%,
+    100% {
+        background-color: transparent;
+    }
+
+    50% {
+        background-color: #DFF0D8;
+    }
 }
 
 .database-structure-cell pre {

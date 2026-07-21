@@ -165,7 +165,6 @@ if ($blCompared) {
         "changed_rows" => "Changed"
     ));
 }
-echo renderEmojiData();
 
 ?>
   <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>

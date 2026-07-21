@@ -338,6 +338,35 @@ function focusAdminElement(oElement, blSelectText) {
     }
 }
 
+function isAdminUserInput(oElement) {
+    var sTag = oElement && oElement.tagName ? oElement.tagName.toLowerCase() : "";
+    var sType;
+    if (!oElement || oElement.disabled || oElement.getAttribute("tabindex") == "-1" || oElement.getAttribute("aria-hidden") == "true") {
+        return false;
+    }
+    if (oElement.closest && oElement.closest("[hidden]")) {
+        return false;
+    }
+    if (sTag == "select" || sTag == "textarea") {
+        return true;
+    }
+    if (sTag != "input") {
+        return false;
+    }
+    sType = (oElement.getAttribute("type") || "text").toLowerCase();
+    return sType != "hidden" && sType != "submit" && sType != "button" && sType != "reset" && sType != "image";
+}
+
+function findFirstAdminUserInput(oRoot) {
+    var aElements = oRoot ? oRoot.querySelectorAll("input, select, textarea") : [];
+    for (var iI = 0; iI < aElements.length; iI += 1) {
+        if (isAdminUserInput(aElements[iI])) {
+            return aElements[iI];
+        }
+    }
+    return null;
+}
+
 function isAdminTextSelectionField(oElement) {
     var sTag = oElement && oElement.tagName ? oElement.tagName.toLowerCase() : "";
     var sType;
@@ -642,7 +671,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var oHeader = oDialog ? oDialog.querySelector(".confirm-dialog-header") : null;
     var oClose = oDialog ? oDialog.querySelector(".js-index-settings-close") : null;
     var oCancel = oDialog ? oDialog.querySelector(".js-index-settings-cancel") : null;
-    var oFirstInput = oDialog ? oDialog.querySelector("input[type=\"checkbox\"]") : null;
     var oCzechiaCountry = oDialog ? oDialog.querySelector(".js-czechia-country-toggle") : null;
     var aCzechiaDependents = oDialog ? oDialog.querySelectorAll(".js-czechia-country-dependent") : [];
     var aSavedCheckboxStates = [];
@@ -721,7 +749,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         document.addEventListener("keydown", closeOnEscape);
-        focusAdminElement(oFirstInput, true);
+        focusAdminElement(findFirstAdminUserInput(oDialog), true);
     }
 
     function closeDialog() {
@@ -1392,7 +1420,7 @@ document.addEventListener("DOMContentLoaded", function () {
         bindRows();
 
         document.addEventListener("keydown", closeOnEscape);
-        focusAdminElement(oDialog.querySelector(".js-complex-filter-field"), true);
+        focusAdminElement(findFirstAdminUserInput(oForm), true);
     }
 
     function closeDialog() {
@@ -2596,7 +2624,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         beginAdminSubjectRowEdit(findAdminGroupRowById(oDialogData.groupId) || oDialogData.groupRow);
-        focusAdminElement(oFocus, true);
+        focusAdminElement(findFirstAdminUserInput(oDialogData.form) || oFocus, true);
     }
 
     function submitGroupDialog(oDialogData, oData) {
@@ -3131,7 +3159,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         beginAdminSubjectRowEdit(findAdminContactTypeRowById(oDialogData.contactTypeId) || oDialogData.contactTypeRow);
-        focusAdminElement(oFocus, true);
+        focusAdminElement(findFirstAdminUserInput(oDialogData.form) || oFocus, true);
     }
 
     function submitContactTypeDialog(oDialogData, oData) {
@@ -4040,9 +4068,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         beginAdminSubjectRowEdit(oDialogData.getCurrentSubjectRow());
-        if (oFocus) {
-            focusAdminElement(oFocus, true);
-        }
+        focusAdminElement(findFirstAdminUserInput(oDialogData.form) || oFocus, true);
     }
 
     function submitSubjectDialog(oDialogData, oData) {
@@ -4915,7 +4941,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         beginAdminSubjectRowEdit(oSubjectRow);
-        focusAdminElement(oValue, true);
+        focusAdminElement(findFirstAdminUserInput(oForm) || oValue, true);
         oCancel.addEventListener("click", function () {
             closeDialog();
         });
@@ -5047,9 +5073,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         document.addEventListener("keydown", closeOnEscape);
-        if (oFocus) {
-            focusAdminElement(oFocus, true);
-        }
+        focusAdminElement(findFirstAdminUserInput(oForm) || oFocus, true);
     }
 
     function hideDialog(oDialog) {
@@ -5287,7 +5311,7 @@ document.addEventListener("DOMContentLoaded", function () {
         setAddressRowsModal(oCell, true);
 
         document.addEventListener("keydown", closeOnEscape);
-        focusAdminElement(getField(oEditForm, "street_name"), true);
+        focusAdminElement(findFirstAdminUserInput(oEditForm) || getField(oEditForm, "street_name"), true);
     }
 
     function openSharedAddressDelete(oCell) {
@@ -5342,7 +5366,7 @@ document.addEventListener("DOMContentLoaded", function () {
         setSubjectRowModal(oCell, true);
 
         document.addEventListener("keydown", closeOnEscape);
-        focusAdminElement(getField(oSubjectEditForm, "street_name"), true);
+        focusAdminElement(findFirstAdminUserInput(oSubjectEditForm) || getField(oSubjectEditForm, "street_name"), true);
     }
 
     function openSubjectAddressDelete(oCell) {

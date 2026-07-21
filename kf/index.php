@@ -11,6 +11,10 @@ if (!$oPdo) {
 }
 
 
+handleSettingsPost();
+$aSettings = getSettings();
+
+
 $aTypes = getFinanceTypes(false);
 $aGroups = array();
 $oStatement = $oPdo->query("SELECT id, name FROM kf_fin_types WHERE type_kind = 'group' ORDER BY name ASC, id ASC");
@@ -95,9 +99,9 @@ $iTime = sendPageHeaders();
   <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
-  <p class="admin-controls">
 <?php
 
+echo "  <p class=\"admin-controls\">";
 renderMenu();
 
 ?>
@@ -106,11 +110,11 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
-  </p>
 <?php
 
-renderMessage();
-echo "  <div id=\"monthly-overview-tables\">\n";
+echo renderSettingsButton(),
+    " </p>\n",
+    "  <div id=\"monthly-overview-tables\">\n";
 
 foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColumnGroup) {
     echo "  <table id=\"monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target monthly-overview-table\">\n",
@@ -153,7 +157,8 @@ foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColum
         "  </table>\n";
 }
 
-echo "  </div>\n";
+echo "  </div>\n",
+    renderSettingsModal($aSettings);
 
 ?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>

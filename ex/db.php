@@ -15,6 +15,9 @@ if (isset($_GET["download"])) {
         $sDownload = "schema";
     }
     if ($sDownload == "backup" && !isTrustedClient($aAllowedIps) && !isProjectViewAllowed("ex")) {
+        if ($blDatabaseBackupDownloadLogin) {
+            requireViewAccess($aAllowedIps, "ex", "ex_csrf_token");
+        }
         send403AndExit();
     }
 }
@@ -100,7 +103,6 @@ if ($sDownload == "schema" || $sDownload == "backup") {
 $sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $sSchemaDownloadUrl = $sScriptUrl . "?download=schema";
 $sBackupDownloadUrl = $sScriptUrl . "?download=backup";
-$blCanDownloadBackup = isTrustedClient($aAllowedIps) || isProjectViewAllowed("ex");
 $iTime = sendPageHeaders();
 
 ?>
@@ -138,7 +140,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="submit" form="database-schema-download-form" class="button-link database-action-button">Download schema</button>
     <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo htmlspecialchars($sSchemaDownloadUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">Copy schema link</button>
-    <button type="submit" form="database-backup-download-form" class="button-link database-action-button"<?php echo $blCanDownloadBackup ? "" : " disabled"; ?>>Download backup</button>
+    <button type="submit" form="database-backup-download-form" class="button-link database-action-button">Download backup</button>
     <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo htmlspecialchars($sBackupDownloadUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">Copy backup link</button>
   </p>
   <table id="database-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">

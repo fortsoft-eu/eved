@@ -184,11 +184,11 @@ foreach ($aRelations as $aRelation) {
             $sRouteAttributes .= " data-via-table-bottom-offset=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
         }
     }
-    echo "      <tr data-source-table=\"" . htmlspecialchars($aRelation["TABLE_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")
-        . "\" data-source-column=\"" . htmlspecialchars($aRelation["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")
-        . "\" data-target-table=\"" . htmlspecialchars($aRelation["REFERENCED_TABLE_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")
-        . "\" data-target-column=\"" . htmlspecialchars($aRelation["REFERENCED_COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\""
-        . $sRouteAttributes . ">\n",
+    echo "      <tr data-source-table=\"" . htmlspecialchars($aRelation["TABLE_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"),
+        "\" data-source-column=\"" . htmlspecialchars($aRelation["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"),
+        "\" data-target-table=\"" . htmlspecialchars($aRelation["REFERENCED_TABLE_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"),
+        "\" data-target-column=\"" . htmlspecialchars($aRelation["REFERENCED_COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"",
+        $sRouteAttributes . ">\n",
         "        <td>" . htmlspecialchars($aRelation["CONSTRAINT_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
         "        <td>" . htmlspecialchars($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
         "        <td>" . htmlspecialchars($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",

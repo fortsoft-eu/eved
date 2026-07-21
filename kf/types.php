@@ -13,28 +13,29 @@ if (!$oPdo) {
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
-    requireNamedCsrfToken("kf_csrf_token");
     $sAction = getPostedTrimmedValue("action");
+    $blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
+    requireFullAccess($aAllowedIps, "kf", "kf_csrf_token", $blJsonResponse);
+    requireNamedCsrfToken("kf_csrf_token", $blJsonResponse);
     if ($sAction == "save_type") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         $sName = getPostedTrimmedValue("name");
         $sTypeKind = getPostedTrimmedValue("type_kind", "expense");
         $aAllowedKinds = array("expense", "income", "group");
         if ($sName == "" || !in_array($sTypeKind, $aAllowedKinds, true)) {
-            setMessage("The type could not be saved. Name and kind are required.", "error");
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The type could not be saved. Name and kind are required."), 400);
+            }
             redirect(getCurrentScriptName());
         }
         try {
             if ($iId > 0) {
                 $oStatement = $oPdo->prepare("UPDATE kf_fin_types SET name = :name, type_kind = :type_kind WHERE id = :id");
                 $oStatement->execute(array("name" => $sName, "type_kind" => $sTypeKind, "id" => $iId));
-                setMessage("Type updated.");
             } else {
                 $oStatement = $oPdo->prepare("INSERT INTO kf_fin_types (name, type_kind) VALUES (:name, :type_kind)");
                 $oStatement->execute(array("name" => $sName, "type_kind" => $sTypeKind));
                 $iId = (int)$oPdo->lastInsertId();
-                setMessage("Type added.");
             }
             $oStatement = $oPdo->prepare("DELETE FROM kf_fin_groups WHERE group_type_id = :group_type_id");
             $oStatement->execute(array("group_type_id" => $iId));
@@ -47,9 +48,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     }
                 }
             }
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => true, "type_id" => $iId, "rows_html" => renderFinanceTypeAdminRows(fetchFinanceTypeAdminRows($oPdo), $blCanEdit)));
+            }
         } catch (PDOException $oException) {
             error_log((string)$oException);
-            setMessage("The type could not be saved. The name may already exist.", "error");
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The type could not be saved. The name may already exist."), 409);
+            }
         }
         redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_type") {
@@ -58,15 +64,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_fin_trans WHERE finance_type_id = :id");
             $oStatement->execute(array("id" => $iId));
             if ((int)$oStatement->fetchColumn() > 0) {
-                setMessage("The type is used by transactions and cannot be deleted.", "error");
+                if ($blJsonResponse) {
+                    sendJsonAndExit(array("success" => false, "message" => "The type is used by transactions and cannot be deleted."), 409);
+                }
             } else {
                 try {
                     $oStatement = $oPdo->prepare("DELETE FROM kf_fin_types WHERE id = :id");
                     $oStatement->execute(array("id" => $iId));
-                    setMessage("Type deleted.");
+                    if ($blJsonResponse) {
+                        sendJsonAndExit(array("success" => true, "type_id" => $iId, "type_deleted" => true, "rows_html" => renderFinanceTypeAdminRows(fetchFinanceTypeAdminRows($oPdo), $blCanEdit)));
+                    }
                 } catch (PDOException $oException) {
                     error_log((string)$oException);
-                    setMessage("The type could not be deleted.", "error");
+                    if ($blJsonResponse) {
+                        sendJsonAndExit(array("success" => false, "message" => "The type could not be deleted."), 500);
+                    }
                 }
             }
         }
@@ -75,17 +87,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 
-$aRows = array();
-$oStatement = $oPdo->query("SELECT ft.id, ft.name, ft.type_kind, GROUP_CONCAT(m.id ORDER BY m.name SEPARATOR ',') AS member_ids, GROUP_CONCAT(m.name ORDER BY m.name SEPARATOR ', ') AS member_names FROM kf_fin_types ft LEFT JOIN kf_fin_groups gi ON gi.group_type_id = ft.id LEFT JOIN kf_fin_types m ON m.id = gi.member_type_id GROUP BY ft.id, ft.name, ft.type_kind ORDER BY FIELD(ft.type_kind, 'income', 'expense', 'group'), ft.name ASC, ft.id ASC");
-while ($aRow = $oStatement->fetch()) {
-    $aRows[] = $aRow;
-}
+$aRows = fetchFinanceTypeAdminRows($oPdo);
 
 
 $aMemberTypes = $blCanEdit ? getFinanceTypes(false) : array();
 $sToolbarHtml = "";
 if ($blCanEdit) {
-    $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-type\" data-modal-target=\"type-modal\" data-modal-title=\"New Type\" data-field-id=\"\" data-field-name=\"\" data-field-type_kind=\"expense\" data-field-members=\"\">New</button>\n";
+    $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-type\">New</button>\n";
 }
 
 
@@ -125,10 +133,8 @@ renderMenu();
 echo $sToolbarHtml,
     "  </p>\n";
 
-renderMessage();
-
 ?>
-  <table id="types-table" class="table-filter-target">
+  <table id="types-table" class="table-filter-target" data-member-types="<?php echo htmlspecialchars(json_encode($aMemberTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th>Kind</th>
@@ -137,76 +143,21 @@ renderMessage();
 <?php
 
 if ($blCanEdit) {
-    echo "        <th></th>\n";
+    echo "        <th class=\"admin-action-column\"></th>\n";
 
 }
 echo "      </tr>\n",
     "    </thead>\n",
     "    <tbody>\n";
 
-foreach ($aRows as $aRow) {
-    $sActionCell = "";
-    if ($blCanEdit) {
-        $sActionCell = "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"type-modal\" data-modal-title=\"Edit Type\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-name=\"" . html($aRow["name"]) . "\" data-field-type_kind=\"" . html($aRow["type_kind"]) . "\" data-field-members=\"" . html($aRow["member_ids"]) . "\">Edit</button></td>\n";
-    }
-    echo "      <tr>\n",
-        "        <td>" . html(ucfirst($aRow["type_kind"])) . "</td>\n",
-        "        <td>" . html($aRow["name"]) . "</td>\n",
-        "        <td>" . htmlValue($aRow["member_names"], "&mdash;") . "</td>\n",
-        $sActionCell,
-        "      </tr>\n";
-}
-
-if (!$aRows) {
-    echo "      <tr><td colspan=\"" . ($blCanEdit ? 4 : 3) . "\">No types found.</td></tr>\n";
-}
-
-echo "    </tbody>\n",
+echo renderFinanceTypeAdminRows($aRows, $blCanEdit),
+    "    </tbody>\n",
     "  </table>\n";
 
 
-if ($blCanEdit) {
-
-?>
-  <div id="type-modal" class="confirm-dialog" hidden>
-    <form method="post" class="confirm-dialog-box edit-dialog">
-      <div class="confirm-dialog-header"><strong data-modal-heading>Type</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
-        <input type="hidden" name="kf_csrf_token" value="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
-        <input type="hidden" name="action" value="save_type">
-        <input type="hidden" name="id" value="">
-        <label for="type-name">Name</label>
-        <input type="text" id="type-name" name="name" required>
-        <label for="type-kind">Kind</label>
-        <select id="type-kind" name="type_kind" required>
-          <option value="income">Income</option>
-          <option value="expense">Expense</option>
-          <option value="group">Group</option>
-        </select>
-        <div data-visible-for-kind="group" hidden>
-          <label>Group Members</label>
-          <div class="checkbox-grid">
-<?php
-
-    foreach ($aMemberTypes as $aType) {
-        echo "            <label class=\"checkbox-label\"><input type=\"checkbox\" name=\"members[]\" value=\"" . (int)$aType["id"] . "\"> " . html($aType["name"]) . "</label>\n";
-    }
-
-?>
-          </div>
-        </div>
-        <div class="confirm-dialog-actions">
-          <button type="submit" class="confirm-dialog-button">Save</button>
-          <button type="submit" name="action" value="delete_type" class="confirm-dialog-button">Delete</button>
-          <button type="button" class="confirm-dialog-button" data-modal-close>Cancel</button>
-        </div>
-    </form>
-  </div>
-<?php
-
-}
-
 ?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

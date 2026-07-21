@@ -12,42 +12,70 @@ if (!$oPdo) {
 }
 
 
+handleSettingsPost();
+$aSettings = getSettings();
+$blUseEuropeanAmountFormat = (int)$aSettings["use_european_amount_format"] == 1;
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
-    requireNamedCsrfToken("kf_csrf_token");
     $sAction = getPostedTrimmedValue("action");
-    if ($sAction == "save_debt") {
+    $blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
+    requireFullAccess($aAllowedIps, "kf", "kf_csrf_token", $blJsonResponse);
+    requireNamedCsrfToken("kf_csrf_token", $blJsonResponse);
+    if ($sAction == "suggest_subjects") {
+        try {
+            sendJsonAndExit(array("success" => true, "subjects" => fetchSubjectSuggestions($oPdo, getPostedTrimmedValue("term"), 12)));
+        } catch (Exception $oException) {
+            error_log((string)$oException);
+            sendJsonAndExit(array("success" => false, "message" => "Subjects could not be loaded."), 500);
+        }
+    } elseif ($sAction == "save_debt") {
         $iId = (int)getPostedTrimmedValue("id", "0");
-        $sFirstName = getPostedTrimmedValue("first_name");
-        $sLastName = getPostedTrimmedValue("last_name");
+        $iSubjectId = (int)getPostedTrimmedValue("ex_subjects_id", "0");
         $fAmount = parseAmount(getPostedTrimmedValue("amount"));
-        $sAccountNumber = getPostedTrimmedValue("account_number");
-        $sEmail = getPostedTrimmedValue("email");
-        if (($sFirstName == "" && $sLastName == "") || $fAmount === null) {
-            setMessage("The debt could not be saved. Name and amount are required.", "error");
+        $sNote = getPostedTrimmedValue("note");
+        if ($iSubjectId < 1 || $fAmount === null) {
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved. Subject and amount are required."), 400);
+            }
+            redirect(getCurrentScriptName());
+        }
+        if ($iSubjectId > 0 && !fetchSubjectNameRow($oPdo, $iSubjectId)) {
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved. Subject was not found."), 404);
+            }
             redirect(getCurrentScriptName());
         }
         if ($iId > 0) {
-            $oStatement = $oPdo->prepare("UPDATE kf_debts SET first_name = :first_name, last_name = :last_name, amount = :amount, account_number = :account_number, email = :email WHERE id = :id");
+            $oStatement = $oPdo->prepare("UPDATE kf_debts SET ex_subjects_id = :ex_subjects_id, amount = :amount, note = :note WHERE id = :id");
             $oStatement->execute(array(
-                "first_name" => $sFirstName != "" ? $sFirstName : null,
-                "last_name" => $sLastName != "" ? $sLastName : null,
+                "ex_subjects_id" => $iSubjectId > 0 ? $iSubjectId : null,
                 "amount" => $fAmount,
-                "account_number" => $sAccountNumber != "" ? $sAccountNumber : null,
-                "email" => $sEmail != "" ? $sEmail : null,
+                "note" => $sNote != "" ? $sNote : null,
                 "id" => $iId
             ));
-            setMessage("Debt updated.");
+            if ($blJsonResponse) {
+                $aDebtRows = fetchDebtAdminRows($oPdo, $iId);
+                if (!$aDebtRows) {
+                    sendJsonAndExit(array("success" => false, "message" => "Debt was not found."), 404);
+                }
+                sendJsonAndExit(array("success" => true, "debt_id" => $iId, "row_html" => renderDebtAdminRow($aDebtRows[0], $blCanEdit, $blUseEuropeanAmountFormat), "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+            }
         } else {
-            $oStatement = $oPdo->prepare("INSERT INTO kf_debts (first_name, last_name, amount, account_number, email) VALUES (:first_name, :last_name, :amount, :account_number, :email)");
+            $oStatement = $oPdo->prepare("INSERT INTO kf_debts (ex_subjects_id, amount, note) VALUES (:ex_subjects_id, :amount, :note)");
             $oStatement->execute(array(
-                "first_name" => $sFirstName != "" ? $sFirstName : null,
-                "last_name" => $sLastName != "" ? $sLastName : null,
+                "ex_subjects_id" => $iSubjectId > 0 ? $iSubjectId : null,
                 "amount" => $fAmount,
-                "account_number" => $sAccountNumber != "" ? $sAccountNumber : null,
-                "email" => $sEmail != "" ? $sEmail : null
+                "note" => $sNote != "" ? $sNote : null
             ));
-            setMessage("Debt added.");
+            if ($blJsonResponse) {
+                $iId = (int)$oPdo->lastInsertId();
+                $aDebtRows = fetchDebtAdminRows($oPdo, $iId);
+                if (!$aDebtRows) {
+                    sendJsonAndExit(array("success" => false, "message" => "Debt was not found."), 404);
+                }
+                sendJsonAndExit(array("success" => true, "debt_id" => $iId, "row_html" => renderDebtAdminRow($aDebtRows[0], $blCanEdit, $blUseEuropeanAmountFormat), "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+            }
         }
         redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_debt") {
@@ -55,23 +83,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($iId > 0) {
             $oStatement = $oPdo->prepare("DELETE FROM kf_debts WHERE id = :id");
             $oStatement->execute(array("id" => $iId));
-            setMessage("Debt deleted.");
+        }
+        if ($blJsonResponse) {
+            sendJsonAndExit(array("success" => true, "debt_id" => $iId, "debt_deleted" => true, "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
         }
         redirect(getCurrentScriptName());
     }
 }
 
 
-$aRows = array();
-$oStatement = $oPdo->query("SELECT id, first_name, last_name, amount, account_number, email FROM kf_debts ORDER BY last_name ASC, first_name ASC, id ASC");
-while ($aRow = $oStatement->fetch()) {
-    $aRows[] = $aRow;
-}
+$aRows = fetchDebtAdminRows($oPdo);
 
 
 $sToolbarHtml = "";
 if ($blCanEdit) {
-    $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-debt\" data-modal-target=\"debt-modal\" data-modal-title=\"New Debt\" data-field-id=\"\" data-field-first_name=\"\" data-field-last_name=\"\" data-field-amount=\"\" data-field-account_number=\"\" data-field-email=\"\">New</button>\n";
+    $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-debt\">New</button>\n";
 }
 
 
@@ -104,87 +130,39 @@ $iTime = sendPageHeaders();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php
 
-echo $sToolbarHtml,
+echo renderSettingsButton(),
+    $sToolbarHtml,
     "  </p>\n";
-renderMessage();
 
 ?>
   <table id="debts-table" class="table-filter-target">
     <thead>
       <tr>
-        <th>First Name</th>
-        <th>Last Name</th>
+        <th>Subject</th>
         <th class="numeric">Amount</th>
         <th>Account Number</th>
-        <th>Email</th>
+        <th>E-mail</th>
+        <th>Phone</th>
+        <th>Note</th>
 <?php
 
 if ($blCanEdit) {
-    echo "        <th></th>\n";
+    echo "        <th class=\"admin-action-column\"></th>\n";
 }
 
 echo "      </tr>\n",
     "    </thead>\n",
     "    <tbody>\n";
 
-$fTotal = 0;
-foreach ($aRows as $aRow) {
-    $fTotal += (float)$aRow["amount"];
-    $sActionCell = "";
-    if ($blCanEdit) {
-        $sActionCell = "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"debt-modal\" data-modal-title=\"Edit Debt\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-first_name=\"" . html($aRow["first_name"]) . "\" data-field-last_name=\"" . html($aRow["last_name"]) . "\" data-field-amount=\"" . html(formatAmount($aRow["amount"])) . "\" data-field-account_number=\"" . html($aRow["account_number"]) . "\" data-field-email=\"" . html($aRow["email"]) . "\">Edit</button></td>\n";
-    }
-    echo "      <tr>\n",
-        "        <td>" . htmlValue($aRow["first_name"], "&mdash;") . "</td>\n",
-        "        <td>" . htmlValue($aRow["last_name"], "&mdash;") . "</td>\n",
-        "        <td class=\"numeric\">" . html(formatAmount($aRow["amount"])) . "</td>\n",
-        "        <td>" . htmlValue($aRow["account_number"], "&mdash;") . "</td>\n",
-        "        <td>" . ($aRow["email"] != "" ? "<a href=\"mailto:" . html($aRow["email"]) . "\">" . html($aRow["email"]) . "</a>" : htmlValue("", "&mdash;")) . "</td>\n",
-        $sActionCell,
-        "      </tr>\n";
-}
-
-if ($aRows) {
-    echo "      <tr><td colspan=\"2\" class=\"debt-total\">Total</td><td class=\"numeric debt-total\">" . html(formatAmount($fTotal)) . "</td><td colspan=\"" . ($blCanEdit ? 3 : 2) . "\"></td></tr>\n";
-} else {
-    echo "      <tr><td colspan=\"" . ($blCanEdit ? 6 : 5) . "\">No debts found.</td></tr>\n";
-}
-
-echo "    </tbody>\n",
+echo renderDebtAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat),
+    "    </tbody>\n",
     "  </table>\n";
 
-if ($blCanEdit) {
-
 ?>
-  <div id="debt-modal" class="confirm-dialog" hidden>
-    <form method="post" class="confirm-dialog-box edit-dialog">
-      <div class="confirm-dialog-header"><strong data-modal-heading>Debt</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
-        <input type="hidden" name="kf_csrf_token" value="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
-        <input type="hidden" name="action" value="save_debt">
-        <input type="hidden" name="id" value="">
-        <label for="first-name">First Name</label>
-        <input type="text" id="first-name" name="first_name">
-        <label for="last-name">Last Name</label>
-        <input type="text" id="last-name" name="last_name">
-        <label for="debt-amount">Amount</label>
-        <input type="text" id="debt-amount" name="amount" required>
-        <label for="account-number">Account Number</label>
-        <input type="text" id="account-number" name="account_number">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email">
-        <div class="confirm-dialog-actions">
-          <button type="submit" class="confirm-dialog-button">Save</button>
-          <button type="submit" name="action" value="delete_debt" class="confirm-dialog-button">Delete</button>
-          <button type="button" class="confirm-dialog-button" data-modal-close>Cancel</button>
-        </div>
-    </form>
-  </div>
-<?php
-
-}
-
-?>
+<?php echo renderSettingsModal($aSettings); ?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+<?php echo renderEmojiData(); ?>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

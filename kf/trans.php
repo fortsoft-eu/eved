@@ -12,10 +12,15 @@ if (!$oPdo) {
 }
 
 
+handleSettingsPost();
+$aSettings = getSettings();
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
-    requireNamedCsrfToken("kf_csrf_token");
     $sAction = getPostedTrimmedValue("action");
+    $blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
+    requireFullAccess($aAllowedIps, "kf", "kf_csrf_token", $blJsonResponse);
+    requireNamedCsrfToken("kf_csrf_token", $blJsonResponse);
     if ($sAction == "save_transaction") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         $sDate = getPostedTrimmedValue("transaction_date");
@@ -27,7 +32,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $oStatement->execute(array("id" => $iFinanceTypeId));
         $aType = $oStatement->fetch();
         if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDate) || !$aType || $fAmount === null || $fAmount <= 0) {
-            setMessage("The transaction could not be saved. Check the date, type, and amount.", "error");
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The transaction could not be saved. Check the date, type, and amount."), 400);
+            }
             redirect(getCurrentScriptName());
         }
         $fSignedAmount = $aType["type_kind"] == "expense" ? -abs($fAmount) : abs($fAmount);
@@ -41,7 +48,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "note" => $sNote != "" ? $sNote : null,
                 "id" => $iId
             ));
-            setMessage("Transaction updated.");
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit)));
+            }
         } else {
             $oStatement = $oPdo->prepare("INSERT INTO kf_fin_trans (transaction_date, finance_type_id, amount, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :counterparty, :note)");
             $oStatement->execute(array(
@@ -51,7 +60,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
                 "note" => $sNote != "" ? $sNote : null
             ));
-            setMessage("Transaction added.");
+            if ($blJsonResponse) {
+                $iId = (int)$oPdo->lastInsertId();
+                sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit)));
+            }
         }
         redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_transaction") {
@@ -59,23 +71,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($iId > 0) {
             $oStatement = $oPdo->prepare("DELETE FROM kf_fin_trans WHERE id = :id");
             $oStatement->execute(array("id" => $iId));
-            setMessage("Transaction deleted.");
+        }
+        if ($blJsonResponse) {
+            sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "transaction_deleted" => true, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit)));
         }
         redirect(getCurrentScriptName());
     }
 }
 
 
-$aRows = array();
-$oStatement = $oPdo->query("SELECT t.id, t.transaction_date, t.amount, t.counterparty, t.note, ft.id AS finance_type_id, ft.name AS type_name, ft.type_kind FROM kf_fin_trans t JOIN kf_fin_types ft ON ft.id = t.finance_type_id ORDER BY t.transaction_date DESC, t.id DESC");
-while ($aRow = $oStatement->fetch()) {
-    $aRows[] = $aRow;
-}
+$aRows = fetchTransactionAdminRows($oPdo);
+$aFinanceTypes = $blCanEdit ? getFinanceTypes(false) : array();
 
 
 $sToolbarHtml = "";
 if ($blCanEdit) {
-    $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-transaction\" data-modal-target=\"transaction-modal\" data-modal-title=\"New Transaction\" data-field-id=\"\" data-field-transaction_date=\"" . html(date("Y-m-d")) . "\" data-field-finance_type_id=\"\" data-field-amount=\"\" data-field-counterparty=\"\" data-field-note=\"\">New</button>\n";
+    $sToolbarHtml = "    <button type=\"button\" class=\"button-link js-add-transaction\">New</button>\n";
 }
 
 
@@ -112,12 +123,12 @@ renderMenu();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php
 
-echo $sToolbarHtml,
+echo renderSettingsButton(),
+    $sToolbarHtml,
     "  </p>\n";
-renderMessage();
 
 ?>
-  <table id="transactions-table" class="table-filter-target">
+  <table id="transactions-table" class="table-filter-target" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th>Date</th>
@@ -128,74 +139,21 @@ renderMessage();
 <?php
 
 if ($blCanEdit) {
-    echo "        <th></th>\n";
+    echo "        <th class=\"admin-action-column\"></th>\n";
 }
 
 echo "      </tr>\n",
     "    </thead>\n",
     "    <tbody>\n";
 
-foreach ($aRows as $aRow) {
-    $sAmountClass = $aRow["amount"] < 0 ? "amount-negative" : ($aRow["amount"] > 0 ? "amount-positive" : "amount-zero");
-    $sActionCell = "";
-    if ($blCanEdit) {
-        $sActionCell = "        <td class=\"nowrap\"><button type=\"button\" class=\"button-link\" data-modal-target=\"transaction-modal\" data-modal-title=\"Edit Transaction\" data-field-id=\"" . (int)$aRow["id"] . "\" data-field-transaction_date=\"" . html(formatDate($aRow["transaction_date"])) . "\" data-field-finance_type_id=\"" . (int)$aRow["finance_type_id"] . "\" data-field-amount=\"" . html(formatAmount(abs($aRow["amount"]))) . "\" data-field-counterparty=\"" . html($aRow["counterparty"]) . "\" data-field-note=\"" . html($aRow["note"]) . "\">Edit</button></td>\n";
-    }
-    echo "      <tr>\n",
-        "        <td class=\"nowrap\">" . html(formatDate($aRow["transaction_date"])) . "</td>\n",
-        "        <td>" . html($aRow["type_name"]) . "</td>\n",
-        "        <td class=\"numeric " . $sAmountClass . "\">" . html(formatAmount($aRow["amount"])) . "</td>\n",
-        "        <td>" . htmlValue($aRow["counterparty"], "&mdash;") . "</td>\n",
-        "        <td>" . htmlValue($aRow["note"], "&mdash;") . "</td>\n",
-        $sActionCell,
-        "      </tr>\n";
-}
-
-if (!$aRows) {
-    echo "      <tr><td colspan=\"" . ($blCanEdit ? 6 : 5) . "\">No transactions found.</td></tr>\n";
-}
-
-echo "    </tbody>\n",
+echo renderTransactionAdminRows($aRows, $blCanEdit),
+    "    </tbody>\n",
     "  </table>\n";
 
-if ($blCanEdit) {
-
 ?>
-  <div id="transaction-modal" class="confirm-dialog" hidden>
-    <form method="post" class="confirm-dialog-box edit-dialog">
-      <div class="confirm-dialog-header"><strong data-modal-heading>Transaction</strong><button type="button" class="confirm-dialog-close" data-modal-close aria-label="Close">&times;</button></div>
-        <input type="hidden" name="kf_csrf_token" value="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
-        <input type="hidden" name="action" value="save_transaction">
-        <input type="hidden" name="id" value="">
-        <label for="transaction-date">Date</label>
-        <input type="date" id="transaction-date" name="transaction_date" required>
-        <label for="finance-type-id">Type</label>
-        <select id="finance-type-id" name="finance_type_id" required>
-<?php
-
-echo getFinanceTypeOptionsHtml();
-
-?>
-        </select>
-        <label for="amount">Amount</label>
-        <input type="text" id="amount" name="amount" required>
-        <label for="counterparty">Counterparty</label>
-        <input type="text" id="counterparty" name="counterparty">
-        <label for="note">Note</label>
-        <input type="text" id="note" name="note">
-        <div class="confirm-dialog-actions">
-          <button type="submit" class="confirm-dialog-button">Save</button>
-          <button type="submit" name="action" value="delete_transaction" class="confirm-dialog-button">Delete</button>
-          <button type="button" class="confirm-dialog-button" data-modal-close>Cancel</button>
-        </div>
-    </form>
-  </div>
-<?php
-
-}
-
-?>
+<?php echo renderSettingsModal($aSettings); ?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>
