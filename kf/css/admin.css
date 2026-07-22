@@ -794,6 +794,7 @@ tr:nth-child(even) {
 
 #transactions-table,
 #subscriptions-table,
+#exchange-rates-table,
 #debts-table {
     table-layout: auto;
     width: 100%;
@@ -803,6 +804,8 @@ tr:nth-child(even) {
 #transactions-table th,
 #subscriptions-table td,
 #subscriptions-table th,
+#exchange-rates-table td,
+#exchange-rates-table th,
 #types-table td,
 #types-table th,
 #debts-table td,

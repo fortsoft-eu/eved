@@ -623,6 +623,282 @@ function renderSubscriptionAdminRows($aRows, $blShowActions = true, $blUseEurope
     return $sHtml;
 }
 
+function fetchLatestExchangeRateRows($oPdo) {
+    $oStatement = $oPdo->query("SELECT MAX(valid_for) FROM kf_exchange_rates");
+    $sValidFor = (string)$oStatement->fetchColumn();
+    if ($sValidFor == "") {
+        return array();
+    }
+    $oStatement = $oPdo->prepare("SELECT id, valid_for, `order` AS rate_order, country, currency, currency_code, amount, rate, fetched_at FROM kf_exchange_rates WHERE valid_for = :valid_for ORDER BY `order` ASC, country ASC, currency_code ASC, id ASC");
+    $oStatement->execute(array("valid_for" => $sValidFor));
+    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function formatExchangeRateValue($mRate) {
+    $sRate = number_format((float)$mRate, 6, ".", "");
+    $sRate = rtrim(rtrim($sRate, "0"), ".");
+    return $sRate != "" ? $sRate : "0";
+}
+
+function formatExchangeRateDateTime($sDateTime) {
+    $iTime = strtotime((string)$sDateTime);
+    return $iTime ? date("Y-m-d H:i:s", $iTime) : "";
+}
+
+function renderExchangeRateRows($aRows) {
+    $sHtml = "";
+    foreach ($aRows as $aRow) {
+        $sHtml .= "      <tr data-exchange-rate-id=\"" . (int)$aRow["id"] . "\">\n"
+            . "        <td class=\"nowrap\">" . html(formatDate($aRow["valid_for"])) . "</td>\n"
+            . "        <td class=\"numeric\">" . html((int)$aRow["rate_order"]) . "</td>\n"
+            . "        <td>" . html($aRow["country"]) . "</td>\n"
+            . "        <td>" . html($aRow["currency"]) . "</td>\n"
+            . "        <td class=\"nowrap\">" . html($aRow["currency_code"]) . "</td>\n"
+            . "        <td class=\"numeric\">" . html((int)$aRow["amount"]) . "</td>\n"
+            . "        <td class=\"numeric\">" . html(formatExchangeRateValue($aRow["rate"])) . "</td>\n"
+            . "        <td class=\"nowrap\">" . html(formatExchangeRateDateTime($aRow["fetched_at"])) . "</td>\n"
+            . "      </tr>\n";
+    }
+    if (!$aRows) {
+        $sHtml .= "      <tr><td colspan=\"8\">No exchange rates found.</td></tr>\n";
+    }
+    return $sHtml;
+}
+
+function sendProcResultAndExit($sResult, $iStatusCode = 200) {
+    sendSecurityHeaders();
+    http_response_code($iStatusCode);
+    header("Content-Type: text/plain; charset=utf-8", true);
+    header("Cache-Control: no-store", true);
+    echo $sResult . "\n";
+    exit;
+}
+
+function getExchangeRateRequestedFor() {
+    $oTimeZone = new DateTimeZone("Europe/Prague");
+    $oNow = new DateTimeImmutable("now", $oTimeZone);
+    $oPublishTime = $oNow->setTime(14, 45, 0);
+    if ($oNow < $oPublishTime) {
+        $oNow = $oNow->modify("-1 day");
+    }
+    return $oNow->format("Y-m-d");
+}
+
+function hasExchangeRatesForDate($oPdo, $sValidFor) {
+    $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_exchange_rates WHERE valid_for = :valid_for");
+    $oStatement->execute(array("valid_for" => $sValidFor));
+    return (int)$oStatement->fetchColumn() > 0;
+}
+
+function reserveExchangeRateFetchAttempt($oPdo, $sRequestedFor) {
+    $oPdo->beginTransaction();
+    try {
+        if (hasExchangeRatesForDate($oPdo, $sRequestedFor)) {
+            $oPdo->commit();
+            return false;
+        }
+        $oStatement = $oPdo->prepare("INSERT INTO kf_exrates_fetches (requested_for, status) VALUES (:requested_for, 'pending') ON DUPLICATE KEY UPDATE requested_for = requested_for");
+        $oStatement->execute(array("requested_for" => $sRequestedFor));
+        $oStatement = $oPdo->prepare("SELECT last_attempt_at, succeeded_at FROM kf_exrates_fetches WHERE requested_for = :requested_for FOR UPDATE");
+        $oStatement->execute(array("requested_for" => $sRequestedFor));
+        $aFetch = $oStatement->fetch(PDO::FETCH_ASSOC);
+        if ($aFetch && trim((string)$aFetch["succeeded_at"]) != "") {
+            $oPdo->commit();
+            return false;
+        }
+        if ($aFetch && trim((string)$aFetch["last_attempt_at"]) != "") {
+            $iLastAttempt = strtotime((string)$aFetch["last_attempt_at"]);
+            if ($iLastAttempt !== false && $iLastAttempt > time() - 3600) {
+                $oPdo->commit();
+                return false;
+            }
+        }
+        $oStatement = $oPdo->prepare("UPDATE kf_exrates_fetches SET status = 'running', last_attempt_at = current_timestamp(6), attempt_count = attempt_count + 1, http_status_code = NULL, error_message = NULL WHERE requested_for = :requested_for");
+        $oStatement->execute(array("requested_for" => $sRequestedFor));
+        $oPdo->commit();
+        return true;
+    } catch (Exception $oException) {
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        throw $oException;
+    }
+}
+
+function getExchangeRateHttpStatusCode($aHeaders) {
+    $iStatusCode = 0;
+    foreach ($aHeaders as $sHeader) {
+        if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", (string)$sHeader, $aMatches)) {
+            $iStatusCode = (int)$aMatches[1];
+        }
+    }
+    return $iStatusCode;
+}
+
+function fetchExchangeRateApiResponse($sRequestedFor) {
+    $sUrl = "https://api.cnb.cz/cnbapi/exrates/daily?" . http_build_query(array("date" => $sRequestedFor, "lang" => "EN"), "", "&");
+    if (function_exists("curl_init")) {
+        $oCurl = curl_init($sUrl);
+        curl_setopt($oCurl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($oCurl, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($oCurl, CURLOPT_TIMEOUT, 30);
+        curl_setopt($oCurl, CURLOPT_HTTPHEADER, array("Accept: application/json"));
+        curl_setopt($oCurl, CURLOPT_USERAGENT, "eved-kf");
+        $sBody = curl_exec($oCurl);
+        $iStatusCode = (int)curl_getinfo($oCurl, CURLINFO_RESPONSE_CODE);
+        $sError = curl_errno($oCurl) ? curl_error($oCurl) : "";
+        if (PHP_VERSION_ID < 80000) {
+            curl_close($oCurl);
+        }
+        return array(
+            "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
+            "status_code" => $iStatusCode,
+            "body" => $sBody !== false ? (string)$sBody : "",
+            "error" => $sError
+        );
+    }
+    $aContext = array(
+        "http" => array(
+            "method" => "GET",
+            "header" => "Accept: application/json\r\nUser-Agent: eved-kf\r\n",
+            "timeout" => 30,
+            "ignore_errors" => true
+        )
+    );
+    $sBody = @file_get_contents($sUrl, false, stream_context_create($aContext));
+    $aHeaders = isset($http_response_header) && is_array($http_response_header) ? $http_response_header : array();
+    $iStatusCode = getExchangeRateHttpStatusCode($aHeaders);
+    $aError = error_get_last();
+    return array(
+        "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
+        "status_code" => $iStatusCode,
+        "body" => $sBody !== false ? (string)$sBody : "",
+        "error" => $sBody !== false ? "" : (isset($aError["message"]) ? (string)$aError["message"] : "HTTP request failed.")
+    );
+}
+
+function normalizeExchangeRateDecimal($mValue) {
+    if (is_int($mValue)) {
+        $sValue = (string)$mValue;
+    } elseif (is_float($mValue)) {
+        $sValue = rtrim(rtrim(sprintf("%.10F", $mValue), "0"), ".");
+    } else {
+        $sValue = trim((string)$mValue);
+    }
+    $sValue = str_replace(",", ".", $sValue);
+    if (!preg_match("/^[0-9]+(?:\\.[0-9]+)?$/", $sValue)) {
+        return false;
+    }
+    return $sValue;
+}
+
+function parseExchangeRateApiResponse($sBody, &$sError) {
+    $aData = json_decode((string)$sBody, true);
+    if (!is_array($aData) || !isset($aData["rates"]) || !is_array($aData["rates"]) || !count($aData["rates"])) {
+        $sError = "CNB response does not contain rates.";
+        return false;
+    }
+    $aRows = array();
+    foreach ($aData["rates"] as $aRate) {
+        if (!is_array($aRate)) {
+            $sError = "CNB rate row is invalid.";
+            return false;
+        }
+        $sValidFor = isset($aRate["validFor"]) ? trim((string)$aRate["validFor"]) : "";
+        $sCountry = isset($aRate["country"]) ? trim((string)$aRate["country"]) : "";
+        $sCurrency = isset($aRate["currency"]) ? trim((string)$aRate["currency"]) : "";
+        $sCurrencyCode = isset($aRate["currencyCode"]) ? strtoupper(trim((string)$aRate["currencyCode"])) : "";
+        $mAmount = isset($aRate["amount"]) ? $aRate["amount"] : null;
+        $mOrder = isset($aRate["order"]) ? $aRate["order"] : null;
+        $mRate = isset($aRate["rate"]) ? $aRate["rate"] : null;
+        $sRate = normalizeExchangeRateDecimal($mRate);
+        if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sValidFor) || $sCountry == "" || $sCurrency == "" || !preg_match("/^[A-Z]{3}$/", $sCurrencyCode)
+            || !is_numeric($mAmount) || !is_numeric($mOrder) || $sRate === false) {
+            $sError = "CNB rate row contains invalid data.";
+            return false;
+        }
+        $aRows[] = array(
+            "valid_for" => $sValidFor,
+            "order" => (int)$mOrder,
+            "country" => $sCountry,
+            "currency" => $sCurrency,
+            "currency_code" => $sCurrencyCode,
+            "amount" => (int)$mAmount,
+            "rate" => $sRate
+        );
+    }
+    return $aRows;
+}
+
+function getExchangeRateApiErrorMessage($aResponse) {
+    if (trim((string)$aResponse["error"]) != "") {
+        return (string)$aResponse["error"];
+    }
+    $aData = json_decode((string)$aResponse["body"], true);
+    if (is_array($aData)) {
+        $aParts = array();
+        foreach (array("description", "errorCode", "messageId", "happenedAt", "endPoint") as $sKey) {
+            if (isset($aData[$sKey]) && trim((string)$aData[$sKey]) != "") {
+                $aParts[] = $sKey . ": " . trim((string)$aData[$sKey]);
+            }
+        }
+        if ($aParts) {
+            return implode("; ", $aParts);
+        }
+    }
+    return "CNB API returned HTTP " . (int)$aResponse["status_code"] . ".";
+}
+
+function recordExchangeRateFetchError($oPdo, $sRequestedFor, $iHttpStatusCode, $sErrorMessage) {
+    $sErrorMessage = substr((string)$sErrorMessage, 0, 1000);
+    $oStatement = $oPdo->prepare("UPDATE kf_exrates_fetches SET status = 'error', http_status_code = :http_status_code, error_message = :error_message WHERE requested_for = :requested_for");
+    $oStatement->execute(array(
+        "http_status_code" => $iHttpStatusCode > 0 ? $iHttpStatusCode : null,
+        "error_message" => $sErrorMessage,
+        "requested_for" => $sRequestedFor
+    ));
+}
+
+function saveExchangeRates($oPdo, $sRequestedFor, $aRows, $iHttpStatusCode) {
+    $sResponseValidFor = (string)$aRows[0]["valid_for"];
+    $oPdo->beginTransaction();
+    try {
+        $oStatement = $oPdo->prepare("SELECT id FROM kf_exrates_fetches WHERE requested_for = :requested_for FOR UPDATE");
+        $oStatement->execute(array("requested_for" => $sRequestedFor));
+        $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_exchange_rates WHERE valid_for = :valid_for");
+        $oStatement->execute(array("valid_for" => $sResponseValidFor));
+        $iExistingRows = (int)$oStatement->fetchColumn();
+        if ($iExistingRows < 1) {
+            $oStatement = $oPdo->prepare("INSERT INTO kf_exchange_rates (valid_for, `order`, country, currency, currency_code, amount, rate, fetched_at) VALUES (:valid_for, :rate_order, :country, :currency, :currency_code, :amount, :rate, current_timestamp(6))");
+            foreach ($aRows as $aRow) {
+                $oStatement->execute(array(
+                    "valid_for" => $aRow["valid_for"],
+                    "rate_order" => (int)$aRow["order"],
+                    "country" => $aRow["country"],
+                    "currency" => $aRow["currency"],
+                    "currency_code" => $aRow["currency_code"],
+                    "amount" => (int)$aRow["amount"],
+                    "rate" => $aRow["rate"]
+                ));
+            }
+            $iExistingRows = count($aRows);
+        }
+        $oStatement = $oPdo->prepare("UPDATE kf_exrates_fetches SET status = 'success', succeeded_at = current_timestamp(6), response_valid_for = :response_valid_for, http_status_code = :http_status_code, rates_count = :rates_count, error_message = NULL WHERE requested_for = :requested_for");
+        $oStatement->execute(array(
+            "response_valid_for" => $sResponseValidFor,
+            "http_status_code" => $iHttpStatusCode > 0 ? $iHttpStatusCode : null,
+            "rates_count" => $iExistingRows,
+            "requested_for" => $sRequestedFor
+        ));
+        $oPdo->commit();
+    } catch (Exception $oException) {
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        throw $oException;
+    }
+}
+
 function fetchFinanceTypeAdminRows($oPdo, $iTypeId = 0) {
     $sSql = "SELECT ft.id, ft.name, ft.type_kind, GROUP_CONCAT(m.id ORDER BY m.name SEPARATOR ',') AS member_ids, GROUP_CONCAT(m.name ORDER BY m.name SEPARATOR ', ') AS member_names FROM kf_fin_types ft LEFT JOIN kf_fin_groups gi ON gi.group_type_id = ft.id LEFT JOIN kf_fin_types m ON m.id = gi.member_type_id";
     if ((int)$iTypeId > 0) {

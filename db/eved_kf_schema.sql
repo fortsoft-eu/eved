@@ -22,6 +22,44 @@ CREATE TABLE `kf_debt_movements` (
   CONSTRAINT `fk_kf_debt_movements_debt` FOREIGN KEY (`debt_id`) REFERENCES `kf_debts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
+CREATE TABLE `kf_exchange_rates` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `valid_for` date NOT NULL,
+  `order` int(10) unsigned NOT NULL,
+  `country` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci NOT NULL,
+  `currency` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci NOT NULL,
+  `currency_code` char(3) NOT NULL,
+  `amount` bigint(20) unsigned NOT NULL,
+  `rate` decimal(18,6) NOT NULL,
+  `fetched_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_kf_exrates_date_currency` (`valid_for`,`currency_code`),
+  KEY `ix_kf_exrates_currency_date` (`currency_code`,`valid_for`),
+  KEY `ix_kf_exrates_valid_for` (`valid_for`,`id`),
+  KEY `ix_kf_exrates_date_order` (`valid_for`,`order`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE TABLE `kf_exrates_fetches` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `requested_for` date NOT NULL,
+  `status` enum('pending','running','success','error') NOT NULL DEFAULT 'pending',
+  `last_attempt_at` datetime(6) DEFAULT NULL,
+  `succeeded_at` datetime(6) DEFAULT NULL,
+  `response_valid_for` date DEFAULT NULL,
+  `http_status_code` smallint(5) unsigned DEFAULT NULL,
+  `rates_count` int(10) unsigned NOT NULL DEFAULT 0,
+  `attempt_count` int(10) unsigned NOT NULL DEFAULT 0,
+  `error_message` varchar(1024) DEFAULT NULL,
+  `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_kf_exrates_fetches_date` (`requested_for`),
+  KEY `ix_kf_exrates_fetches_status` (`status`,`last_attempt_at`),
+  KEY `ix_kf_exrates_fetches_response` (`response_valid_for`,`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
 CREATE TABLE `kf_fin_types` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `legacy_id` int(10) unsigned DEFAULT NULL,
