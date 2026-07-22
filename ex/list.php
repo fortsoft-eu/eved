@@ -932,7 +932,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             "note" => $sNote != "" ? $sNote : null
         ));
         $oPdo->commit();
+        saveNewContactDefaultTypeId($iContactTypeId);
         $aResponse = getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql);
+        session_write_close();
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         error_log((string)$oException);
@@ -1021,6 +1023,7 @@ try {
 }
 
 
+$iNewContactDefaultTypeId = getNewContactDefaultTypeId($aContactTypes);
 $aHiddenInactive = getHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aFullListSettings);
 applySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $aNotes, $aFullListSettings);
 
@@ -1199,7 +1202,7 @@ foreach ($aAllGroups as $aGroup) {
     echo "    <option value=\"" . html($aGroup["name"]) . "\"></option>\n";
 }
 echo "  </datalist>\n",
-    "  <select id=\"contact-type-list\" hidden>\n";
+    "  <select id=\"contact-type-list\" hidden data-default-contact-type-id=\"" . html($iNewContactDefaultTypeId > 0 ? $iNewContactDefaultTypeId : "") . "\">\n";
 foreach ($aContactTypes as $aContactType) {
     echo "    <option value=\"" . html($aContactType["id"]) . "\" data-contact-type=\"" . html($aContactType["contact_type"]) . "\" data-contact-type-active=\"" . html($aContactType["is_active"]) . "\">" . html($aContactType["name"]) . "</option>\n";
 }

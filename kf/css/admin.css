@@ -117,6 +117,11 @@ select {
     width: 100%;
 }
 
+.currency-select,
+.currency-select option {
+    font-family: Consolas, "Courier New", monospace;
+}
+
 input[type="date"],
 input[type="datetime-local"],
 input[type="email"],

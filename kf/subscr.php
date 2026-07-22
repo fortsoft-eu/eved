@@ -102,7 +102,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $oStatement->execute(array("id" => $iFinanceTypeId));
         $aType = $oStatement->fetch();
         $aCurrentSubscription = null;
-        if ($iId > 0) {
+        $blNewSubscription = $iId < 1;
+        if (!$blNewSubscription) {
             $oStatement = $oPdo->prepare("SELECT id, billing_period, billing_day, next_due_at FROM kf_subscriptions WHERE id = :id");
             $oStatement->execute(array("id" => $iId));
             $aCurrentSubscription = $oStatement->fetch(PDO::FETCH_ASSOC);
@@ -124,7 +125,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $sNextDueAtForDatabase = $sNextDueAt != "" ? formatSubscriptionDueForDatabase($sNextDueAt) : null;
         $iBillingDay = getSubscriptionBillingDayForSave($sNextDueAtForDatabase, $sBillingPeriod, $aCurrentSubscription);
         try {
-            if ($iId > 0) {
+            if (!$blNewSubscription) {
                 $oStatement = $oPdo->prepare("UPDATE kf_subscriptions SET name = :name, finance_type_id = :finance_type_id, amount = :amount, currency = :currency, billing_period = :billing_period, billing_day = :billing_day, next_due_at = :next_due_at, counterparty = :counterparty, note = :note, is_active = :is_active WHERE id = :id");
                 $oStatement->execute(array(
                     "name" => $sName,
@@ -154,6 +155,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     "is_active" => $iIsActive
                 ));
                 $iId = (int)$oPdo->lastInsertId();
+                saveNewSubscriptionDefaults($iFinanceTypeId, $sCurrency, $sBillingPeriod);
+            }
+            if ($blNewSubscription) {
+                session_write_close();
             }
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => true, "subscription_id" => $iId, "rows_html" => renderSubscriptionAdminRows(fetchSubscriptionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
@@ -191,6 +196,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $aRows = fetchSubscriptionAdminRows($oPdo);
 $aFinanceTypes = $blCanEdit ? getFinanceTypes(false) : array();
+$aNewSubscriptionDefaults = $blCanEdit ? getNewSubscriptionDefaults($oPdo) : array("finance_type_id" => 0, "currency" => getDefaultCurrency(), "billing_period" => "monthly");
 
 
 $sToolbarHtml = "";
@@ -237,7 +243,7 @@ echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">S
     "  </p>\n";
 
 ?>
-  <table id="subscriptions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(getCurrencyOptionsJson($oPdo, getDefaultCurrency()), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="subscriptions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(getCurrencyOptionsJson($oPdo, getDefaultCurrency()), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-default-finance-type-id="<?php echo html((int)$aNewSubscriptionDefaults["finance_type_id"] > 0 ? $aNewSubscriptionDefaults["finance_type_id"] : ""); ?>" data-default-currency="<?php echo html($aNewSubscriptionDefaults["currency"]); ?>" data-default-billing-period="<?php echo html($aNewSubscriptionDefaults["billing_period"]); ?>">
     <thead>
       <tr>
         <th class="subscription-in-column">In</th>

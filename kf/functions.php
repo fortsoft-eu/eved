@@ -72,6 +72,45 @@ function getDefaultCurrency() {
     return "USD";
 }
 
+function getNewSubscriptionDefaults($oPdo) {
+    $aDefaults = array(
+        "finance_type_id" => 0,
+        "currency" => getDefaultCurrency(),
+        "billing_period" => "monthly"
+    );
+    if (!isset($_SESSION["kf_new_subscription_defaults"]) || !is_array($_SESSION["kf_new_subscription_defaults"])) {
+        return $aDefaults;
+    }
+    $iFinanceTypeId = isset($_SESSION["kf_new_subscription_defaults"]["finance_type_id"]) ? (int)$_SESSION["kf_new_subscription_defaults"]["finance_type_id"] : 0;
+    if ($iFinanceTypeId > 0) {
+        foreach (getFinanceTypes(false) as $aType) {
+            if ((int)$aType["id"] == $iFinanceTypeId) {
+                $aDefaults["finance_type_id"] = $iFinanceTypeId;
+                break;
+            }
+        }
+    }
+    $sCurrency = isset($_SESSION["kf_new_subscription_defaults"]["currency"]) ? normalizeCurrency($_SESSION["kf_new_subscription_defaults"]["currency"]) : "";
+    if ($sCurrency != "" && isCurrencyAvailable($oPdo, $sCurrency)) {
+        $aDefaults["currency"] = $sCurrency;
+    }
+    $sBillingPeriod = isset($_SESSION["kf_new_subscription_defaults"]["billing_period"]) ? (string)$_SESSION["kf_new_subscription_defaults"]["billing_period"] : "";
+    $aBillingPeriods = getSubscriptionBillingPeriods();
+    if (isset($aBillingPeriods[$sBillingPeriod])) {
+        $aDefaults["billing_period"] = $sBillingPeriod;
+    }
+    return $aDefaults;
+}
+
+function saveNewSubscriptionDefaults($iFinanceTypeId, $sCurrency, $sBillingPeriod) {
+    if (!isset($_SESSION["kf_new_subscription_defaults"]) || !is_array($_SESSION["kf_new_subscription_defaults"])) {
+        $_SESSION["kf_new_subscription_defaults"] = array();
+    }
+    $_SESSION["kf_new_subscription_defaults"]["finance_type_id"] = (int)$iFinanceTypeId;
+    $_SESSION["kf_new_subscription_defaults"]["currency"] = normalizeStoredCurrency($sCurrency);
+    $_SESSION["kf_new_subscription_defaults"]["billing_period"] = (string)$sBillingPeriod;
+}
+
 function getSettings() {
     $aSettingsDefaults = getSettingsDefaults();
     $sPageKey = getCurrentSettingsPageKey();
@@ -173,7 +212,7 @@ function renderSettingsModal($aSettings = null) {
         . "      </div>\n"
         . "      <div class=\"index-settings-options\">\n"
         . "        <label for=\"display-currency\">Display currency</label>\n"
-        . "        <select id=\"display-currency\" name=\"display_currency\">\n"
+        . "        <select id=\"display-currency\" name=\"display_currency\" class=\"currency-select\">\n"
         . $sCurrencyOptionsHtml
         . "        </select>\n"
         . "        <div class=\"index-settings-separator\"></div>\n"
@@ -199,8 +238,9 @@ function normalizeStoredCurrency($sCurrency) {
 }
 
 function getCurrencyOptions($oPdo, $sSelectedCurrency = "") {
+    $sCurrencySeparator = " " . html_entity_decode("&#8212;", ENT_QUOTES, "UTF-8") . " ";
     $aCurrencies = array(
-        "CZK" => array("currency" => "CZK", "label" => "CZK")
+        "CZK" => array("currency" => "CZK", "label" => "CZK" . $sCurrencySeparator . "Czech koruna")
     );
     if ($oPdo) {
         try {
@@ -213,7 +253,7 @@ function getCurrencyOptions($oPdo, $sSelectedCurrency = "") {
                 $sCurrencyName = trim((string)$aRow["currency_name"]);
                 $aCurrencies[$sCurrency] = array(
                     "currency" => $sCurrency,
-                    "label" => $sCurrencyName != "" ? $sCurrency . " - " . $sCurrencyName : $sCurrency
+                    "label" => $sCurrencyName != "" ? $sCurrency . $sCurrencySeparator . $sCurrencyName : $sCurrency
                 );
             }
         } catch (Exception $oException) {
@@ -915,6 +955,8 @@ function formatExchangeRateDateTime($sDateTime) {
 function renderExchangeRateRows($aRows) {
     $sHtml = "";
     foreach ($aRows as $aRow) {
+        $sFetchedAtDisplay = formatExchangeRateDateTime($aRow["fetched_at"]);
+        $sFetchedAtDisplay = $sFetchedAtDisplay != "" ? str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sFetchedAtDisplay)) : "&mdash;";
         $sHtml .= "      <tr data-exchange-rate-id=\"" . (int)$aRow["id"] . "\">\n"
             . "        <td class=\"nowrap\">" . html(formatDate($aRow["valid_for"])) . "</td>\n"
             . "        <td class=\"numeric\">" . html((int)$aRow["rate_order"]) . "</td>\n"
@@ -923,7 +965,7 @@ function renderExchangeRateRows($aRows) {
             . "        <td class=\"nowrap\">" . html($aRow["currency_code"]) . "</td>\n"
             . "        <td class=\"numeric\">" . html((int)$aRow["amount"] . " " . $aRow["currency_code"]) . "</td>\n"
             . "        <td class=\"numeric\">" . html(formatExchangeRateValue($aRow["rate"]) . " CZK") . "</td>\n"
-            . "        <td class=\"nowrap\">" . html(formatExchangeRateDateTime($aRow["fetched_at"])) . "</td>\n"
+            . "        <td class=\"nowrap\">" . $sFetchedAtDisplay . "</td>\n"
             . "      </tr>\n";
     }
     if (!$aRows) {

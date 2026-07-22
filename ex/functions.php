@@ -307,6 +307,32 @@ function getContactTypeById($iContactTypeId, $oPdo = null, $blActiveOnly = true)
     return null;
 }
 
+function getNewContactDefaultTypeId($aContactTypes) {
+    $iContactTypeId = 0;
+    if (isset($_SESSION["ex_new_contact_defaults"]) && is_array($_SESSION["ex_new_contact_defaults"]) && isset($_SESSION["ex_new_contact_defaults"]["contact_type_id"])) {
+        $iContactTypeId = (int)$_SESSION["ex_new_contact_defaults"]["contact_type_id"];
+    }
+    if ($iContactTypeId < 1) {
+        return 0;
+    }
+    foreach ($aContactTypes as $aContactType) {
+        if ((int)$aContactType["id"] == $iContactTypeId && (int)$aContactType["is_active"] == 1) {
+            return $iContactTypeId;
+        }
+    }
+    return 0;
+}
+
+function saveNewContactDefaultTypeId($iContactTypeId) {
+    if ((int)$iContactTypeId < 1) {
+        return;
+    }
+    if (!isset($_SESSION["ex_new_contact_defaults"]) || !is_array($_SESSION["ex_new_contact_defaults"])) {
+        $_SESSION["ex_new_contact_defaults"] = array();
+    }
+    $_SESSION["ex_new_contact_defaults"]["contact_type_id"] = (int)$iContactTypeId;
+}
+
 function contactTypeLabel($sType, $oPdo = null) {
     $sType = (string)$sType;
     foreach (fetchContactTypes($oPdo, false) as $aType) {
@@ -2313,8 +2339,16 @@ function countryNameToCode($sCountry) {
     $sCountryLower = function_exists("mb_strtolower") ? mb_strtolower($sCountry, "UTF-8") : strtolower($sCountry);
     $aCountryCodes = getCountryCodes();
     $aCountryNames = getCountryNames();
+    $sCountrySeparator = " " . html_entity_decode("&#8212;", ENT_QUOTES, "UTF-8") . " ";
+    $iCountrySeparator = strpos($sCountry, $sCountrySeparator);
     if ($sCountry == "") {
         return "";
+    }
+    if ($iCountrySeparator === 2) {
+        $sCountryCode = strtoupper(substr($sCountry, 0, 2));
+        if (in_array($sCountryCode, $aCountryCodes, true)) {
+            return $sCountryCode;
+        }
     }
     if (preg_match("/^[A-Z]{2}$/", $sCountryUpper) && in_array($sCountryUpper, $aCountryCodes, true)) {
         return $sCountryUpper;
@@ -2335,7 +2369,7 @@ function renderCountryDatalist($sId = "country-list") {
     $sHtml = "<datalist id=\"" . html($sId) . "\">\n";
 
     foreach (getCountryNames() as $sCode => $sName) {
-        $sHtml .= "    <option value=\"" . html($sName) . "\" label=\"" . html($sCode) . "\"></option>\n";
+        $sHtml .= "    <option value=\"" . html($sCode) . " &#8212; " . html($sName) . "\"></option>\n";
     }
     return $sHtml . "  </datalist>\n";
 }

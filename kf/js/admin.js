@@ -1000,6 +1000,7 @@
             var sCurrency = sSelectedValue || "USD";
             oLabel.textContent = "Currency";
             oSelect.name = "currency";
+            oSelect.className = "currency-select";
             oSelect.required = true;
             for (var iI = 0; iI < aCurrencies.length; iI += 1) {
                 oOption = document.createElement("option");
@@ -1936,6 +1937,15 @@
             return aTypes;
         }
 
+        function setNewSubscriptionDefaults(sFinanceTypeId, sCurrency, sBillingPeriod) {
+            if (!oSubscriptionsTable) {
+                return;
+            }
+            oSubscriptionsTable.setAttribute("data-default-finance-type-id", sFinanceTypeId || "");
+            oSubscriptionsTable.setAttribute("data-default-currency", sCurrency || "USD");
+            oSubscriptionsTable.setAttribute("data-default-billing-period", sBillingPeriod || "monthly");
+        }
+
         function getSubscriptionBillingPeriods() {
             return [
                 {"id": "weekly", "name": "Weekly"},
@@ -2119,7 +2129,7 @@
             focusElement(findFirstAdminUserInput(oDialogData.form) || oFocus, true);
         }
 
-        function submitSubscriptionDialog(oDialogData, oData) {
+        function submitSubscriptionDialog(oDialogData, oData, fnAfterSave) {
             setAdminDialogError(oDialogData.error, "");
             oDialogData.save.disabled = true;
             appendAdminCsrfToken(oData);
@@ -2140,6 +2150,9 @@
                     replaceSubscriptionRows(aData.rows_html);
                 } else if (aData.subscription_deleted) {
                     removeSubscriptionRow(aData.subscription_id);
+                }
+                if (typeof fnAfterSave == "function") {
+                    fnAfterSave(aData);
                 }
                 oDialogData.close(true);
             }).catch(function (oException) {
@@ -2221,17 +2234,20 @@
             var oCounterparty;
             var oNote;
             var oActive;
+            var sDefaultFinanceTypeId = blNewSubscription && oSubscriptionsTable ? (oSubscriptionsTable.getAttribute("data-default-finance-type-id") || "") : "";
+            var sDefaultCurrency = blNewSubscription && oSubscriptionsTable ? (oSubscriptionsTable.getAttribute("data-default-currency") || "USD") : "USD";
+            var sDefaultBillingPeriod = blNewSubscription && oSubscriptionsTable ? (oSubscriptionsTable.getAttribute("data-default-billing-period") || "monthly") : "monthly";
             if (!oDialogData) {
                 return;
             }
             appendSubscriptionHiddenField(oDialogData.form, "id", blNewSubscription ? "" : (oRow.getAttribute("data-subscription-id") || ""));
-            oName = appendSubscriptionTextField(oDialogData.form, "Name", "name", oRow ? (oRow.getAttribute("data-name") || "") : "");
+            oName = appendSubscriptionTextField(oDialogData.form, "Name", "subscription_name", oRow ? (oRow.getAttribute("data-name") || "") : "");
             oName.required = true;
-            oType = appendSubscriptionTypeField(oDialogData.form, oRow ? (oRow.getAttribute("data-finance-type-id") || "") : "");
+            oType = appendSubscriptionTypeField(oDialogData.form, oRow ? (oRow.getAttribute("data-finance-type-id") || "") : sDefaultFinanceTypeId);
             oAmount = appendSubscriptionTextField(oDialogData.form, "Amount", "amount", oRow ? (oRow.getAttribute("data-amount") || "") : "");
             oAmount.required = true;
-            oCurrency = appendAdminCurrencyField(oDialogData.form, oSubscriptionsTable, oRow ? (oRow.getAttribute("data-currency") || "USD") : "USD");
-            oPeriod = appendSubscriptionPeriodField(oDialogData.form, oRow ? (oRow.getAttribute("data-billing-period") || "") : "monthly");
+            oCurrency = appendAdminCurrencyField(oDialogData.form, oSubscriptionsTable, oRow ? (oRow.getAttribute("data-currency") || "USD") : sDefaultCurrency);
+            oPeriod = appendSubscriptionPeriodField(oDialogData.form, oRow ? (oRow.getAttribute("data-billing-period") || "") : sDefaultBillingPeriod);
             oNextDueAt = appendSubscriptionDateTimeField(oDialogData.form, "Next Due", "next_due_at", oRow ? (oRow.getAttribute("data-next-due-at") || "") : "");
             oCounterparty = appendSubscriptionTextField(oDialogData.form, "Counterparty", "counterparty", oRow ? (oRow.getAttribute("data-counterparty") || "") : "");
             oNote = appendSubscriptionTextField(oDialogData.form, "Note", "note", oRow ? (oRow.getAttribute("data-note") || "") : "");
@@ -2250,7 +2266,9 @@
                 oData.append("counterparty", oCounterparty.value);
                 oData.append("note", oNote.value);
                 oData.append("is_active", oActive.checked ? "1" : "0");
-                submitSubscriptionDialog(oDialogData, oData);
+                submitSubscriptionDialog(oDialogData, oData, blNewSubscription ? function () {
+                    setNewSubscriptionDefaults(oType.value, oCurrency.value, oPeriod.value);
+                } : null);
             });
             finishSubscriptionDialog(oDialogData, oName);
         }
@@ -2508,7 +2526,7 @@
                 return;
             }
             appendTypeHiddenField(oDialogData.form, "id", blNewType ? "" : (oRow.getAttribute("data-type-id") || ""));
-            oName = appendTypeTextField(oDialogData.form, "Name", "name", oRow ? (oRow.getAttribute("data-type-name") || "") : "");
+            oName = appendTypeTextField(oDialogData.form, "Name", "finance_type_name", oRow ? (oRow.getAttribute("data-type-name") || "") : "");
             oKind = appendTypeKindField(oDialogData.form, oRow ? (oRow.getAttribute("data-type-kind") || "") : "expense");
             aMembers = appendTypeMemberFields(oDialogData.form, oRow, oKind);
             oDialogData.form.addEventListener("submit", function (oEvent) {

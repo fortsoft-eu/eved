@@ -3200,7 +3200,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oDialogData) {
             return;
         }
-        var oName = appendContactTypeTextField(oDialogData.form, "Name", "name", oRow ? (oRow.getAttribute("data-contact-type-name") || "") : "");
+        var oName = appendContactTypeTextField(oDialogData.form, "Name", "contact_type_name", oRow ? (oRow.getAttribute("data-contact-type-name") || "") : "");
         var oActive = appendContactTypeCheckbox(oDialogData.form, "Active", "is_active", blNewContactType ? true : oRow.getAttribute("data-contact-type-active") == "1");
         oDialogData.form.addEventListener("submit", function (oEvent) {
             var oData = new FormData();
@@ -3767,9 +3767,18 @@ document.addEventListener("DOMContentLoaded", function () {
         var sUpper = sSearch.toUpperCase();
         var sSpecialCode = findSubjectCountrySpecialAlias(sSearch);
         var aOptions;
+        var iSeparator;
+        var sDisplayCode;
         var iI;
         if (sSearch === "") {
             return "";
+        }
+        iSeparator = sSearch.indexOf(" \u2014 ");
+        if (iSeparator === 2) {
+            sDisplayCode = sSearch.substr(0, 2).toUpperCase();
+            if (aSubjectCountryCodes.indexOf(sDisplayCode) !== -1) {
+                return sDisplayCode;
+            }
         }
         if (sSpecialCode !== "") {
             return sSpecialCode;
@@ -3802,6 +3811,22 @@ document.addEventListener("DOMContentLoaded", function () {
         return "";
     }
 
+    function getSubjectCountryDisplayName(sCode) {
+        var sCountryCode = (sCode || "").replace(/^\s+|\s+$/g, "").toUpperCase();
+        var aOptions;
+        var iI;
+        if (!/^[A-Z]{2}$/.test(sCountryCode)) {
+            return "";
+        }
+        aOptions = getSubjectCountryOptions();
+        for (iI = 0; iI < aOptions.length; iI += 1) {
+            if (aOptions[iI].code == sCountryCode) {
+                return aOptions[iI].code + " \u2014 " + aOptions[iI].name;
+            }
+        }
+        return "";
+    }
+
     function ensureSubjectCountryList() {
         var oList = document.getElementById("country-list");
         var aOptions;
@@ -3818,8 +3843,7 @@ document.addEventListener("DOMContentLoaded", function () {
         aOptions = getSubjectCountryOptions();
         for (iI = 0; iI < aOptions.length; iI += 1) {
             oOption = document.createElement("option");
-            oOption.value = aOptions[iI].name;
-            oOption.label = aOptions[iI].code;
+            oOption.value = aOptions[iI].code + " \u2014 " + aOptions[iI].name;
             oList.appendChild(oOption);
         }
         document.body.appendChild(oList);
@@ -3827,7 +3851,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function appendSubjectCountryField(oParent, sValue) {
-        var oInput = appendSubjectTextField(oParent, "Country", "country_name", getSubjectCountryName(sValue));
+        var oInput = appendSubjectTextField(oParent, "Country", "country_name", getSubjectCountryDisplayName(sValue));
         var oHidden = document.createElement("input");
         var sListId = ensureSubjectCountryList();
         var updateCountryCode;
@@ -3851,7 +3875,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oInput.addEventListener("blur", function () {
             updateCountryCode();
             if (oHidden.value !== "") {
-                oInput.value = getSubjectCountryName(oHidden.value);
+                oInput.value = getSubjectCountryDisplayName(oHidden.value);
             }
         });
         oParent.appendChild(oHidden);
@@ -4796,6 +4820,18 @@ document.addEventListener("DOMContentLoaded", function () {
         return oList ? oList.getElementsByTagName("option") : [];
     }
 
+    function getNewContactDefaultTypeId() {
+        var oList = document.getElementById("contact-type-list");
+        return oList ? (oList.getAttribute("data-default-contact-type-id") || "") : "";
+    }
+
+    function setNewContactDefaultTypeId(sTypeId) {
+        var oList = document.getElementById("contact-type-list");
+        if (oList) {
+            oList.setAttribute("data-default-contact-type-id", sTypeId || "");
+        }
+    }
+
     function findContactTypeOptionByType(sType) {
         var aOptions = getContactTypeOptions();
         for (var iI = 0; iI < aOptions.length; iI += 1) {
@@ -4862,6 +4898,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var oCancel = document.createElement("button");
         var oSubjectRow = blNewContact ? oSubjectRowParam : getAdminSubjectRow(oItem);
         var sSubjectId = oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : "";
+        var sNewContactTypeId = blNewContact ? getNewContactDefaultTypeId() : "";
         var blClosed = false;
         var closeOnEscape = function (oEvent) {
             if (oEvent.key == "Escape") {
@@ -4912,7 +4949,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var oSharedNote = document.createElement("p");
         oSharedNote.textContent = "Shared contact values used by other subjects are preserved.";
         oForm.appendChild(oSharedNote);
-        var oType = appendContactTypeSelect(oForm, blNewContact ? "" : (oItem.getAttribute("data-contact-type-id") || ""), blNewContact ? "cell" : (oItem.getAttribute("data-contact-type") || ""));
+        var oType = appendContactTypeSelect(oForm, blNewContact ? sNewContactTypeId : (oItem.getAttribute("data-contact-type-id") || ""), blNewContact && !sNewContactTypeId ? "cell" : (blNewContact ? "" : (oItem.getAttribute("data-contact-type") || "")));
         var oValue = appendTextField(oForm, "Value", "contact_value", blNewContact ? "" : (oItem.getAttribute("data-contact-value") || ""));
         var oNote = appendTextField(oForm, "Note", "note", blNewContact ? "" : (oItem.getAttribute("data-contact-note") || ""));
         var oPrimary = appendCheckbox(oForm, "Primary", "is_primary", blNewContact ? false : oItem.getAttribute("data-contact-primary") == "1");
@@ -4984,6 +5021,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 if (aData.row_html && window.replaceSubjectRow) {
                     window.replaceSubjectRow(aData.subject_id, aData.row_html);
+                }
+                if (blNewContact) {
+                    setNewContactDefaultTypeId(oType.value);
                 }
                 closeDialog(true);
             }).catch(function (oException) {
@@ -5222,10 +5262,19 @@ document.addEventListener("DOMContentLoaded", function () {
         return oForm ? oForm.querySelector("[name=\"" + sName + "\"]") : null;
     }
 
+    function getAddressCountryValue(oCell) {
+        var sCode = oCell ? (oCell.getAttribute("data-country") || "") : "";
+        var sName = oCell ? (oCell.getAttribute("data-country-name") || "") : "";
+        if (sCode !== "" && sName !== "") {
+            return sCode + " \u2014 " + sName;
+        }
+        return sName || sCode;
+    }
+
     function getAddressValue(oCell, sName) {
         var sAttribute = sName.replace(/_/g, "-");
         if (sName == "country") {
-            return oCell.getAttribute("data-country-name") || oCell.getAttribute("data-country") || "";
+            return getAddressCountryValue(oCell);
         }
         return oCell.getAttribute("data-" + sAttribute) || "";
     }
