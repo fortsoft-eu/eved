@@ -4826,16 +4826,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function openAdminSelectPicker(oSelect) {
-        if (oSelect && typeof oSelect.showPicker == "function") {
-            try {
-                oSelect.showPicker();
-            } catch (oException) {
-                logAdminException(oException);
-            }
-        }
-    }
-
     function appendContactTypeSelect(oForm, sTypeId, sType) {
         var oLabel = document.createElement("label");
         var oSelect = document.createElement("select");
@@ -4853,11 +4843,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 oSelect.value = oOption.value || "";
             }
         }
-        oSelect.addEventListener("focus", function () {
-            window.setTimeout(function () {
-                openAdminSelectPicker(oSelect);
-            }, 0);
-        });
         oForm.appendChild(oLabel);
         oForm.appendChild(oSelect);
         return oSelect;
