@@ -15,6 +15,7 @@ if (!$oPdo) {
 handleSettingsPost();
 $aSettings = getSettings();
 $blUseEuropeanAmountFormat = (int)$aSettings["use_european_amount_format"] == 1;
+$sDisplayCurrency = normalizeCurrency($aSettings["display_currency"]);
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -32,7 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         try {
             $oPdo->beginTransaction();
-            $oStatement = $oPdo->prepare("SELECT id, finance_type_id, amount, billing_period, billing_day, next_due_at, counterparty, note FROM kf_subscriptions WHERE id = :id FOR UPDATE");
+            $oStatement = $oPdo->prepare("SELECT id, finance_type_id, amount, currency, billing_period, billing_day, next_due_at, counterparty, note FROM kf_subscriptions WHERE id = :id FOR UPDATE");
             $oStatement->execute(array("id" => $iId));
             $aSubscription = $oStatement->fetch(PDO::FETCH_ASSOC);
             if (!$aSubscription) {
@@ -60,11 +61,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
                 redirect(getCurrentScriptName());
             }
-            $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :counterparty, :note)");
+            $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, currency, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :currency, :counterparty, :note)");
             $oStatement->execute(array(
                 "transaction_date" => $oNextDueAt->format("Y-m-d"),
                 "finance_type_id" => (int)$aSubscription["finance_type_id"],
                 "amount" => $aSubscription["amount"],
+                "currency" => normalizeStoredCurrency($aSubscription["currency"]),
                 "counterparty" => trim((string)$aSubscription["counterparty"]) != "" ? $aSubscription["counterparty"] : null,
                 "note" => trim((string)$aSubscription["note"]) != "" ? $aSubscription["note"] : null
             ));
@@ -72,7 +74,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $oStatement->execute(array("billing_day" => $iBillingDay, "next_due_at" => $sNewNextDueAt, "id" => $iId));
             $oPdo->commit();
             if ($blJsonResponse) {
-                sendJsonAndExit(array("success" => true, "subscription_id" => $iId, "rows_html" => renderSubscriptionAdminRows(fetchSubscriptionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+                sendJsonAndExit(array("success" => true, "subscription_id" => $iId, "rows_html" => renderSubscriptionAdminRows(fetchSubscriptionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
             }
         } catch (Exception $oException) {
             error_log((string)$oException);
@@ -89,6 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $sName = getPostedTrimmedValue("name");
         $iFinanceTypeId = (int)getPostedTrimmedValue("finance_type_id", "0");
         $fAmount = parseAmount(getPostedTrimmedValue("amount"));
+        $sCurrency = getPostedCurrency();
         $sBillingPeriod = getPostedTrimmedValue("billing_period", "monthly");
         $sNextDueAt = getPostedTrimmedValue("next_due_at");
         $sCounterparty = getPostedTrimmedValue("counterparty");
@@ -111,7 +114,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
         if ($sName == "" || !$aType || $fAmount === null || $fAmount <= 0 || !isset($aBillingPeriods[$sBillingPeriod])
-            || ($sNextDueAt != "" && !parseSubscriptionDueAt($sNextDueAt))) {
+            || ($sNextDueAt != "" && !parseSubscriptionDueAt($sNextDueAt)) || !isCurrencyAvailable($oPdo, $sCurrency)) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The subscription could not be saved. Check the name, type, amount, period, and next due date and time."), 400);
             }
@@ -122,11 +125,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $iBillingDay = getSubscriptionBillingDayForSave($sNextDueAtForDatabase, $sBillingPeriod, $aCurrentSubscription);
         try {
             if ($iId > 0) {
-                $oStatement = $oPdo->prepare("UPDATE kf_subscriptions SET name = :name, finance_type_id = :finance_type_id, amount = :amount, billing_period = :billing_period, billing_day = :billing_day, next_due_at = :next_due_at, counterparty = :counterparty, note = :note, is_active = :is_active WHERE id = :id");
+                $oStatement = $oPdo->prepare("UPDATE kf_subscriptions SET name = :name, finance_type_id = :finance_type_id, amount = :amount, currency = :currency, billing_period = :billing_period, billing_day = :billing_day, next_due_at = :next_due_at, counterparty = :counterparty, note = :note, is_active = :is_active WHERE id = :id");
                 $oStatement->execute(array(
                     "name" => $sName,
                     "finance_type_id" => $iFinanceTypeId,
                     "amount" => $fSignedAmount,
+                    "currency" => $sCurrency,
                     "billing_period" => $sBillingPeriod,
                     "billing_day" => $iBillingDay,
                     "next_due_at" => $sNextDueAtForDatabase,
@@ -136,11 +140,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     "id" => $iId
                 ));
             } else {
-                $oStatement = $oPdo->prepare("INSERT INTO kf_subscriptions (name, finance_type_id, amount, billing_period, billing_day, next_due_at, counterparty, note, is_active) VALUES (:name, :finance_type_id, :amount, :billing_period, :billing_day, :next_due_at, :counterparty, :note, :is_active)");
+                $oStatement = $oPdo->prepare("INSERT INTO kf_subscriptions (name, finance_type_id, amount, currency, billing_period, billing_day, next_due_at, counterparty, note, is_active) VALUES (:name, :finance_type_id, :amount, :currency, :billing_period, :billing_day, :next_due_at, :counterparty, :note, :is_active)");
                 $oStatement->execute(array(
                     "name" => $sName,
                     "finance_type_id" => $iFinanceTypeId,
                     "amount" => $fSignedAmount,
+                    "currency" => $sCurrency,
                     "billing_period" => $sBillingPeriod,
                     "billing_day" => $iBillingDay,
                     "next_due_at" => $sNextDueAtForDatabase,
@@ -151,7 +156,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $iId = (int)$oPdo->lastInsertId();
             }
             if ($blJsonResponse) {
-                sendJsonAndExit(array("success" => true, "subscription_id" => $iId, "rows_html" => renderSubscriptionAdminRows(fetchSubscriptionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+                sendJsonAndExit(array("success" => true, "subscription_id" => $iId, "rows_html" => renderSubscriptionAdminRows(fetchSubscriptionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
             }
         } catch (PDOException $oException) {
             error_log((string)$oException);
@@ -167,7 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $oStatement = $oPdo->prepare("DELETE FROM kf_subscriptions WHERE id = :id");
                 $oStatement->execute(array("id" => $iId));
                 if ($blJsonResponse) {
-                    sendJsonAndExit(array("success" => true, "subscription_id" => $iId, "subscription_deleted" => true, "rows_html" => renderSubscriptionAdminRows(fetchSubscriptionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+                    sendJsonAndExit(array("success" => true, "subscription_id" => $iId, "subscription_deleted" => true, "rows_html" => renderSubscriptionAdminRows(fetchSubscriptionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
                 }
             } catch (PDOException $oException) {
                 error_log((string)$oException);
@@ -177,7 +182,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
         if ($blJsonResponse) {
-            sendJsonAndExit(array("success" => true, "subscription_id" => $iId, "subscription_deleted" => true, "rows_html" => renderSubscriptionAdminRows(fetchSubscriptionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+            sendJsonAndExit(array("success" => true, "subscription_id" => $iId, "subscription_deleted" => true, "rows_html" => renderSubscriptionAdminRows(fetchSubscriptionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
         }
         redirect(getCurrentScriptName());
     }
@@ -232,7 +237,7 @@ echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">S
     "  </p>\n";
 
 ?>
-  <table id="subscriptions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="subscriptions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(getCurrencyOptionsJson($oPdo, getDefaultCurrency()), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th class="subscription-in-column">In</th>
@@ -254,7 +259,7 @@ echo "      </tr>\n",
     "    </thead>\n",
     "    <tbody>\n";
 
-echo renderSubscriptionAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat),
+echo renderSubscriptionAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency),
     "    </tbody>\n",
     "  </table>\n";
 

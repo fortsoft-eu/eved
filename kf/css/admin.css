@@ -787,6 +787,21 @@ tr:nth-child(even) {
     margin-right: 6px;
 }
 
+.index-settings-options select {
+    width: 100%;
+}
+
+.index-settings-separator {
+    border-top: 1px solid #C0C0C0;
+    height: 0;
+}
+
+.confirm-dialog-box .index-settings-note {
+    color: #555;
+    font-size: 12px;
+    margin: 0 16px 12px;
+}
+
 #types-table {
     table-layout: auto;
     width: auto;

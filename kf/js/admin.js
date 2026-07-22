@@ -881,29 +881,31 @@
         var oHeader = oDialog ? oDialog.querySelector(".confirm-dialog-header") : null;
         var oClose = oDialog ? oDialog.querySelector(".js-index-settings-close") : null;
         var oCancel = oDialog ? oDialog.querySelector(".js-index-settings-cancel") : null;
-        var aSavedCheckboxStates = [];
+        var aSavedFieldStates = [];
         var closeOnEscape = function (oEvent) {
             if (oEvent.key == "Escape") {
                 closeDialog();
             }
         };
 
-        function rememberCheckboxStates() {
-            var aInputs = oDialog ? oDialog.querySelectorAll("input[type=\"checkbox\"]") : [];
-            aSavedCheckboxStates = [];
+        function rememberFieldStates() {
+            var aInputs = oDialog ? oDialog.querySelectorAll("input[type=\"checkbox\"], select") : [];
+            aSavedFieldStates = [];
             for (var iI = 0; iI < aInputs.length; iI += 1) {
-                aSavedCheckboxStates.push({
+                aSavedFieldStates.push({
                     "checked": aInputs[iI].checked,
-                    "disabled": aInputs[iI].disabled
+                    "disabled": aInputs[iI].disabled,
+                    "value": aInputs[iI].value
                 });
             }
         }
 
-        function restoreCheckboxStates() {
-            var aInputs = oDialog ? oDialog.querySelectorAll("input[type=\"checkbox\"]") : [];
-            for (var iI = 0; iI < aInputs.length && iI < aSavedCheckboxStates.length; iI += 1) {
-                aInputs[iI].checked = aSavedCheckboxStates[iI].checked;
-                aInputs[iI].disabled = aSavedCheckboxStates[iI].disabled;
+        function restoreFieldStates() {
+            var aInputs = oDialog ? oDialog.querySelectorAll("input[type=\"checkbox\"], select") : [];
+            for (var iI = 0; iI < aInputs.length && iI < aSavedFieldStates.length; iI += 1) {
+                aInputs[iI].checked = aSavedFieldStates[iI].checked;
+                aInputs[iI].disabled = aSavedFieldStates[iI].disabled;
+                aInputs[iI].value = aSavedFieldStates[iI].value;
             }
         }
 
@@ -911,7 +913,7 @@
             if (!oDialog) {
                 return;
             }
-            rememberCheckboxStates();
+            rememberFieldStates();
             if (!openAdminDialogElement(oDialog, closeDialog)) {
                 return;
             }
@@ -924,7 +926,7 @@
                 return;
             }
             document.removeEventListener("keydown", closeOnEscape);
-            restoreCheckboxStates();
+            restoreFieldStates();
             closeAdminDialogElement(oDialog);
             focusElement(oOpen);
         }
@@ -963,6 +965,55 @@
         var oAddType = document.querySelector(".js-add-type");
         var oBox;
         var oHeader;
+
+        function getAdminCurrencyOptions(oTable, sSelectedValue) {
+            var aCurrencies = [];
+            var blSelectedFound = false;
+            var sCurrency = sSelectedValue || "USD";
+            if (oTable) {
+                try {
+                    aCurrencies = JSON.parse(oTable.getAttribute("data-currencies") || "[]");
+                } catch (oException) {
+                    logAdminException(oException);
+                    aCurrencies = [];
+                }
+            }
+            for (var iI = 0; iI < aCurrencies.length; iI += 1) {
+                if (String(aCurrencies[iI].currency || "") == String(sCurrency)) {
+                    blSelectedFound = true;
+                }
+            }
+            if (sCurrency && !blSelectedFound) {
+                aCurrencies.push({
+                    "currency": sCurrency,
+                    "label": sCurrency
+                });
+            }
+            return aCurrencies;
+        }
+
+        function appendAdminCurrencyField(oParent, oTable, sSelectedValue) {
+            var aCurrencies = getAdminCurrencyOptions(oTable, sSelectedValue);
+            var oLabel = document.createElement("label");
+            var oSelect = document.createElement("select");
+            var oOption;
+            var sCurrency = sSelectedValue || "USD";
+            oLabel.textContent = "Currency";
+            oSelect.name = "currency";
+            oSelect.required = true;
+            for (var iI = 0; iI < aCurrencies.length; iI += 1) {
+                oOption = document.createElement("option");
+                oOption.value = aCurrencies[iI].currency || "";
+                oOption.textContent = aCurrencies[iI].label || aCurrencies[iI].currency || "";
+                if (String(oOption.value) == String(sCurrency)) {
+                    oOption.selected = true;
+                }
+                oSelect.appendChild(oOption);
+            }
+            oParent.appendChild(oLabel);
+            oParent.appendChild(oSelect);
+            return oSelect;
+        }
 
         function findAdminDebtRowById(sDebtId) {
             return sDebtId && oDebtsTable ? oDebtsTable.querySelector("tbody tr[data-debt-id=\"" + sDebtId + "\"]") : null;
@@ -1437,6 +1488,7 @@
             var oSubject;
             var oMovementDate;
             var oAmount;
+            var oCurrency;
             var oNote;
             var oMovementNote;
             if (!oDialogData) {
@@ -1449,6 +1501,7 @@
                 oMovementDate = appendDebtDateField(oDialogData.form, "Movement Date", "movement_date", new Date().toISOString().slice(0, 10));
                 oAmount = appendDebtTextField(oDialogData.form, "Amount", "amount", "");
                 oAmount.required = true;
+                oCurrency = appendAdminCurrencyField(oDialogData.form, oDebtsTable, "USD");
                 oMovementNote = appendDebtTextField(oDialogData.form, "Movement Note", "movement_note", "");
             }
             oDialogData.form.addEventListener("submit", function (oEvent) {
@@ -1462,6 +1515,7 @@
                 if (blNewDebt) {
                     oData.append("movement_date", oMovementDate.value);
                     oData.append("amount", oAmount.value);
+                    oData.append("currency", oCurrency.value);
                     oData.append("movement_note", oMovementNote.value);
                 }
                 submitDebtDialog(oDialogData, oData);
@@ -1474,6 +1528,7 @@
             var oDialogData = createDebtDialog(blNewMovement ? "New Debt Movement" : "Edit Debt Movement", oRow);
             var oDate;
             var oAmount;
+            var oCurrency;
             var oNote;
             if (!oRow || !oDialogData) {
                 return;
@@ -1484,6 +1539,7 @@
             oDate = appendDebtDateField(oDialogData.form, "Date", "movement_date", blNewMovement ? new Date().toISOString().slice(0, 10) : (oMovement.getAttribute("data-movement-date") || ""));
             oAmount = appendDebtTextField(oDialogData.form, "Amount", "amount", blNewMovement ? "" : (oMovement.getAttribute("data-amount") || ""));
             oAmount.required = true;
+            oCurrency = appendAdminCurrencyField(oDialogData.form, oDebtsTable, blNewMovement ? "USD" : (oMovement.getAttribute("data-currency") || "USD"));
             oNote = appendDebtTextField(oDialogData.form, "Note", "note", blNewMovement ? "" : (oMovement.getAttribute("data-note") || ""));
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();
@@ -1493,6 +1549,7 @@
                 oData.append("debt_id", oRow.getAttribute("data-debt-id") || "");
                 oData.append("movement_date", oDate.value);
                 oData.append("amount", oAmount.value);
+                oData.append("currency", oCurrency.value);
                 oData.append("note", oNote.value);
                 submitDebtDialog(oDialogData, oData);
             });
@@ -1684,21 +1741,24 @@
             return oSelect;
         }
 
-        function appendTransactionAdditionalRow(oDialogData, sSelectedValue) {
+        function appendTransactionAdditionalRow(oDialogData, sSelectedValue, sSelectedCurrency) {
             var oWrapper = document.createElement("div");
             var oTitle = document.createElement("div");
             var oType;
             var oAmount;
+            var oCurrency;
             oWrapper.className = "transaction-additional-row";
             oTitle.className = "transaction-additional-title";
             oTitle.textContent = "Subtracted Transaction";
             oWrapper.appendChild(oTitle);
             oType = appendTransactionTypeField(oWrapper, sSelectedValue);
             oAmount = appendTransactionTextField(oWrapper, "Amount", "additional_amount", "");
+            oCurrency = appendAdminCurrencyField(oWrapper, oTransactionsTable, sSelectedCurrency || "USD");
             oDialogData.additionalContainer.appendChild(oWrapper);
             oDialogData.additionalTransactions.push({
                 type: oType,
-                amount: oAmount
+                amount: oAmount,
+                currency: oCurrency
             });
             if (oDialogData.additionalTransactions.length >= 5) {
                 oDialogData.addSubtractedButton.disabled = true;
@@ -1706,7 +1766,7 @@
             focusElement(oAmount, true);
         }
 
-        function appendTransactionAdditionalControls(oDialogData, oMainType) {
+        function appendTransactionAdditionalControls(oDialogData, oMainType, oMainCurrency) {
             var oButton = document.createElement("button");
             var oContainer = document.createElement("div");
             oDialogData.additionalTransactions = new Array();
@@ -1717,7 +1777,7 @@
             oButton.textContent = "Add Subtracted Transaction";
             oContainer.className = "transaction-additional-list";
             oButton.addEventListener("click", function () {
-                appendTransactionAdditionalRow(oDialogData, oMainType.value);
+                appendTransactionAdditionalRow(oDialogData, oMainType.value, oMainCurrency.value);
             });
             oDialogData.form.appendChild(oButton);
             oDialogData.form.appendChild(oContainer);
@@ -1732,6 +1792,7 @@
                 }
                 oData.append("additional_transactions[" + iOutputIndex + "][finance_type_id]", aRows[iI].type.value);
                 oData.append("additional_transactions[" + iOutputIndex + "][amount]", aRows[iI].amount.value);
+                oData.append("additional_transactions[" + iOutputIndex + "][currency]", aRows[iI].currency.value);
                 iOutputIndex += 1;
             }
         }
@@ -1804,6 +1865,7 @@
             var oDate;
             var oType;
             var oAmount;
+            var oCurrency;
             var oCounterparty;
             var oNote;
             if (!oDialogData) {
@@ -1813,9 +1875,10 @@
             oDate = appendTransactionDateField(oDialogData.form, oRow ? (oRow.getAttribute("data-transaction-date") || "") : new Date().toISOString().slice(0, 10));
             oType = appendTransactionTypeField(oDialogData.form, oRow ? (oRow.getAttribute("data-finance-type-id") || "") : "");
             oAmount = appendTransactionTextField(oDialogData.form, "Amount", "amount", oRow ? (oRow.getAttribute("data-amount") || "") : "");
+            oCurrency = appendAdminCurrencyField(oDialogData.form, oTransactionsTable, oRow ? (oRow.getAttribute("data-currency") || "USD") : "USD");
             oCounterparty = appendTransactionTextField(oDialogData.form, "Counterparty", "counterparty", oRow ? (oRow.getAttribute("data-counterparty") || "") : "");
             oNote = appendTransactionTextField(oDialogData.form, "Note", "note", oRow ? (oRow.getAttribute("data-note") || "") : "");
-            appendTransactionAdditionalControls(oDialogData, oType);
+            appendTransactionAdditionalControls(oDialogData, oType, oCurrency);
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();
                 oEvent.preventDefault();
@@ -1827,6 +1890,7 @@
                 oData.append("transaction_date", oDate.value);
                 oData.append("finance_type_id", oType.value);
                 oData.append("amount", oAmount.value);
+                oData.append("currency", oCurrency.value);
                 oData.append("counterparty", oCounterparty.value);
                 oData.append("note", oNote.value);
                 appendTransactionAdditionalFormData(oDialogData, oData);
@@ -2151,6 +2215,7 @@
             var oName;
             var oType;
             var oAmount;
+            var oCurrency;
             var oPeriod;
             var oNextDueAt;
             var oCounterparty;
@@ -2165,6 +2230,7 @@
             oType = appendSubscriptionTypeField(oDialogData.form, oRow ? (oRow.getAttribute("data-finance-type-id") || "") : "");
             oAmount = appendSubscriptionTextField(oDialogData.form, "Amount", "amount", oRow ? (oRow.getAttribute("data-amount") || "") : "");
             oAmount.required = true;
+            oCurrency = appendAdminCurrencyField(oDialogData.form, oSubscriptionsTable, oRow ? (oRow.getAttribute("data-currency") || "USD") : "USD");
             oPeriod = appendSubscriptionPeriodField(oDialogData.form, oRow ? (oRow.getAttribute("data-billing-period") || "") : "monthly");
             oNextDueAt = appendSubscriptionDateTimeField(oDialogData.form, "Next Due", "next_due_at", oRow ? (oRow.getAttribute("data-next-due-at") || "") : "");
             oCounterparty = appendSubscriptionTextField(oDialogData.form, "Counterparty", "counterparty", oRow ? (oRow.getAttribute("data-counterparty") || "") : "");
@@ -2178,6 +2244,7 @@
                 oData.append("name", oName.value);
                 oData.append("finance_type_id", oType.value);
                 oData.append("amount", oAmount.value);
+                oData.append("currency", oCurrency.value);
                 oData.append("billing_period", oPeriod.value);
                 oData.append("next_due_at", oNextDueAt.value);
                 oData.append("counterparty", oCounterparty.value);

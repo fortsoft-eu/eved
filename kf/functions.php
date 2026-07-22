@@ -55,11 +55,36 @@ function getSettingsDefaults() {
     );
 }
 
+function getCurrentSettingsPageKey() {
+    return getCurrentScriptName();
+}
+
+function getPageSettingsDefaults($sPageKey = "") {
+    if ($sPageKey == "") {
+        $sPageKey = getCurrentSettingsPageKey();
+    }
+    return array(
+        "display_currency" => $sPageKey == "subscr.php" ? "" : "CZK"
+    );
+}
+
+function getDefaultCurrency() {
+    return "USD";
+}
+
 function getSettings() {
     $aSettingsDefaults = getSettingsDefaults();
+    $sPageKey = getCurrentSettingsPageKey();
+    $aPageSettingsDefaults = getPageSettingsDefaults($sPageKey);
     $aSettings = array();
     if (!isset($_SESSION["kf_settings"]) || !is_array($_SESSION["kf_settings"])) {
         $_SESSION["kf_settings"] = array();
+    }
+    if (!isset($_SESSION["kf_page_settings"]) || !is_array($_SESSION["kf_page_settings"])) {
+        $_SESSION["kf_page_settings"] = array();
+    }
+    if (!isset($_SESSION["kf_page_settings"][$sPageKey]) || !is_array($_SESSION["kf_page_settings"][$sPageKey])) {
+        $_SESSION["kf_page_settings"][$sPageKey] = array();
     }
     if (isset($_SESSION["kf_debts_settings"]) && is_array($_SESSION["kf_debts_settings"])) {
         foreach ($aSettingsDefaults as $sSettingName => $iSettingDefault) {
@@ -77,16 +102,36 @@ function getSettings() {
         }
     }
     $_SESSION["kf_settings"] = $aSettings;
+    foreach ($aPageSettingsDefaults as $sSettingName => $sSettingDefault) {
+        if (isset($_SESSION["kf_page_settings"][$sPageKey][$sSettingName])) {
+            $aSettings[$sSettingName] = normalizeCurrency($_SESSION["kf_page_settings"][$sPageKey][$sSettingName]);
+        } else {
+            $aSettings[$sSettingName] = $sSettingDefault;
+        }
+    }
     unset($_SESSION["kf_debts_settings"]);
     return $aSettings;
 }
 
 function saveSettings($aPayload) {
+    global $oPdo;
+
     $aSettings = array();
+    $sPageKey = getCurrentSettingsPageKey();
+    $aPageSettings = array();
     foreach (getSettingsDefaults() as $sSettingName => $iSettingDefault) {
         $aSettings[$sSettingName] = isset($aPayload[$sSettingName]) && (string)$aPayload[$sSettingName] == "1" ? 1 : 0;
     }
+    if (!isset($_SESSION["kf_page_settings"]) || !is_array($_SESSION["kf_page_settings"])) {
+        $_SESSION["kf_page_settings"] = array();
+    }
+    $aPageSettings["display_currency"] = isset($aPayload["display_currency"]) ? normalizeCurrency($aPayload["display_currency"]) : "";
+    if ($aPageSettings["display_currency"] != "" && !isCurrencyAvailable($oPdo, $aPageSettings["display_currency"])) {
+        $aPageSettingsDefaults = getPageSettingsDefaults($sPageKey);
+        $aPageSettings["display_currency"] = $aPageSettingsDefaults["display_currency"];
+    }
     $_SESSION["kf_settings"] = $aSettings;
+    $_SESSION["kf_page_settings"][$sPageKey] = $aPageSettings;
     unset($_SESSION["kf_debts_settings"]);
     return $aSettings;
 }
@@ -105,13 +150,19 @@ function handleSettingsPost() {
 }
 
 function renderSettingsModal($aSettings = null) {
-    global $sBaseUrl;
+    global $oPdo, $sBaseUrl;
 
     if (!is_array($aSettings)) {
         $aSettings = getSettings();
     }
     $sScriptName = basename($_SERVER["SCRIPT_NAME"]);
     $sAction = $sBaseUrl . ($sScriptName == "index.php" ? "" : $sScriptName);
+    $aCurrencyOptions = getCurrencyOptions($oPdo, $aSettings["display_currency"]);
+    $sCurrencyOptionsHtml = "          <option value=\"\"" . ($aSettings["display_currency"] == "" ? " selected" : "") . ">As entered</option>\n";
+    foreach ($aCurrencyOptions as $aCurrencyOption) {
+        $sCurrency = (string)$aCurrencyOption["currency"];
+        $sCurrencyOptionsHtml .= "          <option value=\"" . html($sCurrency) . "\"" . ($aSettings["display_currency"] == $sCurrency ? " selected" : "") . ">" . html($aCurrencyOption["label"]) . "</option>\n";
+    }
     return "  <div class=\"confirm-dialog index-settings-dialog\" id=\"index-settings-dialog\" hidden>\n"
         . "    <form class=\"confirm-dialog-box index-settings-form\" method=\"post\" action=\"" . html($sAction) . "\" enctype=\"application/x-www-form-urlencoded\">\n"
         . "      <input type=\"hidden\" name=\"action\" value=\"save_settings\">\n"
@@ -121,14 +172,213 @@ function renderSettingsModal($aSettings = null) {
         . "        <button type=\"button\" class=\"confirm-dialog-close js-index-settings-close\" aria-label=\"Close\">&times;</button>\n"
         . "      </div>\n"
         . "      <div class=\"index-settings-options\">\n"
+        . "        <label for=\"display-currency\">Display currency</label>\n"
+        . "        <select id=\"display-currency\" name=\"display_currency\">\n"
+        . $sCurrencyOptionsHtml
+        . "        </select>\n"
+        . "        <div class=\"index-settings-separator\"></div>\n"
         . "        <label><input type=\"checkbox\" name=\"use_european_amount_format\" value=\"1\"" . ($aSettings["use_european_amount_format"] ? " checked" : "") . "> Use European number format for amounts</label>\n"
         . "      </div>\n"
+        . "      <p class=\"index-settings-note\">Options above the line apply only to this listing. Options below the line are shared across the KF subproject.</p>\n"
         . "      <div class=\"confirm-dialog-actions\">\n"
         . "        <button type=\"submit\" class=\"confirm-dialog-button\">Save</button>\n"
         . "        <button type=\"button\" class=\"confirm-dialog-button js-index-settings-cancel\">Cancel</button>\n"
         . "      </div>\n"
         . "    </form>\n"
         . "  </div>\n";
+}
+
+function normalizeCurrency($sCurrency) {
+    $sCurrency = strtoupper(trim((string)$sCurrency));
+    return preg_match("/^[A-Z]{3}$/", $sCurrency) ? $sCurrency : "";
+}
+
+function normalizeStoredCurrency($sCurrency) {
+    $sCurrency = normalizeCurrency($sCurrency);
+    return $sCurrency != "" ? $sCurrency : getDefaultCurrency();
+}
+
+function getCurrencyOptions($oPdo, $sSelectedCurrency = "") {
+    $aCurrencies = array(
+        "CZK" => array("currency" => "CZK", "label" => "CZK")
+    );
+    if ($oPdo) {
+        try {
+            $oStatement = $oPdo->query("SELECT currency_code, MIN(currency) AS currency_name FROM kf_exchange_rates GROUP BY currency_code ORDER BY currency_code ASC");
+            while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+                $sCurrency = normalizeCurrency($aRow["currency_code"]);
+                if ($sCurrency == "") {
+                    continue;
+                }
+                $sCurrencyName = trim((string)$aRow["currency_name"]);
+                $aCurrencies[$sCurrency] = array(
+                    "currency" => $sCurrency,
+                    "label" => $sCurrencyName != "" ? $sCurrency . " - " . $sCurrencyName : $sCurrency
+                );
+            }
+        } catch (Exception $oException) {
+            error_log((string)$oException);
+        }
+    }
+    $sSelectedCurrency = normalizeCurrency($sSelectedCurrency);
+    if ($sSelectedCurrency != "" && !isset($aCurrencies[$sSelectedCurrency])) {
+        $aCurrencies[$sSelectedCurrency] = array("currency" => $sSelectedCurrency, "label" => $sSelectedCurrency);
+    }
+    ksort($aCurrencies);
+    return array_values($aCurrencies);
+}
+
+function isCurrencyAvailable($oPdo, $sCurrency) {
+    $sCurrency = normalizeCurrency($sCurrency);
+    if ($sCurrency == "") {
+        return false;
+    }
+    if ($sCurrency == "CZK") {
+        return true;
+    }
+    if (!$oPdo) {
+        return false;
+    }
+    try {
+        $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_exchange_rates WHERE currency_code = :currency_code");
+        $oStatement->execute(array("currency_code" => $sCurrency));
+        return (int)$oStatement->fetchColumn() > 0;
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        return false;
+    }
+}
+
+function getCurrencyOptionsJson($oPdo, $sSelectedCurrency = "") {
+    return json_encode(getCurrencyOptions($oPdo, $sSelectedCurrency));
+}
+
+function getPostedCurrency($sName = "currency") {
+    $sCurrency = normalizeCurrency(getPostedTrimmedValue($sName, getDefaultCurrency()));
+    return $sCurrency != "" ? $sCurrency : getDefaultCurrency();
+}
+
+function getCurrencyRateToCzk($oPdo, $sCurrency, $sDate) {
+    static $aRates = array();
+
+    $sCurrency = normalizeStoredCurrency($sCurrency);
+    $sDate = formatDate($sDate);
+    if ($sCurrency == "CZK") {
+        return 1.0;
+    }
+    if (!$oPdo) {
+        return null;
+    }
+    $sKey = $sCurrency . "|" . $sDate;
+    if (array_key_exists($sKey, $aRates)) {
+        return $aRates[$sKey];
+    }
+    if ($sDate == "") {
+        $oStatement = $oPdo->prepare("SELECT amount, rate FROM kf_exchange_rates WHERE currency_code = :currency_code ORDER BY valid_for DESC, id DESC LIMIT 1");
+        $oStatement->execute(array(
+            "currency_code" => $sCurrency
+        ));
+        $aRate = $oStatement->fetch(PDO::FETCH_ASSOC);
+    } else {
+        $oStatement = $oPdo->prepare("SELECT amount, rate FROM kf_exchange_rates WHERE currency_code = :currency_code AND valid_for <= :valid_for ORDER BY valid_for DESC, id DESC LIMIT 1");
+        $oStatement->execute(array(
+            "currency_code" => $sCurrency,
+            "valid_for" => $sDate
+        ));
+        $aRate = $oStatement->fetch(PDO::FETCH_ASSOC);
+        if (!$aRate) {
+            $oStatement = $oPdo->prepare("SELECT amount, rate FROM kf_exchange_rates WHERE currency_code = :currency_code AND valid_for > :valid_for ORDER BY valid_for ASC, id ASC LIMIT 1");
+            $oStatement->execute(array(
+                "currency_code" => $sCurrency,
+                "valid_for" => $sDate
+            ));
+            $aRate = $oStatement->fetch(PDO::FETCH_ASSOC);
+        }
+    }
+    if (!$aRate || (int)$aRate["amount"] < 1) {
+        $aRates[$sKey] = null;
+        return null;
+    }
+    $aRates[$sKey] = (float)$aRate["rate"] / (int)$aRate["amount"];
+    return $aRates[$sKey];
+}
+
+function convertCurrencyAmount($oPdo, $mAmount, $sSourceCurrency, $sTargetCurrency, $sDate) {
+    $sSourceCurrency = normalizeStoredCurrency($sSourceCurrency);
+    $sTargetCurrency = normalizeCurrency($sTargetCurrency);
+    if ($sTargetCurrency == "" || $sSourceCurrency == $sTargetCurrency) {
+        return (float)$mAmount;
+    }
+    $fSourceRate = getCurrencyRateToCzk($oPdo, $sSourceCurrency, $sDate);
+    $fTargetRate = getCurrencyRateToCzk($oPdo, $sTargetCurrency, $sDate);
+    if ($fSourceRate === null || $fTargetRate === null || $fTargetRate == 0.0) {
+        return null;
+    }
+    return (float)$mAmount * $fSourceRate / $fTargetRate;
+}
+
+function getDisplayCurrencyAmount($oPdo, $mAmount, $sSourceCurrency, $sDate, $sDisplayCurrency) {
+    $sSourceCurrency = normalizeStoredCurrency($sSourceCurrency);
+    $sDisplayCurrency = normalizeCurrency($sDisplayCurrency);
+    if ($sDisplayCurrency == "") {
+        return array(
+            "amount" => (float)$mAmount,
+            "currency" => $sSourceCurrency,
+            "converted" => false
+        );
+    }
+    $mConvertedAmount = convertCurrencyAmount($oPdo, $mAmount, $sSourceCurrency, $sDisplayCurrency, $sDate);
+    if ($mConvertedAmount === null) {
+        return array(
+            "amount" => (float)$mAmount,
+            "currency" => $sSourceCurrency,
+            "converted" => false
+        );
+    }
+    return array(
+        "amount" => (float)$mConvertedAmount,
+        "currency" => $sDisplayCurrency,
+        "converted" => $sSourceCurrency != $sDisplayCurrency
+    );
+}
+
+function formatCurrencyAmount($oPdo, $mAmount, $sSourceCurrency, $sDate, $sDisplayCurrency, $blUseEuropeanAmountFormat = false) {
+    $aDisplayAmount = getDisplayCurrencyAmount($oPdo, $mAmount, $sSourceCurrency, $sDate, $sDisplayCurrency);
+    return formatAmount($aDisplayAmount["amount"], $blUseEuropeanAmountFormat) . " " . $aDisplayAmount["currency"];
+}
+
+function getDisplayCurrencyTotalAmount($oPdo, $aRows, $sDateColumn, $sDisplayCurrency) {
+    $sDisplayCurrency = normalizeCurrency($sDisplayCurrency);
+    $sTargetCurrency = $sDisplayCurrency;
+    $sStoredCurrency = "";
+    $blMixedCurrencies = false;
+    $blConversionFailed = false;
+    foreach ($aRows as $aRow) {
+        $sCurrency = normalizeStoredCurrency($aRow["currency"]);
+        if ($sStoredCurrency == "") {
+            $sStoredCurrency = $sCurrency;
+        } elseif ($sStoredCurrency != $sCurrency) {
+            $blMixedCurrencies = true;
+        }
+    }
+    if ($sTargetCurrency == "") {
+        $sTargetCurrency = $blMixedCurrencies ? "CZK" : ($sStoredCurrency != "" ? $sStoredCurrency : getDefaultCurrency());
+    }
+    $fTotalAmount = 0.0;
+    foreach ($aRows as $aRow) {
+        $mAmount = convertCurrencyAmount($oPdo, $aRow["amount"], $aRow["currency"], $sTargetCurrency, $aRow[$sDateColumn]);
+        if ($mAmount === null && normalizeStoredCurrency($aRow["currency"]) != $sTargetCurrency) {
+            $blConversionFailed = true;
+        }
+        $fTotalAmount += $mAmount === null ? (float)$aRow["amount"] : (float)$mAmount;
+    }
+    return array(
+        "amount" => $fTotalAmount,
+        "currency" => $sTargetCurrency,
+        "source_currency" => $sStoredCurrency,
+        "mixed_currencies" => $blMixedCurrencies,
+        "conversion_failed" => $blConversionFailed
+    );
 }
 
 function parseAmount($sValue) {
@@ -271,7 +521,7 @@ function fetchDebtMovementRowsByDebtIds($oPdo, $aDebtIds) {
     if (!$aPlaceholders) {
         return array();
     }
-    $oStatement = $oPdo->prepare("SELECT id, debt_id, movement_date, amount, note FROM kf_debt_movements WHERE debt_id IN (" . implode(", ", $aPlaceholders) . ") ORDER BY movement_date ASC, id ASC");
+    $oStatement = $oPdo->prepare("SELECT id, debt_id, movement_date, amount, currency, note FROM kf_debt_movements WHERE debt_id IN (" . implode(", ", $aPlaceholders) . ") ORDER BY movement_date ASC, id ASC");
     $oStatement->execute($aParams);
     foreach ($oStatement->fetchAll(PDO::FETCH_ASSOC) as $aRow) {
         $iDebtId = (int)$aRow["debt_id"];
@@ -314,8 +564,8 @@ function fetchDebtAdminRows($oPdo, $iDebtId = 0) {
     return $aRows;
 }
 
-function renderDebtMovementValues($aMovements, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
-    global $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji;
+function renderDebtMovementValues($aMovements, $blShowActions = true, $blUseEuropeanAmountFormat = false, $sDisplayCurrency = "") {
+    global $oPdo, $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji;
 
     if (!$aMovements) {
         return $sEmptyValueEmoji;
@@ -324,12 +574,14 @@ function renderDebtMovementValues($aMovements, $blShowActions = true, $blUseEuro
     foreach ($aMovements as $aMovement) {
         $fAmount = (float)$aMovement["amount"];
         $sAmountClass = $fAmount < 0 ? "amount-negative" : ($fAmount > 0 ? "amount-positive" : "amount-zero");
-        $sFormattedAmount = formatDebtAmount($aMovement["amount"], $blUseEuropeanAmountFormat);
+        $sCurrency = normalizeStoredCurrency($aMovement["currency"]);
+        $sFormattedAmount = formatAmount($aMovement["amount"], $blUseEuropeanAmountFormat);
+        $sDisplayedAmount = formatCurrencyAmount($oPdo, $aMovement["amount"], $sCurrency, $aMovement["movement_date"], $sDisplayCurrency, $blUseEuropeanAmountFormat);
         $sNote = trim((string)$aMovement["note"]);
         $sActions = $blShowActions ? "<span class=\"list-item-actions\"><a href=\"#\" class=\"item-action js-edit-debt-movement\" title=\"Edit movement\" aria-label=\"Edit movement\">" . $sEditEmoji . "</a><a href=\"#\" class=\"item-action js-delete-debt-movement\" title=\"Delete movement\" aria-label=\"Delete movement\">" . $sDeleteEmoji . "</a></span>" : "";
-        $sHtml .= "<span class=\"debt-movement\" data-debt-movement-id=\"" . (int)$aMovement["id"] . "\" data-movement-date=\"" . html(formatDate($aMovement["movement_date"])) . "\" data-amount=\"" . html($sFormattedAmount) . "\" data-note=\"" . html($sNote) . "\">"
-            . "<span class=\"debt-movement-amount " . $sAmountClass . "\">" . html($sFormattedAmount) . "</span>"
-            . renderCopyAction($sFormattedAmount)
+        $sHtml .= "<span class=\"debt-movement\" data-debt-movement-id=\"" . (int)$aMovement["id"] . "\" data-movement-date=\"" . html(formatDate($aMovement["movement_date"])) . "\" data-amount=\"" . html($sFormattedAmount) . "\" data-currency=\"" . html($sCurrency) . "\" data-note=\"" . html($sNote) . "\">"
+            . "<span class=\"debt-movement-amount " . $sAmountClass . "\">" . html($sDisplayedAmount) . "</span>"
+            . renderCopyAction($sDisplayedAmount)
             . "<span class=\"debt-movement-date\">" . html(formatDate($aMovement["movement_date"])) . "</span>"
             . ($sNote != "" ? "<span class=\"contact-note\"> (" . html($sNote) . ")</span>" : "")
             . $sActions
@@ -338,17 +590,19 @@ function renderDebtMovementValues($aMovements, $blShowActions = true, $blUseEuro
     return $sHtml . "</span>";
 }
 
-function renderDebtAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
-    global $sAddEmoji, $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji;
+function renderDebtAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false, $sDisplayCurrency = "") {
+    global $oPdo, $sAddEmoji, $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji;
 
-    $sFormattedAmount = formatDebtAmount($aRow["amount"], $blUseEuropeanAmountFormat);
-    $sAmountClass = (float)$aRow["amount"] < 0 ? "amount-negative" : ((float)$aRow["amount"] > 0 ? "amount-positive" : "amount-zero");
+    $aDisplayAmount = getDisplayCurrencyTotalAmount($oPdo, $aRow["debt_movements"], "movement_date", $sDisplayCurrency);
+    $sCurrency = $aDisplayAmount["conversion_failed"] && !$aDisplayAmount["mixed_currencies"] ? $aDisplayAmount["source_currency"] : $aDisplayAmount["currency"];
+    $sFormattedAmount = formatAmount($aDisplayAmount["amount"], $blUseEuropeanAmountFormat) . ($aDisplayAmount["conversion_failed"] && $aDisplayAmount["mixed_currencies"] ? "" : " " . $sCurrency);
+    $sAmountClass = (float)$aDisplayAmount["amount"] < 0 ? "amount-negative" : ((float)$aDisplayAmount["amount"] > 0 ? "amount-positive" : "amount-zero");
     $sSubjectId = (int)$aRow["ex_subjects_id"] > 0 && (string)$aRow["subject_name"] != "" ? (string)(int)$aRow["ex_subjects_id"] : "";
     $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-add-debt-movement\" title=\"New movement\" aria-label=\"New movement\">" . $sAddEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-debt\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-debt\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
     return "      <tr data-debt-id=\"" . (int)$aRow["id"] . "\" data-ex-subjects-id=\"" . html($sSubjectId) . "\" data-subject-name=\"" . html($aRow["subject_name"]) . "\" data-amount=\"" . html($sFormattedAmount) . "\" data-note=\"" . html($aRow["note"]) . "\">\n"
         . "        <td><span class=\"subject-item-value\">" . htmlValue($aRow["subject_name"], $sEmptyValueEmoji) . "</span>" . renderCopyAction($aRow["subject_name"]) . "</td>\n"
         . "        <td class=\"numeric " . $sAmountClass . "\">" . html($sFormattedAmount) . renderCopyAction($sFormattedAmount) . "</td>\n"
-        . "        <td class=\"debt-movements-cell\">" . renderDebtMovementValues($aRow["debt_movements"], $blShowActions, $blUseEuropeanAmountFormat) . "</td>\n"
+        . "        <td class=\"debt-movements-cell\">" . renderDebtMovementValues($aRow["debt_movements"], $blShowActions, $blUseEuropeanAmountFormat, $sDisplayCurrency) . "</td>\n"
         . "        <td>" . renderDebtContactValue("bankaccount", $aRow["account_number"], $aRow["account_note"], (int)$aRow["account_primary"] == 1) . "</td>\n"
         . "        <td>" . renderDebtContactValue("email", $aRow["email"], $aRow["email_note"], (int)$aRow["email_primary"] == 1) . "</td>\n"
         . "        <td>" . renderDebtContactValue($aRow["phone_type"], $aRow["phone"], $aRow["phone_note"], (int)$aRow["phone_primary"] == 1) . "</td>\n"
@@ -357,15 +611,26 @@ function renderDebtAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFo
         . "      </tr>\n";
 }
 
-function renderDebtAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
+function renderDebtAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmountFormat = false, $sDisplayCurrency = "") {
+    global $oPdo;
+
     $sHtml = "";
     $fTotal = 0;
+    $sTotalCurrency = normalizeCurrency($sDisplayCurrency);
+    if ($sTotalCurrency == "") {
+        $sTotalCurrency = "CZK";
+    }
+    $blTotalConversionFailed = false;
     foreach ($aRows as $aRow) {
-        $fTotal += (float)$aRow["amount"];
-        $sHtml .= renderDebtAdminRow($aRow, $blShowActions, $blUseEuropeanAmountFormat);
+        $aDisplayAmount = getDisplayCurrencyTotalAmount($oPdo, $aRow["debt_movements"], "movement_date", $sTotalCurrency);
+        $fTotal += (float)$aDisplayAmount["amount"];
+        if ($aDisplayAmount["conversion_failed"]) {
+            $blTotalConversionFailed = true;
+        }
+        $sHtml .= renderDebtAdminRow($aRow, $blShowActions, $blUseEuropeanAmountFormat, $sDisplayCurrency);
     }
     if ($aRows) {
-        $sFormattedTotal = formatDebtAmount($fTotal, $blUseEuropeanAmountFormat);
+        $sFormattedTotal = formatAmount($fTotal, $blUseEuropeanAmountFormat) . ($blTotalConversionFailed ? "" : " " . $sTotalCurrency);
         $sHtml .= "      <tr><td class=\"debt-total\">Total</td><td class=\"numeric debt-total\">" . html($sFormattedTotal) . renderCopyAction($sFormattedTotal) . "</td><td colspan=\"" . ($blShowActions ? 6 : 5) . "\"></td></tr>\n";
     } else {
         $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 8 : 7) . "\">No debts found.</td></tr>\n";
@@ -374,7 +639,7 @@ function renderDebtAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmount
 }
 
 function fetchTransactionAdminRows($oPdo, $iTransactionId = 0) {
-    $sSql = "SELECT t.id, t.transaction_date, t.amount, t.counterparty, t.note, ft.id AS finance_type_id, ft.name AS type_name, ft.type_kind FROM kf_fin_transactions t JOIN kf_fin_types ft ON ft.id = t.finance_type_id";
+    $sSql = "SELECT t.id, t.transaction_date, t.amount, t.currency, t.counterparty, t.note, ft.id AS finance_type_id, ft.name AS type_name, ft.type_kind FROM kf_fin_transactions t JOIN kf_fin_types ft ON ft.id = t.finance_type_id";
     if ((int)$iTransactionId > 0) {
         $sSql .= " WHERE t.id = :id";
     }
@@ -388,14 +653,15 @@ function fetchTransactionAdminRows($oPdo, $iTransactionId = 0) {
     return $oStatement->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function renderTransactionAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
-    global $sEditEmoji, $sDeleteEmoji;
+function renderTransactionAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false, $sDisplayCurrency = "") {
+    global $oPdo, $sEditEmoji, $sDeleteEmoji;
 
     $sAmountClass = $aRow["amount"] < 0 ? "amount-negative" : ($aRow["amount"] > 0 ? "amount-positive" : "amount-zero");
-    $sFormattedAmount = formatAmount($aRow["amount"], $blUseEuropeanAmountFormat);
+    $sCurrency = normalizeStoredCurrency($aRow["currency"]);
+    $sFormattedAmount = formatCurrencyAmount($oPdo, $aRow["amount"], $sCurrency, $aRow["transaction_date"], $sDisplayCurrency, $blUseEuropeanAmountFormat);
     $sFormattedAbsoluteAmount = formatAmount(abs($aRow["amount"]), $blUseEuropeanAmountFormat);
     $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-edit-transaction\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-transaction\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
-    return "      <tr data-transaction-id=\"" . (int)$aRow["id"] . "\" data-transaction-date=\"" . html(formatDate($aRow["transaction_date"])) . "\" data-finance-type-id=\"" . (int)$aRow["finance_type_id"] . "\" data-amount=\"" . html($sFormattedAbsoluteAmount) . "\" data-counterparty=\"" . html($aRow["counterparty"]) . "\" data-note=\"" . html($aRow["note"]) . "\">\n"
+    return "      <tr data-transaction-id=\"" . (int)$aRow["id"] . "\" data-transaction-date=\"" . html(formatDate($aRow["transaction_date"])) . "\" data-finance-type-id=\"" . (int)$aRow["finance_type_id"] . "\" data-amount=\"" . html($sFormattedAbsoluteAmount) . "\" data-currency=\"" . html($sCurrency) . "\" data-counterparty=\"" . html($aRow["counterparty"]) . "\" data-note=\"" . html($aRow["note"]) . "\">\n"
         . "        <td class=\"nowrap\">" . html(formatDate($aRow["transaction_date"])) . "</td>\n"
         . "        <td>" . html($aRow["type_name"]) . "</td>\n"
         . "        <td class=\"numeric " . $sAmountClass . "\">" . html($sFormattedAmount) . "</td>\n"
@@ -405,10 +671,10 @@ function renderTransactionAdminRow($aRow, $blShowActions = true, $blUseEuropeanA
         . "      </tr>\n";
 }
 
-function renderTransactionAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
+function renderTransactionAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmountFormat = false, $sDisplayCurrency = "") {
     $sHtml = "";
     foreach ($aRows as $aRow) {
-        $sHtml .= renderTransactionAdminRow($aRow, $blShowActions, $blUseEuropeanAmountFormat);
+        $sHtml .= renderTransactionAdminRow($aRow, $blShowActions, $blUseEuropeanAmountFormat, $sDisplayCurrency);
     }
     if (!$aRows) {
         $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 6 : 5) . "\">No transactions found.</td></tr>\n";
@@ -571,7 +837,7 @@ function formatSubscriptionDueInDays($sNextDueAt) {
 }
 
 function fetchSubscriptionAdminRows($oPdo, $iSubscriptionId = 0) {
-    $sSql = "SELECT s.id, s.name, s.finance_type_id, s.amount, s.billing_period, s.billing_day, s.next_due_at, s.counterparty, s.note, s.is_active, ft.name AS type_name, ft.type_kind FROM kf_subscriptions s JOIN kf_fin_types ft ON ft.id = s.finance_type_id";
+    $sSql = "SELECT s.id, s.name, s.finance_type_id, s.amount, s.currency, s.billing_period, s.billing_day, s.next_due_at, s.counterparty, s.note, s.is_active, ft.name AS type_name, ft.type_kind FROM kf_subscriptions s JOIN kf_fin_types ft ON ft.id = s.finance_type_id";
     if ((int)$iSubscriptionId > 0) {
         $sSql .= " WHERE s.id = :id";
     }
@@ -585,11 +851,12 @@ function fetchSubscriptionAdminRows($oPdo, $iSubscriptionId = 0) {
     return $oStatement->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function renderSubscriptionAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
-    global $sEditEmoji, $sDeleteEmoji, $sSubscriptionServedEmoji;
+function renderSubscriptionAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false, $sDisplayCurrency = "") {
+    global $oPdo, $sEditEmoji, $sDeleteEmoji, $sSubscriptionServedEmoji;
 
     $sAmountClass = $aRow["amount"] < 0 ? "amount-negative" : ($aRow["amount"] > 0 ? "amount-positive" : "amount-zero");
-    $sFormattedAmount = formatAmount($aRow["amount"], $blUseEuropeanAmountFormat);
+    $sCurrency = normalizeStoredCurrency($aRow["currency"]);
+    $sFormattedAmount = formatCurrencyAmount($oPdo, $aRow["amount"], $sCurrency, $aRow["next_due_at"], $sDisplayCurrency, $blUseEuropeanAmountFormat);
     $sNextDueAtDisplay = formatSubscriptionDueAt($aRow["next_due_at"]);
     $sNextDueAtDisplay = $sNextDueAtDisplay != "" ? str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sNextDueAtDisplay)) : "&mdash;";
     $sServedAction = "";
@@ -598,7 +865,7 @@ function renderSubscriptionAdminRow($aRow, $blShowActions = true, $blUseEuropean
     }
     $sServedInCell = formatSubscriptionDueInDays($aRow["next_due_at"]) . ($sServedAction != "" ? "&#8288;" . $sServedAction : "");
     $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-edit-subscription\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-subscription\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
-    return "      <tr data-subscription-id=\"" . (int)$aRow["id"] . "\" data-name=\"" . html($aRow["name"]) . "\" data-finance-type-id=\"" . (int)$aRow["finance_type_id"] . "\" data-amount=\"" . html(formatAmount(abs($aRow["amount"]), $blUseEuropeanAmountFormat)) . "\" data-billing-period=\"" . html($aRow["billing_period"]) . "\" data-billing-day=\"" . html($aRow["billing_day"]) . "\" data-next-due-at=\"" . html(formatSubscriptionDueInput($aRow["next_due_at"])) . "\" data-counterparty=\"" . html($aRow["counterparty"]) . "\" data-note=\"" . html($aRow["note"]) . "\" data-is-active=\"" . ((int)$aRow["is_active"] == 1 ? "1" : "0") . "\">\n"
+    return "      <tr data-subscription-id=\"" . (int)$aRow["id"] . "\" data-name=\"" . html($aRow["name"]) . "\" data-finance-type-id=\"" . (int)$aRow["finance_type_id"] . "\" data-amount=\"" . html(formatAmount(abs($aRow["amount"]), $blUseEuropeanAmountFormat)) . "\" data-currency=\"" . html($sCurrency) . "\" data-billing-period=\"" . html($aRow["billing_period"]) . "\" data-billing-day=\"" . html($aRow["billing_day"]) . "\" data-next-due-at=\"" . html(formatSubscriptionDueInput($aRow["next_due_at"])) . "\" data-counterparty=\"" . html($aRow["counterparty"]) . "\" data-note=\"" . html($aRow["note"]) . "\" data-is-active=\"" . ((int)$aRow["is_active"] == 1 ? "1" : "0") . "\">\n"
         . "        <td class=\"subscription-in-column\">" . $sServedInCell . "</td>\n"
         . "        <td>" . html($aRow["name"]) . "</td>\n"
         . "        <td>" . html($aRow["type_name"]) . "</td>\n"
@@ -612,10 +879,10 @@ function renderSubscriptionAdminRow($aRow, $blShowActions = true, $blUseEuropean
         . "      </tr>\n";
 }
 
-function renderSubscriptionAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmountFormat = false) {
+function renderSubscriptionAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmountFormat = false, $sDisplayCurrency = "") {
     $sHtml = "";
     foreach ($aRows as $aRow) {
-        $sHtml .= renderSubscriptionAdminRow($aRow, $blShowActions, $blUseEuropeanAmountFormat);
+        $sHtml .= renderSubscriptionAdminRow($aRow, $blShowActions, $blUseEuropeanAmountFormat, $sDisplayCurrency);
     }
     if (!$aRows) {
         $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 10 : 9) . "\">No subscriptions found.</td></tr>\n";
@@ -654,8 +921,8 @@ function renderExchangeRateRows($aRows) {
             . "        <td>" . html($aRow["country"]) . "</td>\n"
             . "        <td>" . html($aRow["currency"]) . "</td>\n"
             . "        <td class=\"nowrap\">" . html($aRow["currency_code"]) . "</td>\n"
-            . "        <td class=\"numeric\">" . html((int)$aRow["amount"]) . "</td>\n"
-            . "        <td class=\"numeric\">" . html(formatExchangeRateValue($aRow["rate"])) . "</td>\n"
+            . "        <td class=\"numeric\">" . html((int)$aRow["amount"] . " " . $aRow["currency_code"]) . "</td>\n"
+            . "        <td class=\"numeric\">" . html(formatExchangeRateValue($aRow["rate"]) . " CZK") . "</td>\n"
             . "        <td class=\"nowrap\">" . html(formatExchangeRateDateTime($aRow["fetched_at"])) . "</td>\n"
             . "      </tr>\n";
     }

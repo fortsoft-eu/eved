@@ -15,6 +15,7 @@ if (!$oPdo) {
 handleSettingsPost();
 $aSettings = getSettings();
 $blUseEuropeanAmountFormat = (int)$aSettings["use_european_amount_format"] == 1;
+$sDisplayCurrency = normalizeCurrency($aSettings["display_currency"]);
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -35,6 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $sNote = getPostedTrimmedValue("note");
         $sMovementDate = getPostedTrimmedValue("movement_date");
         $fAmount = parseAmount(getPostedTrimmedValue("amount"));
+        $sCurrency = getPostedCurrency();
         $sMovementNote = getPostedTrimmedValue("movement_note");
         if ($iSubjectId < 1 || ($iId < 1 && ($sMovementDate == "" || $fAmount === null))) {
             if ($blJsonResponse) {
@@ -45,6 +47,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($iId < 1 && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sMovementDate)) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved. Movement date must use YYYY-MM-DD."), 400);
+            }
+            redirect(getCurrentScriptName());
+        }
+        if ($iId < 1 && !isCurrencyAvailable($oPdo, $sCurrency)) {
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved. Currency is not available."), 400);
             }
             redirect(getCurrentScriptName());
         }
@@ -67,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     if (!$aDebtRows) {
                         sendJsonAndExit(array("success" => false, "message" => "Debt was not found."), 404);
                     }
-                    sendJsonAndExit(array("success" => true, "debt_id" => $iId, "row_html" => renderDebtAdminRow($aDebtRows[0], $blCanEdit, $blUseEuropeanAmountFormat), "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+                    sendJsonAndExit(array("success" => true, "debt_id" => $iId, "row_html" => renderDebtAdminRow($aDebtRows[0], $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency), "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
                 }
             } else {
                 $oPdo->beginTransaction();
@@ -77,11 +85,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     "note" => $sNote != "" ? $sNote : null
                 ));
                 $iId = (int)$oPdo->lastInsertId();
-                $oStatement = $oPdo->prepare("INSERT INTO kf_debt_movements (debt_id, movement_date, amount, note) VALUES (:debt_id, :movement_date, :amount, :note)");
+                $oStatement = $oPdo->prepare("INSERT INTO kf_debt_movements (debt_id, movement_date, amount, currency, note) VALUES (:debt_id, :movement_date, :amount, :currency, :note)");
                 $oStatement->execute(array(
                     "debt_id" => $iId,
                     "movement_date" => $sMovementDate,
                     "amount" => $fAmount,
+                    "currency" => $sCurrency,
                     "note" => $sMovementNote != "" ? $sMovementNote : null
                 ));
                 $oPdo->commit();
@@ -90,7 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     if (!$aDebtRows) {
                         sendJsonAndExit(array("success" => false, "message" => "Debt was not found."), 404);
                     }
-                    sendJsonAndExit(array("success" => true, "debt_id" => $iId, "row_html" => renderDebtAdminRow($aDebtRows[0], $blCanEdit, $blUseEuropeanAmountFormat), "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+                    sendJsonAndExit(array("success" => true, "debt_id" => $iId, "row_html" => renderDebtAdminRow($aDebtRows[0], $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency), "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
                 }
             }
         } catch (Exception $oException) {
@@ -109,6 +118,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $iDebtId = (int)getPostedTrimmedValue("debt_id", "0");
         $sMovementDate = getPostedTrimmedValue("movement_date");
         $fAmount = parseAmount(getPostedTrimmedValue("amount"));
+        $sCurrency = getPostedCurrency();
         $sNote = getPostedTrimmedValue("note");
         if ($iDebtId < 1 || $sMovementDate == "" || $fAmount === null) {
             if ($blJsonResponse) {
@@ -119,6 +129,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sMovementDate)) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The debt movement could not be saved. Date must use YYYY-MM-DD."), 400);
+            }
+            redirect(getCurrentScriptName());
+        }
+        if (!isCurrencyAvailable($oPdo, $sCurrency)) {
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The debt movement could not be saved. Currency is not available."), 400);
             }
             redirect(getCurrentScriptName());
         }
@@ -143,25 +159,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     }
                     redirect(getCurrentScriptName());
                 }
-                $oStatement = $oPdo->prepare("UPDATE kf_debt_movements SET movement_date = :movement_date, amount = :amount, note = :note WHERE id = :id AND debt_id = :debt_id");
+                $oStatement = $oPdo->prepare("UPDATE kf_debt_movements SET movement_date = :movement_date, amount = :amount, currency = :currency, note = :note WHERE id = :id AND debt_id = :debt_id");
                 $oStatement->execute(array(
                     "movement_date" => $sMovementDate,
                     "amount" => $fAmount,
+                    "currency" => $sCurrency,
                     "note" => $sNote != "" ? $sNote : null,
                     "id" => $iId,
                     "debt_id" => $iDebtId
                 ));
             } else {
-                $oStatement = $oPdo->prepare("INSERT INTO kf_debt_movements (debt_id, movement_date, amount, note) VALUES (:debt_id, :movement_date, :amount, :note)");
+                $oStatement = $oPdo->prepare("INSERT INTO kf_debt_movements (debt_id, movement_date, amount, currency, note) VALUES (:debt_id, :movement_date, :amount, :currency, :note)");
                 $oStatement->execute(array(
                     "debt_id" => $iDebtId,
                     "movement_date" => $sMovementDate,
                     "amount" => $fAmount,
+                    "currency" => $sCurrency,
                     "note" => $sNote != "" ? $sNote : null
                 ));
             }
             if ($blJsonResponse) {
-                sendJsonAndExit(array("success" => true, "debt_id" => $iDebtId, "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+                sendJsonAndExit(array("success" => true, "debt_id" => $iDebtId, "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
             }
         } catch (Exception $oException) {
             error_log((string)$oException);
@@ -178,7 +196,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $oStatement->execute(array("id" => $iId));
         }
         if ($blJsonResponse) {
-            sendJsonAndExit(array("success" => true, "debt_movement_id" => $iId, "debt_movement_deleted" => true, "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+            sendJsonAndExit(array("success" => true, "debt_movement_id" => $iId, "debt_movement_deleted" => true, "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
         }
         redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_debt") {
@@ -188,7 +206,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $oStatement->execute(array("id" => $iId));
         }
         if ($blJsonResponse) {
-            sendJsonAndExit(array("success" => true, "debt_id" => $iId, "debt_deleted" => true, "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+            sendJsonAndExit(array("success" => true, "debt_id" => $iId, "debt_deleted" => true, "rows_html" => renderDebtAdminRows(fetchDebtAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
         }
         redirect(getCurrentScriptName());
     }
@@ -238,11 +256,11 @@ echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">S
     "  </p>\n";
 
 ?>
-  <table id="debts-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
+  <table id="debts-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-currencies="<?php echo htmlspecialchars(getCurrencyOptionsJson($oPdo, getDefaultCurrency()), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th>Subject</th>
-        <th class="numeric">Amount<span class="column-header-icon">&#128182;</span></th>
+        <th class="numeric">Amount</th>
         <th class="debt-movements-heading">Movements</th>
         <th>Account Number</th>
         <th>E-mail</th>
@@ -258,7 +276,7 @@ echo "      </tr>\n",
     "    </thead>\n",
     "    <tbody>\n";
 
-echo renderDebtAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat),
+echo renderDebtAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency),
     "    </tbody>\n",
     "  </table>\n";
 

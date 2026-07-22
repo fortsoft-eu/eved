@@ -14,6 +14,7 @@ if (!$oPdo) {
 handleSettingsPost();
 $aSettings = getSettings();
 $blUseEuropeanAmountFormat = (int)$aSettings["use_european_amount_format"] == 1;
+$sDisplayCurrency = normalizeCurrency($aSettings["display_currency"]);
 
 
 $aTypes = getFinanceTypes(false);
@@ -24,27 +25,59 @@ while ($aRow = $oStatement->fetch()) {
 }
 
 $aMonths = array();
-$oStatement = $oPdo->query("SELECT DISTINCT DATE_FORMAT(transaction_date, '%Y-%m') AS month_key FROM kf_fin_transactions ORDER BY month_key ASC");
-while ($aRow = $oStatement->fetch()) {
-    $aMonths[] = $aRow["month_key"];
-}
-
 $aTypeTotals = array();
-$oStatement = $oPdo->query("SELECT DATE_FORMAT(t.transaction_date, '%Y-%m') AS month_key, t.finance_type_id, SUM(t.amount) AS amount_sum FROM kf_fin_transactions t GROUP BY month_key, t.finance_type_id");
-while ($aRow = $oStatement->fetch()) {
-    $aTypeTotals[$aRow["month_key"]][(int)$aRow["finance_type_id"]] = (float)$aRow["amount_sum"];
-}
-
 $aGroupTotals = array();
-$oStatement = $oPdo->query("SELECT DATE_FORMAT(t.transaction_date, '%Y-%m') AS month_key, g.group_type_id, SUM(t.amount) AS amount_sum FROM kf_fin_transactions t JOIN kf_fin_groups g ON g.member_type_id = t.finance_type_id GROUP BY month_key, g.group_type_id");
-while ($aRow = $oStatement->fetch()) {
-    $aGroupTotals[$aRow["month_key"]][(int)$aRow["group_type_id"]] = (float)$aRow["amount_sum"];
-}
-
 $aSummaryTotals = array();
-$oStatement = $oPdo->query("SELECT DATE_FORMAT(t.transaction_date, '%Y-%m') AS month_key, ft.type_kind, SUM(t.amount) AS amount_sum FROM kf_fin_transactions t JOIN kf_fin_types ft ON ft.id = t.finance_type_id GROUP BY month_key, ft.type_kind");
+$aTypeConversionFailures = array();
+$aGroupConversionFailures = array();
+$aSummaryConversionFailures = array();
+$aMonthMap = array();
+$aGroupMemberMap = array();
+$oStatement = $oPdo->query("SELECT group_type_id, member_type_id FROM kf_fin_groups ORDER BY group_type_id ASC, member_type_id ASC");
 while ($aRow = $oStatement->fetch()) {
-    $aSummaryTotals[$aRow["month_key"]][$aRow["type_kind"]] = (float)$aRow["amount_sum"];
+    $iMemberTypeId = (int)$aRow["member_type_id"];
+    if (!isset($aGroupMemberMap[$iMemberTypeId])) {
+        $aGroupMemberMap[$iMemberTypeId] = array();
+    }
+    $aGroupMemberMap[$iMemberTypeId][] = (int)$aRow["group_type_id"];
+}
+$oStatement = $oPdo->query("SELECT t.transaction_date, DATE_FORMAT(t.transaction_date, '%Y-%m') AS month_key, t.finance_type_id, t.amount, t.currency, ft.type_kind FROM kf_fin_transactions t JOIN kf_fin_types ft ON ft.id = t.finance_type_id ORDER BY t.transaction_date ASC, t.id ASC");
+while ($aRow = $oStatement->fetch()) {
+    $sMonth = (string)$aRow["month_key"];
+    $iFinanceTypeId = (int)$aRow["finance_type_id"];
+    $sStoredCurrency = normalizeStoredCurrency($aRow["currency"]);
+    $mDisplayAmount = convertCurrencyAmount($oPdo, $aRow["amount"], $aRow["currency"], $sDisplayCurrency, $aRow["transaction_date"]);
+    $blConversionFailed = $sDisplayCurrency != "" && $sStoredCurrency != $sDisplayCurrency && $mDisplayAmount === null;
+    $fAmount = $mDisplayAmount === null ? (float)$aRow["amount"] : (float)$mDisplayAmount;
+    if (!isset($aMonthMap[$sMonth])) {
+        $aMonths[] = $sMonth;
+        $aMonthMap[$sMonth] = true;
+    }
+    if (!isset($aTypeTotals[$sMonth][$iFinanceTypeId])) {
+        $aTypeTotals[$sMonth][$iFinanceTypeId] = 0.0;
+    }
+    $aTypeTotals[$sMonth][$iFinanceTypeId] += $fAmount;
+    if ($blConversionFailed) {
+        $aTypeConversionFailures[$sMonth][$iFinanceTypeId] = true;
+    }
+    if (isset($aGroupMemberMap[$iFinanceTypeId])) {
+        foreach ($aGroupMemberMap[$iFinanceTypeId] as $iGroupTypeId) {
+            if (!isset($aGroupTotals[$sMonth][$iGroupTypeId])) {
+                $aGroupTotals[$sMonth][$iGroupTypeId] = 0.0;
+            }
+            $aGroupTotals[$sMonth][$iGroupTypeId] += $fAmount;
+            if ($blConversionFailed) {
+                $aGroupConversionFailures[$sMonth][$iGroupTypeId] = true;
+            }
+        }
+    }
+    if (!isset($aSummaryTotals[$sMonth][$aRow["type_kind"]])) {
+        $aSummaryTotals[$sMonth][$aRow["type_kind"]] = 0.0;
+    }
+    $aSummaryTotals[$sMonth][$aRow["type_kind"]] += $fAmount;
+    if ($blConversionFailed) {
+        $aSummaryConversionFailures[$sMonth][$aRow["type_kind"]] = true;
+    }
 }
 
 $aOverviewColumns = array();
@@ -135,19 +168,26 @@ foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColum
         echo "      <tr data-month=\"" . html($sMonth) . "\">\n",
             "        <td class=\"nowrap\">" . html(monthLabel($sMonth)) . "</td>\n";
         foreach ($aOverviewColumnGroup as $aOverviewColumn) {
+            $blConversionFailed = false;
             if ($aOverviewColumn["type"] == "type") {
                 $fAmount = isset($aTypeTotals[$sMonth][(int)$aOverviewColumn["id"]]) ? $aTypeTotals[$sMonth][(int)$aOverviewColumn["id"]] : 0;
+                $blConversionFailed = !empty($aTypeConversionFailures[$sMonth][(int)$aOverviewColumn["id"]]);
             } elseif ($aOverviewColumn["type"] == "group") {
                 $fAmount = isset($aGroupTotals[$sMonth][(int)$aOverviewColumn["id"]]) ? $aGroupTotals[$sMonth][(int)$aOverviewColumn["id"]] : 0;
+                $blConversionFailed = !empty($aGroupConversionFailures[$sMonth][(int)$aOverviewColumn["id"]]);
             } elseif ($aOverviewColumn["key"] == "income") {
                 $fAmount = $fIncome;
+                $blConversionFailed = !empty($aSummaryConversionFailures[$sMonth]["income"]);
             } elseif ($aOverviewColumn["key"] == "expense") {
                 $fAmount = $fExpense;
+                $blConversionFailed = !empty($aSummaryConversionFailures[$sMonth]["expense"]);
             } else {
                 $fAmount = $fNet;
+                $blConversionFailed = !empty($aSummaryConversionFailures[$sMonth]["income"]) || !empty($aSummaryConversionFailures[$sMonth]["expense"]);
             }
             $sAmountClass = $fAmount < 0 ? "amount-negative" : ($fAmount > 0 ? "amount-positive" : "amount-zero");
-            echo "        <td class=\"numeric " . $sAmountClass . "\">" . html(formatAmount($fAmount, $blUseEuropeanAmountFormat)) . "</td>\n";
+            $sFormattedAmount = formatAmount($fAmount, $blUseEuropeanAmountFormat) . ($sDisplayCurrency != "" && !$blConversionFailed ? " " . $sDisplayCurrency : "");
+            echo "        <td class=\"numeric " . $sAmountClass . "\">" . html($sFormattedAmount) . "</td>\n";
         }
         echo "      </tr>\n";
     }

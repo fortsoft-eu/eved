@@ -15,6 +15,7 @@ if (!$oPdo) {
 handleSettingsPost();
 $aSettings = getSettings();
 $blUseEuropeanAmountFormat = (int)$aSettings["use_european_amount_format"] == 1;
+$sDisplayCurrency = normalizeCurrency($aSettings["display_currency"]);
 
 
 function getPostedAdditionalTransactions() {
@@ -28,6 +29,7 @@ function getPostedAdditionalTransactions() {
         }
         $iFinanceTypeId = isset($aInput["finance_type_id"]) ? (int)$aInput["finance_type_id"] : 0;
         $sAmount = isset($aInput["amount"]) ? trim((string)$aInput["amount"]) : "";
+        $sCurrency = isset($aInput["currency"]) ? normalizeStoredCurrency($aInput["currency"]) : getDefaultCurrency();
         if ($iFinanceTypeId < 1 && $sAmount == "") {
             continue;
         }
@@ -36,20 +38,22 @@ function getPostedAdditionalTransactions() {
         }
         $aRows[] = array(
             "finance_type_id" => $iFinanceTypeId,
-            "amount" => parseAmount($sAmount)
+            "amount" => parseAmount($sAmount),
+            "currency" => $sCurrency
         );
     }
     return $aRows;
 }
 
-function validateAdditionalTransactions($oPdo, $aRows, $iMainFinanceTypeId, $sTypeKind, $fMainAmount) {
+function validateAdditionalTransactions($oPdo, $aRows, $iMainFinanceTypeId, $sTypeKind, $fMainAmount, $sMainCurrency, $sDate) {
     $aValidatedRows = array();
     $aFinanceTypeIds = array((int)$iMainFinanceTypeId);
     $fTotalAmount = 0.0;
     foreach ($aRows as $aRow) {
         $iFinanceTypeId = (int)$aRow["finance_type_id"];
         $fAmount = $aRow["amount"];
-        if ($iFinanceTypeId < 1 || in_array($iFinanceTypeId, $aFinanceTypeIds, true) || $fAmount === null || $fAmount <= 0) {
+        $sCurrency = normalizeStoredCurrency($aRow["currency"]);
+        if ($iFinanceTypeId < 1 || in_array($iFinanceTypeId, $aFinanceTypeIds, true) || $fAmount === null || $fAmount <= 0 || !isCurrencyAvailable($oPdo, $sCurrency)) {
             return false;
         }
         $oStatement = $oPdo->prepare("SELECT id, type_kind FROM kf_fin_types WHERE id = :id AND type_kind IN ('income', 'expense')");
@@ -58,13 +62,19 @@ function validateAdditionalTransactions($oPdo, $aRows, $iMainFinanceTypeId, $sTy
         if (!$aType || $aType["type_kind"] != $sTypeKind) {
             return false;
         }
-        $fTotalAmount += (float)$fAmount;
+        $mConvertedAmount = convertCurrencyAmount($oPdo, $fAmount, $sCurrency, $sMainCurrency, $sDate);
+        if ($mConvertedAmount === null) {
+            return false;
+        }
+        $fTotalAmount += (float)$mConvertedAmount;
         if (round($fTotalAmount, 2) >= round(abs($fMainAmount), 2)) {
             return false;
         }
         $aValidatedRows[] = array(
             "finance_type_id" => $iFinanceTypeId,
-            "amount" => (float)$fAmount
+            "amount" => (float)$fAmount,
+            "currency" => $sCurrency,
+            "converted_amount" => (float)$mConvertedAmount
         );
         $aFinanceTypeIds[] = $iFinanceTypeId;
     }
@@ -74,7 +84,7 @@ function validateAdditionalTransactions($oPdo, $aRows, $iMainFinanceTypeId, $sTy
 function getAdditionalTransactionsTotal($aRows) {
     $fTotalAmount = 0.0;
     foreach ($aRows as $aRow) {
-        $fTotalAmount += abs((float)$aRow["amount"]);
+        $fTotalAmount += abs((float)$aRow["converted_amount"]);
     }
     return $fTotalAmount;
 }
@@ -83,13 +93,14 @@ function insertAdditionalTransactions($oPdo, $aRows, $sTypeKind, $sDate, $sCount
     if (!$aRows) {
         return;
     }
-    $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :counterparty, :note)");
+    $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, currency, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :currency, :counterparty, :note)");
     foreach ($aRows as $aRow) {
         $fSignedAmount = $sTypeKind == "expense" ? -abs((float)$aRow["amount"]) : abs((float)$aRow["amount"]);
         $oStatement->execute(array(
             "transaction_date" => $sDate,
             "finance_type_id" => (int)$aRow["finance_type_id"],
             "amount" => $fSignedAmount,
+            "currency" => normalizeStoredCurrency($aRow["currency"]),
             "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
             "note" => $sNote != "" ? $sNote : null
         ));
@@ -107,18 +118,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $sDate = getPostedTrimmedValue("transaction_date");
         $iFinanceTypeId = (int)getPostedTrimmedValue("finance_type_id", "0");
         $fAmount = parseAmount(getPostedTrimmedValue("amount"));
+        $sCurrency = getPostedCurrency();
         $sCounterparty = getPostedTrimmedValue("counterparty");
         $sNote = getPostedTrimmedValue("note");
         $oStatement = $oPdo->prepare("SELECT id, type_kind FROM kf_fin_types WHERE id = :id AND type_kind IN ('income', 'expense')");
         $oStatement->execute(array("id" => $iFinanceTypeId));
         $aType = $oStatement->fetch();
-        if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDate) || !$aType || $fAmount === null || $fAmount <= 0) {
+        if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDate) || !$aType || $fAmount === null || $fAmount <= 0 || !isCurrencyAvailable($oPdo, $sCurrency)) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The transaction could not be saved. Check the date, type, and amount."), 400);
             }
             redirect(getCurrentScriptName());
         }
-        $aAdditionalTransactions = validateAdditionalTransactions($oPdo, getPostedAdditionalTransactions(), $iFinanceTypeId, (string)$aType["type_kind"], $fAmount);
+        $aAdditionalTransactions = validateAdditionalTransactions($oPdo, getPostedAdditionalTransactions(), $iFinanceTypeId, (string)$aType["type_kind"], $fAmount, $sCurrency, $sDate);
         if ($aAdditionalTransactions === false) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "Subtracted transactions could not be saved."), 400);
@@ -138,21 +150,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     }
                     redirect(getCurrentScriptName());
                 }
-                $oStatement = $oPdo->prepare("UPDATE kf_fin_transactions SET transaction_date = :transaction_date, finance_type_id = :finance_type_id, amount = :amount, counterparty = :counterparty, note = :note WHERE id = :id");
+                $oStatement = $oPdo->prepare("UPDATE kf_fin_transactions SET transaction_date = :transaction_date, finance_type_id = :finance_type_id, amount = :amount, currency = :currency, counterparty = :counterparty, note = :note WHERE id = :id");
                 $oStatement->execute(array(
                     "transaction_date" => $sDate,
                     "finance_type_id" => $iFinanceTypeId,
                     "amount" => $fSignedAmount,
+                    "currency" => $sCurrency,
                     "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
                     "note" => $sNote != "" ? $sNote : null,
                     "id" => $iId
                 ));
             } else {
-                $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :counterparty, :note)");
+                $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, currency, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :currency, :counterparty, :note)");
                 $oStatement->execute(array(
                     "transaction_date" => $sDate,
                     "finance_type_id" => $iFinanceTypeId,
                     "amount" => $fSignedAmount,
+                    "currency" => $sCurrency,
                     "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
                     "note" => $sNote != "" ? $sNote : null
                 ));
@@ -171,7 +185,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             redirect(getCurrentScriptName());
         }
         if ($blJsonResponse) {
-            sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+            sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
         }
         redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_transaction") {
@@ -181,7 +195,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $oStatement->execute(array("id" => $iId));
         }
         if ($blJsonResponse) {
-            sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "transaction_deleted" => true, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+            sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "transaction_deleted" => true, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency)));
         }
         redirect(getCurrentScriptName());
     }
@@ -236,7 +250,7 @@ echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">S
     "  </p>\n";
 
 ?>
-  <table id="transactions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="transactions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(getCurrencyOptionsJson($oPdo, getDefaultCurrency()), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th>Date</th>
@@ -254,7 +268,7 @@ echo "      </tr>\n",
     "    </thead>\n",
     "    <tbody>\n";
 
-echo renderTransactionAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat),
+echo renderTransactionAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency),
     "    </tbody>\n",
     "  </table>\n";
 
