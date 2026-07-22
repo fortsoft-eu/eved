@@ -17,6 +17,86 @@ $aSettings = getSettings();
 $blUseEuropeanAmountFormat = (int)$aSettings["use_european_amount_format"] == 1;
 
 
+function getPostedAdditionalTransactions() {
+    $aRows = array();
+    if (!isset($_POST["additional_transactions"]) || !is_array($_POST["additional_transactions"])) {
+        return $aRows;
+    }
+    foreach ($_POST["additional_transactions"] as $aInput) {
+        if (!is_array($aInput)) {
+            continue;
+        }
+        $iFinanceTypeId = isset($aInput["finance_type_id"]) ? (int)$aInput["finance_type_id"] : 0;
+        $sAmount = isset($aInput["amount"]) ? trim((string)$aInput["amount"]) : "";
+        if ($iFinanceTypeId < 1 && $sAmount == "") {
+            continue;
+        }
+        if ($sAmount == "") {
+            continue;
+        }
+        $aRows[] = array(
+            "finance_type_id" => $iFinanceTypeId,
+            "amount" => parseAmount($sAmount)
+        );
+    }
+    return $aRows;
+}
+
+function validateAdditionalTransactions($oPdo, $aRows, $iMainFinanceTypeId, $sTypeKind, $fMainAmount) {
+    $aValidatedRows = array();
+    $aFinanceTypeIds = array((int)$iMainFinanceTypeId);
+    $fTotalAmount = 0.0;
+    foreach ($aRows as $aRow) {
+        $iFinanceTypeId = (int)$aRow["finance_type_id"];
+        $fAmount = $aRow["amount"];
+        if ($iFinanceTypeId < 1 || in_array($iFinanceTypeId, $aFinanceTypeIds, true) || $fAmount === null || $fAmount <= 0) {
+            return false;
+        }
+        $oStatement = $oPdo->prepare("SELECT id, type_kind FROM kf_fin_types WHERE id = :id AND type_kind IN ('income', 'expense')");
+        $oStatement->execute(array("id" => $iFinanceTypeId));
+        $aType = $oStatement->fetch();
+        if (!$aType || $aType["type_kind"] != $sTypeKind) {
+            return false;
+        }
+        $fTotalAmount += (float)$fAmount;
+        if (round($fTotalAmount, 2) >= round(abs($fMainAmount), 2)) {
+            return false;
+        }
+        $aValidatedRows[] = array(
+            "finance_type_id" => $iFinanceTypeId,
+            "amount" => (float)$fAmount
+        );
+        $aFinanceTypeIds[] = $iFinanceTypeId;
+    }
+    return $aValidatedRows;
+}
+
+function getAdditionalTransactionsTotal($aRows) {
+    $fTotalAmount = 0.0;
+    foreach ($aRows as $aRow) {
+        $fTotalAmount += abs((float)$aRow["amount"]);
+    }
+    return $fTotalAmount;
+}
+
+function insertAdditionalTransactions($oPdo, $aRows, $sTypeKind, $sDate, $sCounterparty, $sNote) {
+    if (!$aRows) {
+        return;
+    }
+    $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :counterparty, :note)");
+    foreach ($aRows as $aRow) {
+        $fSignedAmount = $sTypeKind == "expense" ? -abs((float)$aRow["amount"]) : abs((float)$aRow["amount"]);
+        $oStatement->execute(array(
+            "transaction_date" => $sDate,
+            "finance_type_id" => (int)$aRow["finance_type_id"],
+            "amount" => $fSignedAmount,
+            "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
+            "note" => $sNote != "" ? $sNote : null
+        ));
+    }
+}
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sAction = getPostedTrimmedValue("action");
     $blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
@@ -38,33 +118,60 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             redirect(getCurrentScriptName());
         }
-        $fSignedAmount = $aType["type_kind"] == "expense" ? -abs($fAmount) : abs($fAmount);
-        if ($iId > 0) {
-            $oStatement = $oPdo->prepare("UPDATE kf_fin_transactions SET transaction_date = :transaction_date, finance_type_id = :finance_type_id, amount = :amount, counterparty = :counterparty, note = :note WHERE id = :id");
-            $oStatement->execute(array(
-                "transaction_date" => $sDate,
-                "finance_type_id" => $iFinanceTypeId,
-                "amount" => $fSignedAmount,
-                "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
-                "note" => $sNote != "" ? $sNote : null,
-                "id" => $iId
-            ));
+        $aAdditionalTransactions = validateAdditionalTransactions($oPdo, getPostedAdditionalTransactions(), $iFinanceTypeId, (string)$aType["type_kind"], $fAmount);
+        if ($aAdditionalTransactions === false) {
             if ($blJsonResponse) {
-                sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
+                sendJsonAndExit(array("success" => false, "message" => "Subtracted transactions could not be saved."), 400);
             }
-        } else {
-            $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :counterparty, :note)");
-            $oStatement->execute(array(
-                "transaction_date" => $sDate,
-                "finance_type_id" => $iFinanceTypeId,
-                "amount" => $fSignedAmount,
-                "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
-                "note" => $sNote != "" ? $sNote : null
-            ));
-            if ($blJsonResponse) {
+            redirect(getCurrentScriptName());
+        }
+        $fSignedAmount = $aType["type_kind"] == "expense" ? -abs($fAmount - getAdditionalTransactionsTotal($aAdditionalTransactions)) : abs($fAmount - getAdditionalTransactionsTotal($aAdditionalTransactions));
+        try {
+            $oPdo->beginTransaction();
+            if ($iId > 0) {
+                $oStatement = $oPdo->prepare("SELECT id FROM kf_fin_transactions WHERE id = :id FOR UPDATE");
+                $oStatement->execute(array("id" => $iId));
+                if (!$oStatement->fetch()) {
+                    $oPdo->rollBack();
+                    if ($blJsonResponse) {
+                        sendJsonAndExit(array("success" => false, "message" => "Transaction was not found."), 404);
+                    }
+                    redirect(getCurrentScriptName());
+                }
+                $oStatement = $oPdo->prepare("UPDATE kf_fin_transactions SET transaction_date = :transaction_date, finance_type_id = :finance_type_id, amount = :amount, counterparty = :counterparty, note = :note WHERE id = :id");
+                $oStatement->execute(array(
+                    "transaction_date" => $sDate,
+                    "finance_type_id" => $iFinanceTypeId,
+                    "amount" => $fSignedAmount,
+                    "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
+                    "note" => $sNote != "" ? $sNote : null,
+                    "id" => $iId
+                ));
+            } else {
+                $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :counterparty, :note)");
+                $oStatement->execute(array(
+                    "transaction_date" => $sDate,
+                    "finance_type_id" => $iFinanceTypeId,
+                    "amount" => $fSignedAmount,
+                    "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
+                    "note" => $sNote != "" ? $sNote : null
+                ));
                 $iId = (int)$oPdo->lastInsertId();
-                sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
             }
+            insertAdditionalTransactions($oPdo, $aAdditionalTransactions, (string)$aType["type_kind"], $sDate, $sCounterparty, $sNote);
+            $oPdo->commit();
+        } catch (Exception $oException) {
+            if ($oPdo->inTransaction()) {
+                $oPdo->rollBack();
+            }
+            error_log((string)$oException);
+            if ($blJsonResponse) {
+                sendJsonAndExit(array("success" => false, "message" => "The transaction could not be saved."), 500);
+            }
+            redirect(getCurrentScriptName());
+        }
+        if ($blJsonResponse) {
+            sendJsonAndExit(array("success" => true, "transaction_id" => $iId, "rows_html" => renderTransactionAdminRows(fetchTransactionAdminRows($oPdo), $blCanEdit, $blUseEuropeanAmountFormat)));
         }
         redirect(getCurrentScriptName());
     } elseif ($sAction == "delete_transaction") {

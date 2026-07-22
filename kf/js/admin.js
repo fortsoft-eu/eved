@@ -1684,6 +1684,77 @@
             return oSelect;
         }
 
+        function appendTransactionAdditionalRow(oDialogData, sSelectedValue) {
+            var oWrapper = document.createElement("div");
+            var oTitle = document.createElement("div");
+            var oType;
+            var oAmount;
+            oWrapper.className = "transaction-additional-row";
+            oTitle.className = "transaction-additional-title";
+            oTitle.textContent = "Subtracted Transaction";
+            oWrapper.appendChild(oTitle);
+            oType = appendTransactionTypeField(oWrapper, sSelectedValue);
+            oAmount = appendTransactionTextField(oWrapper, "Amount", "additional_amount", "");
+            oDialogData.additionalContainer.appendChild(oWrapper);
+            oDialogData.additionalTransactions.push({
+                type: oType,
+                amount: oAmount
+            });
+            if (oDialogData.additionalTransactions.length >= 5) {
+                oDialogData.addSubtractedButton.disabled = true;
+            }
+            focusElement(oAmount, true);
+        }
+
+        function appendTransactionAdditionalControls(oDialogData, oMainType) {
+            var oButton = document.createElement("button");
+            var oContainer = document.createElement("div");
+            oDialogData.additionalTransactions = new Array();
+            oDialogData.additionalContainer = oContainer;
+            oDialogData.addSubtractedButton = oButton;
+            oButton.type = "button";
+            oButton.className = "confirm-dialog-button transaction-additional-button";
+            oButton.textContent = "Add Subtracted Transaction";
+            oContainer.className = "transaction-additional-list";
+            oButton.addEventListener("click", function () {
+                appendTransactionAdditionalRow(oDialogData, oMainType.value);
+            });
+            oDialogData.form.appendChild(oButton);
+            oDialogData.form.appendChild(oContainer);
+        }
+
+        function appendTransactionAdditionalFormData(oDialogData, oData) {
+            var iOutputIndex = 0;
+            var aRows = oDialogData.additionalTransactions || new Array();
+            for (var iI = 0; iI < aRows.length; iI += 1) {
+                if (!aRows[iI].amount.value) {
+                    continue;
+                }
+                oData.append("additional_transactions[" + iOutputIndex + "][finance_type_id]", aRows[iI].type.value);
+                oData.append("additional_transactions[" + iOutputIndex + "][amount]", aRows[iI].amount.value);
+                iOutputIndex += 1;
+            }
+        }
+
+        function validateTransactionAdditionalRows(oDialogData, oMainType) {
+            var aTypeValues = new Array(String(oMainType.value || ""));
+            var aRows = oDialogData.additionalTransactions || new Array();
+            var sTypeValue;
+            for (var iI = 0; iI < aRows.length; iI += 1) {
+                if (!aRows[iI].amount.value) {
+                    continue;
+                }
+                sTypeValue = String(aRows[iI].type.value || "");
+                if (aTypeValues.indexOf(sTypeValue) >= 0) {
+                    setAdminDialogError(oDialogData.error, "Each subtracted transaction type must be different from the types above.");
+                    focusElement(aRows[iI].type);
+                    return false;
+                }
+                aTypeValues.push(sTypeValue);
+            }
+            return true;
+        }
+
         function finishTransactionDialog(oDialogData, oFocus) {
             oDialogData.form.appendChild(oDialogData.error);
             oDialogData.actions.appendChild(oDialogData.save);
@@ -1744,9 +1815,13 @@
             oAmount = appendTransactionTextField(oDialogData.form, "Amount", "amount", oRow ? (oRow.getAttribute("data-amount") || "") : "");
             oCounterparty = appendTransactionTextField(oDialogData.form, "Counterparty", "counterparty", oRow ? (oRow.getAttribute("data-counterparty") || "") : "");
             oNote = appendTransactionTextField(oDialogData.form, "Note", "note", oRow ? (oRow.getAttribute("data-note") || "") : "");
+            appendTransactionAdditionalControls(oDialogData, oType);
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();
                 oEvent.preventDefault();
+                if (!validateTransactionAdditionalRows(oDialogData, oType)) {
+                    return;
+                }
                 oData.append("action", "save_transaction");
                 oData.append("id", blNewTransaction ? "" : (oRow.getAttribute("data-transaction-id") || ""));
                 oData.append("transaction_date", oDate.value);
@@ -1754,6 +1829,7 @@
                 oData.append("amount", oAmount.value);
                 oData.append("counterparty", oCounterparty.value);
                 oData.append("note", oNote.value);
+                appendTransactionAdditionalFormData(oDialogData, oData);
                 submitTransactionDialog(oDialogData, oData);
             });
             finishTransactionDialog(oDialogData, oDate);
