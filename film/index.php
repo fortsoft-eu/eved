@@ -565,9 +565,6 @@ if ($oPdo) {
         }
         if ($blFirefoxBrowser && $blEnglishLanguage && isAllowedIp($aAllowedIps)) {
             printPhpFileLinks($sBaseUrl);
-            echo "          <pre>",
-                rtrim(getRequestPlainTextInfo()),
-                "</pre>\n";
         } else {
             echo "          <div id=\"camera-image\">\n",
                 "            <img src=\"" . $sBaseUrl . "gfx/camera.png\" width=\"1535\" height=\"1025\" alt=\"Praktica MTL 3 — 35 mm single-lens reflex (SLR) film camera by VEB Pentacon Dresden\">\n",
@@ -611,7 +608,6 @@ if ($oPdo) {
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/app.min.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/app.min.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/fancybox-6.1.14/js/fancybox.umd.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/bowser-2.14.1/es5.js"></script>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/gallery.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/gallery.js")); ?>"></script>
 </body>
 </html>

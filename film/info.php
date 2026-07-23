@@ -1,8 +1,11 @@
 <?php
 
-$iDefaultSelectedInfo = INFO_VARIABLES;
-
 include "main.php";
+
+
+if (!$oPdo) {
+    send500AndExit("Database error: " . $sError);
+}
 
 
 requireFullAccess($aAllowedIps, "film", "film_csrf_token");
@@ -36,6 +39,7 @@ $aCreditsTypes = array(
 
 ksort($aInfoTypes);
 ksort($aCreditsTypes);
+$iDefaultSelectedInfo = INFO_VARIABLES;
 
 $iTime = sendPageHeaders();
 
@@ -58,7 +62,7 @@ $iTime = sendPageHeaders();
   <p class="admin-controls">
 <?php
 
-renderMenu();
+renderFilmMenu();
 
 ?>
   </p>
@@ -83,7 +87,6 @@ foreach ($aCreditsTypes as $sKey => $iValue) {
     <button type="submit" formtarget="_blank">Open Selected in New Window</button>
   </form>
   <iframe class="phpinfo-frame" name="phpinfo-frame" src="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]) . "?select=info_" . $iDefaultSelectedInfo, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" title="PHP Info"></iframe>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>
 </html>

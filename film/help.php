@@ -35,21 +35,20 @@ renderMenu();
     <dt>Menu</dt>
     <dd>
       <p>The film menu is built from PHP files in the <code>film</code> directory. <code>index.php</code>, <code>main.php</code>, and <code>functions.php</code> are intentionally excluded from the automatic file scan, because they are the public gallery entry point and shared implementation files rather than menu pages.</p>
-      <p>The dropdown starts with a fixed <strong>Film Scans Gallery</strong> link to <code>index.php</code> and a separator. The first automatic menu group contains the photo and film work pages. The second automatic group contains database, PHP, request, schema, and environment diagnostics. This help page is an ordinary menu page and is included by the same file-based menu rule.</p>
+      <p>The film dropdown contains the film work pages. This help page remains a normal film menu page.</p>
       <ul>
         <li><strong>Fixed entry:</strong> Film Scans Gallery opens the public gallery entry point.</li>
         <li><strong>Photo group:</strong> Photographic Equipment, Assign Film to Lab Bag, Film Scans Overview, Photo Lab Orders, and Film Access Log.</li>
-        <li><strong>Diagnostic group:</strong> PHP, database, request, stream, schema, and help pages.</li>
         <li><strong>Behavior:</strong> The menu opens next to its button and scrolls away with the page.</li>
       </ul>
     </dd>
     <dt>Access</dt>
     <dd>
       <p>The public gallery entry point and Photographic Equipment are public read-only pages. Other menu pages require either a trusted client or a signed-in user with the matching permission. Read-only administrative overviews use view access, while sensitive diagnostics and write-capable tools require full access.</p>
-      <p>The most sensitive pages are the ones that expose request variables, PHP configuration, database server metadata, SQL exports, browser access logs, schema metadata, or assignment forms that write to the database.</p>
+      <p>The most sensitive film pages are the ones that expose SQL exports, browser access logs, schema metadata, or assignment forms that write to the database.</p>
       <ul>
         <li><strong>Write page:</strong> Assign Film to Lab Bag can update film roll assignments.</li>
-        <li><strong>Full access:</strong> PHP, request, database information, export, OPcache, constants, streams, schema, access-log pages, and the write page.</li>
+        <li><strong>Full access:</strong> Film export, schema, access-log pages, and the write page.</li>
         <li><strong>View access:</strong> Film scan overview, photo lab orders, and this help page do not modify data.</li>
       </ul>
     </dd>
@@ -219,16 +218,6 @@ renderMenu();
         <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>const.php">Defined PHP Constants</a></dt>
-    <dd>
-      <p>Defined PHP Constants lists constants returned by <code>get_defined_constants(true)</code>. It is a full-access diagnostic page for checking PHP core, extension, and application constants visible in the current runtime.</p>
-      <p>Values are converted to readable strings, including booleans, nulls, arrays, special float values, and <code>PHP_EOL</code>. The table keeps the constant group, name, value, and PHP type separate for easier filtering.</p>
-      <ul>
-        <li><strong>Columns:</strong> Group, constant, value, and type.</li>
-        <li><strong>Filtering:</strong> Quick filter over all visible constants.</li>
-        <li><strong>Access:</strong> Restricted to full access.</li>
-      </ul>
-    </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
     <dd>
       <p>Database Structure is the full-access SQL structure and export page for film-related tables. It includes tables whose names match <code>fs_film_*</code>, <code>fs_photo_*</code>, or <code>fs_flickr_*</code>, sorts them by foreign-key dependencies, and displays normalized <code>SHOW CREATE TABLE</code> output.</p>
@@ -238,35 +227,6 @@ renderMenu();
         <li><strong>Export:</strong> Schema download and backup download.</li>
         <li><strong>Filtering:</strong> Quick filter over the structure table.</li>
         <li><strong>Access:</strong> Restricted to full access.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>dbinfo.php">Database Information</a></dt>
-    <dd>
-      <p>Database Information is a full-access diagnostic page for the current database connection. It queries server version, database name, server comment, character set, collation, SQL mode, time zone values, and PDO client/server attributes.</p>
-      <p>This page is useful when comparing local, staging, and production environments because it shows both SQL-level values and PDO connection metadata in one table.</p>
-      <ul>
-        <li><strong>Data:</strong> Database server metadata and PDO attributes.</li>
-        <li><strong>Filtering:</strong> Quick filter over name and value.</li>
-        <li><strong>Safety:</strong> Read-only diagnostic page.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>env.php">PHP Environment</a></dt>
-    <dd>
-      <p>PHP Environment is a full-access diagnostic page for high-level runtime information. It shows PHP version, SAPI, operating system, architecture, time zones, locale, loaded configuration files, PDO drivers, resource limits, and selected security-related configuration values.</p>
-      <p>It is more curated than PHP Info and is easier to scan when the question is whether the runtime has the expected PHP version, limits, session settings, PDO drivers, or file-loading configuration.</p>
-      <ul>
-        <li><strong>Categories:</strong> PHP environment, configuration files, PDO, resource limits, and security configuration.</li>
-        <li><strong>Filtering:</strong> Quick filter over category, name, and value.</li>
-        <li><strong>Access:</strong> Restricted to full access.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ext.php">PHP Loaded Extensions</a></dt>
-    <dd>
-      <p>PHP Loaded Extensions lists the currently loaded PHP extensions from <code>get_loaded_extensions()</code>. It is a full-access diagnostic page for confirming whether required extensions are available to this runtime.</p>
-      <ul>
-        <li><strong>Columns:</strong> Numeric row number and extension name.</li>
-        <li><strong>Filtering:</strong> Quick filter over extension names.</li>
-        <li><strong>Safety:</strong> Read-only diagnostic page.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>info.php">PHP Info and PHP Credits</a></dt>
@@ -279,36 +239,6 @@ renderMenu();
         <li><strong>Display:</strong> Iframe by default, separate window on request.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ini.php">PHP Configuration Options</a></dt>
-    <dd>
-      <p>PHP Configuration Options lists values returned by <code>ini_get_all()</code>. It is a full-access diagnostic page for comparing global and local configuration values and checking each option's access level.</p>
-      <p>Long string values are wrapped for table readability. The table is useful when a setting differs between the master configuration and the local runtime value used by this application.</p>
-      <ul>
-        <li><strong>Columns:</strong> Configuration option name, global value, local value, and access.</li>
-        <li><strong>Filtering:</strong> Quick filter over all configuration rows.</li>
-        <li><strong>Access:</strong> Restricted to full access.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>opcache.php">PHP OPcache Status</a></dt>
-    <dd>
-      <p>PHP OPcache Status shows OPcache status and configuration when OPcache functions are available. If OPcache is unavailable or disabled, the page reports that state instead of failing.</p>
-      <p>Nested OPcache status and configuration values are flattened into category, name, value, and type rows so they can be filtered and compared easily.</p>
-      <ul>
-        <li><strong>Data:</strong> OPcache status and configuration.</li>
-        <li><strong>Fallback:</strong> Reports unavailable or disabled OPcache clearly.</li>
-        <li><strong>Access:</strong> Restricted to full access.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>request.php">PHP Request Variables</a></dt>
-    <dd>
-      <p>PHP Request Variables is a full-access diagnostic page for the current request. It prints <code>$_GET</code>, <code>$_POST</code>, <code>$_FILES</code>, <code>$_SERVER</code>, <code>$_SESSION</code>, and <code>$_COOKIE</code> in a filterable table.</p>
-      <p>Because it can reveal session values, cookies, server paths, headers, and request data, it should remain restricted. Empty arrays are shown explicitly so it is clear that the source was checked.</p>
-      <ul>
-        <li><strong>Sources:</strong> GET, POST, FILES, SERVER, SESSION, and COOKIE.</li>
-        <li><strong>Columns:</strong> Array, key, value, and type.</li>
-        <li><strong>Access:</strong> Restricted to full access.</li>
-      </ul>
-    </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
     <dd>
       <p>Database Schema is the visual schema viewer for film-related tables. It reads <code>INFORMATION_SCHEMA</code> metadata for <code>fs_film_*</code>, <code>fs_photo_*</code>, and <code>fs_flickr_*</code> tables and renders table boxes, keys, column types, nullability, extra attributes, and foreign-key relations.</p>
@@ -318,15 +248,6 @@ renderMenu();
         <li><strong>Diagram:</strong> Shows columns, keys, and foreign-key relation lines.</li>
         <li><strong>Relations:</strong> Also listed in a table below the diagram.</li>
         <li><strong>Safety:</strong> Read-only schema inspection.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>streams.php">PHP Stream Support</a></dt>
-    <dd>
-      <p>PHP Stream Support lists stream wrappers, transports, and filters available in the current PHP runtime. It is restricted to full access and is useful when debugging file, URL, compression, or transport behavior.</p>
-      <ul>
-        <li><strong>Types:</strong> Wrapper, transport, and filter.</li>
-        <li><strong>Filtering:</strong> Quick filter over stream support rows.</li>
-        <li><strong>Safety:</strong> Read-only diagnostic page.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>help.php">Film Help</a></dt>
@@ -345,21 +266,20 @@ renderMenu();
     <dt>Menu</dt>
     <dd>
       <p>Menu filmu se skládá z PHP souborů v adresáři <code>film</code>. Soubory <code>index.php</code>, <code>main.php</code> a <code>functions.php</code> jsou z automatického skenu záměrně vynechané, protože jde o veřejný vstup galerie a sdílené implementační soubory, ne o stránky menu.</p>
-      <p>Dropdown začíná pevnou položkou <strong>Film Scans Gallery</strong> s odkazem na <code>index.php</code> a oddělovačem. První automatická skupina menu obsahuje pracovní stránky pro fotografii a film. Druhá automatická skupina obsahuje diagnostiku databáze, PHP, požadavku, schématu a prostředí. Tato nápověda je běžná stránka menu a do menu se dostává stejným souborovým pravidlem.</p>
+      <p>Filmovy dropdown obsahuje filmove pracovni stranky. Tato napoveda zustava beznou strankou filmoveho menu.</p>
       <ul>
         <li><strong>Pevná položka:</strong> Film Scans Gallery otevírá veřejný vstup galerie.</li>
         <li><strong>Foto skupina:</strong> Photographic Equipment, Assign Film to Lab Bag, Film Scans Overview, Photo Lab Orders a Film Access Log.</li>
-        <li><strong>Diagnostická skupina:</strong> PHP, databáze, request, streamy, schéma a nápověda.</li>
         <li><strong>Chování:</strong> Menu se otevře u svého tlačítka a odjede se stránkou při rolování.</li>
       </ul>
     </dd>
     <dt>Přístup</dt>
     <dd>
       <p>Veřejný vstup galerie a Photographic Equipment jsou veřejné pouze čtecí stránky. Ostatní stránky menu vyžadují buď trusted klienta, nebo přihlášeného uživatele s odpovídajícím oprávněním. Pouze čtecí administrační přehledy používají view přístup, zatímco citlivá diagnostika a nástroje schopné zápisu vyžadují full přístup.</p>
-      <p>Nejcitlivější jsou stránky, které ukazují proměnné požadavku, konfiguraci PHP, metadata databázového serveru, SQL exporty, browser access log, metadata schématu nebo přiřazovací formulář zapisující do databáze.</p>
+      <p>Nejcitlivejsi filmove stranky jsou ty, ktere zobrazuji SQL exporty, browser access log, metadata schematu nebo prirazovaci formular zapisujici do databaze.</p>
       <ul>
         <li><strong>Zápisová stránka:</strong> Assign Film to Lab Bag může měnit přiřazení filmů.</li>
-        <li><strong>Full přístup:</strong> PHP, request, databázové informace, export, OPcache, konstanty, streamy, schéma, access log a zápisová stránka.</li>
+        <li><strong>Full pristup:</strong> Filmovy export, schema, access log a zapisova stranka.</li>
         <li><strong>View přístup:</strong> Filmový přehled, laboratorní objednávky a tato nápověda data nemění.</li>
       </ul>
     </dd>
@@ -529,16 +449,6 @@ renderMenu();
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>const.php">Defined PHP Constants</a></dt>
-    <dd>
-      <p>Defined PHP Constants vypisuje konstanty vrácené funkcí <code>get_defined_constants(true)</code>. Je to diagnostická stránka s full přístupem určená ke kontrole PHP core, extension a aplikačních konstant viditelných v aktuálním běhu.</p>
-      <p>Hodnoty se převádějí na čitelné řetězce, včetně boolean, null, polí, speciálních float hodnot a <code>PHP_EOL</code>. Tabulka odděluje skupinu konstanty, název, hodnotu a PHP typ pro snazší filtrování.</p>
-      <ul>
-        <li><strong>Sloupce:</strong> Skupina, konstanta, hodnota a typ.</li>
-        <li><strong>Filtrování:</strong> Rychlý filtr přes všechny viditelné konstanty.</li>
-        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
-      </ul>
-    </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
     <dd>
       <p>Database Structure je stránka s SQL strukturou a exportem filmových tabulek s full přístupem. Zahrnuje tabulky odpovídající <code>fs_film_*</code>, <code>fs_photo_*</code> nebo <code>fs_flickr_*</code>, řadí je podle závislostí cizích klíčů a zobrazuje normalizovaný výstup <code>SHOW CREATE TABLE</code>.</p>
@@ -548,35 +458,6 @@ renderMenu();
         <li><strong>Export:</strong> Stažení schématu a stažení zálohy.</li>
         <li><strong>Filtrování:</strong> Rychlý filtr nad tabulkou struktury.</li>
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>dbinfo.php">Database Information</a></dt>
-    <dd>
-      <p>Database Information je diagnostická stránka aktuálního databázového připojení s full přístupem. Dotazuje se na verzi serveru, název databáze, komentář serveru, znakovou sadu, collation, SQL mode, časové zóny a atributy PDO klienta a serveru.</p>
-      <p>Stránka je užitečná při porovnání lokálního, staging a produkčního prostředí, protože v jedné tabulce ukazuje SQL hodnoty i metadata PDO připojení.</p>
-      <ul>
-        <li><strong>Data:</strong> Metadata databázového serveru a atributy PDO.</li>
-        <li><strong>Filtrování:</strong> Rychlý filtr přes název a hodnotu.</li>
-        <li><strong>Bezpečnost:</strong> Pouze čtecí diagnostická stránka.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>env.php">PHP Environment</a></dt>
-    <dd>
-      <p>PHP Environment je diagnostická stránka s přehledem runtime s full přístupem. Ukazuje verzi PHP, SAPI, operační systém, architekturu, časové zóny, locale, načtené konfigurační soubory, PDO drivery, limity prostředků a vybrané bezpečnostní konfigurační hodnoty.</p>
-      <p>Je stručnější než PHP Info a lépe se čte, když je potřeba ověřit verzi PHP, limity, session nastavení, PDO drivery nebo konfiguraci načítání souborů.</p>
-      <ul>
-        <li><strong>Kategorie:</strong> PHP environment, konfigurační soubory, PDO, resource limits a security configuration.</li>
-        <li><strong>Filtrování:</strong> Rychlý filtr přes kategorii, název a hodnotu.</li>
-        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ext.php">PHP Loaded Extensions</a></dt>
-    <dd>
-      <p>PHP Loaded Extensions vypisuje aktuálně načtená PHP rozšíření z <code>get_loaded_extensions()</code>. Jde o diagnostickou stránku s full přístupem určenou ke kontrole, zda má runtime k dispozici potřebná rozšíření.</p>
-      <ul>
-        <li><strong>Sloupce:</strong> Číslo řádku a název rozšíření.</li>
-        <li><strong>Filtrování:</strong> Rychlý filtr přes názvy rozšíření.</li>
-        <li><strong>Bezpečnost:</strong> Pouze čtecí diagnostická stránka.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>info.php">PHP Info and PHP Credits</a></dt>
@@ -589,36 +470,6 @@ renderMenu();
         <li><strong>Zobrazení:</strong> Standardně iframe, na vyžádání samostatné okno.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ini.php">PHP Configuration Options</a></dt>
-    <dd>
-      <p>PHP Configuration Options vypisuje hodnoty vrácené funkcí <code>ini_get_all()</code>. Je to diagnostická stránka s full přístupem, která slouží k porovnání globálních a lokálních konfiguračních hodnot a kontrole access levelu každé volby.</p>
-      <p>Dlouhé textové hodnoty se zalamují kvůli čitelnosti tabulky. Stránka je užitečná, když se nastavení liší mezi master konfigurací a lokální runtime hodnotou použitou aplikací.</p>
-      <ul>
-        <li><strong>Sloupce:</strong> Název volby, globální hodnota, lokální hodnota a access.</li>
-        <li><strong>Filtrování:</strong> Rychlý filtr přes všechny konfigurační řádky.</li>
-        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>opcache.php">PHP OPcache Status</a></dt>
-    <dd>
-      <p>PHP OPcache Status ukazuje stav a konfiguraci OPcache, pokud jsou OPcache funkce dostupné. Pokud OPcache dostupná není nebo je vypnutá, stránka tento stav vypíše místo selhání.</p>
-      <p>Vnořené hodnoty stavu a konfigurace OPcache se převádějí do řádků kategorie, název, hodnota a typ, aby je šlo snadno filtrovat a porovnávat.</p>
-      <ul>
-        <li><strong>Data:</strong> Stav a konfigurace OPcache.</li>
-        <li><strong>Fallback:</strong> Nedostupná nebo vypnutá OPcache se vypíše srozumitelně.</li>
-        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>request.php">PHP Request Variables</a></dt>
-    <dd>
-      <p>PHP Request Variables je diagnostická stránka aktuálního požadavku s full přístupem. Vypisuje <code>$_GET</code>, <code>$_POST</code>, <code>$_FILES</code>, <code>$_SERVER</code>, <code>$_SESSION</code> a <code>$_COOKIE</code> ve filtrovatelné tabulce.</p>
-      <p>Protože může odhalit session hodnoty, cookies, serverové cesty, hlavičky a data požadavku, má zůstat omezená. Prázdná pole se vypisují explicitně, aby bylo jasné, že zdroj byl zkontrolovaný.</p>
-      <ul>
-        <li><strong>Zdroje:</strong> GET, POST, FILES, SERVER, SESSION a COOKIE.</li>
-        <li><strong>Sloupce:</strong> Pole, klíč, hodnota a typ.</li>
-        <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
-      </ul>
-    </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
     <dd>
       <p>Database Schema je vizuální prohlížeč schématu filmových tabulek. Čte metadata <code>INFORMATION_SCHEMA</code> pro tabulky <code>fs_film_*</code>, <code>fs_photo_*</code> a <code>fs_flickr_*</code> a vykresluje tabulkové boxy, klíče, typy sloupců, nullabilitu, extra atributy a vazby cizích klíčů.</p>
@@ -628,15 +479,6 @@ renderMenu();
         <li><strong>Diagram:</strong> Ukazuje sloupce, klíče a vazby cizích klíčů.</li>
         <li><strong>Vazby:</strong> Jsou vypsané také v tabulce pod diagramem.</li>
         <li><strong>Bezpečnost:</strong> Pouze čtecí kontrola schématu.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>streams.php">PHP Stream Support</a></dt>
-    <dd>
-      <p>PHP Stream Support vypisuje stream wrappers, transports a filters dostupné v aktuálním PHP runtime. Je omezený na full přístup a hodí se při ladění práce se soubory, URL, kompresí nebo transporty.</p>
-      <ul>
-        <li><strong>Typy:</strong> Wrapper, transport a filter.</li>
-        <li><strong>Filtrování:</strong> Rychlý filtr přes řádky stream support.</li>
-        <li><strong>Bezpečnost:</strong> Pouze čtecí diagnostická stránka.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>help.php">Film Help</a></dt>

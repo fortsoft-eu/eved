@@ -272,7 +272,15 @@ function getFilmPhpFileLinkGroups() {
                 "title" => $sTitle
             );
         }
-        usort($aGroup, function ($aFirst, $aSecond) {
+        usort($aGroup, function ($aFirst, $aSecond) use ($blPhotoFiles) {
+            if (!$blPhotoFiles) {
+                if ($aFirst["file_name"] == "db.php" && $aSecond["file_name"] != "db.php") {
+                    return -1;
+                }
+                if ($aSecond["file_name"] == "db.php" && $aFirst["file_name"] != "db.php") {
+                    return 1;
+                }
+            }
             $iResult = strcasecmp($aFirst["title"], $aSecond["title"]);
             if ($iResult != 0) {
                 return $iResult;
@@ -284,7 +292,7 @@ function getFilmPhpFileLinkGroups() {
     return $aGroups;
 }
 
-function renderMenu() {
+function renderFilmMenu() {
     global $oPdo, $sBaseUrl, $sMenuEmoji;
 
     $aItems = getMenuItemsFromDatabase($oPdo);

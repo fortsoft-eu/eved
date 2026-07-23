@@ -3,12 +3,12 @@
 include "main.php";
 
 
-requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
-
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
+
+requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
 
 
 handleSettingsPost();

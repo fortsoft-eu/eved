@@ -8,19 +8,7 @@ if (!$oPdo) {
 }
 
 
-$sDownload = "";
-if (isset($_GET["download"])) {
-    $sDownload = (string)$_GET["download"];
-    if ($sDownload == "db.sql") {
-        $sDownload = "schema";
-    }
-    if ($sDownload == "backup" && !isTrustedClient($aAllowedIps) && !isProjectViewAllowed("film")) {
-        if ($blDatabaseBackupDownloadLogin) {
-            requireViewAccess($aAllowedIps, "film", "film_csrf_token");
-        }
-        send403AndExit();
-    }
-}
+requireFullAccess($aAllowedIps, "portal", "lm_csrf_token");
 
 
 $aTables = array();
@@ -28,10 +16,8 @@ try {
     $oStatement = $oPdo->query("SHOW TABLES");
     $aTableNames = $oStatement->fetchAll(PDO::FETCH_COLUMN);
     foreach ($aTableNames as $sTableName) {
-        if (!preg_match("/^fs_(film|photo|flickr)_[a-zA-Z0-9_]+$/", $sTableName)) {
-            continue;
-        }
-        $oStatement = $oPdo->query("SHOW CREATE TABLE `" . $sTableName . "`");
+        $sQuotedTableName = "`" . str_replace("`", "``", $sTableName) . "`";
+        $oStatement = $oPdo->query("SHOW CREATE TABLE " . $sQuotedTableName);
         $aTable = $oStatement->fetch(PDO::FETCH_NUM);
         if (isset($aTable[0], $aTable[1])) {
             $aTable[1] = preg_replace("/\s+AUTO_INCREMENT=\d+\b/i", "", $aTable[1]);
@@ -86,23 +72,30 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
-if ($sDownload == "schema" || $sDownload == "backup") {
-    try {
-        $sBody = $sDownload == "backup" ? getDatabaseBackupSql($oPdo, $aTables) : getDatabaseSchemaSql($aTables);
-    } catch (Exception $oException) {
-        error_log((string)$oException);
-        send500AndExit("Database error: " . $oException->getMessage());
+if (isset($_GET["download"])) {
+    $sDownload = (string)$_GET["download"];
+    if ($sDownload == "db.sql") {
+        $sDownload = "schema";
     }
-    $aScriptNameParts = explode("/", $_SERVER["SCRIPT_NAME"]);
-    $sPrefix = $aScriptNameParts[1];
-    $sProject = $aScriptNameParts[2];
-    $sFileName = $sPrefix . "_" . $sProject . "_" . $sDownload . "_" . date("Y-m-d_His", time()) . ".sql";
-    sendDatabaseSqlAndExit($sFileName, $sBody);
+    if ($sDownload == "schema" || $sDownload == "backup") {
+        try {
+            $sBody = $sDownload == "backup" ? getDatabaseBackupSql($oPdo, $aTables) : getDatabaseSchemaSql($aTables);
+        } catch (Exception $oException) {
+            error_log((string)$oException);
+            send500AndExit("Database error: " . $oException->getMessage());
+        }
+        $aScriptNameParts = explode("/", $_SERVER["SCRIPT_NAME"]);
+        $sPrefix = $aScriptNameParts[1];
+        $sProject = $aScriptNameParts[2];
+        $sFileName = $sPrefix . "_" . $sProject . "_" . $sDownload . "_" . date("Y-m-d_His", time()) . ".sql";
+        sendDatabaseSqlAndExit($sFileName, $sBody);
+    }
 }
 
 $sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $sSchemaDownloadUrl = $sScriptUrl . "?download=schema";
 $sBackupDownloadUrl = $sScriptUrl . "?download=backup";
+
 $iTime = sendPageHeaders();
 
 ?>
@@ -130,7 +123,7 @@ $iTime = sendPageHeaders();
   <p class="admin-controls">
 <?php
 
-renderFilmMenu();
+renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>

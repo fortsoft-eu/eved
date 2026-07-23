@@ -3,12 +3,12 @@
 include "main.php";
 
 
-requireFullAccess($aAllowedIps, "ex", "ex_csrf_token");
-
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
+
+requireFullAccess($aAllowedIps, "portal", "lm_csrf_token");
 
 
 $iDefaultSelectedInfo = INFO_VARIABLES;
@@ -48,10 +48,12 @@ if (isset($_GET["type"])) {
         sendPhpGeneratedOutputAndExit("credits", $iSelect);
     }
 }
+
 $sDefaultFrameUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]) . "?" . http_build_query(array(
     "type" => "info",
     "info" => array($iDefaultSelectedInfo)
 ), "", "&");
+
 $iTime = sendPageHeaders();
 
 ?>

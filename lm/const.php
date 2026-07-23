@@ -3,16 +3,15 @@
 include "main.php";
 
 
-requireFullAccess($aAllowedIps, "film", "film_csrf_token");
+if (!$oPdo) {
+    send500AndExit("Database error: " . $sError);
+}
 
-$aRequestVariables = array(
-    "GET" => $_GET,
-    "POST" => $_POST,
-    "FILES" => $_FILES,
-    "SERVER" => $_SERVER,
-    "SESSION" => isset($_SESSION) ? $_SESSION : array(),
-    "COOKIE" => $_COOKIE
-);
+
+requireFullAccess($aAllowedIps, "portal", "lm_csrf_token");
+
+
+$aConstants = get_defined_constants(true);
 
 $iTime = sendPageHeaders();
 
@@ -27,7 +26,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo htmlspecialchars(getPageTitleText("PHP Request Variables", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
+  <title><?php echo htmlspecialchars(getPageTitleText("Defined PHP Constants", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css" rel="stylesheet" type="text/css">
 </head>
@@ -39,16 +38,16 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="request-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="constants-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
   </p>
-  <table id="request-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
+  <table id="constants-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
-        <th>Array</th>
-        <th>Key</th>
+        <th>Group</th>
+        <th>Constant</th>
         <th>Value</th>
         <th>Type</th>
       </tr>
@@ -56,32 +55,43 @@ renderMenu();
     <tbody>
 <?php
 
-foreach ($aRequestVariables as $sArrayName => $aValues) {
-    if (!$aValues) {
+foreach ($aConstants as $sGroup => $aGroupConstants) {
+    foreach ($aGroupConstants as $sName => $mValue) {
+        if ($sName == "PHP_EOL") {
+            $sValue = "";
+            for ($i = 0; $i < strlen($mValue); $i++) {
+                if ($sValue != "") {
+                    $sValue .= ".";
+                }
+                $sValue .= "chr(" . ord($mValue[$i]) . ")";
+            }
+        } elseif (is_bool($mValue)) {
+            $sValue = $mValue ? "true" : "false";
+        } elseif ($mValue === null) {
+            $sValue = "null";
+        } elseif (is_array($mValue)) {
+            $sValue = print_r($mValue, true);
+        } elseif (is_float($mValue) && is_nan($mValue)) {
+            $sValue = "NAN";
+        } elseif (is_float($mValue) && is_infinite($mValue)) {
+            $sValue = $mValue > 0 ? "INF" : "-INF";
+        } else {
+            $sValue = (string)$mValue;
+        }
         echo "      <tr>\n",
-            "        <td>" . htmlspecialchars($sArrayName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-            "        <td><em>Empty</em></td>\n",
-            "        <td></td>\n",
-            "        <td>array</td>\n",
-            "      </tr>\n";
-        continue;
-    }
-    foreach ($aValues as $sKey => $mValue) {
-        $sValue = is_array($mValue) ? print_r($mValue, true) : (is_bool($mValue) ? ($mValue ? "true" : "false") : (string)$mValue);
-        echo "      <tr>\n",
-            "        <td style=\"vertical-align: top;\">" . htmlspecialchars($sArrayName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-            "        <td style=\"vertical-align: top;\">" . htmlspecialchars((string)$sKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td style=\"vertical-align: top;\">" . htmlspecialchars($sGroup, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td style=\"vertical-align: top;\">" . htmlspecialchars($sName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
             "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . htmlspecialchars($sValue, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
             "        <td style=\"vertical-align: top;\">" . htmlspecialchars(gettype($mValue), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
             "      </tr>\n";
     }
 }
 
+echo "    </tbody>\n",
+    "  </table>\n";
+
 ?>
-    </tbody>
-  </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>
 </html>

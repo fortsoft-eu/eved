@@ -302,6 +302,10 @@ table {
     width: 75px;
 }
 
+.admin-controls .js-add-menu-item {
+    width: 75px;
+}
+
 .admin-controls .quick-filter-active {
     font-weight: bold;
 }
@@ -427,6 +431,21 @@ table {
     height: auto;
     overflow-wrap: normal;
     vertical-align: top;
+    word-break: normal;
+}
+
+#extensions-table,
+#streams-table {
+    table-layout: auto;
+    width: auto;
+}
+
+#extensions-table td,
+#extensions-table th,
+#streams-table td,
+#streams-table th {
+    overflow-wrap: normal;
+    white-space: nowrap;
     word-break: normal;
 }
 
@@ -670,6 +689,82 @@ tr:nth-child(even) {
     cursor: help;
 }
 
+body.phpinfo-page {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 12px);
+    height: calc(100dvh - 12px);
+    overflow: hidden;
+}
+
+body.phpinfo-page .admin-controls {
+    flex: 0 0 auto;
+}
+
+.phpinfo-frame {
+    background: #FFF;
+    border: 1px solid #C0C0C0;
+    box-sizing: border-box;
+    display: block;
+    flex: 1 1 0;
+    height: auto;
+    margin-top: 12px;
+    min-height: 0;
+    width: 100%;
+}
+
+#phpinfo-select-form {
+    align-items: stretch;
+    background: transparent;
+    display: grid;
+    flex: 0 0 auto;
+    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0;
+    width: 100%;
+}
+
+#phpinfo-select-form form {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 12px;
+    width: 100%;
+}
+
+#phpinfo-select-form fieldset {
+    border: 1px solid #C0C0C0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin: 0;
+    min-width: 0;
+}
+
+#phpinfo-select-form .phpinfo-button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+#phpinfo-select-form button,
+#phpinfo-select-form label,
+#phpinfo-select-form select {
+    margin-top: 0;
+}
+
+#phpinfo-select-form button,
+#phpinfo-select-form select {
+    width: auto;
+}
+
+#phpinfo-select-form button {
+    white-space: nowrap;
+}
+
 @media (max-width: 600px) {
     .menu-panel {
         max-width: calc(100vw - 16px);
@@ -682,6 +777,14 @@ tr:nth-child(even) {
 
     .schema-unavailable-message {
         display: block;
+    }
+
+    #phpinfo-select-form {
+        grid-template-columns: 1fr;
+    }
+
+    #phpinfo-select-form button {
+        white-space: normal;
     }
 }
 
@@ -1084,6 +1187,256 @@ th.numeric {
 .kf-help-list dd {
     margin: 6px 0 20px 24px;
     max-width: 980px;
+}
+
+.lm-help-list {
+    max-width: 1100px;
+}
+
+.lm-help-list dt {
+    font-weight: bold;
+    margin-top: 18px;
+}
+
+.lm-help-list dt:first-child {
+    margin-top: 0;
+}
+
+.lm-help-list dd {
+    margin: 6px 0 20px 24px;
+    max-width: 980px;
+}
+
+.request-overview {
+    background: #FFF;
+    border: 1px solid #C0C0C0;
+    box-sizing: border-box;
+    line-height: 1;
+    margin: 0;
+    overflow: auto;
+    padding: 8px;
+    white-space: pre-wrap;
+}
+
+.request-overview hr {
+    background-color: #CCC;
+    border: 0;
+    height: 1px;
+}
+
+.admin-table-groups table {
+    margin-bottom: 14px;
+}
+
+.menu-admin-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.menu-admin-table caption {
+    background: #DDD;
+    border: 1px solid #C0C0C0;
+    border-bottom: 0;
+    font-weight: bold;
+    padding: 8px;
+    text-align: left;
+}
+
+.menu-admin-table .menu-col-path {
+    width: 27%;
+}
+
+.menu-admin-table .menu-col-icon {
+    width: 4em;
+}
+
+.menu-admin-table .menu-col-name {
+    width: 12%;
+}
+
+.menu-admin-table .menu-col-title {
+    width: 29%;
+}
+
+.menu-admin-table .menu-col-target {
+    width: 8em;
+}
+
+.menu-admin-table .menu-col-active {
+    width: 5em;
+}
+
+.menu-admin-table .menu-col-separator {
+    width: 6.5em;
+}
+
+.menu-admin-table .menu-col-order,
+.menu-admin-table .menu-col-actions {
+    width: 5.5em;
+}
+
+.empty-table-message {
+    text-align: center;
+}
+
+.authors-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.authors-table td:first-child,
+.authors-table th:first-child {
+    width: 20em;
+}
+
+.authors-table .pages {
+    overflow-wrap: anywhere;
+    white-space: normal;
+    word-break: normal;
+}
+
+body.php-generated-output {
+    --php-dark-grey: #333;
+    --php-dark-blue: #4F5B93;
+    --php-light-blue: #E2E4EF;
+    background-color: #FFF;
+    color: #222;
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+body.php-generated-output pre {
+    font-family: monospace;
+    margin: 0;
+}
+
+body.php-generated-output a {
+    color: inherit;
+}
+
+body.php-generated-output a:hover {
+    text-decoration: none;
+}
+
+body.php-generated-output table {
+    border: 0;
+    border-collapse: collapse;
+    box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.2);
+    width: 934px;
+}
+
+body.php-generated-output .center {
+    text-align: center;
+}
+
+body.php-generated-output .center table {
+    margin: 1em auto;
+    text-align: left;
+}
+
+body.php-generated-output .center th {
+    text-align: center !important;
+}
+
+body.php-generated-output td,
+body.php-generated-output th {
+    border: 1px solid #666;
+    font-size: inherit;
+    padding: 4px 5px;
+    vertical-align: baseline;
+}
+
+body.php-generated-output th {
+    background: inherit;
+    position: sticky;
+    top: 0;
+}
+
+body.php-generated-output h1 {
+    font-size: 150%;
+}
+
+body.php-generated-output h2 {
+    font-size: 125%;
+}
+
+body.php-generated-output h2 > a {
+    text-decoration: none;
+}
+
+body.php-generated-output h2 > a:hover {
+    text-decoration: underline;
+}
+
+body.php-generated-output .p {
+    text-align: left;
+}
+
+body.php-generated-output .e {
+    background-color: #CCF;
+    font-weight: bold;
+    width: 300px;
+}
+
+body.php-generated-output .h {
+    background-color: #99C;
+    font-weight: bold;
+}
+
+body.php-generated-output .v {
+    background-color: #DDD;
+    max-width: 300px;
+    overflow-x: auto;
+    word-wrap: normal;
+}
+
+body.php-generated-output .v i {
+    color: #999;
+}
+
+body.php-generated-output img {
+    border: 0;
+    float: right;
+}
+
+body.php-generated-output hr {
+    background-color: #CCC;
+    border: 0;
+    height: 1px;
+    width: 934px;
+}
+
+@media (prefers-color-scheme: dark) {
+    body.php-generated-output {
+        background: var(--php-dark-grey);
+        color: var(--php-light-blue);
+    }
+
+    body.php-generated-output .h td,
+    body.php-generated-output td.e,
+    body.php-generated-output th {
+        border-color: #606A90;
+    }
+
+    body.php-generated-output td {
+        border-color: #505153;
+    }
+
+    body.php-generated-output .e {
+        background-color: #404A77;
+    }
+
+    body.php-generated-output .h {
+        background-color: var(--php-dark-blue);
+    }
+
+    body.php-generated-output .v {
+        background-color: var(--php-dark-grey);
+    }
+
+    body.php-generated-output hr {
+        background-color: #505153;
+    }
 }
 
 .admin-row-modal > td {

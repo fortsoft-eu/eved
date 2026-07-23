@@ -106,30 +106,47 @@ function addPhpGeneratedViewportMeta($sHtml) {
 }
 
 function getPhpGeneratedStyleTag($sStyleNonce) {
-    global $sBaseUrl;
-
-    $sScriptDirectory = dirname((string)$_SERVER["SCRIPT_FILENAME"]);
-    return "  <link href=\"" . htmlspecialchars($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" rel=\"stylesheet\" type=\"text/css\">\n";
+    $sNonce = $sStyleNonce != "" ? " nonce=\"" . htmlspecialchars($sStyleNonce, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"" : "";
+    return "  <style" . $sNonce . ">\n"
+        . "body {background-color: #fff; color: #222; font-family: sans-serif;}\n"
+        . "pre {margin: 0; font-family: monospace;}\n"
+        . "a {color: inherit;}\n"
+        . "a:hover {text-decoration: none;}\n"
+        . "table {border-collapse: collapse; border: 0; width: 934px; box-shadow: 1px 2px 3px rgba(0, 0, 0, 0.2);}\n"
+        . ".center {text-align: center;}\n"
+        . ".center table {margin: 1em auto; text-align: left;}\n"
+        . ".center th {text-align: center !important;}\n"
+        . "td, th {border: 1px solid #666; font-size: 75%; vertical-align: baseline; padding: 4px 5px;}\n"
+        . "th {position: sticky; top: 0; background: inherit;}\n"
+        . "h1 {font-size: 150%;}\n"
+        . "h2 {font-size: 125%;}\n"
+        . "h2 > a {text-decoration: none;}\n"
+        . "h2 > a:hover {text-decoration: underline;}\n"
+        . ".p {text-align: left;}\n"
+        . ".e {background-color: #ccf; width: 300px; font-weight: bold;}\n"
+        . ".h {background-color: #99c; font-weight: bold;}\n"
+        . ".v {background-color: #ddd; max-width: 300px; overflow-x: auto; word-wrap: break-word;}\n"
+        . ".v i {color: #999;}\n"
+        . "img {float: right; border: 0;}\n"
+        . "hr {width: 934px; background-color: #ccc; border: 0; height: 1px;}\n"
+        . ":root {--php-dark-grey: #333; --php-dark-blue: #4F5B93; --php-medium-blue: #8892BF; --php-light-blue: #E2E4EF; --php-accent-purple: #793862}\n"
+        . "@media (prefers-color-scheme: dark) {\n"
+        . "  body {background: var(--php-dark-grey); color: var(--php-light-blue)}\n"
+        . "  .h td, td.e, th {border-color: #606A90}\n"
+        . "  td {border-color: #505153}\n"
+        . "  .e {background-color: #404A77}\n"
+        . "  .h {background-color: var(--php-dark-blue)}\n"
+        . "  .v {background-color: var(--php-dark-grey)}\n"
+        . "  hr {background-color: #505153}\n"
+        . "}\n"
+        . "  </style>\n";
 }
 
 function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
     if (stripos($sHtml, "<html") !== false) {
-        $sHtml = preg_replace("#<style\\b[^>]*>.*?</style>\\s*#is", "", $sHtml);
-        if (stripos($sHtml, "css/admin.css") === false && stripos($sHtml, "</head>") !== false) {
+        if (stripos($sHtml, "<style") === false && stripos($sHtml, "</head>") !== false) {
             $sHtml = preg_replace("#</head>#i", getPhpGeneratedStyleTag($sStyleNonce) . "</head>", $sHtml, 1);
         }
-        $sHtml = preg_replace_callback("#<body\\b([^>]*)>#i", function ($aMatches) {
-            $sAttributes = $aMatches[1];
-            if (preg_match("#\\bclass\\s*=\\s*([\"'])(.*?)\\1#i", $sAttributes, $aClassMatches)) {
-                if (strpos($aClassMatches[2], "php-generated-output") === false) {
-                    $sClass = trim($aClassMatches[2] . " php-generated-output");
-                    $sAttributes = preg_replace("#\\bclass\\s*=\\s*([\"'])(.*?)\\1#i", "class=" . $aClassMatches[1] . $sClass . $aClassMatches[1], $sAttributes, 1);
-                }
-            } else {
-                $sAttributes .= " class=\"php-generated-output\"";
-            }
-            return "<body" . $sAttributes . ">";
-        }, $sHtml, 1);
         return addPhpGeneratedViewportMeta($sHtml);
     }
     $sTitle = htmlspecialchars($sTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
@@ -142,7 +159,7 @@ function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
         "  <title>" . $sTitle . "</title>\n",
         getPhpGeneratedStyleTag($sStyleNonce)
         . "</head>\n",
-        "<body class=\"php-generated-output\"><div class=\"center\">\n",
+        "<body><div class=\"center\">\n",
         $sHtml
         . "\n</div></body>\n",
         "</html>\n";
@@ -409,6 +426,49 @@ function getCurrentScriptName() {
     $sScriptName = str_replace("\\", "/", $sScriptName);
     $sScriptName = basename($sScriptName);
     return $sScriptName != "" ? $sScriptName : "index.php";
+}
+
+function getMenuItems($oPdo) {
+    try {
+        return getMenuItemsFromDatabase($oPdo);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        return array();
+    }
+}
+
+function renderMenu() {
+    global $oPdo, $sBaseUrl, $sMenuEmoji;
+
+    $aItems = getMenuItems($oPdo);
+    if (!$aItems) {
+        return;
+    }
+    $sCurrentPath = getCurrentMenuPath();
+    echo "    <span class=\"menu\" data-menu>\n",
+        "      <button type=\"button\" class=\"menu-button\" data-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n",
+        "      <span class=\"menu-panel\" data-menu-panel hidden>\n";
+    foreach ($aItems as $aItem) {
+        if ($aItem["separator"]) {
+            echo "        <span class=\"menu-separator\"></span>\n";
+            continue;
+        }
+        $sClass = "menu-link";
+        $sCurrent = "";
+        $sIcon = trim((string)$aItem["icon"]);
+        $sTitle = trim((string)$aItem["title"]);
+        $sTarget = trim((string)$aItem["target"]);
+        $sTitleAttribute = $sTitle != "" ? " title=\"" . html($sTitle) . "\"" : "";
+        $sTargetAttribute = $sTarget != "" && preg_match("#^(_blank|_self|_parent|_top|[A-Za-z][A-Za-z0-9_\\-]*)$#", $sTarget) ? " target=\"" . html($sTarget) . "\"" : "";
+        $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
+        if ($aItem["path"] === $sCurrentPath) {
+            $sClass .= " menu-link-active";
+            $sCurrent = " aria-current=\"page\"";
+        }
+        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"menu-icon\" aria-hidden=\"true\">" . html($sIcon) . "</span><span class=\"menu-text\">" . html($aItem["name"]) . "</span></a>\n";
+    }
+    echo "      </span>\n",
+        "    </span>\n";
 }
 
 function normalizeMenuPath($sPath) {

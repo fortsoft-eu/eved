@@ -3,11 +3,11 @@
 include "main.php";
 
 
-requireFullAccess($aAllowedIps, "film", "film_csrf_token");
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
+requireFullAccess($aAllowedIps, "film", "film_csrf_token");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("film_csrf_token");
@@ -179,7 +179,7 @@ if ($sMessage) {
     echo "  <div class=\"message-box message-" . htmlspecialchars($sMessageType, ENT_QUOTES, "UTF-8") . "\" id=\"message-box\">" . $sMessage . "</div>\n";
 }
 echo "  <p class=\"admin-controls\">\n";
-renderMenu();
+renderFilmMenu();
 echo "  </p>\n";
 
 ?>
@@ -308,7 +308,6 @@ foreach ($aLinks as $aLink) {
       </div>
     </form>
   </div>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>
 </html>

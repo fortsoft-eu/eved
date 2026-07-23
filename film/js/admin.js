@@ -1,3 +1,9 @@
+function logFilmException(oException) {
+    if (window.console && window.console.error) {
+        window.console.error(oException);
+    }
+}
+
 var iAdminModalCount = 0;
 var sAdminBodyOverflow = "";
 var oFilmOpenDialog = null;

@@ -1,15 +1,5 @@
 <?php
 
-function getMenuItems($oPdo) {
-    try {
-        return getMenuItemsFromDatabase($oPdo);
-    } catch (Exception $oException) {
-        error_log((string)$oException);
-        return array();
-    }
-    return $aItems;
-}
-
 function getCurrentMenuName($oPdo) {
     global $sError;
 
@@ -27,40 +17,6 @@ function getCurrentMenuName($oPdo) {
         send500AndExit("Database error: " . $oException->getMessage());
     }
     send500AndExit("Menu error: Missing active menu name for " . $sPath . ".");
-}
-
-function renderMenu() {
-    global $oPdo, $sBaseUrl, $sMenuEmoji;
-
-    $aItems = getMenuItems($oPdo);
-    $sCurrentPath = getCurrentMenuPath();
-    if (!$aItems) {
-        return;
-    }
-    echo "    <span class=\"menu\" data-menu>\n",
-        "      <button type=\"button\" class=\"menu-button\" data-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n",
-        "      <span class=\"menu-panel\" data-menu-panel hidden>\n";
-    foreach ($aItems as $aItem) {
-        if ($aItem["separator"]) {
-            echo "        <span class=\"menu-separator\"></span>\n";
-            continue;
-        }
-        $sClass = "menu-link";
-        $sCurrent = "";
-        $sIcon = trim((string)$aItem["icon"]);
-        $sTitle = trim((string)$aItem["title"]);
-        $sTarget = trim((string)$aItem["target"]);
-        $sTitleAttribute = $sTitle != "" ? " title=\"" . html($sTitle) . "\"" : "";
-        $sTargetAttribute = $sTarget != "" && preg_match("#^(_blank|_self|_parent|_top|[A-Za-z][A-Za-z0-9_\\-]*)$#", $sTarget) ? " target=\"" . html($sTarget) . "\"" : "";
-        $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
-        if ($aItem["path"] === $sCurrentPath) {
-            $sClass .= " menu-link-active";
-            $sCurrent = " aria-current=\"page\"";
-        }
-        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"menu-icon\" aria-hidden=\"true\">" . html($sIcon) . "</span><span class=\"menu-text\">" . html($aItem["name"]) . "</span></a>\n";
-    }
-    echo "      </span>\n",
-        "    </span>\n";
 }
 
 function formatTimestampTooltipValue($mValue) {
@@ -2333,32 +2289,192 @@ function countryCodeToName($sCountry) {
     return isset($aCountryNames[$sCountry]) ? $aCountryNames[$sCountry] : $sCountry;
 }
 
-function countryNameToCode($sCountry) {
-    $sCountry = trim((string)$sCountry);
-    $sCountryUpper = strtoupper($sCountry);
-    $sCountryLower = function_exists("mb_strtolower") ? mb_strtolower($sCountry, "UTF-8") : strtolower($sCountry);
-    $aCountryCodes = getCountryCodes();
-    $aCountryNames = getCountryNames();
-    $sCountrySeparator = " " . html_entity_decode("&#8212;", ENT_QUOTES, "UTF-8") . " ";
-    $iCountrySeparator = strpos($sCountry, $sCountrySeparator);
-    if ($sCountry == "") {
+function countryDashPattern() {
+    return "(?:-|\\x{2010}|\\x{2011}|\\x{2012}|\\x{2013}|\\x{2014}|\\x{2015}|\\x{2212})";
+}
+
+function normalizeCountrySearchText($sCountry) {
+    $sCountry = html_entity_decode((string)$sCountry, ENT_QUOTES | ENT_HTML5, "UTF-8");
+    $sCountry = str_replace(array("\xc2\xa0", "\xe2\x80\x8b", "&"), array(" ", "", " and "), $sCountry);
+    $sCountry = preg_replace("/" . countryDashPattern() . "/u", " ", $sCountry);
+    $aCzechChars = array(
+        html_entity_decode("&#193;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#201;", ENT_QUOTES, "UTF-8") => "e",
+        html_entity_decode("&#205;", ENT_QUOTES, "UTF-8") => "i",
+        html_entity_decode("&#211;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#218;", ENT_QUOTES, "UTF-8") => "u",
+        html_entity_decode("&#221;", ENT_QUOTES, "UTF-8") => "y",
+        html_entity_decode("&#192;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#194;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#195;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#196;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#197;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#198;", ENT_QUOTES, "UTF-8") => "ae",
+        html_entity_decode("&#199;", ENT_QUOTES, "UTF-8") => "c",
+        html_entity_decode("&#200;", ENT_QUOTES, "UTF-8") => "e",
+        html_entity_decode("&#202;", ENT_QUOTES, "UTF-8") => "e",
+        html_entity_decode("&#203;", ENT_QUOTES, "UTF-8") => "e",
+        html_entity_decode("&#204;", ENT_QUOTES, "UTF-8") => "i",
+        html_entity_decode("&#206;", ENT_QUOTES, "UTF-8") => "i",
+        html_entity_decode("&#207;", ENT_QUOTES, "UTF-8") => "i",
+        html_entity_decode("&#209;", ENT_QUOTES, "UTF-8") => "n",
+        html_entity_decode("&#210;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#212;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#213;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#214;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#216;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#217;", ENT_QUOTES, "UTF-8") => "u",
+        html_entity_decode("&#219;", ENT_QUOTES, "UTF-8") => "u",
+        html_entity_decode("&#220;", ENT_QUOTES, "UTF-8") => "u",
+        html_entity_decode("&#225;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#224;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#226;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#227;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#228;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#229;", ENT_QUOTES, "UTF-8") => "a",
+        html_entity_decode("&#230;", ENT_QUOTES, "UTF-8") => "ae",
+        html_entity_decode("&#231;", ENT_QUOTES, "UTF-8") => "c",
+        html_entity_decode("&#233;", ENT_QUOTES, "UTF-8") => "e",
+        html_entity_decode("&#232;", ENT_QUOTES, "UTF-8") => "e",
+        html_entity_decode("&#234;", ENT_QUOTES, "UTF-8") => "e",
+        html_entity_decode("&#235;", ENT_QUOTES, "UTF-8") => "e",
+        html_entity_decode("&#237;", ENT_QUOTES, "UTF-8") => "i",
+        html_entity_decode("&#236;", ENT_QUOTES, "UTF-8") => "i",
+        html_entity_decode("&#238;", ENT_QUOTES, "UTF-8") => "i",
+        html_entity_decode("&#239;", ENT_QUOTES, "UTF-8") => "i",
+        html_entity_decode("&#241;", ENT_QUOTES, "UTF-8") => "n",
+        html_entity_decode("&#243;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#242;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#244;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#245;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#246;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#248;", ENT_QUOTES, "UTF-8") => "o",
+        html_entity_decode("&#250;", ENT_QUOTES, "UTF-8") => "u",
+        html_entity_decode("&#249;", ENT_QUOTES, "UTF-8") => "u",
+        html_entity_decode("&#251;", ENT_QUOTES, "UTF-8") => "u",
+        html_entity_decode("&#252;", ENT_QUOTES, "UTF-8") => "u",
+        html_entity_decode("&#253;", ENT_QUOTES, "UTF-8") => "y",
+        html_entity_decode("&#255;", ENT_QUOTES, "UTF-8") => "y",
+        html_entity_decode("&#338;", ENT_QUOTES, "UTF-8") => "oe",
+        html_entity_decode("&#339;", ENT_QUOTES, "UTF-8") => "oe",
+        html_entity_decode("&#376;", ENT_QUOTES, "UTF-8") => "y",
+        html_entity_decode("&#223;", ENT_QUOTES, "UTF-8") => "ss",
+        html_entity_decode("&#268;", ENT_QUOTES, "UTF-8") => "c",
+        html_entity_decode("&#269;", ENT_QUOTES, "UTF-8") => "c",
+        html_entity_decode("&#270;", ENT_QUOTES, "UTF-8") => "d",
+        html_entity_decode("&#271;", ENT_QUOTES, "UTF-8") => "d",
+        html_entity_decode("&#282;", ENT_QUOTES, "UTF-8") => "e",
+        html_entity_decode("&#283;", ENT_QUOTES, "UTF-8") => "e",
+        html_entity_decode("&#327;", ENT_QUOTES, "UTF-8") => "n",
+        html_entity_decode("&#328;", ENT_QUOTES, "UTF-8") => "n",
+        html_entity_decode("&#344;", ENT_QUOTES, "UTF-8") => "r",
+        html_entity_decode("&#345;", ENT_QUOTES, "UTF-8") => "r",
+        html_entity_decode("&#352;", ENT_QUOTES, "UTF-8") => "s",
+        html_entity_decode("&#353;", ENT_QUOTES, "UTF-8") => "s",
+        html_entity_decode("&#356;", ENT_QUOTES, "UTF-8") => "t",
+        html_entity_decode("&#357;", ENT_QUOTES, "UTF-8") => "t",
+        html_entity_decode("&#366;", ENT_QUOTES, "UTF-8") => "u",
+        html_entity_decode("&#367;", ENT_QUOTES, "UTF-8") => "u",
+        html_entity_decode("&#381;", ENT_QUOTES, "UTF-8") => "z",
+        html_entity_decode("&#382;", ENT_QUOTES, "UTF-8") => "z"
+    );
+    $sCountry = strtr($sCountry, $aCzechChars);
+    if (function_exists("iconv")) {
+        $sConverted = @iconv("UTF-8", "ASCII//TRANSLIT//IGNORE", $sCountry);
+        if ($sConverted !== false) {
+            $sCountry = $sConverted;
+        }
+    }
+    $sCountry = strtolower($sCountry);
+    $sCountry = preg_replace("/[^a-z0-9]+/", " ", $sCountry);
+    return trim(preg_replace("/ +/", " ", $sCountry));
+}
+
+function getCountryNameAliases() {
+    return array(
+        "CS" => array(
+            "Czechoslovakia",
+            "Ceskoslovensko",
+            html_entity_decode("&#268;eskoslovensko", ENT_QUOTES, "UTF-8")
+        ),
+        "CI" => array(
+            "Ivory Coast"
+        ),
+        "CZ" => array(
+            "Czech Republic",
+            "Cesko",
+            "Ceska republika",
+            html_entity_decode("&#268;esko", ENT_QUOTES, "UTF-8"),
+            html_entity_decode("&#268;esk&#225; republika", ENT_QUOTES, "UTF-8")
+        ),
+        "GB" => array(
+            "Great Britain",
+            "Britain",
+            "UK",
+            "U.K."
+        ),
+        "US" => array(
+            "United States of America",
+            "USA",
+            "U.S.A."
+        )
+    );
+}
+
+function countryAliasToCode($sCountry) {
+    $sCountryNormalized = normalizeCountrySearchText($sCountry);
+    if ($sCountryNormalized == "") {
         return "";
     }
-    if ($iCountrySeparator === 2) {
-        $sCountryCode = strtoupper(substr($sCountry, 0, 2));
+    foreach (getCountryNameAliases() as $sCode => $aAliases) {
+        foreach ($aAliases as $sAlias) {
+            if ($sCountryNormalized == normalizeCountrySearchText($sAlias)) {
+                return $sCode;
+            }
+        }
+    }
+    return "";
+}
+
+function delimitedCountryCode($sCountry, $aCountryCodes) {
+    $sPattern = countryDashPattern();
+    if (preg_match("/^\\s*([A-Za-z]{2})\\s*" . $sPattern . "\\s*(.*?)\\s*$/u", (string)$sCountry, $aMatches)) {
+        $sCountryCode = strtoupper($aMatches[1]);
         if (in_array($sCountryCode, $aCountryCodes, true)) {
             return $sCountryCode;
         }
     }
+    if (preg_match("/^\\s*(.*?)\\s*" . $sPattern . "\\s*([A-Za-z]{2})\\s*$/u", (string)$sCountry, $aMatches)) {
+        $sCountryCode = strtoupper($aMatches[2]);
+        if (in_array($sCountryCode, $aCountryCodes, true)) {
+            return $sCountryCode;
+        }
+    }
+    return "";
+}
+
+function countryNameToCode($sCountry) {
+    $sCountry = trim((string)$sCountry);
+    $sCountryUpper = strtoupper($sCountry);
+    $sCountryNormalized = normalizeCountrySearchText($sCountry);
+    $aCountryCodes = getCountryCodes();
+    $aCountryNames = getCountryNames();
+    if ($sCountry == "") {
+        return "";
+    }
+    $sCountryCode = delimitedCountryCode($sCountry, $aCountryCodes);
+    if ($sCountryCode != "") {
+        return $sCountryCode;
+    }
     if (preg_match("/^[A-Z]{2}$/", $sCountryUpper) && in_array($sCountryUpper, $aCountryCodes, true)) {
         return $sCountryUpper;
     }
-    if ($sCountryLower == "czech republic") {
-        return "CZ";
+    $sCountryCode = countryAliasToCode($sCountry);
+    if ($sCountryCode != "") {
+        return $sCountryCode;
     }
     foreach ($aCountryNames as $sCode => $sName) {
-        $sNameLower = function_exists("mb_strtolower") ? mb_strtolower((string)$sName, "UTF-8") : strtolower((string)$sName);
-        if ($sCountryLower == $sNameLower) {
+        if ($sCountryNormalized == normalizeCountrySearchText($sName)) {
             return $sCode;
         }
     }
@@ -5393,12 +5509,13 @@ function getFullListComplexFilterFields($aContactTypes) {
     );
     foreach ($aContactTypes as $aContactType) {
         $iContactTypeId = isset($aContactType["id"]) ? (int)$aContactType["id"] : 0;
+        $sContactType = trim((string)(isset($aContactType["contact_type"]) ? $aContactType["contact_type"] : ""));
         $sContactTypeName = trim((string)(isset($aContactType["name"]) ? $aContactType["name"] : ""));
         if ($sContactTypeName == "") {
             $sContactTypeName = trim((string)(isset($aContactType["contact_type"]) ? $aContactType["contact_type"] : ""));
         }
         if ($iContactTypeId > 0 && $sContactTypeName != "") {
-            $aFields["contact_type_" . $iContactTypeId] = array("label" => "Contact: " . $sContactTypeName, "contact_type_id" => $iContactTypeId);
+            $aFields["contact_type_" . $iContactTypeId] = array("label" => "Contact: " . $sContactTypeName, "contact_type_id" => $iContactTypeId, "contact_type" => $sContactType);
         }
     }
     $aFields += array(
@@ -5666,6 +5783,9 @@ function normalizeFullListComplexFilterSqlValue($aField, $sValue) {
             }
         }
         return $sNormalized;
+    }
+    if (isset($aField["contact_type"])) {
+        return contactCanonicalValue($aField["contact_type"], $sValue);
     }
     return (string)$sValue;
 }

@@ -3718,6 +3718,90 @@ document.addEventListener("DOMContentLoaded", function () {
         return "";
     }
 
+    function normalizeSubjectCountrySearch(sValue) {
+        var sSearch = (sValue || "").replace(/\u00A0/g, " ").replace(/\u200B/g, "").replace(/&/g, " and ");
+        var aCzechChars = {
+            "\u00C1": "a",
+            "\u00C9": "e",
+            "\u00CD": "i",
+            "\u00D3": "o",
+            "\u00DA": "u",
+            "\u00DD": "y",
+            "\u00E1": "a",
+            "\u00E9": "e",
+            "\u00ED": "i",
+            "\u00F3": "o",
+            "\u00FA": "u",
+            "\u00FD": "y",
+            "\u010C": "c",
+            "\u010D": "c",
+            "\u010E": "d",
+            "\u010F": "d",
+            "\u011A": "e",
+            "\u011B": "e",
+            "\u0147": "n",
+            "\u0148": "n",
+            "\u0158": "r",
+            "\u0159": "r",
+            "\u0160": "s",
+            "\u0161": "s",
+            "\u0164": "t",
+            "\u0165": "t",
+            "\u016E": "u",
+            "\u016F": "u",
+            "\u017D": "z",
+            "\u017E": "z"
+        };
+        sSearch = sSearch.replace(/[-\u2010-\u2015\u2212]/g, " ");
+        if (typeof sSearch.normalize == "function") {
+            sSearch = sSearch.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+        sSearch = sSearch.replace(/[\u00C1\u00C9\u00CD\u00D3\u00DA\u00DD\u00E1\u00E9\u00ED\u00F3\u00FA\u00FD\u010C\u010D\u010E\u010F\u011A\u011B\u0147\u0148\u0158\u0159\u0160\u0161\u0164\u0165\u016E\u016F\u017D\u017E]/g, function (sChar) {
+            return aCzechChars[sChar] || sChar;
+        });
+        return sSearch.toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+    }
+
+    function findSubjectCountryAliasCode(sValue) {
+        var sSearch = normalizeSubjectCountrySearch(sValue);
+        var aAliases = {
+            "britain": "GB",
+            "ceska republika": "CZ",
+            "cesko": "CZ",
+            "ceskoslovensko": "CS",
+            "czech republic": "CZ",
+            "czechoslovakia": "CS",
+            "great britain": "GB",
+            "ivory coast": "CI",
+            "u k": "GB",
+            "u s a": "US",
+            "uk": "GB",
+            "united states of america": "US",
+            "usa": "US"
+        };
+        return aAliases[sSearch] || "";
+    }
+
+    function findSubjectCountryDelimitedCode(sValue) {
+        var sSearch = (sValue || "").replace(/^\s+|\s+$/g, "");
+        var aMatches = sSearch.match(/^\s*([A-Za-z]{2})\s*[-\u2010-\u2015\u2212]\s*(.*?)\s*$/);
+        var sCode;
+        if (aMatches) {
+            sCode = aMatches[1].toUpperCase();
+            if (aSubjectCountryCodes.indexOf(sCode) !== -1) {
+                return sCode;
+            }
+        }
+        aMatches = sSearch.match(/^\s*(.*?)\s*[-\u2010-\u2015\u2212]\s*([A-Za-z]{2})\s*$/);
+        if (aMatches) {
+            sCode = aMatches[2].toUpperCase();
+            if (aSubjectCountryCodes.indexOf(sCode) !== -1) {
+                return sCode;
+            }
+        }
+        return "";
+    }
+
     function getSubjectCountryOptions() {
         var aOptions = [];
         var oNames = null;
@@ -3765,20 +3849,20 @@ document.addEventListener("DOMContentLoaded", function () {
     function findSubjectCountryCode(sValue) {
         var sSearch = (sValue || "").replace(/^\s+|\s+$/g, "");
         var sUpper = sSearch.toUpperCase();
+        var sDelimitedCode = findSubjectCountryDelimitedCode(sSearch);
+        var sAliasCode = findSubjectCountryAliasCode(sSearch);
         var sSpecialCode = findSubjectCountrySpecialAlias(sSearch);
+        var sNormalizedSearch = normalizeSubjectCountrySearch(sSearch);
         var aOptions;
-        var iSeparator;
-        var sDisplayCode;
         var iI;
         if (sSearch === "") {
             return "";
         }
-        iSeparator = sSearch.indexOf(" \u2014 ");
-        if (iSeparator === 2) {
-            sDisplayCode = sSearch.substr(0, 2).toUpperCase();
-            if (aSubjectCountryCodes.indexOf(sDisplayCode) !== -1) {
-                return sDisplayCode;
-            }
+        if (sDelimitedCode !== "") {
+            return sDelimitedCode;
+        }
+        if (sAliasCode !== "") {
+            return sAliasCode;
         }
         if (sSpecialCode !== "") {
             return sSpecialCode;
@@ -3788,7 +3872,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         aOptions = getSubjectCountryOptions();
         for (iI = 0; iI < aOptions.length; iI += 1) {
-            if (aOptions[iI].name.toLowerCase() == sSearch.toLowerCase()) {
+            if (normalizeSubjectCountrySearch(aOptions[iI].name) == sNormalizedSearch) {
                 return aOptions[iI].code;
             }
         }

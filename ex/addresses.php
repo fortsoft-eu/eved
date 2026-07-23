@@ -3,13 +3,13 @@
 include "main.php";
 
 
-requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
-$blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
-
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
+
+requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
+$blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
 
 
 $aAddressesSettingsDefaults = array(

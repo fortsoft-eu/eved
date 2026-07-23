@@ -45,7 +45,7 @@ if ($sError) {
     echo "  <p>No records found in <code>fs_film_scans</code>.</p>\n";
 } else {
 echo "  <p class=\"admin-controls\">\n";
-renderMenu();
+renderFilmMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
@@ -120,7 +120,6 @@ renderMenu();
     </tbody>
   </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
 </body>
 </html>

@@ -3,12 +3,12 @@
 include "main.php";
 
 
-requireFullAccess($aAllowedIps, "ex", "ex_csrf_token");
-
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
+
+requireFullAccess($aAllowedIps, "ex", "ex_csrf_token");
 
 
 $aChecks = array(

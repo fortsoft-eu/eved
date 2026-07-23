@@ -65,7 +65,7 @@ $iTime = sendPageHeaders();
   <p class="admin-controls">
 <?php
 
-renderMenu();
+renderFilmMenu();
 
 ?>
   </p>
@@ -198,7 +198,6 @@ foreach ($aRelations as $aRelation) {
 ?>
     </tbody>
   </table>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/common.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/common.js")); ?>"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

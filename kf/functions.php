@@ -1,48 +1,5 @@
 <?php
 
-function getMenuItems($oPdo) {
-    try {
-        return getMenuItemsFromDatabase($oPdo);
-    } catch (Exception $oException) {
-        error_log((string)$oException);
-        return array();
-    }
-}
-
-function renderMenu() {
-    global $oPdo, $sBaseUrl, $sMenuEmoji;
-
-    $aItems = getMenuItems($oPdo);
-    if (!$aItems) {
-        return;
-    }
-    $sCurrentPath = getCurrentMenuPath();
-    echo "    <span class=\"menu\" data-menu>\n",
-        "      <button type=\"button\" class=\"menu-button\" data-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n",
-        "      <span class=\"menu-panel\" data-menu-panel hidden>\n";
-    foreach ($aItems as $aItem) {
-        if ($aItem["separator"]) {
-            echo "        <span class=\"menu-separator\"></span>\n";
-            continue;
-        }
-        $sClass = "menu-link";
-        $sCurrent = "";
-        $sIcon = trim((string)$aItem["icon"]);
-        $sTitle = trim((string)$aItem["title"]);
-        $sTarget = trim((string)$aItem["target"]);
-        $sTitleAttribute = $sTitle != "" ? " title=\"" . html($sTitle) . "\"" : "";
-        $sTargetAttribute = $sTarget != "" && preg_match("#^(_blank|_self|_parent|_top|[A-Za-z][A-Za-z0-9_\\-]*)$#", $sTarget) ? " target=\"" . html($sTarget) . "\"" : "";
-        $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
-        if ($aItem["path"] === $sCurrentPath) {
-            $sClass .= " menu-link-active";
-            $sCurrent = " aria-current=\"page\"";
-        }
-        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"menu-icon\" aria-hidden=\"true\">" . html($sIcon) . "</span><span class=\"menu-text\">" . html($aItem["name"]) . "</span></a>\n";
-    }
-    echo "      </span>\n",
-        "    </span>\n";
-}
-
 function redirect($sPath) {
     sendSecurityHeaders();
     header("Location: " . $sPath, true, 303);
@@ -50,9 +7,7 @@ function redirect($sPath) {
 }
 
 function getSettingsDefaults() {
-    return array(
-        "use_european_amount_format" => 0
-    );
+    return array("use_european_amount_format" => 0);
 }
 
 function getCurrentSettingsPageKey() {
@@ -63,9 +18,7 @@ function getPageSettingsDefaults($sPageKey = "") {
     if ($sPageKey == "") {
         $sPageKey = getCurrentSettingsPageKey();
     }
-    return array(
-        "display_currency" => $sPageKey == "subscr.php" ? "" : "CZK"
-    );
+    return array("display_currency" => $sPageKey == "subscr.php" ? "" : "CZK");
 }
 
 function getDefaultCurrency() {
@@ -1608,4 +1561,3 @@ function renderDebtContactValue($sType, $sValue, $sNote, $blIsPrimary = false) {
         . "<span class=\"contact-flags\"><span class=\"contact-primary\" title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span></span>"
         . "</span>";
 }
-

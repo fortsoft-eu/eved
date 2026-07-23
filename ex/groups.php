@@ -3,13 +3,13 @@
 include "main.php";
 
 
-$blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
-requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
-
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
+
+$blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
+requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {

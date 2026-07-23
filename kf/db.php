@@ -3,11 +3,12 @@
 include "main.php";
 
 
-requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
+
+
+requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
 
 
 $aTables = array();

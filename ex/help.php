@@ -72,10 +72,12 @@ renderMenu();
     <dd>
       <p>The complex filter is available on the subject-style pages where the data model is wide enough to need it. It can match all conditions or any condition and supports a limited number of conditions so that the filter remains usable in the browser.</p>
       <p>Available fields cover subject type, computed subject name, active state, creation time, personal name fields, birth and death dates, service timestamps, nicknames, postal addresses, address fields, contact values, individual contact types, groups, and notes. Operators include equality, inequality, lower and greater comparisons, contains, starts with, ends with, empty, and not empty. Boolean fields intentionally use equality only.</p>
+      <p>Country fields normalize flexible input before comparison. They accept two-letter country codes, country names, common aliases, and labels such as <code>CZ &mdash; Czechia</code> with an em dash, en dash, hyphen, or different spacing. Per-contact-type fields normalize the searched value with the same contact-type canonicalization used by contact dialogs, so phone numbers and other normalized contact types can be searched in their usual input form.</p>
       <p>Each page keeps its own complex-filter state when the underlying listing is different. The compact Contacts page, the full Subjects page, and the Demo Subjects page therefore do not overwrite one another's complex filter settings.</p>
       <ul>
         <li><strong>Mode:</strong> Match all conditions or match any condition.</li>
         <li><strong>Fields:</strong> Subject, person, address, contact, group, note, date, datetime, boolean, and per-contact-type fields.</li>
+        <li><strong>Normalization:</strong> Country fields and individual contact-type fields are normalized before SQL comparison.</li>
         <li><strong>State:</strong> Stored separately for different subject-style listings.</li>
       </ul>
     </dd>
@@ -95,6 +97,7 @@ renderMenu();
       <p>Action icons inside a table cell act on the concrete item represented by that cell. An edit icon in a contact cell edits that contact relation, an edit icon in an address cell edits that address relation, and an edit icon next to the subject name edits the subject itself.</p>
       <p>Some aggregate pages distinguish shared actions from subject-specific actions. A shared contact or shared address action can affect every matching row, while an action shown in the Subject cell affects only the relation for the listed subject. This distinction is important on Shared Contacts and Addresses.</p>
       <p>Dialogs validate values before saving. Contact values are normalized according to their contact type, dates use the database date format, postal codes are checked against country metadata when available, and destructive actions ask for confirmation before they are sent to the server.</p>
+      <p>Opening a dialog focuses the primary field or selected control without forcing native drop-downs to open. A new contact uses the contact type remembered from the previous new contact insertion, not from editing an existing contact.</p>
       <ul>
         <li><strong>Cell actions:</strong> Edit, delete, copy, or add the item shown in the cell.</li>
         <li><strong>Subject actions:</strong> Apply to the whole subject row.</li>
@@ -278,18 +281,6 @@ renderMenu();
         <li><strong>Safety:</strong> No network access and no file modification.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>info.php">PHP Info and PHP Credits</a></dt>
-    <dd>
-      <p>PHP Info and PHP Credits is a full-access environment diagnostic page. It exposes PHP configuration and credits output and is intended for verifying the runtime environment, loaded modules, configuration values, and related PHP metadata.</p>
-      <p>The PHP Info selector can show sections such as general information, configuration, modules, environment, variables, license, or all info. The PHP Credits selector can show sections such as group, general, SAPI, modules, documentation, QA, or all credits.</p>
-      <p>Output is loaded into an iframe by default and can also be opened in a new window. The page is diagnostic only and does not edit portal data.</p>
-      <ul>
-        <li><strong>PHP Info:</strong> Selects configuration, modules, environment, variables, license, or all info.</li>
-        <li><strong>PHP Credits:</strong> Selects group, general, SAPI, modules, documentation, QA, or all credits.</li>
-        <li><strong>Display:</strong> Iframe by default, with an option to open output separately.</li>
-        <li><strong>Safety:</strong> Diagnostic only; portal data is not edited.</li>
-      </ul>
-    </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>help.php">Portal Help</a></dt>
     <dd>
       <p>Portal Help is this bilingual help page. It documents portal menu pages, shared controls, filters, settings, access expectations, edit scopes, diagnostic tools, exports, and the difference between shared aggregate actions and subject-specific actions.</p>
@@ -351,10 +342,12 @@ renderMenu();
     <dd>
       <p>Komplexní filtr je dostupný na stránkách se subjektovou tabulkou, kde je datový model dost široký na to, aby byl potřeba. Umí vyhodnocovat shodu všech podmínek nebo libovolné podmínky a počet podmínek je omezený, aby filtr zůstal použitelný v prohlížeči.</p>
       <p>Dostupná pole pokrývají typ subjektu, vypočtené jméno subjektu, aktivitu, čas vytvoření, osobní jmenná pole, data narození a úmrtí, časy obsloužení, přezdívky, poštovní adresy, adresní pole, kontaktní hodnoty, jednotlivé typy kontaktů, skupiny a poznámky. Operátory zahrnují rovnost, nerovnost, menší a větší porovnání, obsahuje, začíná, končí, prázdné a neprázdné. Logické hodnoty záměrně používají jen rovnost.</p>
+      <p>Pole země se před porovnáním normalizuje. Bere dvoupísmenný kód země, název země, běžné aliasy a popisky jako <code>CZ &mdash; Czechia</code> s em dash, en dash, spojovníkem nebo různými mezerami. Pole konkrétního typu kontaktu normalizují hledanou hodnotu stejnou kanonizací jako kontaktní dialogy, takže telefonní čísla a další normalizované typy kontaktů lze hledat v běžném vstupním tvaru.</p>
       <p>Každá stránka si drží vlastní stav komplexního filtru, pokud je její výpis odlišný. Kompaktní Contacts, úplné Subjects a Demo Subjects si proto nepřepisují nastavení komplexního filtru navzájem.</p>
       <ul>
         <li><strong>Režim:</strong> Shoda všech podmínek nebo libovolné podmínky.</li>
         <li><strong>Pole:</strong> Subjekt, osoba, adresa, kontakt, skupina, poznámka, datum, čas, logická hodnota a konkrétní typy kontaktů.</li>
+        <li><strong>Normalizace:</strong> Pole země a pole konkrétního typu kontaktu se normalizují před SQL porovnáním.</li>
         <li><strong>Stav:</strong> Ukládá se odděleně pro různé subjektové výpisy.</li>
       </ul>
     </dd>
@@ -374,6 +367,7 @@ renderMenu();
       <p>Akční ikony uvnitř buňky tabulky platí pro konkrétní položku zobrazenou v této buňce. Editace v buňce kontaktu upravuje danou kontaktní vazbu, editace v buňce adresy upravuje danou adresní vazbu a editace vedle jména subjektu upravuje samotný subjekt.</p>
       <p>Některé agregační stránky rozlišují sdílené akce a akce konkrétního subjektu. Sdílený kontakt nebo sdílená adresa může zasáhnout všechny odpovídající řádky, zatímco akce v buňce Subject upravuje pouze vazbu vypsaného subjektu. Toto rozlišení je podstatné na stránkách Shared Contacts a Addresses.</p>
       <p>Dialogy hodnoty před uložením validují. Kontakty se normalizují podle typu kontaktu, data používají databázový formát data, poštovní směrovací čísla se kontrolují podle metadat státu, pokud jsou dostupná, a destruktivní akce před odesláním vyžadují potvrzení.</p>
+      <p>Dialog při otevření zaostří hlavní pole nebo vybraný prvek, ale nevynucuje rozbalení nativního drop-downu. Nový kontakt používá typ kontaktu zapamatovaný z předchozího nového vložení, nikoli z editace existujícího kontaktu.</p>
       <ul>
         <li><strong>Akce v buňce:</strong> Upravují, mažou, kopírují nebo přidávají položku zobrazenou v buňce.</li>
         <li><strong>Akce subjektu:</strong> Platí pro celý řádek subjektu.</li>
@@ -555,18 +549,6 @@ renderMenu();
         <li><strong>Sloupce:</strong> Práva, vlastník, čas stažení a název souboru.</li>
         <li><strong>Filtrování:</strong> Rychlý filtr zužuje viditelný inventář.</li>
         <li><strong>Bezpečnost:</strong> Bez síťového přístupu a bez úprav souborů.</li>
-      </ul>
-    </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>info.php">PHP Info and PHP Credits</a></dt>
-    <dd>
-      <p>PHP Info and PHP Credits je diagnostická stránka prostředí s plným přístupem. Zpřístupňuje konfiguraci PHP a výstup PHP Credits a slouží ke kontrole běhového prostředí, načtených modulů, konfiguračních hodnot a souvisejících metadat PHP.</p>
-      <p>Selector PHP Info umí zobrazit části jako general information, configuration, modules, environment, variables, license nebo all info. Selector PHP Credits umí zobrazit části jako group, general, SAPI, modules, documentation, QA nebo all credits.</p>
-      <p>Výstup se standardně načítá do iframe a lze jej otevřít i v novém okně. Stránka je pouze diagnostická a neupravuje portálová data.</p>
-      <ul>
-        <li><strong>PHP Info:</strong> Vybírá konfiguraci, moduly, prostředí, proměnné, licenci nebo celý výstup.</li>
-        <li><strong>PHP Credits:</strong> Vybírá group, general, SAPI, modules, documentation, QA nebo all credits.</li>
-        <li><strong>Zobrazení:</strong> Standardně iframe, s možností otevřít výstup zvlášť.</li>
-        <li><strong>Bezpečnost:</strong> Pouze diagnostika; portálová data se neupravují.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>help.php">Portal Help</a></dt>
