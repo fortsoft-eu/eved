@@ -300,7 +300,7 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
         <button type="button" class="button-link complex-filter-add js-complex-filter-add">Add condition</button>
       </div>
       <div class="confirm-dialog-actions">
-        <button type="button" class="confirm-dialog-button js-complex-filter-reset">Reset</button>
+        <button type="button" class="confirm-dialog-button js-complex-filter-modal-reset">Reset</button>
         <button type="submit" class="confirm-dialog-button">Apply</button>
         <button type="button" class="confirm-dialog-button js-complex-filter-cancel">Close</button>
       </div>

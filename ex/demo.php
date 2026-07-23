@@ -86,7 +86,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "reset_full_list_complex_filter") {
     $aFullListComplexFilter = getDefaultFullListComplexFilter();
+    $aFullListComplexFilterDraft = getDefaultFullListComplexFilterDraft();
     $_SESSION["ex_demo_full_list_complex_filter"] = $aFullListComplexFilter;
+    $_SESSION["ex_demo_full_list_complex_filter_draft"] = $aFullListComplexFilterDraft;
     session_write_close();
     sendSecurityHeaders();
     header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
