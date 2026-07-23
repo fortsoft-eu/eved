@@ -1410,7 +1410,7 @@ function formatDumpVarValue($mVar, $iLevel) {
 
 function formatDumpVarArray($aArray, $iLevel) {
     if (!$aArray) {
-        return "<span style=\"font-weight: bold !important; color: #F0F !important;\">Array</span><span style=\"color: #000 !important;\">()</span>";
+        return "<span style=\"font-weight: bold !important; color: #F0F !important;\">Array</span><span style=\"color: #000 !important;\">()</span>\n";
     }
     $sOutput = "<span style=\"font-weight: bold !important; color: #F0F !important;\">Array</span><span style=\"color: #000 !important;\">(" . count($aArray) . ")</span>\n";
     $sOutput .= getDumpVarIndentation($iLevel) . "<span style=\"color: #000 !important;\">(</span>\n";
@@ -1430,7 +1430,7 @@ function formatDumpVarObject($oObject, $iLevel) {
     $aProperties = get_object_vars($oObject);
     $sClassName = htmlspecialchars(get_class($oObject), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     if (!$aProperties) {
-        return "<span style=\"color: #000 !important;\">" . $sClassName . " </span><span style=\"font-weight: bold !important; color: #F00 !important;\">Object</span><span style=\"color: #000 !important;\">()</span>";
+        return "<span style=\"color: #000 !important;\">" . $sClassName . " </span><span style=\"font-weight: bold !important; color: #F00 !important;\">Object</span><span style=\"color: #000 !important;\">()</span>\n";
     }
     $sOutput = "<span style=\"color: #000 !important;\">" . $sClassName . " </span><span style=\"font-weight: bold !important; color: #F00 !important;\">Object</span><span style=\"color: #000 !important;\">(" . count($aProperties) . ")</span>\n";
     $sOutput .= getDumpVarIndentation($iLevel) . "<span style=\"color: #000 !important;\">(</span>\n";
