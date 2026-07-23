@@ -68,7 +68,7 @@ form {
     box-sizing: border-box;
     line-height: 1.35;
     margin: 16px 16px 0;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
     padding: 8px 10px;
     position: static;
     text-align: left;
@@ -483,9 +483,9 @@ table {
 }
 
 .database-structure-cell .sql-enum {
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
     white-space: pre-wrap;
-    word-break: break-word;
+    word-break: normal;
 }
 
 td,
@@ -777,8 +777,16 @@ tr:nth-child(even) {
 }
 
 .subject-edit-error {
-    color: #D00;
-    margin: 10px 16px 0;
+    background: #FEE;
+    border: 1px solid #DCA7A7;
+    box-sizing: border-box;
+    color: #8A1F11;
+    line-height: 1.35;
+    margin: 16px 16px 0;
+    overflow-wrap: normal;
+    padding: 8px 10px;
+    text-align: left;
+    width: calc(100% - 32px);
 }
 
 .index-settings-form {
@@ -891,7 +899,7 @@ tr:nth-child(even) {
 
 .monthly-overview-table td,
 .monthly-overview-table th {
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
     white-space: normal;
     word-break: normal;
 }

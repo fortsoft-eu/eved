@@ -25,6 +25,213 @@ function getCondensedTableClass() {
     return isDesktop() ? "" : " condensed-table";
 }
 
+function getEvedUaFingerprintText($aData, $sName) {
+    if (!isset($aData[$sName])) {
+        return "";
+    }
+    if (is_array($aData[$sName])) {
+        $aValues = array();
+        foreach ($aData[$sName] as $mValue) {
+            if (is_scalar($mValue)) {
+                $aValues[] = (string)$mValue;
+            }
+        }
+        return implode(",", $aValues);
+    }
+    return is_scalar($aData[$sName]) ? (string)$aData[$sName] : "";
+}
+
+function getEvedUaFingerprintNullableText($aData, $sName, $iMaxLength = 0) {
+    $sValue = trim(getEvedUaFingerprintText($aData, $sName));
+    if ($sValue == "") {
+        return null;
+    }
+    if ($iMaxLength > 0) {
+        $sValue = substr($sValue, 0, $iMaxLength);
+    }
+    return $sValue;
+}
+
+function insertEvedUaRequest($oPdo) {
+    if (!$oPdo) {
+        return 0;
+    }
+    try {
+        $oStatement = $oPdo->prepare("INSERT INTO fs_eved_ua (ip_address, x_real_ip, x_forwarded_for, x_web_id, x_geo_provider, x_geo_continent_code, x_geo_country_code, request_uri, referer, user_agent, accept_language, `timestamp`) VALUES (:ip_address, :x_real_ip, :x_forwarded_for, :x_web_id, :x_geo_provider, :x_geo_continent_code, :x_geo_country_code, :request_uri, :referer, :user_agent, :accept_language, CURRENT_TIMESTAMP(6))");
+        $oStatement->execute(array(
+            "ip_address"           => isset($_SERVER["REMOTE_ADDR"]) ? substr((string)$_SERVER["REMOTE_ADDR"], 0, 45) : "",
+            "x_real_ip"            => isset($_SERVER["HTTP_X_REAL_IP"]) ? substr((string)$_SERVER["HTTP_X_REAL_IP"], 0, 45) : null,
+            "x_forwarded_for"      => isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ? substr((string)$_SERVER["HTTP_X_FORWARDED_FOR"], 0, 1024) : null,
+            "x_web_id"             => isset($_SERVER["HTTP_X_WEB_ID"]) ? substr((string)$_SERVER["HTTP_X_WEB_ID"], 0, 255) : null,
+            "x_geo_provider"       => isset($_SERVER["HTTP_X_GEO_PROVIDER"]) ? substr((string)$_SERVER["HTTP_X_GEO_PROVIDER"], 0, 100) : null,
+            "x_geo_continent_code" => isset($_SERVER["HTTP_X_GEO_CONTINENT_CODE"]) ? substr((string)$_SERVER["HTTP_X_GEO_CONTINENT_CODE"], 0, 2) : null,
+            "x_geo_country_code"   => isset($_SERVER["HTTP_X_GEO_COUNTRY_CODE"]) ? substr((string)$_SERVER["HTTP_X_GEO_COUNTRY_CODE"], 0, 2) : null,
+            "request_uri"          => isset($_SERVER["REQUEST_URI"]) ? substr((string)$_SERVER["REQUEST_URI"], 0, 1024) : "",
+            "referer"              => isset($_SERVER["HTTP_REFERER"]) ? substr((string)$_SERVER["HTTP_REFERER"], 0, 1024) : null,
+            "user_agent"           => isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "",
+            "accept_language"      => isset($_SERVER["HTTP_ACCEPT_LANGUAGE"]) ? substr((string)$_SERVER["HTTP_ACCEPT_LANGUAGE"], 0, 255) : null
+        ));
+        return (int)$oPdo->lastInsertId();
+    } catch (PDOException $oException) {
+        error_log((string)$oException);
+    }
+    return 0;
+}
+
+function updateEvedUaFingerprint($oPdo, $iEvedUaId, $aData) {
+    if (!$oPdo || $iEvedUaId < 1) {
+        return false;
+    }
+    try {
+        $mIsMobile = null;
+        if (array_key_exists("is_mobile", $aData) && is_scalar($aData["is_mobile"]) && $aData["is_mobile"] != "") {
+            $mIsMobile = $aData["is_mobile"] ? 1 : 0;
+        }
+        $aParameters = array(
+            "browser_name"      => getEvedUaFingerprintNullableText($aData, "browser_name", 100),
+            "browser_version"   => getEvedUaFingerprintNullableText($aData, "browser_version", 100),
+            "os_name"           => getEvedUaFingerprintNullableText($aData, "os_name", 100),
+            "os_version"        => getEvedUaFingerprintNullableText($aData, "os_version", 100),
+            "platform_type"     => getEvedUaFingerprintNullableText($aData, "platform_type", 32),
+            "device_vendor"     => getEvedUaFingerprintNullableText($aData, "device_vendor", 100),
+            "device_model"      => getEvedUaFingerprintNullableText($aData, "device_model", 191),
+            "architecture"      => getEvedUaFingerprintNullableText($aData, "architecture", 32),
+            "bitness"           => getEvedUaFingerprintNullableText($aData, "bitness", 16),
+            "is_mobile"         => $mIsMobile,
+            "ua_brands"         => getEvedUaFingerprintNullableText($aData, "ua_brands"),
+            "gpu_info"          => getEvedUaFingerprintText($aData, "gpu"),
+            "fonts"             => getEvedUaFingerprintText($aData, "fonts"),
+            "screen_resolution" => getEvedUaFingerprintText($aData, "screen"),
+            "screen_physical"   => getEvedUaFingerprintText($aData, "screen_physical"),
+            "color_depth"       => getEvedUaFingerprintText($aData, "depth"),
+            "timezone"          => getEvedUaFingerprintText($aData, "tz"),
+            "language"          => getEvedUaFingerprintText($aData, "lang"),
+            "platform"          => getEvedUaFingerprintText($aData, "platform"),
+            "plugins"           => getEvedUaFingerprintText($aData, "plugins"),
+            "mime_types"        => getEvedUaFingerprintText($aData, "mimes"),
+            "id"                => $iEvedUaId,
+            "ip_address"        => isset($_SERVER["REMOTE_ADDR"]) ? substr((string)$_SERVER["REMOTE_ADDR"], 0, 45) : "",
+            "user_agent"        => isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : ""
+        );
+        $oStatement = $oPdo->prepare("UPDATE fs_eved_ua SET browser_name = :browser_name, browser_version = :browser_version, os_name = :os_name, os_version = :os_version, platform_type = :platform_type, device_vendor = :device_vendor, device_model = :device_model, architecture = :architecture, bitness = :bitness, is_mobile = :is_mobile, ua_brands = :ua_brands, gpu_info = :gpu_info, fonts = :fonts, screen_resolution = :screen_resolution, screen_physical = :screen_physical, color_depth = :color_depth, timezone = :timezone, language = :language, platform = :platform, plugins = :plugins, mime_types = :mime_types WHERE id = :id AND ip_address = :ip_address AND user_agent = :user_agent AND `timestamp` >= DATE_SUB(CURRENT_TIMESTAMP(6), INTERVAL 10 MINUTE)");
+        $oStatement->execute($aParameters);
+        if ($oStatement->rowCount() > 0) {
+            return true;
+        }
+        $oStatement = $oPdo->prepare("SELECT 1 FROM fs_eved_ua WHERE id = :id AND ip_address = :ip_address AND user_agent = :user_agent AND `timestamp` >= DATE_SUB(CURRENT_TIMESTAMP(6), INTERVAL 10 MINUTE) LIMIT 1");
+        $oStatement->execute(array(
+            "id"         => $aParameters["id"],
+            "ip_address" => $aParameters["ip_address"],
+            "user_agent" => $aParameters["user_agent"]
+        ));
+        return $oStatement->fetchColumn() !== false;
+    } catch (PDOException $oException) {
+        error_log((string)$oException);
+    }
+    return false;
+}
+
+function sendEvedUaJsonAndExit($aResponse, $iStatus = 200) {
+    http_response_code($iStatus);
+    header("Content-Type: application/json; charset=utf-8", true);
+    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0", true);
+    sendSecurityHeaders();
+    echo json_encode($aResponse);
+    exit;
+}
+
+function sendEvedUaFingerprintResponse($oPdo, $aAllowedIps) {
+    if (isAllowedIp($aAllowedIps)) {
+        sendEvedUaJsonAndExit(array("status" => "ignored"));
+    }
+    if (!$oPdo) {
+        sendEvedUaJsonAndExit(array("status" => "error"), 500);
+    }
+    $sInput = file_get_contents("php://input");
+    $aData = json_decode($sInput, true);
+    if (!is_array($aData)) {
+        $aData = array();
+    }
+    $iEvedUaId = isset($aData["ua_id"]) ? (int)$aData["ua_id"] : 0;
+    if (!updateEvedUaFingerprint($oPdo, $iEvedUaId, $aData)) {
+        sendEvedUaJsonAndExit(array("status" => "error"), 500);
+    }
+    sendEvedUaJsonAndExit(array("status" => "ok"));
+}
+
+function formatUaCountryFlag($sCountryCode) {
+    $sCountryCode = strtoupper(trim((string)$sCountryCode));
+    if (strlen($sCountryCode) != 2 || !ctype_alpha($sCountryCode)) {
+        return "";
+    }
+    return "&#" . (127462 + ord($sCountryCode[0]) - 65) . ";&#" . (127462 + ord($sCountryCode[1]) - 65) . ";";
+}
+
+function formatUaUserAgent($sUserAgent) {
+    $sUserAgent = trim((string)$sUserAgent);
+    $sBrowser = "Unknown browser";
+    $sOperatingSystem = "Unknown operating system";
+    $sArchitecture = "";
+    $aMatches = array();
+    $aWindowsVersions = array(
+        "10.0" => "Windows 10/11",
+        "6.3"  => "Windows 8.1",
+        "6.2"  => "Windows 8",
+        "6.1"  => "Windows 7",
+        "6.0"  => "Windows Vista",
+        "5.1"  => "Windows XP"
+    );
+    if (preg_match("#Edg(?:A|iOS)?/([0-9.]+)#", $sUserAgent, $aMatches)) {
+        $sBrowser = "Microsoft Edge " . $aMatches[1];
+    } elseif (preg_match("#OPR/([0-9.]+)#", $sUserAgent, $aMatches)) {
+        $sBrowser = "Opera " . $aMatches[1];
+    } elseif (preg_match("#Firefox/([0-9.]+)#", $sUserAgent, $aMatches)) {
+        $sBrowser = "Firefox " . $aMatches[1];
+    } elseif (preg_match("#CriOS/([0-9.]+)#", $sUserAgent, $aMatches)) {
+        $sBrowser = "Chrome " . $aMatches[1];
+    } elseif (preg_match("#Chrome/([0-9.]+)#", $sUserAgent, $aMatches)) {
+        $sBrowser = "Chrome " . $aMatches[1];
+    } elseif (preg_match("#Version/([0-9.]+).*Safari/#", $sUserAgent, $aMatches)) {
+        $sBrowser = "Safari " . $aMatches[1];
+    }
+    if (preg_match("#Windows NT ([0-9.]+)#", $sUserAgent, $aMatches)) {
+        $sOperatingSystem = isset($aWindowsVersions[$aMatches[1]]) ? $aWindowsVersions[$aMatches[1]] : "Windows NT " . $aMatches[1];
+    } elseif (preg_match("#Android ([0-9.]+)#", $sUserAgent, $aMatches)) {
+        $sOperatingSystem = "Android " . $aMatches[1];
+    } elseif (preg_match("#(?:iPhone|CPU) OS ([0-9_]+)#", $sUserAgent, $aMatches)) {
+        $sOperatingSystem = "iOS " . str_replace("_", ".", $aMatches[1]);
+    } elseif (preg_match("#Mac OS X ([0-9_]+)#", $sUserAgent, $aMatches)) {
+        $sOperatingSystem = "macOS " . str_replace("_", ".", $aMatches[1]);
+    } elseif (stripos($sUserAgent, "Linux") !== false) {
+        $sOperatingSystem = "Linux";
+    }
+    if (preg_match("#Win64|x86_64|x64|amd64#i", $sUserAgent)) {
+        $sArchitecture = " (64-bit)";
+    } elseif (preg_match("#i[3-6]86|Win32#i", $sUserAgent)) {
+        $sArchitecture = " (32-bit)";
+    }
+    return $sBrowser . " on " . $sOperatingSystem . $sArchitecture;
+}
+
+function formatUaGpu($sGpuInfo) {
+    $sGpuInfo = trim((string)$sGpuInfo);
+    if ($sGpuInfo == "") {
+        return "";
+    }
+    $sFriendly = preg_replace("#^ANGLE\\s*\\(#i", "", $sGpuInfo);
+    $sFriendly = preg_replace("#\\)?,?\\s*or similar\\s*$#i", "", $sFriendly);
+    $sFriendly = preg_replace("#\\)\\s*$#", "", $sFriendly);
+    $aParts = array_map("trim", explode(",", $sFriendly));
+    if (isset($aParts[1]) && $aParts[1] != "") {
+        $sFriendly = $aParts[1];
+    } elseif (isset($aParts[0])) {
+        $sFriendly = $aParts[0];
+    }
+    $sFriendly = preg_replace("#\\s+(?:Direct3D|OpenGL|Vulkan|Metal)\\b.*$#i", "", $sFriendly);
+    $sFriendly = preg_replace("#\\s+vs_[0-9_]+.*$#i", "", $sFriendly);
+    return trim($sFriendly);
+}
+
 function getContentSecurityPolicySource() {
     global $sScheme;
 
@@ -125,7 +332,7 @@ function getPhpGeneratedStyleTag($sStyleNonce) {
         . ".p {text-align: left;}\n"
         . ".e {background-color: #ccf; width: 300px; font-weight: bold;}\n"
         . ".h {background-color: #99c; font-weight: bold;}\n"
-        . ".v {background-color: #ddd; max-width: 300px; overflow-x: auto; word-wrap: break-word;}\n"
+        . ".v {background-color: #ddd; max-width: 300px; overflow-x: auto; word-wrap: normal;}\n"
         . ".v i {color: #999;}\n"
         . "img {float: right; border: 0;}\n"
         . "hr {width: 934px; background-color: #ccc; border: 0; height: 1px;}\n"

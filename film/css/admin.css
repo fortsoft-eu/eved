@@ -54,7 +54,7 @@ form {
     box-sizing: border-box;
     line-height: 1.35;
     margin: 16px 16px 0;
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
     padding: 8px 10px;
     position: static;
     text-align: left;
@@ -563,9 +563,9 @@ table {
 }
 
 .database-structure-cell .sql-enum {
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
     white-space: pre-wrap;
-    word-break: break-word;
+    word-break: normal;
 }
 
 .ua-table td,
@@ -740,7 +740,7 @@ tr:nth-child(even) {
 }
 
 .schema-table[data-table="fs_flickr_photosets"] td:nth-child(2) {
-    overflow-wrap: anywhere;
+    overflow-wrap: normal;
     white-space: normal;
 }
 

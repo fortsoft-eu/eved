@@ -549,6 +549,132 @@ function setupTableFilter() {
     }
 }
 
+function setupAutoRefresh() {
+    var oAutoRefresh = document.querySelector(".js-auto-refresh");
+    var iRefreshTimer = null;
+    var oAudioContext = null;
+    var sStorageKey;
+    var iLatestId;
+    var iRefreshInterval;
+    if (!oAutoRefresh || !window.fetch) {
+        return;
+    }
+    sStorageKey = "admin-auto-refresh:" + window.location.pathname;
+    iLatestId = parseInt(oAutoRefresh.getAttribute("data-latest-id") || "0", 10);
+    iRefreshInterval = parseInt(oAutoRefresh.getAttribute("data-refresh-interval") || "300000", 10);
+    try {
+        oAutoRefresh.checked = window.localStorage.getItem(sStorageKey) == "1";
+    } catch (oException) {
+        logAdminException(oException);
+    }
+
+    function prepareAudio() {
+        var AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) {
+            return Promise.resolve(false);
+        }
+        if (!oAudioContext || oAudioContext.state == "closed") {
+            oAudioContext = new AudioContext();
+        }
+        if (oAudioContext.state == "suspended") {
+            return oAudioContext.resume().then(function() {
+                return oAudioContext.state == "running";
+            }).catch(function(oException) {
+                logAdminException(oException);
+                return false;
+            });
+        }
+        return Promise.resolve(oAudioContext.state == "running");
+    }
+
+    function playChime() {
+        return prepareAudio().then(function(blAudioReady) {
+            var oGain;
+            var oFirstOscillator;
+            var oSecondOscillator;
+            var iNow;
+            if (!blAudioReady) {
+                return;
+            }
+            iNow = oAudioContext.currentTime;
+            oGain = oAudioContext.createGain();
+            oGain.gain.setValueAtTime(0.0001, iNow);
+            oGain.gain.exponentialRampToValueAtTime(0.18, iNow + 0.02);
+            oGain.gain.exponentialRampToValueAtTime(0.0001, iNow + 0.7);
+            oGain.connect(oAudioContext.destination);
+            oFirstOscillator = oAudioContext.createOscillator();
+            oFirstOscillator.frequency.setValueAtTime(880, iNow);
+            oFirstOscillator.connect(oGain);
+            oFirstOscillator.start(iNow);
+            oFirstOscillator.stop(iNow + 0.25);
+            oSecondOscillator = oAudioContext.createOscillator();
+            oSecondOscillator.frequency.setValueAtTime(1174.66, iNow + 0.2);
+            oSecondOscillator.connect(oGain);
+            oSecondOscillator.start(iNow + 0.2);
+            oSecondOscillator.stop(iNow + 0.65);
+        });
+    }
+
+    function scheduleRefreshCheck() {
+        if (iRefreshTimer !== null) {
+            window.clearTimeout(iRefreshTimer);
+            iRefreshTimer = null;
+        }
+        if (oAutoRefresh.checked) {
+            iRefreshTimer = window.setTimeout(checkForNewRecords, iRefreshInterval);
+        }
+    }
+
+    function checkForNewRecords() {
+        fetch(window.location.href, {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store"
+        }).then(function(oResponse) {
+            return oResponse.text();
+        }).then(function(sHtml) {
+            var oDocument = new DOMParser().parseFromString(sHtml, "text/html");
+            var oNewAutoRefresh = oDocument.querySelector(".js-auto-refresh");
+            var iNewLatestId = oNewAutoRefresh ? parseInt(oNewAutoRefresh.getAttribute("data-latest-id") || "0", 10) : iLatestId;
+            if (iNewLatestId > iLatestId) {
+                playChime().then(function() {
+                    window.setTimeout(function() {
+                        window.location.reload();
+                    }, 700);
+                });
+                return;
+            }
+            scheduleRefreshCheck();
+        }).catch(function(oException) {
+            logAdminException(oException);
+            scheduleRefreshCheck();
+        });
+    }
+
+    oAutoRefresh.addEventListener("change", function() {
+        try {
+            window.localStorage.setItem(sStorageKey, oAutoRefresh.checked ? "1" : "0");
+        } catch (oException) {
+            logAdminException(oException);
+        }
+        if (oAutoRefresh.checked) {
+            prepareAudio();
+        }
+        scheduleRefreshCheck();
+    });
+
+    function prepareStoredAutoRefreshAudio() {
+        if (oAutoRefresh.checked) {
+            prepareAudio();
+        }
+    }
+
+    document.addEventListener("mousedown", prepareStoredAutoRefreshAudio);
+    document.addEventListener("keydown", prepareStoredAutoRefreshAudio);
+    document.addEventListener("touchstart", prepareStoredAutoRefreshAudio);
+    scheduleRefreshCheck();
+}
+
 function closeAdminDialog() {
     var oDialog = document.getElementById("admin-reusable-dialog");
     if (!oDialog) {
@@ -1037,6 +1163,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setupTableRows();
     setupFilterFocusButton();
     setupTableFilter();
+    setupAutoRefresh();
     bindAdminCopyLinks();
     bindMenuAdmin();
     bindAdminSubmitOnChange();
