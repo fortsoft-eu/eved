@@ -13,12 +13,14 @@ CREATE TABLE `kf_debt_movements` (
   `debt_id` int(10) unsigned NOT NULL,
   `movement_date` date NOT NULL,
   `amount` decimal(10,2) NOT NULL,
+  `currency` char(3) NOT NULL DEFAULT 'USD',
   `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci DEFAULT NULL,
   `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   PRIMARY KEY (`id`),
   KEY `ix_kf_debt_movements_debt_date` (`debt_id`,`movement_date`,`id`),
   KEY `ix_kf_debt_movements_date` (`movement_date`,`id`),
+  KEY `ix_kf_debt_movements_currency` (`currency`,`movement_date`,`id`),
   CONSTRAINT `fk_kf_debt_movements_debt` FOREIGN KEY (`debt_id`) REFERENCES `kf_debts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -90,6 +92,7 @@ CREATE TABLE `kf_fin_transactions` (
   `transaction_date` date NOT NULL,
   `finance_type_id` int(10) unsigned NOT NULL,
   `amount` decimal(10,2) NOT NULL,
+  `currency` char(3) NOT NULL DEFAULT 'USD',
   `counterparty` varchar(255) DEFAULT NULL,
   `note` text CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci DEFAULT NULL,
   `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
@@ -98,6 +101,7 @@ CREATE TABLE `kf_fin_transactions` (
   UNIQUE KEY `ux_kf_fin_transactions_legacy_id` (`legacy_id`),
   KEY `ix_kf_fin_transactions_date` (`transaction_date`,`id`),
   KEY `ix_kf_fin_transactions_type` (`finance_type_id`),
+  KEY `ix_kf_fin_transactions_currency` (`currency`,`transaction_date`,`id`),
   CONSTRAINT `fk_kf_fin_transactions_type` FOREIGN KEY (`finance_type_id`) REFERENCES `kf_fin_types` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -106,6 +110,7 @@ CREATE TABLE `kf_subscriptions` (
   `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci NOT NULL,
   `finance_type_id` int(10) unsigned NOT NULL,
   `amount` decimal(10,2) NOT NULL,
+  `currency` char(3) NOT NULL DEFAULT 'USD',
   `billing_period` enum('weekly','monthly','quarterly','yearly','other') NOT NULL DEFAULT 'monthly',
   `billing_day` tinyint(2) unsigned DEFAULT NULL,
   `next_due_at` datetime(6) DEFAULT NULL,
@@ -118,5 +123,6 @@ CREATE TABLE `kf_subscriptions` (
   KEY `ix_kf_subscriptions_name` (`name`,`id`),
   KEY `ix_kf_subscriptions_type` (`finance_type_id`),
   KEY `ix_kf_subscriptions_active_due` (`is_active`,`next_due_at`,`id`),
+  KEY `ix_kf_subscriptions_currency` (`currency`,`next_due_at`,`id`),
   CONSTRAINT `fk_kf_subscriptions_type` FOREIGN KEY (`finance_type_id`) REFERENCES `kf_fin_types` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
