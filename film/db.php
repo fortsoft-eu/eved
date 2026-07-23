@@ -130,7 +130,7 @@ $iTime = sendPageHeaders();
   <p class="admin-controls">
 <?php
 
-renderFilmMenu();
+renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>

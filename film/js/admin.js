@@ -317,11 +317,11 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-    var aMenus = document.querySelectorAll("[data-film-menu]");
+    var aMenus = document.querySelectorAll("[data-menu]");
 
     function closeFilmMenu(oMenu) {
-        var oButton = oMenu ? oMenu.querySelector("[data-film-menu-button]") : null;
-        var oPanel = oMenu ? oMenu.querySelector("[data-film-menu-panel]") : null;
+        var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
+        var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
         if (oPanel) {
             oPanel.hidden = true;
         }
@@ -339,8 +339,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function openFilmMenu(oMenu) {
-        var oButton = oMenu ? oMenu.querySelector("[data-film-menu-button]") : null;
-        var oPanel = oMenu ? oMenu.querySelector("[data-film-menu-panel]") : null;
+        var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
+        var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
         if (!oButton || !oPanel) {
             return;
         }
@@ -354,8 +354,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     for (var iI = 0; iI < aMenus.length; iI += 1) {
         (function (oMenu) {
-            var oButton = oMenu.querySelector("[data-film-menu-button]");
-            var oPanel = oMenu.querySelector("[data-film-menu-panel]");
+            var oButton = oMenu.querySelector("[data-menu-button]");
+            var oPanel = oMenu.querySelector("[data-menu-panel]");
             if (!oButton || !oPanel) {
                 return;
             }
@@ -372,7 +372,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.addEventListener("click", function (oEvent) {
-        var oMenu = oEvent.target.closest ? oEvent.target.closest("[data-film-menu]") : null;
+        var oMenu = oEvent.target.closest ? oEvent.target.closest("[data-menu]") : null;
         if (!oMenu) {
             closeFilmMenus(null);
         }

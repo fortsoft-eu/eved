@@ -11,7 +11,7 @@ if (!$oPdo) {
 requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
 
 
-$sTitle = getPageTitleText("KF Help", $aAllowedIps);
+$sTitle = getPageTitleText("Kesef Help", $aAllowedIps);
 $iTime = sendPageHeaders();
 
 ?>
@@ -38,13 +38,13 @@ renderMenu();
 
 ?>
   </p>
-  <h1>KF Help</h1>
+  <h1>Kesef Help</h1>
   <h2>US English</h2>
   <h3>Common Controls</h3>
   <dl class="kf-help-list">
     <dt>Access and Sign-in</dt>
     <dd>
-      <p>KF pages are protected by the shared portal sign-in. Normal listings require view access for the <code>kf</code> project, while editing actions and sensitive database diagnostics require full access. A trusted client is treated as allowed by the shared access layer.</p>
+      <p>Kesef pages are protected by the shared portal sign-in. Normal listings require view access for the <code>kf</code> project, while editing actions and sensitive database diagnostics require full access. A trusted client is treated as allowed by the shared access layer.</p>
       <p>Read-only pages can be opened with view access. Pages that show edit buttons still hide those buttons unless the current user has full access. Ajax write actions return JSON access errors instead of rendering a sign-in page inside a dialog.</p>
       <ul>
         <li><strong>View access:</strong> Monthly overview, transactions, debts, subscriptions, types, exchange rates, and this help page.</li>
@@ -64,7 +64,7 @@ renderMenu();
     </dd>
     <dt>Settings and Display Currency</dt>
     <dd>
-      <p>Pages with amounts use the Settings dialog. Display currency is stored per listing above the separator. The European amount format setting is shared across the KF subproject below the separator.</p>
+      <p>Pages with amounts use the Settings dialog. Display currency is stored per listing above the separator. The European amount format setting is shared across the Kesef subproject below the separator.</p>
       <p>The display-currency selector offers <strong>As entered</strong> and available currencies. Currency choices are labeled as <code>CODE &mdash; currency name</code>, with the code visually separated from the name. If a display currency is selected, amounts are converted for display and totals before rendering.</p>
       <p><strong>As entered</strong> leaves individual values in their stored currency. The Subscriptions page defaults to As entered, while the main monetary listings default to CZK display unless the session setting changes it.</p>
       <ul>
@@ -75,9 +75,9 @@ renderMenu();
     </dd>
     <dt>Currency Conversion</dt>
     <dd>
-      <p>Transactions, debt movements, and subscriptions store their own currency. The stored amount is never relabeled as another currency without conversion. When conversion is requested, KF converts the numeric amount before totals and labels are rendered.</p>
+      <p>Transactions, debt movements, and subscriptions store their own currency. The stored amount is never relabeled as another currency without conversion. When conversion is requested, Kesef converts the numeric amount before totals and labels are rendered.</p>
       <p>Exchange rates come from rows in <code>kf_exchange_rates</code>. For dated records, the conversion uses the latest rate whose <code>valid_for</code> date is not later than the record date. If no older rate exists, it uses the earliest later rate. Records without a usable date use the latest available rate.</p>
-      <p>If a required rate is missing, the affected value stays in its original currency and KF avoids showing a misleading converted currency suffix. Debt totals also track conversion failures so that a mixed or partially unconverted total is not labeled as a fully converted value.</p>
+      <p>If a required rate is missing, the affected value stays in its original currency and Kesef avoids showing a misleading converted currency suffix. Debt totals also track conversion failures so that a mixed or partially unconverted total is not labeled as a fully converted value.</p>
       <ul>
         <li><strong>Stored data:</strong> Amount plus currency per finance row.</li>
         <li><strong>Rate source:</strong> Stored CNB exchange-rate rows.</li>
@@ -176,22 +176,22 @@ renderMenu();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
     <dd>
-      <p>Database Schema is the full-access visual schema viewer. It reads KF table, column, key, index, and relation metadata from <code>INFORMATION_SCHEMA</code>.</p>
-      <p>The diagram displays KF tables, primary keys, foreign keys, unique keys, indexes, column types, nullability, and relation lines. On devices where the diagram is not suitable, the page shows an unavailable message instead of a broken view.</p>
+      <p>Database Schema is the full-access visual schema viewer. It reads Kesef table, column, key, index, and relation metadata from <code>INFORMATION_SCHEMA</code>.</p>
+      <p>The diagram displays Kesef tables, primary keys, foreign keys, unique keys, indexes, column types, nullability, and relation lines. On devices where the diagram is not suitable, the page shows an unavailable message instead of a broken view.</p>
       <ul>
         <li><strong>Access:</strong> Full access only.</li>
         <li><strong>Metadata:</strong> Columns, keys, indexes, and relations.</li>
-        <li><strong>Purpose:</strong> Visual review of the KF data model.</li>
+        <li><strong>Purpose:</strong> Visual review of the Kesef data model.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">KF Help</a></dt>
+    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
     <dd>
-      <p>KF Help is this bilingual read-only help page. It documents common controls, access expectations, monetary conversion behavior, settings, dialogs, and KF menu pages.</p>
-      <p>The page itself requires only KF view access and does not modify finance data.</p>
+      <p>Help is this bilingual read-only help page. It documents common controls, access expectations, monetary conversion behavior, settings, dialogs, and Kesef menu pages.</p>
+      <p>The page itself requires only Kesef view access and does not modify finance data.</p>
       <ul>
         <li><strong>Access:</strong> View access.</li>
         <li><strong>Languages:</strong> US English and Czech.</li>
-        <li><strong>Scope:</strong> User-visible KF behavior.</li>
+        <li><strong>Scope:</strong> User-visible Kesef behavior.</li>
       </ul>
     </dd>
   </dl>
@@ -200,7 +200,7 @@ renderMenu();
   <dl class="kf-help-list">
     <dt>Přístup a přihlášení</dt>
     <dd>
-      <p>Stránky KF jsou chráněné společným portálovým přihlášením. Běžné výpisy vyžadují view přístup pro projekt <code>kf</code>, zatímco editační akce a citlivá databázová diagnostika vyžadují full přístup. Trusted klient se ve sdílené přístupové vrstvě bere jako povolený.</p>
+      <p>Stránky Kesef jsou chráněné společným portálovým přihlášením. Běžné výpisy vyžadují view přístup pro projekt <code>kf</code>, zatímco editační akce a citlivá databázová diagnostika vyžadují full přístup. Trusted klient se ve sdílené přístupové vrstvě bere jako povolený.</p>
       <p>Pouze čtecí stránky lze otevřít s view přístupem. Stránky, které umí editovat, dál skrývají editační tlačítka, pokud aktuální uživatel nemá full přístup. Ajaxové zápisové akce vracejí JSON chybu přístupu místo přihlašovací stránky uvnitř dialogu.</p>
       <ul>
         <li><strong>View přístup:</strong> Měsíční přehled, transakce, dluhy, předplatná, typy, kurzy a tato nápověda.</li>
@@ -220,7 +220,7 @@ renderMenu();
     </dd>
     <dt>Nastavení a zobrazovaná měna</dt>
     <dd>
-      <p>Stránky s částkami používají dialog Settings. Zobrazovaná měna nad oddělovačem se ukládá zvlášť pro daný výpis. Evropský formát částek pod oddělovačem je společný pro celý KF podprojekt.</p>
+      <p>Stránky s částkami používají dialog Settings. Zobrazovaná měna nad oddělovačem se ukládá zvlášť pro daný výpis. Evropský formát částek pod oddělovačem je společný pro celý Kesef podprojekt.</p>
       <p>Výběr zobrazované měny nabízí <strong>As entered</strong> a dostupné měny. Volby měn jsou popsané jako <code>CODE &mdash; název měny</code>, s kódem opticky odděleným od názvu. Pokud je vybraná zobrazovaná měna, částky se před vykreslením a součty přepočítají.</p>
       <p><strong>As entered</strong> nechává jednotlivé hodnoty v uložené měně. Stránka Subscriptions má ve výchozím stavu As entered, zatímco hlavní peněžní výpisy výchozí CZK, pokud to nezmění session nastavení.</p>
       <ul>
@@ -231,9 +231,9 @@ renderMenu();
     </dd>
     <dt>Přepočty měn</dt>
     <dd>
-      <p>Transakce, pohyby dluhů a předplatná ukládají vlastní měnu. Uložená částka se nikdy jen nepřelepí jinou měnou bez přepočtu. Pokud je přepočet vyžadovaný, KF přepočítá číselnou hodnotu před vykreslením součtů a popisků.</p>
+      <p>Transakce, pohyby dluhů a předplatná ukládají vlastní měnu. Uložená částka se nikdy jen nepřelepí jinou měnou bez přepočtu. Pokud je přepočet vyžadovaný, Kesef přepočítá číselnou hodnotu před vykreslením součtů a popisků.</p>
       <p>Kurzy pocházejí z řádků v <code>kf_exchange_rates</code>. Pro datované záznamy se použije poslední kurz, jehož <code>valid_for</code> není pozdější než datum záznamu. Pokud starší kurz neexistuje, použije se nejbližší pozdější kurz. Záznamy bez použitelného data používají poslední dostupný kurz.</p>
-      <p>Pokud potřebný kurz chybí, dotčená hodnota zůstane v původní měně a KF nevypíše zavádějící suffix přepočtené měny. Součty dluhů také sledují selhání přepočtu, aby smíšený nebo jen částečně přepočtený součet nebyl označený jako plně přepočtená hodnota.</p>
+      <p>Pokud potřebný kurz chybí, dotčená hodnota zůstane v původní měně a Kesef nevypíše zavádějící suffix přepočtené měny. Součty dluhů také sledují selhání přepočtu, aby smíšený nebo jen částečně přepočtený součet nebyl označený jako plně přepočtená hodnota.</p>
       <ul>
         <li><strong>Uložená data:</strong> Částka a měna u každého finančního řádku.</li>
         <li><strong>Zdroj kurzu:</strong> Uložené řádky kurzů CNB.</li>
@@ -332,22 +332,22 @@ renderMenu();
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
     <dd>
-      <p>Database Schema je vizuální schema viewer pouze pro full přístup. Čte metadata KF tabulek, sloupců, klíčů, indexů a relací z <code>INFORMATION_SCHEMA</code>.</p>
-      <p>Diagram zobrazuje KF tabulky, primární klíče, cizí klíče, unikátní klíče, indexy, typy sloupců, nullability a spojnice relací. Na zařízeních, kde diagram není vhodný, stránka zobrazí zprávu o nedostupnosti místo rozbitého pohledu.</p>
+      <p>Database Schema je vizuální schema viewer pouze pro full přístup. Čte metadata Kesef tabulek, sloupců, klíčů, indexů a relací z <code>INFORMATION_SCHEMA</code>.</p>
+      <p>Diagram zobrazuje Kesef tabulky, primární klíče, cizí klíče, unikátní klíče, indexy, typy sloupců, nullability a spojnice relací. Na zařízeních, kde diagram není vhodný, stránka zobrazí zprávu o nedostupnosti místo rozbitého pohledu.</p>
       <ul>
         <li><strong>Přístup:</strong> Pouze full přístup.</li>
         <li><strong>Metadata:</strong> Sloupce, klíče, indexy a relace.</li>
-        <li><strong>Účel:</strong> Vizuální kontrola datového modelu KF.</li>
+        <li><strong>Účel:</strong> Vizuální kontrola datového modelu Kesef.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">KF Help</a></dt>
+    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
     <dd>
-      <p>KF Help je tato dvojjazyčná pouze čtecí nápověda. Dokumentuje společné ovládání, očekávaný přístup, chování měnových přepočtů, nastavení, dialogy a stránky menu KF.</p>
-      <p>Samotná stránka vyžaduje jen KF view přístup a neupravuje finanční data.</p>
+      <p>Help je tato dvojjazyčná pouze čtecí nápověda. Dokumentuje společné ovládání, očekávaný přístup, chování měnových přepočtů, nastavení, dialogy a stránky menu Kesef.</p>
+      <p>Samotná stránka vyžaduje jen Kesef view přístup a neupravuje finanční data.</p>
       <ul>
         <li><strong>Přístup:</strong> View přístup.</li>
         <li><strong>Jazyky:</strong> US English a čeština.</li>
-        <li><strong>Rozsah:</strong> Uživatelsky viditelné chování KF.</li>
+        <li><strong>Rozsah:</strong> Uživatelsky viditelné chování Kesef.</li>
       </ul>
     </dd>
   </dl>

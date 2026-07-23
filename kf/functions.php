@@ -399,10 +399,6 @@ function formatAmount($mAmount, $blUseEuropeanAmountFormat = false) {
     return $fAmount < 0 ? "−" . $sAmount : $sAmount;
 }
 
-function formatDebtAmount($mAmount, $blUseEuropeanAmountFormat = false) {
-    return formatAmount($mAmount, $blUseEuropeanAmountFormat);
-}
-
 function formatDate($sDate) {
     $iTime = strtotime((string)$sDate);
     return $iTime ? date("Y-m-d", $iTime) : "";
@@ -421,15 +417,6 @@ function getFinanceTypes($blIncludeGroups = false) {
     return $oStatement->fetchAll();
 }
 
-function getFinanceTypeOptionsHtml($iSelectedId = 0) {
-    $sHtml = "";
-    foreach (getFinanceTypes(false) as $aType) {
-        $sLabel = ($aType["type_kind"] == "income" ? "Income: " : "Expense: ") . $aType["name"];
-        $sHtml .= "          <option value=\"" . (int)$aType["id"] . "\"" . ((int)$aType["id"] == $iSelectedId ? " selected" : "") . ">" . html($sLabel) . "</option>\n";
-    }
-    return $sHtml;
-}
-
 function renderEmojiData() {
     global $sCopyEmoji, $sCopySuccessEmoji, $sCopyFailureEmoji;
 
@@ -445,15 +432,6 @@ function renderEmojiData() {
     return $sHtml . "></span>\n";
 }
 
-function renderCopyAction($mValue, $sTitle = "Copy") {
-    global $sCopyEmoji;
-
-    $sValue = trim((string)$mValue);
-    if ($sValue == "") {
-        return "";
-    }
-    return "<a class=\"copy-action\" href=\"#\" data-copy-value=\"" . html($sValue) . "\" title=\"" . html($sTitle) . "\" aria-label=\"" . html($sTitle) . "\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
-}
 
 function getSubjectNameSelectSql() {
     $sPersonDisplayBase = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.title_before, ''), NULLIF(p.first_name, ''), NULLIF(p.middle_name, ''), NULLIF(p.last_name, ''))), '')";
@@ -673,6 +651,95 @@ function renderTransactionAdminRows($aRows, $blShowActions = true, $blUseEuropea
         $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 6 : 5) . "\">No transactions found.</td></tr>\n";
     }
     return $sHtml;
+}
+
+function getPostedAdditionalTransactions() {
+    $aRows = array();
+    if (!isset($_POST["additional_transactions"]) || !is_array($_POST["additional_transactions"])) {
+        return $aRows;
+    }
+    foreach ($_POST["additional_transactions"] as $aInput) {
+        if (!is_array($aInput)) {
+            continue;
+        }
+        $iFinanceTypeId = isset($aInput["finance_type_id"]) ? (int)$aInput["finance_type_id"] : 0;
+        $sAmount = isset($aInput["amount"]) ? trim((string)$aInput["amount"]) : "";
+        $sCurrency = isset($aInput["currency"]) ? normalizeStoredCurrency($aInput["currency"]) : getDefaultCurrency();
+        if ($iFinanceTypeId < 1 && $sAmount == "") {
+            continue;
+        }
+        if ($sAmount == "") {
+            continue;
+        }
+        $aRows[] = array(
+            "finance_type_id" => $iFinanceTypeId,
+            "amount" => parseAmount($sAmount),
+            "currency" => $sCurrency
+        );
+    }
+    return $aRows;
+}
+
+function validateAdditionalTransactions($oPdo, $aRows, $iMainFinanceTypeId, $sTypeKind, $fMainAmount, $sMainCurrency, $sDate) {
+    $aValidatedRows = array();
+    $aFinanceTypeIds = array((int)$iMainFinanceTypeId);
+    $fTotalAmount = 0.0;
+    foreach ($aRows as $aRow) {
+        $iFinanceTypeId = (int)$aRow["finance_type_id"];
+        $fAmount = $aRow["amount"];
+        $sCurrency = normalizeStoredCurrency($aRow["currency"]);
+        if ($iFinanceTypeId < 1 || in_array($iFinanceTypeId, $aFinanceTypeIds, true) || $fAmount === null || $fAmount <= 0 || !isCurrencyAvailable($oPdo, $sCurrency)) {
+            return false;
+        }
+        $oStatement = $oPdo->prepare("SELECT id, type_kind FROM kf_fin_types WHERE id = :id AND type_kind IN ('income', 'expense')");
+        $oStatement->execute(array("id" => $iFinanceTypeId));
+        $aType = $oStatement->fetch();
+        if (!$aType || $aType["type_kind"] != $sTypeKind) {
+            return false;
+        }
+        $mConvertedAmount = convertCurrencyAmount($oPdo, $fAmount, $sCurrency, $sMainCurrency, $sDate);
+        if ($mConvertedAmount === null) {
+            return false;
+        }
+        $fTotalAmount += (float)$mConvertedAmount;
+        if (round($fTotalAmount, 2) >= round(abs($fMainAmount), 2)) {
+            return false;
+        }
+        $aValidatedRows[] = array(
+            "finance_type_id" => $iFinanceTypeId,
+            "amount" => (float)$fAmount,
+            "currency" => $sCurrency,
+            "converted_amount" => (float)$mConvertedAmount
+        );
+        $aFinanceTypeIds[] = $iFinanceTypeId;
+    }
+    return $aValidatedRows;
+}
+
+function getAdditionalTransactionsTotal($aRows) {
+    $fTotalAmount = 0.0;
+    foreach ($aRows as $aRow) {
+        $fTotalAmount += abs((float)$aRow["converted_amount"]);
+    }
+    return $fTotalAmount;
+}
+
+function insertAdditionalTransactions($oPdo, $aRows, $sTypeKind, $sDate, $sCounterparty, $sNote) {
+    if (!$aRows) {
+        return;
+    }
+    $oStatement = $oPdo->prepare("INSERT INTO kf_fin_transactions (transaction_date, finance_type_id, amount, currency, counterparty, note) VALUES (:transaction_date, :finance_type_id, :amount, :currency, :counterparty, :note)");
+    foreach ($aRows as $aRow) {
+        $fSignedAmount = $sTypeKind == "expense" ? -abs((float)$aRow["amount"]) : abs((float)$aRow["amount"]);
+        $oStatement->execute(array(
+            "transaction_date" => $sDate,
+            "finance_type_id" => (int)$aRow["finance_type_id"],
+            "amount" => $fSignedAmount,
+            "currency" => normalizeStoredCurrency($aRow["currency"]),
+            "counterparty" => $sCounterparty != "" ? $sCounterparty : null,
+            "note" => $sNote != "" ? $sNote : null
+        ));
+    }
 }
 
 function getSubscriptionBillingPeriods() {
@@ -1199,218 +1266,6 @@ function renderFinanceTypeAdminRows($aRows, $blShowActions = true) {
     return $sHtml;
 }
 
-function phoneContactTypes() {
-    return array(
-        "landline" => true,
-        "cell" => true,
-        "fax" => true,
-        "pager" => true
-    );
-}
-
-function isPhoneContactType($sContactType) {
-    $aPhoneTypes = phoneContactTypes();
-    return isset($aPhoneTypes[(string)$sContactType]);
-}
-
-function phoneMetadataRegex($sPattern) {
-    return preg_replace("/\\s+/", "", trim((string)$sPattern));
-}
-
-function phonePatternMatches($sPattern, $sValue, $blFullMatch = true, &$aMatches = null) {
-    $sPattern = phoneMetadataRegex($sPattern);
-    $aMatches = array();
-    if ($sPattern == "") {
-        return false;
-    }
-    $sRegex = $blFullMatch ? "~^(?:" . str_replace("~", "\\~", $sPattern) . ")$~" : "~^(?:" . str_replace("~", "\\~", $sPattern) . ")~";
-    return @preg_match($sRegex, (string)$sValue, $aMatches);
-}
-
-function phoneMetadata() {
-    static $aMetadata = null;
-
-    if ($aMetadata !== null) {
-        return $aMetadata;
-    }
-    $aMetadata = array("codes" => array());
-    if (!function_exists("simplexml_load_file")) {
-        return $aMetadata;
-    }
-    $sFile = __DIR__ . "/../ex/lib/phone_metadata.xml";
-    $blPreviousLibxmlState = libxml_use_internal_errors(true);
-    $sXml = is_file($sFile) ? file_get_contents($sFile) : "";
-    $sXml = preg_replace("/^\\xEF\\xBB\\xBF/", "", (string)$sXml);
-    $oXml = $sXml != "" ? simplexml_load_string($sXml) : false;
-    libxml_clear_errors();
-    libxml_use_internal_errors($blPreviousLibxmlState);
-    if (!$oXml || !isset($oXml->territories->territory)) {
-        return $aMetadata;
-    }
-    foreach ($oXml->territories->territory as $oTerritory) {
-        $sCountryCode = (string)$oTerritory["countryCode"];
-        if ($sCountryCode == "") {
-            continue;
-        }
-        $aFormats = array();
-        if (isset($oTerritory->availableFormats->numberFormat)) {
-            foreach ($oTerritory->availableFormats->numberFormat as $oFormat) {
-                $aLeadingDigits = array();
-                foreach ($oFormat->leadingDigits as $oLeadingDigits) {
-                    $aLeadingDigits[] = phoneMetadataRegex((string)$oLeadingDigits);
-                }
-                $aFormats[] = array(
-                    "pattern" => phoneMetadataRegex((string)$oFormat["pattern"]),
-                    "format" => (string)$oFormat->format,
-                    "leading_digits" => $aLeadingDigits
-                );
-            }
-        }
-        if (!isset($aMetadata["codes"][$sCountryCode])) {
-            $aMetadata["codes"][$sCountryCode] = array();
-        }
-        $aMetadata["codes"][$sCountryCode][] = array(
-            "id" => (string)$oTerritory["id"],
-            "main" => (string)$oTerritory["mainCountryForCode"] == "true",
-            "leading_digits" => phoneMetadataRegex((string)$oTerritory["leadingDigits"]),
-            "national_prefix" => preg_replace("/\\D/", "", (string)$oTerritory["nationalPrefix"]),
-            "pattern" => phoneMetadataRegex((string)$oTerritory->generalDesc->nationalNumberPattern),
-            "formats" => $aFormats
-        );
-    }
-    return $aMetadata;
-}
-
-function findPhoneTerritory($sDigits) {
-    $aMetadata = phoneMetadata();
-    $iMaxCountryCodeLength = min(3, strlen((string)$sDigits) - 1);
-    for ($iLength = $iMaxCountryCodeLength; $iLength >= 1; $iLength--) {
-        $sCountryCode = substr((string)$sDigits, 0, $iLength);
-        if (!isset($aMetadata["codes"][$sCountryCode])) {
-            continue;
-        }
-        $sNationalNumber = substr((string)$sDigits, $iLength);
-        foreach ($aMetadata["codes"][$sCountryCode] as $aTerritory) {
-            $aNationalNumbers = array($sNationalNumber);
-            if ($aTerritory["national_prefix"] != "" && strpos($sNationalNumber, (string)$aTerritory["national_prefix"]) === 0) {
-                $aNationalNumbers[] = substr($sNationalNumber, strlen((string)$aTerritory["national_prefix"]));
-            }
-            foreach ($aNationalNumbers as $sCandidateNationalNumber) {
-                if ($aTerritory["leading_digits"] != "" && !phonePatternMatches((string)$aTerritory["leading_digits"], $sCandidateNationalNumber, false)) {
-                    continue;
-                }
-                if (phonePatternMatches((string)$aTerritory["pattern"], $sCandidateNationalNumber, true)) {
-                    return array(
-                        "country_code" => $sCountryCode,
-                        "national_number" => $sCandidateNationalNumber,
-                        "territory" => $aTerritory
-                    );
-                }
-            }
-        }
-        return false;
-    }
-    return false;
-}
-
-function phoneDefaultFormats($sCountryCode) {
-    $aMetadata = phoneMetadata();
-    $aFallbackFormats = array();
-    if (!isset($aMetadata["codes"][(string)$sCountryCode])) {
-        return array();
-    }
-    foreach ($aMetadata["codes"][(string)$sCountryCode] as $aTerritory) {
-        if (count($aTerritory["formats"]) > 0 && !empty($aTerritory["main"])) {
-            return $aTerritory["formats"];
-        }
-        if (!$aFallbackFormats && count($aTerritory["formats"]) > 0) {
-            $aFallbackFormats = $aTerritory["formats"];
-        }
-    }
-    return $aFallbackFormats;
-}
-
-function applyPhoneNumberFormat($sPattern, $sFormat, $sNationalNumber) {
-    $aMatches = array();
-    $sFormatted = (string)$sFormat;
-    if ($sFormatted == "" || !phonePatternMatches($sPattern, $sNationalNumber, true, $aMatches)) {
-        return "";
-    }
-    for ($iIndex = 1; $iIndex < count($aMatches); $iIndex++) {
-        $sFormatted = str_replace("$" . $iIndex, $aMatches[$iIndex], $sFormatted);
-    }
-    return $sFormatted;
-}
-
-function formatPhoneContactDisplayValue($sCountryCode, $sNationalNumber, $aTerritory) {
-    $aFormats = count($aTerritory["formats"]) > 0 ? $aTerritory["formats"] : phoneDefaultFormats($sCountryCode);
-    foreach ($aFormats as $aFormat) {
-        $aLeadingDigits = $aFormat["leading_digits"];
-        if (count($aLeadingDigits) > 0 && !phonePatternMatches($aLeadingDigits[count($aLeadingDigits) - 1], $sNationalNumber, false)) {
-            continue;
-        }
-        $sFormatted = applyPhoneNumberFormat((string)$aFormat["pattern"], (string)$aFormat["format"], $sNationalNumber);
-        if ($sFormatted != "") {
-            return "+" . (string)$sCountryCode . " " . $sFormatted;
-        }
-    }
-    return "+" . (string)$sCountryCode . " " . (string)$sNationalNumber;
-}
-
-function analyzePhoneContactValue($sValue) {
-    $sText = trim((string)$sValue);
-    $sDigits = "";
-    $aPhone = array();
-    if ($sText == "") {
-        return array("valid" => true, "canonical" => "", "display" => "");
-    }
-    if (!preg_match("/^(?:\\+|00)/", $sText) && preg_match("/^[0-9().\\s\\-]+$/", $sText)) {
-        $sDigits = preg_replace("/\\D/", "", $sText);
-        $sText = "+420" . $sDigits;
-    }
-    if (!preg_match("/^(?:\\+|00)[0-9().\\s\\-]+$/", $sText)) {
-        return array("valid" => false, "canonical" => false, "display" => $sText);
-    }
-    if (strpos($sText, "+") === 0) {
-        $sDigits = preg_replace("/\\D/", "", substr($sText, 1));
-    } else {
-        $sDigits = preg_replace("/\\D/", "", substr($sText, 2));
-    }
-    if (!preg_match("/^[1-9][0-9]{5,14}$/", $sDigits)) {
-        return array("valid" => false, "canonical" => false, "display" => $sText);
-    }
-    $aPhone = findPhoneTerritory($sDigits);
-    if ($aPhone === false) {
-        return array("valid" => false, "canonical" => false, "display" => $sText);
-    }
-    return array(
-        "valid" => true,
-        "canonical" => "+" . (string)$aPhone["country_code"] . "." . (string)$aPhone["national_number"],
-        "display" => formatPhoneContactDisplayValue((string)$aPhone["country_code"], (string)$aPhone["national_number"], $aPhone["territory"])
-    );
-}
-
-function normalizePhoneContactValue($sValue) {
-    $aPhone = analyzePhoneContactValue($sValue);
-    if (empty($aPhone["valid"])) {
-        return false;
-    }
-    if (strpos((string)$aPhone["canonical"], "00") === 0) {
-        return "+" . substr((string)$aPhone["canonical"], 2);
-    }
-    return (string)$aPhone["canonical"];
-}
-
-function phoneContactDisplayValue($sValue) {
-    $aPhone = analyzePhoneContactValue($sValue);
-    return !empty($aPhone["valid"]) ? (string)$aPhone["display"] : (string)$sValue;
-}
-
-function phoneContactHref($sValue) {
-    $aPhone = analyzePhoneContactValue($sValue);
-    return !empty($aPhone["valid"]) && $aPhone["canonical"] != "" ? "tel:" . str_replace(".", "", (string)$aPhone["canonical"]) : "";
-}
-
 function normalizeEmailContactValue($sValue) {
     $sText = strtolower(trim((string)$sValue));
     if ($sText == "") {
@@ -1419,9 +1274,6 @@ function normalizeEmailContactValue($sValue) {
     return filter_var($sText, FILTER_VALIDATE_EMAIL) ? $sText : false;
 }
 
-function contactTypeKey($sContactType) {
-    return strtolower(trim((string)$sContactType));
-}
 
 function contactValueIsInvalid($sType, $sValue) {
     $sType = contactTypeKey($sType);
@@ -1501,39 +1353,6 @@ function contactLinkTitle($sType) {
         return "Call pager";
     }
     return "";
-}
-
-function renderContactValue($sType, $sValue, $blShowCopy = false, $blAllowExternalLinks = false, $sTooltipAttribute = "") {
-    return renderContactValueText($sType, $sValue, $sTooltipAttribute) . renderContactValueActions($sType, $sValue, $blShowCopy, $blAllowExternalLinks);
-}
-
-function renderContactValueText($sType, $sValue, $sTooltipAttribute = "") {
-    $sDisplayValue = contactDisplayValue($sType, $sValue);
-    $sClass = "contact-value" . (contactValueIsInvalid($sType, $sValue) ? " invalid-contact-value" : "");
-    return "<span class=\"" . html($sClass) . "\"" . $sTooltipAttribute . ">" . html($sDisplayValue) . "</span>";
-}
-
-function renderContactValueActions($sType, $sValue, $blShowCopy = false, $blAllowExternalLinks = false) {
-    global $sCopyEmoji;
-
-    $sDisplayValue = contactDisplayValue($sType, $sValue);
-    $sHref = contactHref($sType, $sValue, $blAllowExternalLinks);
-    $sHtml = "";
-    $sLinkTitle = "";
-    $blHasIcon = false;
-    if ($blShowCopy && $sDisplayValue != "") {
-        $sHtml .= "<a class=\"contact-copy\" href=\"#\" title=\"Copy\" aria-label=\"Copy\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
-        $blHasIcon = true;
-    }
-    if ($sHref != "") {
-        $sLinkTitle = contactLinkTitle($sType);
-        return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"contact-link\" href=\"" . html($sHref) . "\" title=\"" . html($sLinkTitle) . "\" aria-label=\"" . html($sLinkTitle) . "\">" . contactLinkEmoji($sType) . "</a>";
-    }
-    return $sHtml;
-}
-
-function renderDebtPhoneValue($sType, $sValue) {
-    return renderDebtContactValue($sType, $sValue, "", false);
 }
 
 function renderDebtNoteValue($sNote) {

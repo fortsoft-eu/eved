@@ -37,7 +37,7 @@ renderMenu();
 
 ?>
   </p>
-  <pre class="request-overview"><?php echo rtrim(getLmRequestPlainTextInfo()); ?></pre>
+  <pre class="request-overview"><?php echo rtrim(getRequestPlainTextInfo()); ?></pre>
   <script type="text/javascript" src="<?php echo html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))); ?>"></script>
 </body>
 </html>

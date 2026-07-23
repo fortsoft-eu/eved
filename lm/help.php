@@ -36,7 +36,7 @@ renderMenu();
 
 ?>
   </p>
-  <h1>LM Help</h1>
+  <h1>Dashboard Help</h1>
   <h2>US English</h2>
   <dl class="lm-help-list">
     <dt>Purpose</dt>

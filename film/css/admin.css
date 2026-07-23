@@ -326,12 +326,12 @@ table {
     row-gap: 5px;
 }
 
-.admin-controls .film-menu {
+.admin-controls .menu {
     flex: 0 0 27px;
     width: 27px;
 }
 
-.admin-controls .film-menu-button {
+.admin-controls .menu-button {
     height: 27px;
     width: 27px;
 }
@@ -380,12 +380,12 @@ table {
     margin-left: 8px;
 }
 
-.film-menu {
+.menu {
     display: inline-flex;
     position: relative;
 }
 
-.film-menu-button {
+.menu-button {
     background: #F0F0F0;
     border: 1px solid #C0C0C0;
     box-sizing: border-box;
@@ -397,11 +397,11 @@ table {
     width: 27px;
 }
 
-.film-menu-button:hover {
+.menu-button:hover {
     background: #DCDCE4;
 }
 
-.film-menu-panel {
+.menu-panel {
     background: #F0F0F0;
     border: 1px solid #C0C0C0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
@@ -414,11 +414,11 @@ table {
     z-index: 11;
 }
 
-.film-menu-panel[hidden] {
+.menu-panel[hidden] {
     display: none;
 }
 
-.film-menu-link {
+.menu-link {
     align-items: center;
     color: #000;
     cursor: default;
@@ -429,28 +429,28 @@ table {
     white-space: nowrap;
 }
 
-.film-menu-icon {
+.menu-icon {
     flex: 0 0 20px;
     font-size: inherit;
     text-align: center;
 }
 
-.film-menu-text {
+.menu-text {
     display: inline-block;
 }
 
-.film-menu-separator {
+.menu-separator {
     border-top: 1px solid #E5E5E5;
     display: block;
     margin: 8px 0;
 }
 
-.film-menu-link-active,
-.film-menu-link:hover {
+.menu-link-active,
+.menu-link:hover {
     background: #DCDCE4;
 }
 
-.film-menu-link-active {
+.menu-link-active {
     font-weight: bold;
 }
 
@@ -842,7 +842,7 @@ tr:nth-child(even) {
 }
 
 @media (max-width: 600px) {
-    .film-menu-panel {
+    .menu-panel {
         max-width: calc(100vw - 16px);
     }
 

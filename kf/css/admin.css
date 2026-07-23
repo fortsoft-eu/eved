@@ -817,7 +817,7 @@ tr:nth-child(even) {
 
 #types-table {
     table-layout: auto;
-    width: auto;
+    width: 100%;
 }
 
 #transactions-table,

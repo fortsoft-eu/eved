@@ -281,9 +281,9 @@ renderMenu();
         <li><strong>Safety:</strong> No network access and no file modification.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Portal Help</a></dt>
+    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
     <dd>
-      <p>Portal Help is this bilingual help page. It documents portal menu pages, shared controls, filters, settings, access expectations, edit scopes, diagnostic tools, exports, and the difference between shared aggregate actions and subject-specific actions.</p>
+      <p>Help is this bilingual help page. It documents portal menu pages, shared controls, filters, settings, access expectations, edit scopes, diagnostic tools, exports, and the difference between shared aggregate actions and subject-specific actions.</p>
       <p>The help page itself is read-only. Its links follow the same base URL and menu behavior as the rest of the portal so that a user can move from documentation to the relevant page directly.</p>
       <ul>
         <li><strong>Scope:</strong> Menu pages and shared menu-page behavior.</li>
@@ -389,7 +389,7 @@ renderMenu();
   <dl class="portal-help-list">
     <dt><a href="<?php echo $sBaseUrl; ?>index.php">Contacts</a></dt>
     <dd>
-      <p>Contacts je kompaktní pouze čtecí přehled portálových subjektů. Je určený k rychlému procházení osob a služeb, kopírování hodnot z tabulky a otevírání kontaktních odkazů bez zobrazení celé editační vrstvy. Používá stejné pomocné vykreslování subjektů jako editační stránky, ale záměrně zůstává lehčí a na užších obrazovkách skrývá méně důležité sloupce.</p>
+      <p>Contacts je kompaktní pouze čtecí přehled portálových subjektů. Je určený k rychlému procházení osob a služeb, kopírování hodnot z tabulky a otevírání kontaktních odkazů bez zobrazení celé editační vrstvy. Používá stejné pomocné vykreslování subjektů jako editační stránky, ale záměrně zůstává lehčí a na užších displayích skrývá méně důležité sloupce.</p>
       <p>Tabulka obsahuje vypočtené jméno subjektu, osobní data, přezdívky, poštovní adresy, kontakty, skupiny a poznámky. Hodnoty se zobrazují ve stejném tvaru jako ve zbytku portálu, takže kompaktní přehled je vhodný i ke kontrole toho, jak bude subjekt vypadat mimo úplný editor.</p>
       <p>Rychlý filtr hledá ve viditelném textu tabulky a komplexní filtr umí zúžit sadu subjektů podle subjektu, osoby, adresy, kontaktu, skupiny, poznámky, data, času, logické hodnoty, prázdné hodnoty a konkrétních typů kontaktů. Stav tohoto filtru je oddělený od stránky Subjects, protože kompaktní tabulka má jiný účel.</p>
       <p>Neaktivní subjekty a neaktivní podřízené položky jsou ve výchozím stavu skryté. Nastavení zobrazení států je společné s ostatními adresními stránkami portálu. Plné editační akce se zde nezobrazují; pro úpravy slouží Subjects nebo některý zaměřený agregační editor.</p>
@@ -551,9 +551,9 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Bez síťového přístupu a bez úprav souborů.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Portal Help</a></dt>
+    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
     <dd>
-      <p>Portal Help je tato dvojjazyčná nápověda. Dokumentuje stránky menu portálu, společné ovládání, filtry, nastavení, očekávaný přístup, rozsahy editací, diagnostické nástroje, exporty a rozdíl mezi sdílenými agregačními akcemi a akcemi konkrétního subjektu.</p>
+      <p>Help je tato dvojjazyčná nápověda. Dokumentuje stránky menu portálu, společné ovládání, filtry, nastavení, očekávaný přístup, rozsahy editací, diagnostické nástroje, exporty a rozdíl mezi sdílenými agregačními akcemi a akcemi konkrétního subjektu.</p>
       <p>Samotná nápověda je pouze pro čtení. Její odkazy používají stejnou základní URL a stejné chování menu jako zbytek portálu, aby bylo možné z dokumentace přejít přímo na příslušnou stránku.</p>
       <ul>
         <li><strong>Rozsah:</strong> Stránky menu a společné chování stránek menu.</li>

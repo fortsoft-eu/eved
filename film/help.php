@@ -250,9 +250,9 @@ renderMenu();
         <li><strong>Safety:</strong> Read-only schema inspection.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Film Help</a></dt>
+    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
     <dd>
-      <p>Film Help is this bilingual help page. It documents the film menu pages, shared controls, access expectations, diagnostic pages, database exports, and the difference between read-only listings and the assignment page that writes to the database.</p>
+      <p>Help is this bilingual help page. It documents the film menu pages, shared controls, access expectations, diagnostic pages, database exports, and the difference between read-only listings and the assignment page that writes to the database.</p>
       <ul>
         <li><strong>Scope:</strong> Menu pages and the public gallery entry point.</li>
         <li><strong>Languages:</strong> US English and Czech.</li>
@@ -319,7 +319,7 @@ renderMenu();
     <dt>Levý panel a navigace</dt>
     <dd>
       <p>Levý panel vzniká z <code>fs_film_scans</code> seřazených podle <code>archive_no</code>. Film je v seznamu jen tehdy, když název složky obsahuje použitelný token podadresáře a tento podadresář existuje v nakonfigurovaném adresáři scanů. Výběr položky ve stromu načte film do oblasti článku, upraví historii prohlížeče, titulek stránky i pevnou hlavičku a synchronizuje vybraný uzel stromu.</p>
-      <p>Na desktopu je navigační panel standardně otevřený a splitterem ho lze vodorovně měnit. Na malých obrazovkách panel otevírá a skrývá tlačítko v hlavičce a tmavá maska ho zavírá. Kontejnery search a index jsou v šabloně přítomné, ale tato stránka pro ně nevykresluje viditelná tlačítka záložek; běžná navigace probíhá stromem filmů.</p>
+      <p>Na desktopu je navigační panel standardně otevřený a splitterem ho lze vodorovně měnit. Na malých displayích panel otevírá a skrývá tlačítko v hlavičce a tmavá maska ho zavírá. Kontejnery search a index jsou v šabloně přítomné, ale tato stránka pro ně nevykresluje viditelná tlačítka záložek; běžná navigace probíhá stromem filmů.</p>
       <ul>
         <li><strong>Zdroj stromu:</strong> Existující adresáře scanů podle <code>fs_film_scans.folder_name</code>.</li>
         <li><strong>Historie:</strong> Kliknutí ve stromu i ovládání galerie mění obsah a historii prohlížeče.</li>
@@ -383,7 +383,7 @@ renderMenu();
     <dt>Doručení obrázků a access log</dt>
     <dd>
       <p>Přímé požadavky na obrázek používají <code>?img=&lt;base-name&gt;</code>. Server odvodí podadresář z prvních osmi znaků základního názvu obrázku, přidá nakonfigurovanou příponu, ověří soubor a odešle obrázek s dlouhou immutable cache prohlížeče. Veřejný požadavek na obrázek musí mít odpovídající řádek <code>fs_film_photos</code> se statusem <code>ok_public</code>; jinak vrátí zakázáno nebo nenalezeno podle situace. Povolené IP adresy mohou požadovat všechny statusy.</p>
-      <p>Pro návštěvníky mimo seznam povolených IP stránka založí access-log požadavek a prohlížeč odešle fingerprint obsahující GPU, detekované fonty, rozměr obrazovky, fyzický rozměr obrazovky, barevnou hloubku, časové pásmo, jazyk, platformu, pluginy, MIME typy a parsované informace o prohlížeči a zařízení. Požadavky z povolených IP adres tento tracking stav mažou a ignorují. Načítání obrázků se při chybě zkouší znovu až pětkrát s cache-busting parametrem <code>reload</code>, po 500 ms, a stejná retry logika se připojuje i k obrázkům přidaným později dynamickým načtením obsahu.</p>
+      <p>Pro návštěvníky mimo seznam povolených IP stránka založí access-log požadavek a prohlížeč odešle fingerprint obsahující GPU, detekované fonty, rozměr displaye, fyzický rozměr displaye, barevnou hloubku, časové pásmo, jazyk, platformu, pluginy, MIME typy a parsované informace o prohlížeči a zařízení. Požadavky z povolených IP adres tento tracking stav mažou a ignorují. Načítání obrázků se při chybě zkouší znovu až pětkrát s cache-busting parametrem <code>reload</code>, po 500 ms, a stejná retry logika se připojuje i k obrázkům přidaným později dynamickým načtením obsahu.</p>
       <ul>
         <li><strong>Image endpoint:</strong> <code>?img=</code> odešle nakonfigurovaný soubor scanu, pokud projdou kontroly přístupu.</li>
         <li><strong>Veřejná ochrana:</strong> Mimo povolené IP adresy jsou dostupné pouze obrázky <code>ok_public</code>.</li>
@@ -441,10 +441,10 @@ renderMenu();
     <dt><a href="<?php echo $sBaseUrl; ?>ua.php">Film Access Log</a></dt>
     <dd>
       <p>Film Access Log je diagnostická stránka s full přístupem pro poslední záznamy přístupů k filmům. Čte posledních 100 řádků z <code>fs_film_ua</code> a podle možnosti připojuje požadovaný filmový scan.</p>
-      <p>Tabulka kombinuje serverová request data s browser fingerprint detaily sbíranými filmovými stránkami. Ukazuje IP adresu, geo hlavičky, parsovaný user agent, požadovaný film a obrázek, GPU, fonty, obrazovku, časové pásmo, jazyk, platformu, pluginy, MIME typy a timestamp. Dlouhé hodnoty jsou v buňkách zkrácené, ale zůstávají v title tooltipech.</p>
+      <p>Tabulka kombinuje serverová request data s browser fingerprint detaily sbíranými filmovými stránkami. Ukazuje IP adresu, geo hlavičky, parsovaný user agent, požadovaný film a obrázek, GPU, fonty, display, časové pásmo, jazyk, platformu, pluginy, MIME typy a timestamp. Dlouhé hodnoty jsou v buňkách zkrácené, ale zůstávají v title tooltipech.</p>
       <ul>
         <li><strong>Řádky:</strong> Posledních 100 záznamů access logu.</li>
-        <li><strong>Detaily:</strong> Prohlížeč, zařízení, GPU, fonty, obrazovka, jazyk, pluginy a MIME typy.</li>
+        <li><strong>Detaily:</strong> Prohlížeč, zařízení, GPU, fonty, display, jazyk, pluginy a MIME typy.</li>
         <li><strong>Refresh:</strong> Volitelný auto-refresh každých 5 minut.</li>
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
@@ -473,7 +473,7 @@ renderMenu();
     <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
     <dd>
       <p>Database Schema je vizuální prohlížeč schématu filmových tabulek. Čte metadata <code>INFORMATION_SCHEMA</code> pro tabulky <code>fs_film_*</code>, <code>fs_photo_*</code> a <code>fs_flickr_*</code> a vykresluje tabulkové boxy, klíče, typy sloupců, nullabilitu, extra atributy a vazby cizích klíčů.</p>
-      <p>Spojovací linie jsou ručně trasované pro známé filmové a fotografické vztahy. Na malých obrazovkách se diagram i tabulka vazeb skryjí a zobrazí se hláška, protože diagram potřebuje dost prostoru, aby byl čitelný.</p>
+      <p>Spojovací linie jsou ručně trasované pro známé filmové a fotografické vztahy. Na malých displayích se diagram i tabulka vazeb skryjí a zobrazí se hláška, protože diagram potřebuje dost prostoru, aby byl čitelný.</p>
       <ul>
         <li><strong>Tabulky:</strong> Tabulky s prefixem film, photo a Flickr.</li>
         <li><strong>Diagram:</strong> Ukazuje sloupce, klíče a vazby cizích klíčů.</li>
@@ -481,9 +481,9 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Pouze čtecí kontrola schématu.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Film Help</a></dt>
+    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
     <dd>
-      <p>Film Help je tato dvojjazyčná nápověda. Dokumentuje stránky filmového menu, společné ovládání, očekávaný přístup, diagnostické stránky, databázové exporty a rozdíl mezi pouze čtecími výpisy a přiřazovací stránkou, která zapisuje do databáze.</p>
+      <p>Help je tato dvojjazyčná nápověda. Dokumentuje stránky filmového menu, společné ovládání, očekávaný přístup, diagnostické stránky, databázové exporty a rozdíl mezi pouze čtecími výpisy a přiřazovací stránkou, která zapisuje do databáze.</p>
       <ul>
         <li><strong>Rozsah:</strong> Stránky menu a veřejný vstup galerie.</li>
         <li><strong>Jazyky:</strong> US English a čeština.</li>

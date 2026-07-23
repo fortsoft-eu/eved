@@ -45,7 +45,7 @@ if ($sError) {
     echo "  <p>No records found in <code>fs_film_scans</code>.</p>\n";
 } else {
 echo "  <p class=\"admin-controls\">\n";
-renderFilmMenu();
+renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>

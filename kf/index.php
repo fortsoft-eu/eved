@@ -11,6 +11,18 @@ if (!$oPdo) {
 requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
 
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && getPostedTrimmedValue("action") == "save_oc") {
+    requireNamedCsrfToken("kf_csrf_token", true);
+    $iOverviewColumns = (int)getPostedTrimmedValue("oc", "0");
+    if ($iOverviewColumns >= 1 && $iOverviewColumns <= 12) {
+        $_SESSION["kf_index_cols"] = $iOverviewColumns;
+        session_write_close();
+        sendJsonAndExit(array("success" => true));
+    }
+    sendJsonAndExit(array("success" => false, "message" => "Invalid overview column count."), 400);
+}
+
+
 handleSettingsPost();
 $aSettings = getSettings();
 $blUseEuropeanAmountFormat = (int)$aSettings["use_european_amount_format"] == 1;
@@ -99,10 +111,18 @@ $aOverviewColumns[] = array("type" => "summary", "key" => "income", "title" => "
 $aOverviewColumns[] = array("type" => "summary", "key" => "expense", "title" => "Expense Total");
 $aOverviewColumns[] = array("type" => "summary", "key" => "net", "title" => "Net Total");
 
+$iOverviewColumnsPerTable = 10;
+if (isset($_SESSION["kf_index_cols"]) && ctype_digit((string)$_SESSION["kf_index_cols"])) {
+    $iStoredOverviewColumns = (int)$_SESSION["kf_index_cols"];
+    if ($iStoredOverviewColumns >= 1 && $iStoredOverviewColumns <= 12) {
+        $iOverviewColumnsPerTable = $iStoredOverviewColumns;
+    }
+}
+
 $aOverviewColumnGroups = array();
 $aOverviewColumnGroup = array();
 foreach ($aOverviewColumns as $aOverviewColumn) {
-    if (count($aOverviewColumnGroup) >= 10) {
+    if (count($aOverviewColumnGroup) >= $iOverviewColumnsPerTable) {
         $aOverviewColumnGroups[] = $aOverviewColumnGroup;
         $aOverviewColumnGroup = array();
     }
@@ -148,7 +168,7 @@ renderMenu();
 
 echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">Settings</button>\n",
     " </p>\n",
-    "  <div id=\"monthly-overview-tables\">\n";
+    "  <div id=\"monthly-overview-tables\" data-overview-columns=\"" . (int)$iOverviewColumnsPerTable . "\">\n";
 
 foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColumnGroup) {
     echo "  <table id=\"monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target monthly-overview-table" . getCondensedTableClass() . "\">\n",

@@ -292,39 +292,6 @@ function getFilmPhpFileLinkGroups() {
     return $aGroups;
 }
 
-function renderFilmMenu() {
-    global $oPdo, $sBaseUrl, $sMenuEmoji;
-
-    $aItems = getMenuItemsFromDatabase($oPdo);
-    if (!$aItems) {
-        return;
-    }
-    $sCurrentPath = getCurrentMenuPath();
-    echo "    <span class=\"film-menu\" data-film-menu>\n",
-        "      <button type=\"button\" class=\"film-menu-button\" data-film-menu-button aria-haspopup=\"true\" aria-expanded=\"false\" title=\"Menu\" aria-label=\"Menu\">" . $sMenuEmoji . "</button>\n",
-        "      <span class=\"film-menu-panel\" data-film-menu-panel hidden>\n";
-    foreach ($aItems as $aItem) {
-        if ($aItem["separator"]) {
-            echo "        <span class=\"film-menu-separator\"></span>\n";
-            continue;
-        }
-        $sClass = "film-menu-link";
-        $sCurrent = "";
-        if ($aItem["path"] === $sCurrentPath) {
-            $sClass .= " film-menu-link-active";
-            $sCurrent = " aria-current=\"page\"";
-        }
-        $sTitle = trim((string)$aItem["title"]);
-        $sTarget = trim((string)$aItem["target"]);
-        $sTitleAttribute = $sTitle != "" ? " title=\"" . html($sTitle) . "\"" : "";
-        $sTargetAttribute = $sTarget != "" ? " target=\"" . html($sTarget) . "\"" : "";
-        $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
-        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"film-menu-icon\" aria-hidden=\"true\">" . html($aItem["icon"]) . "</span><span class=\"film-menu-text\">" . html($aItem["name"]) . "</span></a>\n";
-    }
-    echo "      </span>\n",
-        "    </span>\n";
-}
-
 function printPhpFileLinks($sBaseUrl) {
     $aGroups = getFilmPhpFileLinkGroups();
     foreach ($aGroups as $iGroup => $aGroup) {
@@ -338,45 +305,6 @@ function printPhpFileLinks($sBaseUrl) {
     }
 }
 
-function getRequestPlainTextInfo() {
-    $sOutput = "";
-    $sOutput .= "<b>Navigation</b>\n";
-    $sOutput .= "Referer: " . (isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : "N/A") . "\n";
-    $sOutput .= "<hr>";
-    $sOutput .= "<b>IP address sources</b>\n";
-    $sOutput .= "Remote address: " . (isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : "N/A") . "\n";
-    $sOutput .= "X-Real-IP: " . (isset($_SERVER["HTTP_X_REAL_IP"]) ? $_SERVER["HTTP_X_REAL_IP"] : "N/A") . "\n";
-    $sOutput .= "X-Forwarded-For: " . (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ? $_SERVER["HTTP_X_FORWARDED_FOR"] : "N/A") . "\n";
-    $sOutput .= "<hr>";
-    $sOutput .= "<b>HTTP headers</b>\n";
-    foreach (getallheaders() as $sHeaderName => $sHeaderValue) {
-        $sOutput .= $sHeaderName . ": " . $sHeaderValue . "\n";
-    }
-    $sOutput .= "<hr>";
-    $sOutput .= "<b>PHP \$_SERVER array</b>\n";
-    foreach ($_SERVER as $sKey => $sValue) {
-        $sOutput .= $sKey . ": " . $sValue . "\n";
-    }
-    $sOutput .= "<hr>";
-    $sOutput .= "<b>PHP \$_SESSION array</b>\n";
-    if (isset($_SESSION)) {
-        foreach ($_SESSION as $sKey => $mValue) {
-            if (is_array($mValue)) {
-                $mValue = dumpVar($mValue);
-            }
-            $sOutput .= $sKey . ": " . $mValue . "\n";
-        }
-    }
-    $sOutput .= "<hr>";
-    $sOutput .= "<b>PHP \$_COOKIE array</b>\n";
-    foreach ($_COOKIE as $sKey => $mValue) {
-        if (is_array($mValue)) {
-            $mValue = dumpVar($mValue);
-        }
-        $sOutput .= $sKey . ": " . $mValue . "\n";
-    }
-    return $sOutput;
-}
 
 function loadExposureDates(PDO $oPdo, $iId) {
     $sSql = "SELECT NULLIF(exposure_date,'0000-00-00') AS exposure_date FROM fs_film_exposure_dates WHERE film_scan_id = :id ORDER BY exposure_date";
@@ -525,17 +453,6 @@ function sendFilmMetadataTxt($oPdo, $aRow) {
     sendSecurityHeaders();
     echo $sBody;
     exit;
-}
-
-function generateRandomId($iLength = 8) {
-    $sSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    $iLen = strlen($sSet);
-    $sResult = "";
-    for ($iI = 0; $iI < $iLength; $iI++) {
-        $iIndex = mt_rand(0, $iLen - 1);
-        $sResult .= $sSet[$iIndex];
-    }
-    return $sResult;
 }
 
 function renderCell($mValue, $blError) {

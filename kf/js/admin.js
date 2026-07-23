@@ -952,6 +952,102 @@
         }
     }
 
+    function getMonthlyOverviewColumnCount(iViewportWidth, blCondensedTable) {
+        var iMaxDataColumns = blCondensedTable ? 12 : 10;
+        var iMaxTotalColumns = iMaxDataColumns + 1;
+        var iColumns = Math.ceil(iViewportWidth * iMaxTotalColumns / 2040) - 1;
+        if (blCondensedTable) {
+            iColumns = Math.ceil(iViewportWidth * iMaxTotalColumns / 2040) - 1;
+        }
+        if (iColumns > iMaxDataColumns) {
+            return iMaxDataColumns;
+        }
+        if (blCondensedTable && iColumns < 2) {
+            return 2;
+        }
+        if (iColumns < 1) {
+            return 1;
+        }
+        return iColumns;
+    }
+
+    function getMonthlyOverviewViewportWidth() {
+        if (document.documentElement && document.documentElement.clientWidth) {
+            return document.documentElement.clientWidth;
+        }
+        if (window.innerWidth) {
+            return window.innerWidth;
+        }
+        if (window.visualViewport && window.visualViewport.width) {
+            return Math.round(window.visualViewport.width);
+        }
+        if (document.body && document.body.clientWidth) {
+            return document.body.clientWidth;
+        }
+        return 1920;
+    }
+
+    function getMonthlyOverviewUrlWithoutColumnParam() {
+        var sUrl = window.location.href;
+        var iHashPosition;
+        var sHash = "";
+        if (typeof URL == "function") {
+            try {
+                sUrl = new URL(window.location.href);
+                sUrl.searchParams.delete("overview_columns");
+                return sUrl.toString();
+            } catch (oException) {
+                logAdminException(oException);
+            }
+        }
+        iHashPosition = sUrl.indexOf("#");
+        if (iHashPosition !== -1) {
+            sHash = sUrl.substring(iHashPosition);
+            sUrl = sUrl.substring(0, iHashPosition);
+        }
+        sUrl = sUrl.replace(/([?&])overview_columns=[^&]*&?/g, "$1").replace(/[?&]$/, "");
+        return sUrl + sHash;
+    }
+
+    function saveMonthlyOverviewColumns(iColumns) {
+        var oData;
+        if (!window.fetch || !window.FormData) {
+            return;
+        }
+        oData = new FormData();
+        oData.append("action", "save_oc");
+        oData.append("oc", String(iColumns));
+        appendAdminCsrfToken(oData);
+        window.fetch(window.location.href, {
+            "method": "POST",
+            "credentials": "same-origin",
+            "headers": getAdminAjaxHeaders(),
+            "body": oData
+        }).then(function (oResponse) {
+            if (oResponse && oResponse.ok) {
+                window.location.replace(getMonthlyOverviewUrlWithoutColumnParam());
+            }
+        }).catch(function (oException) {
+            logAdminException(oException);
+        });
+    }
+
+    function setupMonthlyOverviewColumns() {
+        var oContainer = document.getElementById("monthly-overview-tables");
+        var iCurrentColumns = oContainer ? parseInt(oContainer.getAttribute("data-overview-columns") || "", 10) : 0;
+        var blCondensedTable = oContainer && oContainer.querySelector(".monthly-overview-table.condensed-table") ? true : false;
+        var iViewportWidth = getMonthlyOverviewViewportWidth();
+        var iColumns = getMonthlyOverviewColumnCount(iViewportWidth, blCondensedTable);
+        if (oContainer && window.location.href.indexOf("overview_columns=") !== -1 && iCurrentColumns == iColumns) {
+            window.location.replace(getMonthlyOverviewUrlWithoutColumnParam());
+            return;
+        }
+        if (!oContainer || iCurrentColumns == iColumns) {
+            return;
+        }
+        saveMonthlyOverviewColumns(iColumns);
+    }
+
     function setupModals() {
         var aOpeners = document.querySelectorAll("[data-modal-target]");
         var aModals = document.querySelectorAll(".confirm-dialog");
@@ -3224,6 +3320,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
+        setupMonthlyOverviewColumns();
         setupMenu();
         setupMessages();
         setupFilterFocusButton();
