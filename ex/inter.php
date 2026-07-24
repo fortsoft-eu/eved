@@ -203,8 +203,8 @@ if ($sBdPostAction == "update_subject") {
     }
     $iSubjectId = isset($aPayload["subject_id"]) ? (int)$aPayload["subject_id"] : 0;
     $sSubjectType = payloadValue($aPayload, "subject_type");
-    $sBirthDate = payloadValue($aPayload, "birth_date");
-    $sDeathDate = payloadValue($aPayload, "death_date");
+    $sBirthDate = normalizeInputDate(payloadValue($aPayload, "birth_date"));
+    $sDeathDate = normalizeInputDate(payloadValue($aPayload, "death_date"));
     $sBirthNumber = normalizeBirthNumber(payloadValue($aPayload, "birth_number"));
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
@@ -212,10 +212,10 @@ if ($sBdPostAction == "update_subject") {
     if ($sSubjectType != "" && !in_array($sSubjectType, getSubjectTypes(), true)) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject type."), 400);
     }
-    if ($sBirthDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sBirthDate)) {
+    if ($sBirthDate === false) {
         sendJsonAndExit(array("success" => false, "message" => "Birth date must use YYYY-MM-DD."), 400);
     }
-    if ($sDeathDate != "" && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDeathDate)) {
+    if ($sDeathDate === false) {
         sendJsonAndExit(array("success" => false, "message" => "Death date must use YYYY-MM-DD."), 400);
     }
     if ($sBirthNumber === false) {
@@ -1033,7 +1033,7 @@ $iTime = sendPageHeaders();
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
-<body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-date-input-format="<?php echo html($sDateInputFormat); ?>" data-date-input-pattern="<?php echo html($sDateInputPattern); ?>">
+<body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-date-input-format="<?php echo html($sDateInputFormat); ?>">
   <p class="admin-controls">
 <?php
 

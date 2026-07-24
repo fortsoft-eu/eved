@@ -99,6 +99,215 @@ function dispatchAdminInputEvent(oElement) {
     oElement.dispatchEvent(oEvent);
 }
 
+function padAdminDateTimeNumber(iValue) {
+    return iValue < 10 ? "0" + iValue : "" + iValue;
+}
+
+function createAdminParsedDateTime(iYear, iMonth, iDay, iHour, iMinute, iSecond, blHasTime, blHasSeconds) {
+    var oDate;
+    iYear = parseInt(iYear, 10);
+    iMonth = parseInt(iMonth, 10);
+    iDay = parseInt(iDay, 10);
+    iHour = parseInt(iHour || 0, 10);
+    iMinute = parseInt(iMinute || 0, 10);
+    iSecond = parseInt(iSecond || 0, 10);
+    if (!isFinite(iYear) || !isFinite(iMonth) || !isFinite(iDay) || !isFinite(iHour) || !isFinite(iMinute) || !isFinite(iSecond)) {
+        return null;
+    }
+    if (iYear < 1 || iYear > 9999 || iMonth < 1 || iMonth > 12 || iDay < 1 || iDay > 31 || iHour < 0 || iHour > 23 || iMinute < 0 || iMinute > 59 || iSecond < 0 || iSecond > 59) {
+        return null;
+    }
+    oDate = new Date(0);
+    oDate.setFullYear(iYear, iMonth - 1, iDay);
+    oDate.setHours(iHour, iMinute, iSecond, 0);
+    if (oDate.getFullYear() !== iYear || oDate.getMonth() !== iMonth - 1 || oDate.getDate() !== iDay || oDate.getHours() !== iHour || oDate.getMinutes() !== iMinute || oDate.getSeconds() !== iSecond) {
+        return null;
+    }
+    return {
+        date: oDate,
+        year: iYear,
+        month: iMonth,
+        day: iDay,
+        hour: iHour,
+        minute: iMinute,
+        second: iSecond,
+        hasTime: blHasTime === true,
+        hasSeconds: blHasSeconds === true
+    };
+}
+
+function parseAdminCompactTime(sDigits) {
+    if (!/^\d{4}(\d{2})?$/.test(sDigits || "")) {
+        return null;
+    }
+    return {
+        hour: parseInt(sDigits.substring(0, 2), 10),
+        minute: parseInt(sDigits.substring(2, 4), 10),
+        second: sDigits.length == 6 ? parseInt(sDigits.substring(4, 6), 10) : 0,
+        hasSeconds: sDigits.length == 6
+    };
+}
+
+function parseAdminCompactDateTime(sDigits) {
+    var oTime;
+    if (!/^\d{8}(\d{4}(\d{2})?)?$/.test(sDigits || "")) {
+        return null;
+    }
+    oTime = sDigits.length > 8 ? parseAdminCompactTime(sDigits.substring(8)) : { hour: 0, minute: 0, second: 0, hasSeconds: false };
+    if (!oTime) {
+        return null;
+    }
+    return createAdminParsedDateTime(sDigits.substring(0, 4), sDigits.substring(4, 6), sDigits.substring(6, 8), oTime.hour, oTime.minute, oTime.second, sDigits.length > 8, oTime.hasSeconds);
+}
+
+function parseAdminNumericDateTime(sValue) {
+    var sNormalized = String(sValue || "").replace(/[^\d]+/g, " ").replace(/^\s+|\s+$/g, "");
+    var sDigits = String(sValue || "").replace(/[^\d]+/g, "");
+    var aParts = sNormalized ? sNormalized.split(/ +/) : [];
+    var iHour = 0;
+    var iMinute = 0;
+    var iSecond = 0;
+    var blHasTime = false;
+    var blHasSeconds = false;
+    var oTime;
+    var oParsed = parseAdminCompactDateTime(sDigits);
+    if (oParsed) {
+        return oParsed;
+    }
+    if (aParts.length < 1) {
+        return null;
+    }
+    if (aParts.length == 1) {
+        return parseAdminCompactDateTime(aParts[0]);
+    }
+    if (/^\d{8}$/.test(aParts[0]) && /^\d{4}(\d{2})?$/.test(aParts[1] || "")) {
+        oTime = parseAdminCompactTime(aParts[1]);
+        if (!oTime) {
+            return null;
+        }
+        return createAdminParsedDateTime(aParts[0].substring(0, 4), aParts[0].substring(4, 6), aParts[0].substring(6, 8), oTime.hour, oTime.minute, oTime.second, true, oTime.hasSeconds);
+    }
+    if (aParts.length >= 3 && /^\d{4}$/.test(aParts[0])) {
+        if (typeof aParts[3] != "undefined") {
+            blHasTime = true;
+            if (/^\d{4}(\d{2})?$/.test(aParts[3]) && typeof aParts[4] == "undefined") {
+                oTime = parseAdminCompactTime(aParts[3]);
+                if (!oTime) {
+                    return null;
+                }
+                iHour = oTime.hour;
+                iMinute = oTime.minute;
+                iSecond = oTime.second;
+                blHasSeconds = oTime.hasSeconds;
+            } else {
+                iHour = parseInt(aParts[3], 10);
+                iMinute = typeof aParts[4] != "undefined" ? parseInt(aParts[4], 10) : 0;
+                iSecond = typeof aParts[5] != "undefined" ? parseInt(aParts[5], 10) : 0;
+                blHasSeconds = typeof aParts[5] != "undefined";
+            }
+        }
+        return createAdminParsedDateTime(aParts[0], aParts[1], aParts[2], iHour, iMinute, iSecond, blHasTime, blHasSeconds);
+    }
+    if (aParts.length >= 3 && /^\d{4}$/.test(aParts[2])) {
+        if (typeof aParts[3] != "undefined") {
+            blHasTime = true;
+            if (/^\d{4}(\d{2})?$/.test(aParts[3]) && typeof aParts[4] == "undefined") {
+                oTime = parseAdminCompactTime(aParts[3]);
+                if (!oTime) {
+                    return null;
+                }
+                iHour = oTime.hour;
+                iMinute = oTime.minute;
+                iSecond = oTime.second;
+                blHasSeconds = oTime.hasSeconds;
+            } else {
+                iHour = parseInt(aParts[3], 10);
+                iMinute = typeof aParts[4] != "undefined" ? parseInt(aParts[4], 10) : 0;
+                iSecond = typeof aParts[5] != "undefined" ? parseInt(aParts[5], 10) : 0;
+                blHasSeconds = typeof aParts[5] != "undefined";
+            }
+        }
+        return createAdminParsedDateTime(aParts[2], aParts[1], aParts[0], iHour, iMinute, iSecond, blHasTime, blHasSeconds);
+    }
+    return null;
+}
+
+function parseAdminFlexibleDateTime(sValue) {
+    var sText = String(sValue || "").replace(/\u00a0/g, " ").replace(/([0-9])[Tt]([0-9])/g, "$1 $2").replace(/^\s+|\s+$/g, "");
+    var oParsed;
+    var iTime;
+    var oDate;
+    if (sText == "") {
+        return null;
+    }
+    oParsed = parseAdminNumericDateTime(sText);
+    if (oParsed) {
+        return oParsed;
+    }
+    if (/^[0-9][0-9\s:.,\/-]*$/.test(sText)) {
+        return null;
+    }
+    iTime = Date.parse(sText);
+    if (isNaN(iTime)) {
+        return null;
+    }
+    oDate = new Date(iTime);
+    return createAdminParsedDateTime(oDate.getFullYear(), oDate.getMonth() + 1, oDate.getDate(), oDate.getHours(), oDate.getMinutes(), oDate.getSeconds(), /[0-9][Tt :.,-][0-9]{1,2}[ :.,-]?[0-9]{0,2}/.test(sText), /[0-9][:. -][0-9]{1,2}[^\d]+[0-9]{1,2}/.test(sText) || /[0-9]{14}/.test(sText));
+}
+
+function formatAdminParsedDate(oParsed) {
+    return oParsed.year + "-" + padAdminDateTimeNumber(oParsed.month) + "-" + padAdminDateTimeNumber(oParsed.day);
+}
+
+function formatAdminParsedDateTime(oParsed, blDateTime) {
+    var sValue = formatAdminParsedDate(oParsed);
+    if (!blDateTime) {
+        return sValue;
+    }
+    sValue += " " + padAdminDateTimeNumber(oParsed.hour) + ":" + padAdminDateTimeNumber(oParsed.minute);
+    if (oParsed.hasSeconds || oParsed.second != 0) {
+        sValue += ":" + padAdminDateTimeNumber(oParsed.second);
+    }
+    return sValue;
+}
+
+function normalizeAdminDateTimeInput(oInput, sValueType, blDispatch) {
+    var sOldValue;
+    var oParsed;
+    var sNewValue;
+    if (!oInput) {
+        return;
+    }
+    sOldValue = oInput.value || "";
+    if (sOldValue.replace(/^\s+|\s+$/g, "") == "") {
+        return;
+    }
+    oParsed = parseAdminFlexibleDateTime(sOldValue);
+    if (!oParsed) {
+        return;
+    }
+    sNewValue = formatAdminParsedDateTime(oParsed, sValueType == "datetime");
+    if (sOldValue != sNewValue) {
+        oInput.value = sNewValue;
+        if (blDispatch) {
+            dispatchAdminInputEvent(oInput);
+        }
+    }
+}
+
+function normalizeAdminDateTimeInputs(oParent) {
+    var aInputs = oParent && oParent.querySelectorAll ? oParent.querySelectorAll("input[data-date-input-kind], input[data-value-type=\"date\"], input[data-value-type=\"datetime\"]") : [];
+    var sValueType;
+    for (var iI = 0; iI < aInputs.length; iI += 1) {
+        sValueType = aInputs[iI].getAttribute("data-value-type") || aInputs[iI].getAttribute("data-date-input-kind") || "date";
+        normalizeAdminDateTimeInput(aInputs[iI], sValueType, false);
+    }
+}
+
+document.addEventListener("submit", function (oEvent) {
+    normalizeAdminDateTimeInputs(oEvent.target);
+}, true);
+
 function refreshAdminTableFilter() {
     dispatchAdminInputEvent(document.querySelector(".js-table-filter"));
 }
@@ -802,11 +1011,18 @@ document.addEventListener("DOMContentLoaded", function () {
     var oRows = oDialog ? oDialog.querySelector(".js-complex-filter-rows") : null;
     var iDraftTimer = 0;
     var oRowTemplate = null;
+    var iComplexFilterCalendarFirstDay = 1;
     var closeOnEscape = function (oEvent) {
         if (oEvent.key == "Escape") {
             closeDialog();
         }
     };
+    if (document.body) {
+        iComplexFilterCalendarFirstDay = parseInt(document.body.getAttribute("data-calendar-first-day") || "1", 10);
+    }
+    if (isNaN(iComplexFilterCalendarFirstDay) || iComplexFilterCalendarFirstDay < 0 || iComplexFilterCalendarFirstDay > 6) {
+        iComplexFilterCalendarFirstDay = 1;
+    }
 
     function getMatchValue() {
         var oChecked = oForm ? oForm.querySelector("input[name=\"complex_filter_match\"]:checked") : null;
@@ -937,27 +1153,255 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function normalizeComplexFilterInputValue(sValue, sValueType) {
         var sText = sValue === null || typeof sValue == "undefined" ? "" : String(sValue);
-        if (sValueType == "date" && sText.length >= 10) {
-            return sText.substring(0, 10);
-        }
-        if (sValueType == "datetime" && sText.length >= 16) {
-            return sText.replace(" ", "T").substring(0, 16);
+        var oParsed;
+        if (isComplexFilterDateValueType(sValueType)) {
+            oParsed = parseAdminFlexibleDateTime(sText);
+            return oParsed ? formatAdminParsedDateTime(oParsed, sValueType == "datetime") : sText;
         }
         return sText;
+    }
+
+    function isComplexFilterDateValueType(sValueType) {
+        return sValueType == "date" || sValueType == "datetime";
+    }
+
+    function isComplexFilterDateField(oValue) {
+        var oParent = oValue ? oValue.parentNode : null;
+        return !!(oParent && (" " + oParent.className + " ").indexOf(" complex-filter-date-field ") !== -1);
+    }
+
+    function getComplexFilterValueContainer(oValue) {
+        return isComplexFilterDateField(oValue) ? oValue.parentNode : oValue;
+    }
+
+    function getComplexFilterValueFromControl(oControl) {
+        var oValue = oControl && oControl.querySelector ? oControl.querySelector(".js-complex-filter-value") : null;
+        return oValue || oControl;
+    }
+
+    function replaceComplexFilterValueControl(oValue, oNewControl) {
+        var oContainer = getComplexFilterValueContainer(oValue);
+        if (!oContainer || !oContainer.parentNode) {
+            return getComplexFilterValueFromControl(oNewControl);
+        }
+        oContainer.parentNode.replaceChild(oNewControl, oContainer);
+        return getComplexFilterValueFromControl(oNewControl);
+    }
+
+    function padComplexFilterIsoDateNumber(iValue) {
+        return iValue < 10 ? "0" + iValue : "" + iValue;
+    }
+
+    function formatComplexFilterIsoDate(oDate) {
+        return oDate.getFullYear() + "-" + padComplexFilterIsoDateNumber(oDate.getMonth() + 1) + "-" + padComplexFilterIsoDateNumber(oDate.getDate());
+    }
+
+    function parseComplexFilterIsoDate(sValue) {
+        var oParsed = parseAdminFlexibleDateTime(sValue);
+        return oParsed ? oParsed.date : null;
+    }
+
+    function getComplexFilterInputDateValue(oInput) {
+        var oParsed = parseAdminFlexibleDateTime(oInput.value || "");
+        return oParsed ? formatAdminParsedDate(oParsed) : (oInput.value || "").substring(0, 10);
+    }
+
+    function setComplexFilterInputDateValue(oInput, sDate) {
+        var sValue = oInput.value || "";
+        var oParsed = parseAdminFlexibleDateTime(sValue);
+        var sTime = "00:00";
+        if (oInput.getAttribute("data-value-type") == "datetime") {
+            if (oParsed && oParsed.hasTime) {
+                sTime = padAdminDateTimeNumber(oParsed.hour) + ":" + padAdminDateTimeNumber(oParsed.minute);
+                if (oParsed.hasSeconds || oParsed.second != 0) {
+                    sTime += ":" + padAdminDateTimeNumber(oParsed.second);
+                }
+            }
+            oInput.value = sDate + " " + sTime;
+        } else {
+            oInput.value = sDate;
+        }
+        dispatchAdminInputEvent(oInput);
+    }
+
+    function renderComplexFilterDateCalendar(oInput, oCalendar, oMonthDate) {
+        var aDayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        var oSelectedDate = parseComplexFilterIsoDate(getComplexFilterInputDateValue(oInput));
+        var iYear = oMonthDate.getFullYear();
+        var iMonth = oMonthDate.getMonth();
+        var iFirstDay = new Date(iYear, iMonth, 1).getDay();
+        var iOffset = (iFirstDay - iComplexFilterCalendarFirstDay + 7) % 7;
+        var iDays = new Date(iYear, iMonth + 1, 0).getDate();
+        var oHeader = document.createElement("div");
+        var oPrev = document.createElement("button");
+        var oNext = document.createElement("button");
+        var oTitle = document.createElement("span");
+        var oGrid = document.createElement("div");
+        var iI;
+        var oEmpty;
+        var oDayLabel;
+        var oDateButton;
+        var oDate;
+        var sDate;
+        oCalendar.innerHTML = "";
+        oCalendar._currentDate = new Date(iYear, iMonth, 1);
+        oHeader.className = "subject-date-calendar-header";
+        oPrev.type = "button";
+        oPrev.className = "subject-date-calendar-nav";
+        oPrev.textContent = "<";
+        oNext.type = "button";
+        oNext.className = "subject-date-calendar-nav";
+        oNext.textContent = ">";
+        oTitle.className = "subject-date-calendar-title";
+        oTitle.textContent = iYear + "-" + padComplexFilterIsoDateNumber(iMonth + 1);
+        oGrid.className = "subject-date-calendar-grid";
+        oPrev.addEventListener("click", function () {
+            renderComplexFilterDateCalendar(oInput, oCalendar, new Date(iYear, iMonth - 1, 1));
+            positionComplexFilterDateCalendar(oInput, oCalendar);
+        });
+        oNext.addEventListener("click", function () {
+            renderComplexFilterDateCalendar(oInput, oCalendar, new Date(iYear, iMonth + 1, 1));
+            positionComplexFilterDateCalendar(oInput, oCalendar);
+        });
+        oHeader.appendChild(oPrev);
+        oHeader.appendChild(oTitle);
+        oHeader.appendChild(oNext);
+        for (iI = 0; iI < 7; iI += 1) {
+            oDayLabel = document.createElement("div");
+            oDayLabel.className = "subject-date-calendar-day";
+            oDayLabel.textContent = aDayLabels[(iComplexFilterCalendarFirstDay + iI) % 7];
+            oGrid.appendChild(oDayLabel);
+        }
+        for (iI = 0; iI < iOffset; iI += 1) {
+            oEmpty = document.createElement("span");
+            oEmpty.className = "subject-date-calendar-empty";
+            oGrid.appendChild(oEmpty);
+        }
+        for (iI = 1; iI <= iDays; iI += 1) {
+            oDate = new Date(iYear, iMonth, iI);
+            sDate = formatComplexFilterIsoDate(oDate);
+            oDateButton = document.createElement("button");
+            oDateButton.type = "button";
+            oDateButton.className = "subject-date-calendar-date" + (oSelectedDate && formatComplexFilterIsoDate(oSelectedDate) == sDate ? " subject-date-calendar-selected" : "");
+            oDateButton.setAttribute("data-date", sDate);
+            oDateButton.textContent = "" + iI;
+            oDateButton.addEventListener("click", function () {
+                setComplexFilterInputDateValue(oInput, this.getAttribute("data-date") || "");
+                oCalendar.style.display = "none";
+            });
+            oGrid.appendChild(oDateButton);
+        }
+        oCalendar.appendChild(oHeader);
+        oCalendar.appendChild(oGrid);
+    }
+
+    function positionComplexFilterDateCalendar(oInput, oCalendar) {
+        var oRect = oInput.getBoundingClientRect();
+        var iWidth = oCalendar.offsetWidth || 238;
+        var iHeight = oCalendar.offsetHeight || 220;
+        var iLeft = Math.max(4, Math.min(oRect.left, window.innerWidth - iWidth - 4));
+        var iTop = oRect.bottom + 2;
+        if (iTop + iHeight > window.innerHeight - 4) {
+            iTop = oRect.top - iHeight - 2;
+        }
+        if (iTop < 4) {
+            iTop = 4;
+        }
+        oCalendar.style.left = iLeft + "px";
+        oCalendar.style.top = iTop + "px";
+    }
+
+    function showComplexFilterDateCalendar(oInput, oCalendar) {
+        var oDate = parseComplexFilterIsoDate(getComplexFilterInputDateValue(oInput)) || oCalendar._currentDate || new Date();
+        renderComplexFilterDateCalendar(oInput, oCalendar, new Date(oDate.getFullYear(), oDate.getMonth(), 1));
+        if (!oCalendar.parentNode) {
+            document.body.appendChild(oCalendar);
+        }
+        oCalendar.style.display = "";
+        positionComplexFilterDateCalendar(oInput, oCalendar);
+    }
+
+    function removeComplexFilterDateCalendars() {
+        var aCalendars = document.querySelectorAll(".complex-filter-date-calendar");
+        for (var iI = 0; iI < aCalendars.length; iI += 1) {
+            if (aCalendars[iI].parentNode) {
+                aCalendars[iI].parentNode.removeChild(aCalendars[iI]);
+            }
+        }
+    }
+
+    function prepareComplexFilterDateInput(oInput, sValueType) {
+        oInput.type = "text";
+        oInput.placeholder = sValueType == "datetime" ? "YYYY-MM-DD HH:mm" : "YYYY-MM-DD";
+        oInput.maxLength = 19;
+        oInput.autocomplete = "off";
+        oInput.title = sValueType == "datetime" ? "Use YYYY-MM-DD HH:mm." : "Use YYYY-MM-DD.";
+    }
+
+    function bindComplexFilterDateCalendar(oInput, oButton, oCalendar, oWrapper) {
+        if (!oInput || !oButton || !oCalendar || !oWrapper || oInput.getAttribute("data-complex-filter-date-bound") == "1") {
+            return;
+        }
+        oInput.setAttribute("data-complex-filter-date-bound", "1");
+        oCalendar.addEventListener("mousedown", function (oEvent) {
+            oEvent.preventDefault();
+        });
+        oButton.addEventListener("click", function (oEvent) {
+            oEvent.preventDefault();
+            if (oCalendar.style.display == "none") {
+                showComplexFilterDateCalendar(oInput, oCalendar);
+            } else {
+                oCalendar.style.display = "none";
+            }
+        });
+        oInput.addEventListener("focus", function () {
+            showComplexFilterDateCalendar(oInput, oCalendar);
+        });
+        oInput.addEventListener("input", function () {
+            var oDate = parseComplexFilterIsoDate(getComplexFilterInputDateValue(oInput));
+            if (oDate && oCalendar.style.display != "none") {
+                renderComplexFilterDateCalendar(oInput, oCalendar, new Date(oDate.getFullYear(), oDate.getMonth(), 1));
+                positionComplexFilterDateCalendar(oInput, oCalendar);
+            }
+        });
+        oInput.addEventListener("keydown", function (oEvent) {
+            if (oEvent.key == "Escape") {
+                oCalendar.style.display = "none";
+            }
+        });
+        oWrapper.addEventListener("focusout", function () {
+            normalizeAdminDateTimeInput(oInput, oInput.getAttribute("data-value-type") || "date", true);
+            window.setTimeout(function () {
+                if (!oWrapper.contains(document.activeElement) && !oCalendar.contains(document.activeElement)) {
+                    oCalendar.style.display = "none";
+                }
+            }, 0);
+        });
+        window.addEventListener("resize", function () {
+            if (oCalendar.style.display != "none") {
+                positionComplexFilterDateCalendar(oInput, oCalendar);
+            }
+        });
     }
 
     function updateComplexFilterInputType(oInput, sValueType) {
         if (!oInput) {
             return;
         }
-        if (sValueType == "date") {
-            oInput.type = "date";
-        } else if (sValueType == "datetime") {
-            oInput.type = "datetime-local";
+        if (isComplexFilterDateValueType(sValueType)) {
+            prepareComplexFilterDateInput(oInput, sValueType);
         } else if (sValueType == "number") {
             oInput.type = "number";
+            oInput.removeAttribute("pattern");
+            oInput.removeAttribute("placeholder");
+            oInput.removeAttribute("maxlength");
+            oInput.removeAttribute("title");
         } else {
             oInput.type = "text";
+            oInput.removeAttribute("pattern");
+            oInput.removeAttribute("placeholder");
+            oInput.removeAttribute("maxlength");
+            oInput.removeAttribute("title");
         }
         if (sValueType == "country") {
             oInput.setAttribute("list", "country-list");
@@ -1084,36 +1528,69 @@ document.addEventListener("DOMContentLoaded", function () {
         return oInput;
     }
 
+    function createComplexFilterDateField(sValue, sValueType) {
+        var oWrapper = document.createElement("div");
+        var oInput = document.createElement("input");
+        var oButton = document.createElement("button");
+        var oCalendar = document.createElement("div");
+        oWrapper.className = "complex-filter-date-field";
+        oInput.name = "complex_filter_value[]";
+        oInput.className = "js-complex-filter-value";
+        oInput.setAttribute("data-value-type", sValueType);
+        prepareComplexFilterDateInput(oInput, sValueType);
+        oInput.value = normalizeComplexFilterInputValue(sValue, sValueType);
+        oButton.type = "button";
+        oButton.className = "complex-filter-date-button subject-date-button";
+        oButton.setAttribute("aria-label", "Open calendar");
+        oButton.textContent = "\u25BE";
+        oCalendar.className = "subject-date-calendar complex-filter-date-calendar";
+        oCalendar.style.display = "none";
+        bindComplexFilterDateCalendar(oInput, oButton, oCalendar, oWrapper);
+        oWrapper.appendChild(oInput);
+        oWrapper.appendChild(oButton);
+        return oWrapper;
+    }
+
     function ensureComplexFilterValueControl(oRow) {
         var sValueType = getRowValueType(oRow);
         var oValue = oRow ? oRow.querySelector(".js-complex-filter-value") : null;
         var oNewValue;
         var sCurrentValue;
         var sTagName;
+        var blDateField;
         if (!oRow || !oValue) {
             return oValue;
         }
         sCurrentValue = oValue.value;
         sTagName = oValue.tagName ? oValue.tagName.toLowerCase() : "";
-        if (sValueType == "boolean" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "boolean")) {
+        blDateField = isComplexFilterDateField(oValue);
+        if (sValueType == "boolean" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "boolean" || blDateField)) {
             oNewValue = createComplexFilterBooleanSelect(sCurrentValue);
-            oValue.parentNode.replaceChild(oNewValue, oValue);
+            oNewValue = replaceComplexFilterValueControl(oValue, oNewValue);
             oValue = oNewValue;
-        } else if (sValueType == "group" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "group")) {
+        } else if (sValueType == "group" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "group" || blDateField)) {
             oNewValue = createComplexFilterGroupSelect(sCurrentValue);
-            oValue.parentNode.replaceChild(oNewValue, oValue);
+            oNewValue = replaceComplexFilterValueControl(oValue, oNewValue);
             oValue = oNewValue;
-        } else if (sValueType == "subject_type" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "subject_type")) {
+        } else if (sValueType == "subject_type" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "subject_type" || blDateField)) {
             oNewValue = createComplexFilterSubjectTypeSelect(sCurrentValue);
-            oValue.parentNode.replaceChild(oNewValue, oValue);
+            oNewValue = replaceComplexFilterValueControl(oValue, oNewValue);
             oValue = oNewValue;
-        } else if (sValueType == "address_type" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "address_type")) {
+        } else if (sValueType == "address_type" && (sTagName != "select" || oValue.getAttribute("data-value-type") != "address_type" || blDateField)) {
             oNewValue = createComplexFilterAddressTypeSelect(sCurrentValue);
-            oValue.parentNode.replaceChild(oNewValue, oValue);
+            oNewValue = replaceComplexFilterValueControl(oValue, oNewValue);
             oValue = oNewValue;
-        } else if (!isComplexFilterSelectValueType(sValueType) && sTagName == "select") {
+        } else if (isComplexFilterDateValueType(sValueType) && !blDateField) {
+            oNewValue = createComplexFilterDateField(sCurrentValue, sValueType);
+            oNewValue = replaceComplexFilterValueControl(oValue, oNewValue);
+            oValue = oNewValue;
+        } else if (isComplexFilterDateValueType(sValueType) && blDateField) {
+            oValue.setAttribute("data-value-type", sValueType);
+            prepareComplexFilterDateInput(oValue, sValueType);
+            oValue.value = normalizeComplexFilterInputValue(oValue.value, sValueType);
+        } else if (!isComplexFilterSelectValueType(sValueType) && (sTagName == "select" || blDateField)) {
             oNewValue = createComplexFilterTextInput(sCurrentValue, sValueType);
-            oValue.parentNode.replaceChild(oNewValue, oValue);
+            oNewValue = replaceComplexFilterValueControl(oValue, oNewValue);
             oValue = oNewValue;
         } else if (sTagName == "input") {
             oValue.setAttribute("data-value-type", sValueType);
@@ -1399,6 +1876,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         oTemplate = ensureRowTemplate();
+        removeComplexFilterDateCalendars();
         oRows.innerHTML = "";
         oRow = oTemplate ? oTemplate.cloneNode(true) : null;
         if (!oRow) {
@@ -1430,6 +1908,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         document.removeEventListener("keydown", closeOnEscape);
         saveDraftNow();
+        removeComplexFilterDateCalendars();
         closeAdminDialogElement(oDialog);
         focusAdminElement(oOpen);
     }
@@ -3338,7 +3817,6 @@ document.addEventListener("DOMContentLoaded", function () {
     var aSubjectButtons = document.querySelectorAll(".js-add-subject, .js-add-subject-nickname, .js-add-subject-address, .js-add-subject-group, .js-add-subject-note, .js-edit-subject, .js-edit-subject-portal, .js-edit-subject-nickname, .js-edit-subject-address, .js-edit-subject-group, .js-edit-subject-note, .js-delete-subject, .js-delete-subject-contact, .js-delete-subject-nickname, .js-delete-subject-address, .js-delete-subject-group, .js-delete-subject-note");
     var iSubjectCalendarFirstDay = 1;
     var sSubjectDateInputFormat = "YYYY-MM-DD";
-    var sSubjectDateInputPattern = "\\d{4}-\\d{2}-\\d{2}";
     var blHideSubjectBirthNumber = false;
     var aSubjectCountryCodes = ("AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CS CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW").split(" ");
     var aSubjectCountryOptions = null;
@@ -3348,7 +3826,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (document.body) {
         iSubjectCalendarFirstDay = parseInt(document.body.getAttribute("data-calendar-first-day") || "1", 10);
         sSubjectDateInputFormat = document.body.getAttribute("data-date-input-format") || sSubjectDateInputFormat;
-        sSubjectDateInputPattern = document.body.getAttribute("data-date-input-pattern") || sSubjectDateInputPattern;
         blHideSubjectBirthNumber = document.body.getAttribute("data-hide-subject-birth-number") == "1";
     }
     if (isNaN(iSubjectCalendarFirstDay) || iSubjectCalendarFirstDay < 0 || iSubjectCalendarFirstDay > 6) {
@@ -3413,23 +3890,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function parseSubjectIsoDate(sValue) {
-        var aMatch;
-        var iYear;
-        var iMonth;
-        var iDay;
-        var oDate;
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(sValue || "")) {
-            return null;
-        }
-        aMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(sValue);
-        iYear = parseInt(aMatch[1], 10);
-        iMonth = parseInt(aMatch[2], 10);
-        iDay = parseInt(aMatch[3], 10);
-        oDate = new Date(iYear, iMonth - 1, iDay);
-        if (oDate.getFullYear() !== iYear || oDate.getMonth() !== iMonth - 1 || oDate.getDate() !== iDay) {
-            return null;
-        }
-        return oDate;
+        var oParsed = parseAdminFlexibleDateTime(sValue);
+        return oParsed ? oParsed.date : null;
     }
 
     function renderSubjectDateCalendar(oInput, oCalendar, oMonthDate) {
@@ -3540,10 +4002,10 @@ document.addEventListener("DOMContentLoaded", function () {
         oInput.type = "text";
         oInput.name = sName;
         oInput.value = sValue || "";
-        oInput.pattern = sSubjectDateInputPattern;
         oInput.placeholder = sSubjectDateInputFormat;
-        oInput.maxLength = 10;
+        oInput.maxLength = 19;
         oInput.autocomplete = "off";
+        oInput.setAttribute("data-date-input-kind", "date");
         oInput.setAttribute("inputmode", "numeric");
         oInput.title = "Use " + sSubjectDateInputFormat + ".";
         oButton.type = "button";
@@ -3579,6 +4041,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
         oWrapper.addEventListener("focusout", function () {
+            normalizeAdminDateTimeInput(oInput, "date", false);
             window.setTimeout(function () {
                 if (!oWrapper.contains(document.activeElement) && !oCalendar.contains(document.activeElement)) {
                     oCalendar.style.display = "none";

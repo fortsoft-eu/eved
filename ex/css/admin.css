@@ -622,6 +622,27 @@ table {
     width: 100%;
 }
 
+.complex-filter-date-field {
+    box-sizing: border-box;
+    display: flex;
+    min-width: 0;
+    width: 100%;
+}
+
+.complex-filter-row .complex-filter-date-field input[type="text"] {
+    margin-top: 0;
+    min-width: 0;
+    width: calc(100% - 34px);
+}
+
+.complex-filter-date-button {
+    border: 1px solid #C0C0C0;
+    box-sizing: border-box;
+    margin: 0 0 0 4px;
+    padding: 0;
+    width: 30px;
+}
+
 .complex-filter-row .js-complex-filter-operator[aria-hidden="true"] {
     visibility: hidden;
 }

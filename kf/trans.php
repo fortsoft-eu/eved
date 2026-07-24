@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("kf_csrf_token", $blJsonResponse);
     if ($sAction == "save_transaction") {
         $iId = (int)getPostedTrimmedValue("id", "0");
-        $sDate = getPostedTrimmedValue("transaction_date");
+        $sDate = normalizeInputDate(getPostedTrimmedValue("transaction_date"));
         $iFinanceTypeId = (int)getPostedTrimmedValue("finance_type_id", "0");
         $fAmount = parseAmount(getPostedTrimmedValue("amount"));
         $sCurrency = getPostedCurrency();
@@ -34,7 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $oStatement = $oPdo->prepare("SELECT id, type_kind FROM kf_fin_types WHERE id = :id AND type_kind IN ('income', 'expense')");
         $oStatement->execute(array("id" => $iFinanceTypeId));
         $aType = $oStatement->fetch();
-        if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDate) || !$aType || $fAmount === null || $fAmount <= 0 || !isCurrencyAvailable($oPdo, $sCurrency)) {
+        if ($sDate === false || $sDate == "" || !$aType || $fAmount === null || $fAmount <= 0 || !isCurrencyAvailable($oPdo, $sCurrency)) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The transaction could not be saved. Check the date, type, and amount."), 400);
             }

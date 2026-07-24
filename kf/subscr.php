@@ -94,6 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $sCurrency = getPostedCurrency();
         $sBillingPeriod = getPostedTrimmedValue("billing_period", "monthly");
         $sNextDueAt = getPostedTrimmedValue("next_due_at");
+        $sNextDueAtForDatabase = $sNextDueAt != "" ? normalizeInputDateTimeForDatabase($sNextDueAt) : null;
         $sCounterparty = getPostedTrimmedValue("counterparty");
         $sNote = getPostedTrimmedValue("note");
         $iIsActive = getPostedTrimmedValue("is_active") == "1" ? 1 : 0;
@@ -115,14 +116,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
         }
         if ($sName == "" || !$aType || $fAmount === null || $fAmount <= 0 || !isset($aBillingPeriods[$sBillingPeriod])
-            || ($sNextDueAt != "" && !parseSubscriptionDueAt($sNextDueAt)) || !isCurrencyAvailable($oPdo, $sCurrency)) {
+            || $sNextDueAtForDatabase === false || !isCurrencyAvailable($oPdo, $sCurrency)) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The subscription could not be saved. Check the name, type, amount, period, and next due date and time."), 400);
             }
             redirect(getCurrentScriptName());
         }
         $fSignedAmount = $aType["type_kind"] == "expense" ? -abs($fAmount) : abs($fAmount);
-        $sNextDueAtForDatabase = $sNextDueAt != "" ? formatSubscriptionDueForDatabase($sNextDueAt) : null;
         $iBillingDay = getSubscriptionBillingDayForSave($sNextDueAtForDatabase, $sBillingPeriod, $aCurrentSubscription);
         try {
             if (!$blNewSubscription) {

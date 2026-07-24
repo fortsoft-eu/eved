@@ -25,6 +25,180 @@ function getCondensedTableClass() {
     return isDesktop() ? "" : " condensed-table";
 }
 
+function parseInputDateTimeFromParts($iYear, $iMonth, $iDay, $iHour = 0, $iMinute = 0, $iSecond = 0) {
+    $iYear = (int)$iYear;
+    $iMonth = (int)$iMonth;
+    $iDay = (int)$iDay;
+    $iHour = (int)$iHour;
+    $iMinute = (int)$iMinute;
+    $iSecond = (int)$iSecond;
+    if ($iYear < 1 || $iYear > 9999 || !checkdate($iMonth, $iDay, $iYear)) {
+        return null;
+    }
+    if ($iHour < 0 || $iHour > 23 || $iMinute < 0 || $iMinute > 59 || $iSecond < 0 || $iSecond > 59) {
+        return null;
+    }
+    $sDateTime = sprintf("%04d-%02d-%02d %02d:%02d:%02d", $iYear, $iMonth, $iDay, $iHour, $iMinute, $iSecond);
+    $oDateTime = DateTimeImmutable::createFromFormat("!Y-m-d H:i:s", $sDateTime);
+    if (!$oDateTime || $oDateTime->format("Y-m-d H:i:s") != $sDateTime) {
+        return null;
+    }
+    return $oDateTime;
+}
+
+function parseInputCompactTime($sDigits) {
+    $sDigits = (string)$sDigits;
+    if (!preg_match("/^[0-9]{4}([0-9]{2})?$/", $sDigits)) {
+        return null;
+    }
+    return array(
+        "hour" => (int)substr($sDigits, 0, 2),
+        "minute" => (int)substr($sDigits, 2, 2),
+        "second" => strlen($sDigits) == 6 ? (int)substr($sDigits, 4, 2) : 0
+    );
+}
+
+function parseInputCompactDateTime($sDigits) {
+    $sDigits = (string)$sDigits;
+    if (!preg_match("/^[0-9]{8}([0-9]{4}([0-9]{2})?)?$/", $sDigits)) {
+        return null;
+    }
+    $aTime = strlen($sDigits) > 8 ? parseInputCompactTime(substr($sDigits, 8)) : array("hour" => 0, "minute" => 0, "second" => 0);
+    if (!$aTime) {
+        return null;
+    }
+    return parseInputDateTimeFromParts(substr($sDigits, 0, 4), substr($sDigits, 4, 2), substr($sDigits, 6, 2), $aTime["hour"], $aTime["minute"], $aTime["second"]);
+}
+
+function parseInputDateTimeNumeric($sValue) {
+    $sNormalized = trim(preg_replace("/[^0-9]+/", " ", (string)$sValue));
+    $sDigits = preg_replace("/[^0-9]+/", "", (string)$sValue);
+    $aParts = $sNormalized == "" ? array() : preg_split("/ +/", $sNormalized);
+    $iHour = 0;
+    $iMinute = 0;
+    $iSecond = 0;
+    $aTime = null;
+    $oDateTime = parseInputCompactDateTime($sDigits);
+    if ($oDateTime) {
+        return $oDateTime;
+    }
+    if (!$aParts) {
+        return null;
+    }
+    if (count($aParts) == 1) {
+        return parseInputCompactDateTime($aParts[0]);
+    }
+    if (preg_match("/^[0-9]{8}$/", $aParts[0]) && isset($aParts[1]) && preg_match("/^[0-9]{4}([0-9]{2})?$/", $aParts[1])) {
+        $aTime = parseInputCompactTime($aParts[1]);
+        if (!$aTime) {
+            return null;
+        }
+        return parseInputDateTimeFromParts(substr($aParts[0], 0, 4), substr($aParts[0], 4, 2), substr($aParts[0], 6, 2), $aTime["hour"], $aTime["minute"], $aTime["second"]);
+    }
+    if (count($aParts) >= 3 && preg_match("/^[0-9]{4}$/", $aParts[0])) {
+        if (isset($aParts[3])) {
+            if (preg_match("/^[0-9]{4}([0-9]{2})?$/", $aParts[3]) && !isset($aParts[4])) {
+                $aTime = parseInputCompactTime($aParts[3]);
+                if (!$aTime) {
+                    return null;
+                }
+                $iHour = $aTime["hour"];
+                $iMinute = $aTime["minute"];
+                $iSecond = $aTime["second"];
+            } else {
+                $iHour = (int)$aParts[3];
+                $iMinute = isset($aParts[4]) ? (int)$aParts[4] : 0;
+                $iSecond = isset($aParts[5]) ? (int)$aParts[5] : 0;
+            }
+        }
+        return parseInputDateTimeFromParts($aParts[0], $aParts[1], $aParts[2], $iHour, $iMinute, $iSecond);
+    }
+    if (count($aParts) >= 3 && preg_match("/^[0-9]{4}$/", $aParts[2])) {
+        if (isset($aParts[3])) {
+            if (preg_match("/^[0-9]{4}([0-9]{2})?$/", $aParts[3]) && !isset($aParts[4])) {
+                $aTime = parseInputCompactTime($aParts[3]);
+                if (!$aTime) {
+                    return null;
+                }
+                $iHour = $aTime["hour"];
+                $iMinute = $aTime["minute"];
+                $iSecond = $aTime["second"];
+            } else {
+                $iHour = (int)$aParts[3];
+                $iMinute = isset($aParts[4]) ? (int)$aParts[4] : 0;
+                $iSecond = isset($aParts[5]) ? (int)$aParts[5] : 0;
+            }
+        }
+        return parseInputDateTimeFromParts($aParts[2], $aParts[1], $aParts[0], $iHour, $iMinute, $iSecond);
+    }
+    return null;
+}
+
+function parseInputDateTime($mValue) {
+    $sValue = trim(str_replace("\xC2\xA0", " ", (string)$mValue));
+    $aParsed = array();
+    $iHour = 0;
+    $iMinute = 0;
+    $iSecond = 0;
+    $oDateTime = null;
+    if ($sValue == "") {
+        return null;
+    }
+    $sValue = preg_replace("/([0-9])[Tt]([0-9])/", "$1 $2", $sValue);
+    $sValue = preg_replace("/ +/", " ", $sValue);
+    $oDateTime = parseInputDateTimeNumeric($sValue);
+    if ($oDateTime) {
+        return $oDateTime;
+    }
+    $aParsed = date_parse($sValue);
+    if (!is_array($aParsed) || (isset($aParsed["error_count"]) && (int)$aParsed["error_count"] > 0)) {
+        return null;
+    }
+    if (!isset($aParsed["year"], $aParsed["month"], $aParsed["day"]) || $aParsed["year"] === false || $aParsed["month"] === false || $aParsed["day"] === false) {
+        return null;
+    }
+    if (isset($aParsed["hour"]) && $aParsed["hour"] !== false) {
+        $iHour = (int)$aParsed["hour"];
+    }
+    if (isset($aParsed["minute"]) && $aParsed["minute"] !== false) {
+        $iMinute = (int)$aParsed["minute"];
+    }
+    if (isset($aParsed["second"]) && $aParsed["second"] !== false) {
+        $iSecond = (int)$aParsed["second"];
+    }
+    return parseInputDateTimeFromParts($aParsed["year"], $aParsed["month"], $aParsed["day"], $iHour, $iMinute, $iSecond);
+}
+
+function normalizeInputDate($mValue) {
+    $sValue = trim((string)$mValue);
+    if ($sValue == "") {
+        return "";
+    }
+    $oDateTime = parseInputDateTime($sValue);
+    return $oDateTime ? $oDateTime->format("Y-m-d") : false;
+}
+
+function normalizeInputDateTime($mValue) {
+    $sValue = trim((string)$mValue);
+    if ($sValue == "") {
+        return "";
+    }
+    $oDateTime = parseInputDateTime($sValue);
+    if (!$oDateTime) {
+        return false;
+    }
+    return (int)$oDateTime->format("s") == 0 ? $oDateTime->format("Y-m-d H:i") : $oDateTime->format("Y-m-d H:i:s");
+}
+
+function normalizeInputDateTimeForDatabase($mValue) {
+    $sValue = trim((string)$mValue);
+    if ($sValue == "") {
+        return "";
+    }
+    $oDateTime = parseInputDateTime($sValue);
+    return $oDateTime ? $oDateTime->format("Y-m-d H:i:s") : false;
+}
+
 function getEvedUaFingerprintText($aData, $sName) {
     if (!isset($aData[$sName])) {
         return "";

@@ -747,6 +747,96 @@ tr:nth-child(even) {
     width: calc(100% - 32px);
 }
 
+.subject-date-field {
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 16px;
+    position: relative;
+    width: calc(100% - 32px);
+}
+
+.subject-edit-dialog .subject-date-field input[type="text"] {
+    margin: 0;
+    width: calc(100% - 34px);
+}
+
+.subject-date-button {
+    border: 1px solid #C0C0C0;
+    box-sizing: border-box;
+    margin: 0 0 0 4px;
+    padding: 0;
+    width: 30px;
+}
+
+.subject-date-calendar {
+    background: #FFF;
+    border: 1px solid #C0C0C0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    left: 0;
+    padding: 6px;
+    position: fixed;
+    top: 0;
+    width: 238px;
+    z-index: 9;
+}
+
+.subject-date-calendar-header {
+    align-items: center;
+    display: flex;
+    gap: 6px;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.subject-date-calendar-title {
+    font-weight: bold;
+    text-align: center;
+    width: 142px;
+}
+
+.subject-date-calendar-nav {
+    border: 1px solid #C0C0C0;
+    margin: 0;
+    padding: 0;
+    width: 28px;
+}
+
+.subject-date-calendar-grid {
+    display: grid;
+    gap: 2px;
+    grid-template-columns: repeat(7, 1fr);
+}
+
+.subject-date-calendar-day {
+    color: #666;
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.subject-date-calendar-empty {
+    min-height: 24px;
+}
+
+.subject-date-calendar-date {
+    border: 1px solid transparent;
+    margin: 0;
+    min-height: 24px;
+    padding: 0;
+    width: auto;
+}
+
+.subject-date-calendar-date:hover {
+    border-color: #C0C0C0;
+}
+
+.subject-date-calendar-selected {
+    background: #CFE2FF;
+    border-color: #9EC5FE;
+}
+
 .subject-edit-dialog input[type="checkbox"] {
     margin: 0 6px 0 16px;
     width: auto;

@@ -35,6 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $iSubjectId = (int)getPostedTrimmedValue("ex_subjects_id", "0");
         $sNote = getPostedTrimmedValue("note");
         $sMovementDate = getPostedTrimmedValue("movement_date");
+        $sNormalizedMovementDate = normalizeInputDate($sMovementDate);
         $fAmount = parseAmount(getPostedTrimmedValue("amount"));
         $sCurrency = getPostedCurrency();
         $sMovementNote = getPostedTrimmedValue("movement_note");
@@ -44,12 +45,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             redirect(getCurrentScriptName());
         }
-        if ($iId < 1 && !preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sMovementDate)) {
+        if ($iId < 1 && $sNormalizedMovementDate === false) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved. Movement date must use YYYY-MM-DD."), 400);
             }
             redirect(getCurrentScriptName());
         }
+        $sMovementDate = $sNormalizedMovementDate;
         if ($iId < 1 && !isCurrencyAvailable($oPdo, $sCurrency)) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved. Currency is not available."), 400);
@@ -117,6 +119,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         $iDebtId = (int)getPostedTrimmedValue("debt_id", "0");
         $sMovementDate = getPostedTrimmedValue("movement_date");
+        $sNormalizedMovementDate = normalizeInputDate($sMovementDate);
         $fAmount = parseAmount(getPostedTrimmedValue("amount"));
         $sCurrency = getPostedCurrency();
         $sNote = getPostedTrimmedValue("note");
@@ -126,12 +129,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             redirect(getCurrentScriptName());
         }
-        if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sMovementDate)) {
+        if ($sNormalizedMovementDate === false) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The debt movement could not be saved. Date must use YYYY-MM-DD."), 400);
             }
             redirect(getCurrentScriptName());
         }
+        $sMovementDate = $sNormalizedMovementDate;
         if (!isCurrencyAvailable($oPdo, $sCurrency)) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The debt movement could not be saved. Currency is not available."), 400);

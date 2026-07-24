@@ -4643,6 +4643,8 @@ function normalizeDemoFullListComplexFilter($aPayload, $aFields, $aOperators) {
             }
             if (empty($aOperators[$sOperator]["needs_value"])) {
                 $sValue = "";
+            } else {
+                $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
             }
             $aFilter["conditions"][] = array(
                 "field" => $sField,
@@ -4674,6 +4676,8 @@ function normalizeDemoFullListComplexFilter($aPayload, $aFields, $aOperators) {
         }
         if (empty($aOperators[$sOperator]["needs_value"])) {
             $sValue = "";
+        } else {
+            $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
         }
         $aFilter["conditions"][] = array(
             "field" => $sField,
@@ -4723,6 +4727,8 @@ function normalizeDemoFullListComplexFilterDraft($aPayload, $aFields, $aOperator
             }
             if (empty($aOperators[$sOperator]["needs_value"])) {
                 $sValue = "";
+            } else {
+                $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
             }
             $aFilter["conditions"][] = array(
                 "field" => $sField,
@@ -4761,6 +4767,8 @@ function normalizeDemoFullListComplexFilterDraft($aPayload, $aFields, $aOperator
             }
             if (empty($aOperators[$sOperator]["needs_value"])) {
                 $sValue = "";
+            } else {
+                $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
             }
             $aFilter["conditions"][] = array(
                 "field" => $sField,
@@ -4870,6 +4878,14 @@ function normalizeDemoFullListComplexFilterValue($aField, $sValue) {
     }
     if (isset($aField["value_type"]) && (string)$aField["value_type"] == "birth_number") {
         $sNormalized = normalizeBirthNumber($sValue);
+        return $sNormalized === false ? (string)$sValue : $sNormalized;
+    }
+    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "date") {
+        $sNormalized = normalizeInputDate($sValue);
+        return $sNormalized === false ? (string)$sValue : $sNormalized;
+    }
+    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "datetime") {
+        $sNormalized = normalizeInputDateTime($sValue);
         return $sNormalized === false ? (string)$sValue : $sNormalized;
     }
     if (isset($aField["value_type"]) && (string)$aField["value_type"] == "country") {
@@ -5265,6 +5281,19 @@ function getFullListComplexFilterDefaultOperator($aField) {
     return "contains";
 }
 
+function normalizeFullListComplexFilterInputValue($aField, $sValue) {
+    $sNormalized = false;
+    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "date") {
+        $sNormalized = normalizeInputDate($sValue);
+        return $sNormalized !== false ? $sNormalized : (string)$sValue;
+    }
+    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "datetime") {
+        $sNormalized = normalizeInputDateTime($sValue);
+        return $sNormalized !== false ? $sNormalized : (string)$sValue;
+    }
+    return (string)$sValue;
+}
+
 function normalizeFullListComplexFilter($aPayload, $aFields, $aOperators) {
     $aFilter = getDefaultFullListComplexFilter();
     if (isset($aPayload["match"]) && (string)$aPayload["match"] == "any") {
@@ -5294,6 +5323,8 @@ function normalizeFullListComplexFilter($aPayload, $aFields, $aOperators) {
             }
             if (empty($aOperators[$sOperator]["needs_value"])) {
                 $sValue = "";
+            } else {
+                $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
             }
             $aFilter["conditions"][] = array(
                 "field" => $sField,
@@ -5325,6 +5356,8 @@ function normalizeFullListComplexFilter($aPayload, $aFields, $aOperators) {
         }
         if (empty($aOperators[$sOperator]["needs_value"])) {
             $sValue = "";
+        } else {
+            $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
         }
         $aFilter["conditions"][] = array(
             "field" => $sField,
@@ -5374,6 +5407,8 @@ function normalizeFullListComplexFilterDraft($aPayload, $aFields, $aOperators) {
             }
             if (empty($aOperators[$sOperator]["needs_value"])) {
                 $sValue = "";
+            } else {
+                $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
             }
             $aFilter["conditions"][] = array(
                 "field" => $sField,
@@ -5412,6 +5447,8 @@ function normalizeFullListComplexFilterDraft($aPayload, $aFields, $aOperators) {
             }
             if (empty($aOperators[$sOperator]["needs_value"])) {
                 $sValue = "";
+            } else {
+                $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
             }
             $aFilter["conditions"][] = array(
                 "field" => $sField,
@@ -5653,7 +5690,7 @@ function buildFullListComplexFilterSql($aFilter, $aFields, $aOperators) {
             continue;
         }
         if (isset($aFields[$sField]["value_type"]) && $aFields[$sField]["value_type"] == "datetime") {
-            $sSqlValueBase = "DATE_FORMAT(" . $aFields[$sField]["sql"] . ", '%Y-%m-%dT%H:%i')";
+            $sSqlValueBase = preg_match("/:[0-9]{2}:[0-9]{2}$/", $sValue) ? "DATE_FORMAT(" . $aFields[$sField]["sql"] . ", '%Y-%m-%d %H:%i:%s')" : "DATE_FORMAT(" . $aFields[$sField]["sql"] . ", '%Y-%m-%d %H:%i')";
         } else {
             $sSqlValueBase = "CAST(" . $aFields[$sField]["sql"] . " AS CHAR)";
         }

@@ -400,8 +400,8 @@ function formatAmount($mAmount, $blUseEuropeanAmountFormat = false) {
 }
 
 function formatDate($sDate) {
-    $iTime = strtotime((string)$sDate);
-    return $iTime ? date("Y-m-d", $iTime) : "";
+    $sNormalized = normalizeInputDate($sDate);
+    return $sNormalized !== false ? $sNormalized : "";
 }
 
 function monthLabel($sMonth) {
@@ -772,22 +772,7 @@ function getSubscriptionBillingPeriodDateModifier($sBillingPeriod) {
 }
 
 function parseSubscriptionDueAt($sDueAt) {
-    $sDueAt = str_replace("T", " ", trim((string)$sDueAt));
-    if (preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/", $sDueAt, $aMatches)) {
-        $sDueAt .= " 00:00:00";
-    }
-    if (!preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2})(?::([0-9]{2})(?:\\.[0-9]{1,6})?)?$/", $sDueAt, $aMatches)) {
-        return null;
-    }
-    if (!checkdate((int)$aMatches[2], (int)$aMatches[3], (int)$aMatches[1])) {
-        return null;
-    }
-    if ((int)$aMatches[4] > 23 || (int)$aMatches[5] > 59 || (isset($aMatches[6]) && (int)$aMatches[6] > 59)) {
-        return null;
-    }
-    $sSecond = isset($aMatches[6]) && $aMatches[6] !== "" ? $aMatches[6] : "00";
-    $oDueAt = DateTimeImmutable::createFromFormat("!Y-m-d H:i:s", sprintf("%04d-%02d-%02d %02d:%02d:%02d", (int)$aMatches[1], (int)$aMatches[2], (int)$aMatches[3], (int)$aMatches[4], (int)$aMatches[5], (int)$sSecond));
-    return $oDueAt ? $oDueAt : null;
+    return parseInputDateTime($sDueAt);
 }
 
 function formatSubscriptionDueAt($sDueAt) {
@@ -796,13 +781,13 @@ function formatSubscriptionDueAt($sDueAt) {
 }
 
 function formatSubscriptionDueInput($sDueAt) {
-    $oDueAt = parseSubscriptionDueAt($sDueAt);
-    return $oDueAt ? $oDueAt->format("Y-m-d\\TH:i") : "";
+    $sNormalized = normalizeInputDateTime($sDueAt);
+    return $sNormalized !== false ? $sNormalized : "";
 }
 
 function formatSubscriptionDueForDatabase($sDueAt) {
-    $oDueAt = parseSubscriptionDueAt($sDueAt);
-    return $oDueAt ? $oDueAt->format("Y-m-d H:i:s") : null;
+    $sNormalized = normalizeInputDateTimeForDatabase($sDueAt);
+    return $sNormalized !== false && $sNormalized != "" ? $sNormalized : null;
 }
 
 function getSubscriptionBillingDayFromDueAt($sDueAt) {
