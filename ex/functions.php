@@ -2616,10 +2616,11 @@ function fetchSubjectPortalUser($oPdo, $iSubjectId) {
         "has_user" => 0,
         "user_name" => "",
         "is_active" => 1,
+        "session_timeout" => 1200,
         "direct_permission_keys" => array(),
         "effective_permission_keys" => array()
     );
-    $oStatement = $oPdo->prepare("SELECT id, user_name, is_active, created_at, updated_at FROM ex_users WHERE subject_id = :subject_id");
+    $oStatement = $oPdo->prepare("SELECT id, user_name, is_active, session_timeout, created_at, updated_at FROM ex_users WHERE subject_id = :subject_id");
     $oStatement->execute(array("subject_id" => $iSubjectId));
     $aUser = $oStatement->fetch(PDO::FETCH_ASSOC);
     if (!$aUser) {
@@ -2628,6 +2629,7 @@ function fetchSubjectPortalUser($oPdo, $iSubjectId) {
     $aPortalUser["has_user"] = 1;
     $aPortalUser["user_name"] = (string)$aUser["user_name"];
     $aPortalUser["is_active"] = (int)$aUser["is_active"];
+    $aPortalUser["session_timeout"] = (int)$aUser["session_timeout"];
     $aPortalUser["created_at"] = (string)$aUser["created_at"];
     $aPortalUser["updated_at"] = (string)$aUser["updated_at"];
     $aPortalUser["timestamp_tooltip"] = timestampTooltipText($aUser);
@@ -2742,6 +2744,7 @@ function saveSubjectPortalAccess($oPdo, $iSubjectId, $sSubjectType, $aPayload) {
     if (!isset($aPayload["portal_user_enabled"])
         && !isset($aPayload["portal_user_name"])
         && !isset($aPayload["portal_password"])
+        && !isset($aPayload["portal_session_timeout"])
         && !isset($aPayload["portal_permission_keys"])) {
         return;
     }
@@ -2770,31 +2773,38 @@ function saveSubjectPortalAccess($oPdo, $iSubjectId, $sSubjectType, $aPayload) {
     if (!$aUser && $sPassword == "") {
         throw new Exception("Password is required for a new portal user.");
     }
+    $iSessionTimeout = (int)payloadValue($aPayload, "portal_session_timeout");
+    if ($iSessionTimeout < 60) {
+        $iSessionTimeout = 60;
+    }
     if ($aUser) {
         if ($sPassword != "") {
-            $oStatement = $oPdo->prepare("UPDATE ex_users SET user_name = :user_name, password_hash = :password_hash, is_active = :is_active WHERE id = :id");
+            $oStatement = $oPdo->prepare("UPDATE ex_users SET user_name = :user_name, password_hash = :password_hash, is_active = :is_active, session_timeout = :session_timeout WHERE id = :id");
             $oStatement->execute(array(
                 "user_name" => $sUserName,
                 "password_hash" => password_hash($sPassword, PASSWORD_DEFAULT),
                 "is_active" => payloadFlag($aPayload, "portal_user_active"),
+                "session_timeout" => $iSessionTimeout,
                 "id" => (int)$aUser["id"]
             ));
         } else {
-            $oStatement = $oPdo->prepare("UPDATE ex_users SET user_name = :user_name, is_active = :is_active WHERE id = :id");
+            $oStatement = $oPdo->prepare("UPDATE ex_users SET user_name = :user_name, is_active = :is_active, session_timeout = :session_timeout WHERE id = :id");
             $oStatement->execute(array(
                 "user_name" => $sUserName,
                 "is_active" => payloadFlag($aPayload, "portal_user_active"),
+                "session_timeout" => $iSessionTimeout,
                 "id" => (int)$aUser["id"]
             ));
         }
         $iUserId = (int)$aUser["id"];
     } else {
-        $oStatement = $oPdo->prepare("INSERT INTO ex_users (subject_id, user_name, password_hash, is_active) VALUES (:subject_id, :user_name, :password_hash, :is_active)");
+        $oStatement = $oPdo->prepare("INSERT INTO ex_users (subject_id, user_name, password_hash, is_active, session_timeout) VALUES (:subject_id, :user_name, :password_hash, :is_active, :session_timeout)");
         $oStatement->execute(array(
             "subject_id" => $iSubjectId,
             "user_name" => $sUserName,
             "password_hash" => password_hash($sPassword, PASSWORD_DEFAULT),
-            "is_active" => payloadFlag($aPayload, "portal_user_active")
+            "is_active" => payloadFlag($aPayload, "portal_user_active"),
+            "session_timeout" => $iSessionTimeout
         ));
         $iUserId = (int)$oPdo->lastInsertId();
     }

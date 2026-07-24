@@ -17,7 +17,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("lm_csrf_token", $blJsonResponse);
 }
 
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_snippet_board") {
+$sAction = $_SERVER["REQUEST_METHOD"] == "POST" ? getPostedValue("action") : "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "check_snippet_board_revision") {
+    try {
+        $oStatement = $oPdo->query("SELECT COALESCE(DATE_FORMAT(MAX(updated_at), '%Y-%m-%d %H:%i:%s.%f'), '') AS board_revision FROM fs_snippet_board WHERE id BETWEEN 1 AND 6");
+        $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+        sendJsonAndExit(array("success" => true, "revision" => (string)$aRow["board_revision"]));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "load_snippet_board") {
+    $aSnippets = array();
+    $sBoardRevision = "";
+    for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
+        $aSnippets[$iSnippetId] = "";
+    }
+    try {
+        $oStatement = $oPdo->query("SELECT id, note_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
+        while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+            $iSnippetId = (int)$aRow["id"];
+            if ($iSnippetId >= 1 && $iSnippetId <= 6) {
+                $aSnippets[$iSnippetId] = (string)$aRow["note_text"];
+                if ((string)$aRow["updated_at_text"] > $sBoardRevision) {
+                    $sBoardRevision = (string)$aRow["updated_at_text"];
+                }
+            }
+        }
+        sendJsonAndExit(array("success" => true, "revision" => $sBoardRevision, "snippets" => $aSnippets));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "save_snippet_board") {
     try {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("INSERT INTO fs_snippet_board (id, note_text) VALUES (:id, :note_text) ON DUPLICATE KEY UPDATE note_text = VALUES(note_text)");
@@ -29,7 +66,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         $oPdo->commit();
         if ($blJsonResponse) {
-            sendJsonAndExit(array("success" => true));
+            $oStatement = $oPdo->query("SELECT COALESCE(DATE_FORMAT(MAX(updated_at), '%Y-%m-%d %H:%i:%s.%f'), '') AS board_revision FROM fs_snippet_board WHERE id BETWEEN 1 AND 6");
+            $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+            sendJsonAndExit(array("success" => true, "revision" => (string)$aRow["board_revision"]));
         }
         sendSecurityHeaders();
         header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
@@ -47,16 +86,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 }
 
 $aSnippets = array();
+$sBoardRevision = "";
 for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
     $aSnippets[$iSnippetId] = "";
 }
 
 try {
-    $oStatement = $oPdo->query("SELECT id, note_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
+    $oStatement = $oPdo->query("SELECT id, note_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
     while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
         $iSnippetId = (int)$aRow["id"];
         if ($iSnippetId >= 1 && $iSnippetId <= 6) {
             $aSnippets[$iSnippetId] = (string)$aRow["note_text"];
+            if ((string)$aRow["updated_at_text"] > $sBoardRevision) {
+                $sBoardRevision = (string)$aRow["updated_at_text"];
+            }
         }
     }
 } catch (Exception $oException) {
@@ -88,7 +131,7 @@ $iTime = sendPageHeaders();
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
   <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . $sStyleToken); ?>" rel="stylesheet" type="text/css">
 </head>
-<body class="snippet-board-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>">
+<body class="snippet-board-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>" data-snippet-board-revision="<?php echo html($sBoardRevision); ?>">
   <p class="admin-controls">
 <?php
 

@@ -988,17 +988,22 @@ function handleQuickTableFilterRequest() {
 }
 
 function fetchPortalLoginUser($oPdo, $sUserName) {
-    $oStatement = $oPdo->prepare("SELECT u.id, u.subject_id, u.user_name, u.password_hash, u.is_active, s.subject_type, s.is_active AS subject_active FROM ex_users AS u INNER JOIN ex_subjects AS s ON s.id = u.subject_id WHERE u.user_name = :user_name LIMIT 1");
+    $oStatement = $oPdo->prepare("SELECT u.id, u.subject_id, u.user_name, u.password_hash, u.is_active, u.session_timeout, s.subject_type, s.is_active AS subject_active FROM ex_users AS u INNER JOIN ex_subjects AS s ON s.id = u.subject_id WHERE u.user_name = :user_name LIMIT 1");
     $oStatement->execute(array("user_name" => $sUserName));
     $aUser = $oStatement->fetch(PDO::FETCH_ASSOC);
     return $aUser ? $aUser : null;
 }
 
 function fetchPortalSessionUser($oPdo, $iUserId) {
-    $oStatement = $oPdo->prepare("SELECT u.id, u.subject_id, u.user_name, u.is_active, s.subject_type, s.is_active AS subject_active FROM ex_users AS u INNER JOIN ex_subjects AS s ON s.id = u.subject_id WHERE u.id = :id LIMIT 1");
+    $oStatement = $oPdo->prepare("SELECT u.id, u.subject_id, u.user_name, u.is_active, u.session_timeout, s.subject_type, s.is_active AS subject_active FROM ex_users AS u INNER JOIN ex_subjects AS s ON s.id = u.subject_id WHERE u.id = :id LIMIT 1");
     $oStatement->execute(array("id" => $iUserId));
     $aUser = $oStatement->fetch(PDO::FETCH_ASSOC);
     return $aUser ? $aUser : null;
+}
+
+function getPortalUserSessionTimeout($aUser) {
+    $iTimeout = isset($aUser["session_timeout"]) ? (int)$aUser["session_timeout"] : 1200;
+    return $iTimeout >= 60 ? $iTimeout : 60;
 }
 
 function fetchUserEffectivePermissions($oPdo, $iUserId, $iSubjectId) {
@@ -1074,7 +1079,7 @@ function refreshAuthSession() {
         return false;
     }
     $iAuthTime = isset($_SESSION["auth_time"]) ? (int)$_SESSION["auth_time"] : 0;
-    if ($iAuthTime < 1 || $iAuthTime < time() - 1200) {
+    if ($iAuthTime < 1) {
         clearAuthSession();
         return false;
     }
@@ -1085,6 +1090,10 @@ function refreshAuthSession() {
     try {
         $aUser = fetchPortalSessionUser($oPdo, (int)$_SESSION["auth_user_id"]);
         if (!$aUser || (int)$aUser["is_active"] != 1 || (int)$aUser["subject_active"] != 1 || !in_array((string)$aUser["subject_type"], array("person", "service"), true)) {
+            clearAuthSession();
+            return false;
+        }
+        if ($iAuthTime < time() - getPortalUserSessionTimeout($aUser)) {
             clearAuthSession();
             return false;
         }

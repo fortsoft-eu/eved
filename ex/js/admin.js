@@ -4843,6 +4843,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var oPortalUserName;
         var oPortalPassword;
         var oPortalActive;
+        var oPortalSessionTimeout;
         var oPermissionBox;
         var oPermissionTitle;
         var oLabel;
@@ -4863,6 +4864,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         oPortalPassword = appendSubjectTextField(oDialogData.form, "New Password", "portal_password", "", "password");
         oPortalActive = appendSubjectCheckbox(oDialogData.form, "Active", "portal_user_active", aPortalUser["is_active"] !== 0 && aPortalUser["is_active"] !== "0");
+        oPortalSessionTimeout = appendSubjectTextField(oDialogData.form, "Session Timeout", "portal_session_timeout", aPortalUser["session_timeout"] || "1200", "number");
+        oPortalSessionTimeout.min = "60";
+        oPortalSessionTimeout.step = "1";
         if (aPortalPermissions.length > 0) {
             oPermissionBox = document.createElement("div");
             oPermissionTitle = document.createElement("strong");
@@ -4898,6 +4902,7 @@ document.addEventListener("DOMContentLoaded", function () {
             oPortalUserName.disabled = !blEnabled;
             oPortalPassword.disabled = !blEnabled;
             oPortalActive.disabled = !blEnabled;
+            oPortalSessionTimeout.disabled = !blEnabled;
             for (iJ = 0; iJ < aPortalPermissionInputs.length; iJ += 1) {
                 aPortalPermissionInputs[iJ].disabled = !blEnabled;
             }
@@ -4914,6 +4919,7 @@ document.addEventListener("DOMContentLoaded", function () {
             appendAdminEncodedValue(oData, "portal_user_name", oPortalUserName.value);
             appendAdminEncodedValue(oData, "portal_password", oPortalPassword.value);
             oData.append("portal_user_active", oPortalActive.checked ? "1" : "0");
+            oData.append("portal_session_timeout", oPortalSessionTimeout.value || "1200");
             for (iJ = 0; iJ < aPortalPermissionInputs.length; iJ += 1) {
                 if (aPortalPermissionInputs[iJ].checked) {
                     oData.append("permissions[]", aPortalPermissionInputs[iJ].value);

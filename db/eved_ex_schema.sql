@@ -183,6 +183,7 @@ CREATE TABLE `ex_users` (
   `user_name` varchar(191) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `session_timeout` int(10) unsigned NOT NULL DEFAULT 1200,
   `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   `last_login_at` datetime DEFAULT NULL,

@@ -184,6 +184,7 @@ if ($sBdPostAction == "update_subject_portal_user") {
             "portal_user_name" => getPostedTrimmedValue("portal_user_name"),
             "portal_password" => getPostedValue("portal_password"),
             "portal_user_active" => isset($_POST["portal_user_active"]) && (string)$_POST["portal_user_active"] == "1" ? "1" : "0",
+            "portal_session_timeout" => getPostedTrimmedValue("portal_session_timeout", "1200"),
             "portal_permission_keys" => $aPermissionKeys
         );
         saveSubjectPortalAccess($oPdo, $iSubjectId, (string)$aSubjectRow["subject_type"], $aPayload);

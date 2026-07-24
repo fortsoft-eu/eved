@@ -1146,6 +1146,8 @@ function bindAdminSubmitOnChange() {
     }
 }
 
+var blSnippetBoardApplyingRemote = false;
+
 function resizeSnippetBoardEditors() {
     var oGrid = document.querySelector(".snippet-board-grid");
     var iHeight = oGrid ? parseInt(oGrid.getAttribute("data-editor-height") || "320", 10) : 320;
@@ -1265,34 +1267,238 @@ function bindSnippetBoardTabs() {
 function bindSnippetBoardForm() {
     var oForm = document.getElementById("snippet-board-form");
     var oStatus = document.querySelector(".js-snippet-board-status");
+    var oBoardChannel = null;
     var iSaveTimer = null;
+    var iRevisionTimer = null;
+    var iStatusTimer = null;
     var blSaving = false;
     var blSaveAgain = false;
     var blChanged = false;
+    var blRevisionRequest = false;
+    var sBoardInstanceId = String(new Date().getTime()) + "-" + String(Math.random());
+    var sBoardRevision = document.body ? (document.body.getAttribute("data-snippet-board-revision") || "") : "";
+    var iSaveDebounceMs = 10000;
+    var iRevisionPollMs = 10000;
+    var iLastRevisionRequestAt = 0;
 
     function setSnippetBoardStatus(sText, sState) {
         if (!oStatus) {
             return;
+        }
+        if (iStatusTimer) {
+            window.clearTimeout(iStatusTimer);
+            iStatusTimer = null;
         }
         oStatus.textContent = sText || "";
         oStatus.className = "snippet-board-status js-snippet-board-status";
         if (sState) {
             addAdminClass(oStatus, "snippet-board-status-" + sState);
         }
+        if (sText && sState == "saved") {
+            iStatusTimer = window.setTimeout(function() {
+                iStatusTimer = null;
+                oStatus.textContent = "";
+                oStatus.className = "snippet-board-status js-snippet-board-status";
+            }, 4000);
+        }
     }
 
-    function collectSnippetBoardData() {
-        var oData = new FormData();
+    function setSnippetBoardRevision(sRevision) {
+        if (typeof sRevision != "string") {
+            return;
+        }
+        sBoardRevision = sRevision;
+        if (document.body) {
+            document.body.setAttribute("data-snippet-board-revision", sRevision);
+        }
+    }
+
+    function getSnippetBoardValues() {
         var aTextareas = oForm.querySelectorAll(".js-snippet-board-textarea");
+        var aValues = {};
+        var sSlot;
         var i;
-        oData.append("action", "save_snippet_board");
         if (window.tinymce && typeof window.tinymce.triggerSave == "function") {
             window.tinymce.triggerSave();
         }
         for (i = 0; i < aTextareas.length; i++) {
-            appendAdminEncodedValue(oData, aTextareas[i].name, aTextareas[i].value);
+            sSlot = aTextareas[i].name.replace(/^snippet_/, "");
+            aValues[sSlot] = aTextareas[i].value;
+        }
+        return aValues;
+    }
+
+    function collectSnippetBoardData() {
+        var oData = new FormData();
+        var aValues = getSnippetBoardValues();
+        var sSlot;
+        oData.append("action", "save_snippet_board");
+        for (sSlot in aValues) {
+            if (Object.prototype.hasOwnProperty.call(aValues, sSlot)) {
+                appendAdminEncodedValue(oData, "snippet_" + sSlot, aValues[sSlot]);
+            }
         }
         return oData;
+    }
+
+    function applySnippetBoardValues(aValues) {
+        var aTextareas = oForm.querySelectorAll(".js-snippet-board-textarea");
+        var oEditor;
+        var sSlot;
+        var sValue;
+        var i;
+        blSnippetBoardApplyingRemote = true;
+        try {
+            for (i = 0; i < aTextareas.length; i++) {
+                sSlot = aTextareas[i].name.replace(/^snippet_/, "");
+                sValue = aValues && Object.prototype.hasOwnProperty.call(aValues, sSlot) ? String(aValues[sSlot]) : "";
+                oEditor = window.tinymce && typeof window.tinymce.get == "function" ? window.tinymce.get(aTextareas[i].id) : null;
+                if (oEditor && typeof oEditor.setContent == "function") {
+                    if (typeof oEditor.getContent != "function" || oEditor.getContent() != sValue) {
+                        oEditor.setContent(sValue);
+                    }
+                    if (typeof oEditor.save == "function") {
+                        oEditor.save();
+                    }
+                } else if (aTextareas[i].value != sValue) {
+                    aTextareas[i].value = sValue;
+                }
+            }
+        } finally {
+            blSnippetBoardApplyingRemote = false;
+        }
+    }
+
+    function requestSnippetBoardAction(sAction, fSuccess, fError) {
+        var oData = new FormData();
+        oData.append("action", sAction);
+        submitAdminRequest(oData, fSuccess, fError);
+    }
+
+    function canApplySnippetBoardRemote() {
+        return !blChanged && !blSaving;
+    }
+
+    function broadcastSnippetBoardSaved() {
+        if (!oBoardChannel || !sBoardRevision) {
+            return;
+        }
+        try {
+            oBoardChannel.postMessage({
+                source: sBoardInstanceId,
+                type: "saved",
+                revision: sBoardRevision,
+                snippets: getSnippetBoardValues()
+            });
+        } catch (oException) {
+            logAdminException(oException);
+        }
+    }
+
+    function loadSnippetBoardRemote(sExpectedRevision) {
+        requestSnippetBoardAction("load_snippet_board", function(aData) {
+            if (!canApplySnippetBoardRemote()) {
+                setSnippetBoardStatus("Changed elsewhere.", "changed");
+                return;
+            }
+            if (sExpectedRevision && aData.revision && aData.revision != sExpectedRevision) {
+                setSnippetBoardRevision(aData.revision);
+            } else if (aData.revision) {
+                setSnippetBoardRevision(aData.revision);
+            }
+            applySnippetBoardValues(aData.snippets || {});
+            setSnippetBoardStatus("Updated.", "saved");
+        }, function(sMessage) {
+            logAdminException(sMessage);
+        });
+    }
+
+    function handleSnippetBoardMessage(oEvent) {
+        var aMessage = oEvent && oEvent.data ? oEvent.data : null;
+        if (!aMessage || aMessage.source == sBoardInstanceId || aMessage.type != "saved") {
+            return;
+        }
+        if (aMessage.revision && sBoardRevision && aMessage.revision <= sBoardRevision) {
+            return;
+        }
+        if (!canApplySnippetBoardRemote()) {
+            setSnippetBoardStatus("Changed elsewhere.", "changed");
+            return;
+        }
+        setSnippetBoardRevision(aMessage.revision || "");
+        applySnippetBoardValues(aMessage.snippets || {});
+        setSnippetBoardStatus("Updated.", "saved");
+    }
+
+    function openSnippetBoardChannel() {
+        if (!window.BroadcastChannel) {
+            return;
+        }
+        try {
+            oBoardChannel = new BroadcastChannel("eved-lm-snippet-board");
+            oBoardChannel.addEventListener("message", handleSnippetBoardMessage);
+        } catch (oException) {
+            logAdminException(oException);
+        }
+    }
+
+    function scheduleSnippetBoardRevisionCheck(iDelay) {
+        var iDelayMs = typeof iDelay == "number" ? iDelay : iRevisionPollMs;
+        if (iRevisionTimer) {
+            window.clearTimeout(iRevisionTimer);
+            iRevisionTimer = null;
+        }
+        if (document.visibilityState == "hidden") {
+            return;
+        }
+        iRevisionTimer = window.setTimeout(function() {
+            iRevisionTimer = null;
+            checkSnippetBoardRevision();
+        }, iDelayMs);
+    }
+
+    function requestSnippetBoardRevisionCheck(blForce) {
+        var iNow = new Date().getTime();
+        var iRemaining;
+        if (document.visibilityState == "hidden") {
+            return;
+        }
+        if (!blForce && iLastRevisionRequestAt > 0 && iNow - iLastRevisionRequestAt < iRevisionPollMs) {
+            iRemaining = iRevisionPollMs - (iNow - iLastRevisionRequestAt);
+            scheduleSnippetBoardRevisionCheck(iRemaining);
+            return;
+        }
+        if (iRevisionTimer) {
+            window.clearTimeout(iRevisionTimer);
+            iRevisionTimer = null;
+        }
+        checkSnippetBoardRevision();
+    }
+
+    function checkSnippetBoardRevision() {
+        if (blRevisionRequest) {
+            return;
+        }
+        if (document.visibilityState == "hidden") {
+            return;
+        }
+        iLastRevisionRequestAt = new Date().getTime();
+        blRevisionRequest = true;
+        requestSnippetBoardAction("check_snippet_board_revision", function(aData) {
+            blRevisionRequest = false;
+            if (aData.revision && aData.revision != sBoardRevision) {
+                if (canApplySnippetBoardRemote()) {
+                    loadSnippetBoardRemote(aData.revision);
+                } else {
+                    setSnippetBoardStatus("Changed elsewhere.", "changed");
+                }
+            }
+            scheduleSnippetBoardRevisionCheck();
+        }, function(sMessage) {
+            blRevisionRequest = false;
+            logAdminException(sMessage);
+            scheduleSnippetBoardRevisionCheck();
+        });
     }
 
     function sendSnippetBoardBeacon() {
@@ -1332,12 +1538,16 @@ function bindSnippetBoardForm() {
         blChanged = false;
         setSnippetBoardStatus("Saving...", "saving");
         oData = collectSnippetBoardData();
-        submitAdminRequest(oData, function() {
+        submitAdminRequest(oData, function(aData) {
             blSaving = false;
             if (blSaveAgain || blChanged) {
                 saveSnippetBoardNow();
                 return;
             }
+            if (aData && aData.revision) {
+                setSnippetBoardRevision(aData.revision);
+            }
+            broadcastSnippetBoardSaved();
             setSnippetBoardStatus("Saved.", "saved");
         }, function(sMessage) {
             blSaving = false;
@@ -1347,6 +1557,10 @@ function bindSnippetBoardForm() {
     }
 
     function scheduleSnippetBoardSave() {
+        if (blSnippetBoardApplyingRemote) {
+            return;
+        }
+        requestSnippetBoardRevisionCheck(false);
         blChanged = true;
         if (iSaveTimer) {
             window.clearTimeout(iSaveTimer);
@@ -1355,7 +1569,7 @@ function bindSnippetBoardForm() {
         iSaveTimer = window.setTimeout(function() {
             iSaveTimer = null;
             saveSnippetBoardNow();
-        }, 650);
+        }, iSaveDebounceMs);
     }
 
     function bindTextareaChanges() {
@@ -1383,8 +1597,16 @@ function bindSnippetBoardForm() {
         if (document.visibilityState == "hidden" && blChanged && !sendSnippetBoardBeacon()) {
             saveSnippetBoardNow();
         }
+        if (document.visibilityState != "hidden") {
+            requestSnippetBoardRevisionCheck(true);
+        }
+    });
+    window.addEventListener("focus", function() {
+        requestSnippetBoardRevisionCheck(true);
     });
     bindTextareaChanges();
+    openSnippetBoardChannel();
+    scheduleSnippetBoardRevisionCheck(iRevisionPollMs);
 }
 
 function bindSnippetBoardTinyMce() {
@@ -1412,7 +1634,9 @@ function bindSnippetBoardTinyMce() {
             setup: function(oEditor) {
                 oEditor.on("change keyup undo redo input paste", function() {
                     oEditor.save();
-                    dispatchAdminInputEvent(oEditor.getElement());
+                    if (!blSnippetBoardApplyingRemote) {
+                        dispatchAdminInputEvent(oEditor.getElement());
+                    }
                 });
                 oEditor.on("init", function() {
                     layoutSnippetBoard();

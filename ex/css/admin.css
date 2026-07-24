@@ -1716,6 +1716,7 @@ body.phpinfo-page .admin-controls {
 
 .subject-edit-dialog input[type="text"],
 .subject-edit-dialog input[type="password"],
+.subject-edit-dialog input[type="number"],
 .subject-edit-dialog input[type="date"],
 .subject-edit-dialog select {
     box-sizing: border-box;

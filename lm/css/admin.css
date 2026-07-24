@@ -1544,11 +1544,11 @@ body.snippet-board-page {
 
 .admin-controls .snippet-board-tab {
     box-sizing: border-box;
-    flex: 0 0 40px;
+    flex: 0 0 27px;
     height: 27px;
     margin: 0;
     padding: 2px 2px 3px 2px;
-    width: 40px;
+    width: 27px;
 }
 
 .snippet-board-tab-active {
