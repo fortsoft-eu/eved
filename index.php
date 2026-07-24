@@ -221,7 +221,7 @@ sendSecurityHeaders($sStyleNonce);
 <body>
   <h1>עֶבֶד יְהוָה</h1>
   <h2>וְאָנֹכִי וּבֵיתִי נַעֲבֹד אֶת־יְהוָה</h2>
-  <script type="text/javascript" src="<?php echo htmlspecialchars($sBaseUrl . "js/es.js?sToken=" . dechex(filemtime(__DIR__ . "/js/es.js")), ENT_QUOTES, "UTF-8"); ?>"></script>
-  <script type="text/javascript" src="<?php echo htmlspecialchars($sBaseUrl . "js/ua.js?sToken=" . dechex(filemtime(__DIR__ . "/js/ua.js")), ENT_QUOTES, "UTF-8"); ?>"></script>
+  <script type="text/javascript" src="<?php echo htmlspecialchars($sBaseUrl . "film/vendors/bowser-2.14.1/es5.js?sToken=" . dechex(filemtime(__DIR__ . "/film/vendors/bowser-2.14.1/es5.js")), ENT_QUOTES, "UTF-8"); ?>"></script>
+  <script type="text/javascript" src="<?php echo htmlspecialchars($sBaseUrl . "film/js/ua.js?sToken=" . dechex(filemtime(__DIR__ . "/film/js/ua.js")), ENT_QUOTES, "UTF-8"); ?>"></script>
 </body>
 </html>

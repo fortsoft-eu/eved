@@ -255,7 +255,16 @@ function getContentSecurityPolicySource() {
 }
 
 function sendSecurityHeaders($sStyleNonce = "") {
+    global $sScheme;
+
     $sContentSecurityPolicySource = getContentSecurityPolicySource();
+    $sScriptSource = $sContentSecurityPolicySource;
+    if (isset($_SERVER["HTTP_HOST"])) {
+        $sHost = preg_replace("/[^A-Za-z0-9\\.\\-\\:\\[\\]]/", "", $_SERVER["HTTP_HOST"]);
+        if ($sHost != "") {
+            $sScriptSource .= " " . $sScheme . "://" . $sHost;
+        }
+    }
     $sStyleSource = $sContentSecurityPolicySource;
     if ($sStyleNonce != "") {
         $sStyleSource .= " 'nonce-" . $sStyleNonce . "'";
@@ -263,7 +272,7 @@ function sendSecurityHeaders($sStyleNonce = "") {
         $sStyleSource .= " 'unsafe-inline'";
     }
     $sContentSecurityPolicy = "default-src 'none'; "
-        . "script-src " . $sContentSecurityPolicySource . "; "
+        . "script-src " . $sScriptSource . "; "
         . "style-src " . $sStyleSource . "; "
         . "img-src " . $sContentSecurityPolicySource . " data: blob:; "
         . "font-src " . $sContentSecurityPolicySource . " data:; "

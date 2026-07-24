@@ -132,12 +132,7 @@ function setupTableRows() {
 
     function applyRowColor(oRow) {
         var sColor = getCurrentRowColor(oRow);
-        var aCells = oRow.cells || oRow.querySelectorAll("td");
-        var iI;
         oRow.style.backgroundColor = sColor;
-        for (iI = 0; iI < aCells.length; iI += 1) {
-            aCells[iI].style.backgroundColor = sColor;
-        }
     }
 
     function isTableRowActionTarget(oTarget) {
@@ -1150,6 +1145,106 @@ function bindAdminSubmitOnChange() {
         });
     }
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+    var aUserAgents = document.querySelectorAll(".js-user-agent");
+    var iUserAgentIndex = 0;
+    var iUserAgentChunkSize = 40;
+    if (!window.bowser || typeof window.bowser.parse != "function") {
+        return;
+    }
+
+    function scheduleUserAgentChunk(oCallback) {
+        if (window.requestAnimationFrame) {
+            window.requestAnimationFrame(oCallback);
+        } else if (window.setTimeout) {
+            window.setTimeout(oCallback, 0);
+        } else {
+            oCallback();
+        }
+    }
+
+    function formatUserAgent(oElement) {
+        var sUserAgent = oElement.getAttribute("data-user-agent") || "";
+        var oResult = null;
+        var aParts = [];
+        var sBrowserName = oElement.getAttribute("data-browser-name") || "";
+        var sBrowserVersion = oElement.getAttribute("data-browser-version") || "";
+        var sOsName = oElement.getAttribute("data-os-name") || "";
+        var sOsVersion = oElement.getAttribute("data-os-version") || "";
+        var sPlatform = oElement.getAttribute("data-platform-type") || "";
+        var sDeviceVendor = oElement.getAttribute("data-device-vendor") || "";
+        var sDeviceModel = oElement.getAttribute("data-device-model") || "";
+        var sBrowser;
+        var sOperatingSystem;
+        var sDevice;
+        if (!sBrowserName || !sOsName || !sPlatform) {
+            try {
+                oResult = window.bowser.parse(sUserAgent);
+            } catch (oException) {
+                console.error(oException);
+                logAdminException(oException);
+                return sUserAgent;
+            }
+        }
+        if (!sBrowserName && oResult && oResult.browser && oResult.browser.name) {
+            sBrowserName = oResult.browser.name;
+        }
+        if (!sBrowserVersion && oResult && oResult.browser && oResult.browser.version) {
+            sBrowserVersion = oResult.browser.version;
+        }
+        if (!sOsName && oResult && oResult.os && oResult.os.name) {
+            sOsName = oResult.os.name;
+        }
+        if (!sOsVersion && oResult && oResult.os) {
+            sOsVersion = oResult.os.versionName || oResult.os.version || "";
+        }
+        if (!sPlatform && oResult && oResult.platform && oResult.platform.type) {
+            sPlatform = oResult.platform.type;
+        }
+        if (!sDeviceVendor && oResult && oResult.platform && oResult.platform.vendor) {
+            sDeviceVendor = oResult.platform.vendor;
+        }
+        if (!sDeviceModel && oResult && oResult.platform && oResult.platform.model) {
+            sDeviceModel = oResult.platform.model;
+        }
+        sBrowser = (sBrowserName + " " + sBrowserVersion).trim();
+        sOperatingSystem = (sOsName + " " + sOsVersion).trim();
+        sDevice = (sDeviceVendor + " " + sDeviceModel).trim();
+        if (sBrowser) {
+            aParts.push(sBrowser);
+        }
+        if (sOperatingSystem) {
+            aParts.push(sOperatingSystem);
+        }
+        if (sPlatform) {
+            sPlatform = sPlatform.charAt(0).toUpperCase() + sPlatform.slice(1);
+            aParts.push(sPlatform);
+        }
+        if (sDevice) {
+            if (aParts.indexOf(sDevice) === -1) {
+                aParts.push(sDevice);
+            }
+        }
+        return aParts.length ? aParts.join(" / ") : sUserAgent;
+    }
+
+    function processUserAgentChunk() {
+        var iEnd = Math.min(iUserAgentIndex + iUserAgentChunkSize, aUserAgents.length);
+        var sValue;
+        for (; iUserAgentIndex < iEnd; iUserAgentIndex += 1) {
+            sValue = formatUserAgent(aUserAgents[iUserAgentIndex]);
+            if (aUserAgents[iUserAgentIndex].textContent != sValue) {
+                aUserAgents[iUserAgentIndex].textContent = sValue;
+            }
+        }
+        if (iUserAgentIndex < aUserAgents.length) {
+            scheduleUserAgentChunk(processUserAgentChunk);
+        }
+    }
+
+    processUserAgentChunk();
+});
 
 document.addEventListener("keydown", function(oEvent) {
     if (oEvent.key == "Escape") {

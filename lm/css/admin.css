@@ -253,11 +253,11 @@ table {
 }
 
 .admin-controls {
+    margin: 0 0 5px;
     align-items: center;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin: 0 0 5px;
 }
 
 .admin-controls:has(.js-table-filter) {
@@ -293,9 +293,29 @@ table {
     width: 154px;
 }
 
-.admin-controls .js-filter-operator,
+.admin-controls .js-filter-operator {
+    width: 75px;
+}
+
 .admin-controls .js-filter-reset {
     width: 75px;
+}
+
+.admin-controls .database-action-button {
+    flex: 0 0 130px;
+}
+
+.admin-controls .quick-filter-active {
+    font-weight: bold;
+}
+
+.admin-controls input,
+.admin-controls label {
+    margin-top: 0;
+}
+
+.admin-controls input[type="checkbox"] {
+    margin-left: 8px;
 }
 
 .admin-controls .js-index-settings-open {
@@ -304,19 +324,6 @@ table {
 
 .admin-controls .js-add-menu-item {
     width: 75px;
-}
-
-.admin-controls .quick-filter-active {
-    font-weight: bold;
-}
-
-.admin-controls .database-action-button {
-    flex: 0 0 130px;
-}
-
-.admin-controls input,
-.admin-controls label {
-    margin-top: 0;
 }
 
 .menu {
@@ -410,7 +417,7 @@ table {
     white-space: nowrap;
     width: 75px;
     word-break: normal;
-    z-index: 5;
+    z-index: 900;
 }
 
 .filter-focus-button.filter-focus-active {
@@ -524,7 +531,6 @@ th {
     height: 18px;
     padding: 1px 2px;
     text-align: left;
-    vertical-align: top;
     white-space: nowrap;
 }
 
