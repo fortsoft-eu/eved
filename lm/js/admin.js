@@ -1299,7 +1299,7 @@ function bindSnippetBoardForm() {
                 iStatusTimer = null;
                 oStatus.textContent = "";
                 oStatus.className = "snippet-board-status js-snippet-board-status";
-            }, 4000);
+            }, 5000);
         }
     }
 

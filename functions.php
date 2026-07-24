@@ -1742,6 +1742,44 @@ function renderContactValueActions($sType, $sValue, $blShowCopy = false, $blAllo
     return $sHtml;
 }
 
+function encryptTextMessage($sText, $sPassword) {
+    if (!function_exists("openssl_encrypt")) {
+        throw new RuntimeException("OpenSSL extension is required.");
+    }
+    $iOptions = defined("OPENSSL_RAW_DATA") ? constant("OPENSSL_RAW_DATA") : 1;
+    $sPayload = (string)$sText . md5((string)$sText, true);
+    $sEncrypted = openssl_encrypt($sPayload, "AES-128-CBC", md5((string)$sPassword, true), $iOptions, str_repeat("\0", 16));
+    if ($sEncrypted === false) {
+        throw new RuntimeException("Text encryption failed.");
+    }
+    return base64_encode($sEncrypted);
+}
+
+function decryptTextMessage($sText, $sPassword) {
+    if (!function_exists("openssl_decrypt")) {
+        throw new RuntimeException("OpenSSL extension is required.");
+    }
+    $sBytes = base64_decode((string)$sText, true);
+    if ($sBytes === false) {
+        throw new RuntimeException("Invalid encrypted text.");
+    }
+    $iOptions = defined("OPENSSL_RAW_DATA") ? constant("OPENSSL_RAW_DATA") : 1;
+    $sPayload = openssl_decrypt($sBytes, "AES-128-CBC", md5((string)$sPassword, true), $iOptions, str_repeat("\0", 16));
+    if ($sPayload === false) {
+        throw new RuntimeException("Text decryption failed.");
+    }
+    $iLength = strlen($sPayload) - 16;
+    if ($iLength < 0) {
+        throw new RuntimeException("Message hash is missing.");
+    }
+    $sMessage = substr($sPayload, 0, $iLength);
+    $sHash = substr($sPayload, $iLength, 16);
+    if (!hash_equals(md5($sMessage, true), $sHash)) {
+        throw new RuntimeException("Message hash is invalid.");
+    }
+    return $sMessage;
+}
+
 function decodePostedBase64Value($sValue) {
     $sDecoded = base64_decode((string)$sValue, true);
     return $sDecoded !== false ? $sDecoded : (string)$sValue;

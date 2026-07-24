@@ -37,11 +37,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "load_snippet_board") {
         $aSnippets[$iSnippetId] = "";
     }
     try {
-        $oStatement = $oPdo->query("SELECT id, note_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
+        $oStatement = $oPdo->query("SELECT id, note_text, `hash`, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
         while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
             $iSnippetId = (int)$aRow["id"];
             if ($iSnippetId >= 1 && $iSnippetId <= 6) {
-                $aSnippets[$iSnippetId] = (string)$aRow["note_text"];
+                $sNoteText = (string)$aRow["note_text"];
+                if ($sNoteText != "") {
+                    if ((string)$aRow["hash"] == "") {
+                        throw new RuntimeException("Snippet Board hash is missing for slot " . $iSnippetId . ".");
+                    }
+                    $sNoteText = decryptTextMessage($sNoteText, (string)$aRow["hash"]);
+                }
+                $aSnippets[$iSnippetId] = $sNoteText;
                 if ((string)$aRow["updated_at_text"] > $sBoardRevision) {
                     $sBoardRevision = (string)$aRow["updated_at_text"];
                 }
@@ -55,13 +62,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "load_snippet_board") {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "save_snippet_board") {
+    $aSnippetHashes = array();
     try {
+        $oStatement = $oPdo->query("SELECT id, `hash` FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
+        while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+            $iSnippetId = (int)$aRow["id"];
+            if ($iSnippetId >= 1 && $iSnippetId <= 6 && (string)$aRow["hash"] != "") {
+                $aSnippetHashes[$iSnippetId] = (string)$aRow["hash"];
+            }
+        }
+        for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
+            if (!isset($aSnippetHashes[$iSnippetId])) {
+                throw new RuntimeException("Snippet Board hash is missing for slot " . $iSnippetId . ".");
+            }
+        }
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("INSERT INTO fs_snippet_board (id, note_text) VALUES (:id, :note_text) ON DUPLICATE KEY UPDATE note_text = VALUES(note_text)");
+        $oStatement = $oPdo->prepare("UPDATE fs_snippet_board SET note_text = :note_text WHERE id = :id");
         for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
             $oStatement->execute(array(
                 "id" => $iSnippetId,
-                "note_text" => getPostedValue("snippet_" . $iSnippetId)
+                "note_text" => encryptTextMessage(getPostedValue("snippet_" . $iSnippetId), $aSnippetHashes[$iSnippetId])
             ));
         }
         $oPdo->commit();
@@ -92,11 +112,18 @@ for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
 }
 
 try {
-    $oStatement = $oPdo->query("SELECT id, note_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
+    $oStatement = $oPdo->query("SELECT id, note_text, `hash`, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
     while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
         $iSnippetId = (int)$aRow["id"];
         if ($iSnippetId >= 1 && $iSnippetId <= 6) {
-            $aSnippets[$iSnippetId] = (string)$aRow["note_text"];
+            $sNoteText = (string)$aRow["note_text"];
+            if ($sNoteText != "") {
+                if ((string)$aRow["hash"] == "") {
+                    throw new RuntimeException("Snippet Board hash is missing for slot " . $iSnippetId . ".");
+                }
+                $sNoteText = decryptTextMessage($sNoteText, (string)$aRow["hash"]);
+            }
+            $aSnippets[$iSnippetId] = $sNoteText;
             if ((string)$aRow["updated_at_text"] > $sBoardRevision) {
                 $sBoardRevision = (string)$aRow["updated_at_text"];
             }
