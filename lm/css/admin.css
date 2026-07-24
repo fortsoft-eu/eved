@@ -1488,3 +1488,158 @@ body.php-generated-output hr {
     margin: 0;
     white-space: pre;
 }
+
+body.snippet-board-page {
+    box-sizing: border-box;
+    height: calc(100vh - 12px);
+    height: calc(100dvh - 12px);
+    overflow: hidden;
+}
+
+.snippet-board-form {
+    background: transparent;
+    box-sizing: border-box;
+    overflow: auto;
+    padding: 0;
+    width: 100%;
+}
+
+.snippet-board-status {
+    box-sizing: border-box;
+    display: inline-block;
+    height: 27px;
+    line-height: 18px;
+    padding: 4px 8px 3px 8px;
+}
+
+.snippet-board-status:empty {
+    display: none;
+}
+
+.snippet-board-status-saving,
+.snippet-board-status-changed {
+    background: #FCF8E3;
+    border: 1px solid #F0D98C;
+    color: #8A6D3B;
+}
+
+.snippet-board-status-saved {
+    background: #DFF0D8;
+    border: 1px solid #A3C293;
+    color: #2E5E2E;
+}
+
+.snippet-board-status-error {
+    background: #FEE;
+    border: 1px solid #DCA7A7;
+    color: #8A1F11;
+}
+
+.snippet-board-tabs {
+    display: none;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+}
+
+.admin-controls .snippet-board-tab {
+    box-sizing: border-box;
+    flex: 0 0 40px;
+    height: 27px;
+    margin: 0;
+    padding: 2px 2px 3px 2px;
+    width: 40px;
+}
+
+.snippet-board-tab-active {
+    background: #DCDCE4;
+    font-weight: bold;
+}
+
+.snippet-board-grid {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.snippet-board-panel {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 0;
+}
+
+.snippet-board-textarea {
+    box-sizing: border-box;
+    height: 320px;
+    margin: 0;
+    resize: none;
+    width: 100%;
+}
+
+.snippet-board-form .tox-tinymce {
+    border: 1px solid #B6BCC2;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.snippet-board-form .tox .tox-toolbar,
+.snippet-board-form .tox .tox-toolbar__overflow,
+.snippet-board-form .tox .tox-toolbar__primary {
+    background: #F4F4F4;
+}
+
+.snippet-board-form .tox .tox-toolbar__primary {
+    border-bottom: 1px solid #C0C0C0;
+}
+
+.snippet-board-form .tox .tox-tbtn {
+    border-radius: 0;
+    height: 26px;
+    margin: 1px;
+}
+
+.snippet-board-form .tox .tox-tbtn:hover {
+    background: #DCDCE4;
+}
+
+.snippet-board-form .tox .tox-statusbar__resize-handle {
+    display: none;
+}
+
+body[data-pmd-like="1"] .snippet-board-tabs {
+    display: inline-flex;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 6px;
+}
+
+body[data-pmd-like="1"] .admin-controls {
+    flex-wrap: nowrap;
+}
+
+body[data-pmd-like="1"] .snippet-board-form {
+    overflow: hidden;
+}
+
+body[data-pmd-like="1"] .snippet-board-grid {
+    display: block;
+}
+
+body[data-pmd-like="1"] .snippet-board-panel {
+    display: none;
+}
+
+body[data-pmd-like="1"] .snippet-board-panel-active {
+    display: block;
+}
+
+@media print {
+    body.snippet-board-page {
+        height: auto;
+        overflow: visible;
+    }
+
+    .snippet-board-tabs {
+        display: none;
+    }
+}

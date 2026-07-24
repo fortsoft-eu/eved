@@ -1146,6 +1146,284 @@ function bindAdminSubmitOnChange() {
     }
 }
 
+function resizeSnippetBoardEditors() {
+    var oGrid = document.querySelector(".snippet-board-grid");
+    var iHeight = oGrid ? parseInt(oGrid.getAttribute("data-editor-height") || "320", 10) : 320;
+    if (window.tinymce && typeof window.tinymce.get == "function") {
+        window.setTimeout(function() {
+            var aTextareas = document.querySelectorAll(".js-snippet-board-textarea");
+            var oContainer;
+            var oEditor;
+            var i;
+            for (i = 0; i < aTextareas.length; i++) {
+                oEditor = window.tinymce.get(aTextareas[i].id);
+                if (oEditor && typeof oEditor.getContainer == "function") {
+                    oContainer = oEditor.getContainer();
+                    if (oContainer) {
+                        oContainer.style.height = iHeight + "px";
+                        oContainer.style.minHeight = iHeight + "px";
+                    }
+                    if (typeof oEditor.dispatch == "function") {
+                        oEditor.dispatch("ResizeEditor");
+                    }
+                }
+            }
+        }, 0);
+    }
+}
+
+function isSnippetBoardPmdLike() {
+    return document.body && document.body.getAttribute("data-pmd-like") == "1";
+}
+
+function getSnippetBoardColumnCount(iViewportWidth) {
+    if (isSnippetBoardPmdLike()) {
+        return 1;
+    }
+    if (iViewportWidth >= 1180) {
+        return 3;
+    }
+    if (iViewportWidth >= 760) {
+        return 2;
+    }
+    return 1;
+}
+
+function getSnippetBoardEditorHeight(iAvailableHeight, iRows, blPmdLike) {
+    var iGap = 8;
+    var iHeight;
+    if (blPmdLike) {
+        return Math.max(220, iAvailableHeight);
+    }
+    iHeight = Math.floor((iAvailableHeight - (iRows - 1) * iGap) / iRows);
+    return Math.max(220, iHeight);
+}
+
+function layoutSnippetBoard() {
+    var oForm = document.getElementById("snippet-board-form");
+    var oGrid = oForm ? oForm.querySelector(".snippet-board-grid") : null;
+    var aTextareas = oForm ? oForm.querySelectorAll(".js-snippet-board-textarea") : [];
+    var oControls = document.querySelector(".admin-controls");
+    var oVisualViewport = window.visualViewport || null;
+    var iViewportWidth = oVisualViewport ? Math.floor(oVisualViewport.width) : (window.innerWidth || document.documentElement.clientWidth || 1024);
+    var iViewportHeight = oVisualViewport ? Math.floor(oVisualViewport.height) : (window.innerHeight || document.documentElement.clientHeight || 768);
+    var blPmdLike = isSnippetBoardPmdLike();
+    var iColumns = getSnippetBoardColumnCount(iViewportWidth);
+    var iRows = blPmdLike ? 1 : Math.ceil(6 / iColumns);
+    var iTop = oForm ? oForm.getBoundingClientRect().top - (oVisualViewport ? oVisualViewport.offsetTop : 0) : (oControls ? oControls.getBoundingClientRect().bottom + 6 : 0);
+    var iAvailableHeight = Math.max(220, Math.floor(iViewportHeight - iTop - 6));
+    var iEditorHeight = getSnippetBoardEditorHeight(iAvailableHeight, iRows, blPmdLike);
+    var i;
+    if (!oForm || !oGrid) {
+        return;
+    }
+    oForm.style.height = iAvailableHeight + "px";
+    oGrid.style.gridTemplateColumns = "repeat(" + iColumns + ", minmax(0, 1fr))";
+    oGrid.setAttribute("data-editor-height", String(iEditorHeight));
+    oGrid.setAttribute("data-columns", String(iColumns));
+    oGrid.setAttribute("data-rows", String(iRows));
+    for (i = 0; i < aTextareas.length; i++) {
+        aTextareas[i].style.height = iEditorHeight + "px";
+    }
+    resizeSnippetBoardEditors();
+}
+
+function activateSnippetBoardPanel(sSlot) {
+    var aTabs = document.querySelectorAll("[data-snippet-tab]");
+    var aPanels = document.querySelectorAll("[data-snippet-panel]");
+    var i;
+    for (i = 0; i < aTabs.length; i++) {
+        if (aTabs[i].getAttribute("data-snippet-tab") == sSlot) {
+            addAdminClass(aTabs[i], "snippet-board-tab-active");
+            aTabs[i].setAttribute("aria-selected", "true");
+        } else {
+            removeAdminClass(aTabs[i], "snippet-board-tab-active");
+            aTabs[i].setAttribute("aria-selected", "false");
+        }
+    }
+    for (i = 0; i < aPanels.length; i++) {
+        if (aPanels[i].getAttribute("data-snippet-panel") == sSlot) {
+            addAdminClass(aPanels[i], "snippet-board-panel-active");
+        } else {
+            removeAdminClass(aPanels[i], "snippet-board-panel-active");
+        }
+    }
+    resizeSnippetBoardEditors();
+    layoutSnippetBoard();
+}
+
+function bindSnippetBoardTabs() {
+    var aTabs = document.querySelectorAll("[data-snippet-tab]");
+    var i;
+    for (i = 0; i < aTabs.length; i++) {
+        aTabs[i].addEventListener("click", function() {
+            activateSnippetBoardPanel(this.getAttribute("data-snippet-tab") || "1");
+        });
+    }
+}
+
+function bindSnippetBoardForm() {
+    var oForm = document.getElementById("snippet-board-form");
+    var oStatus = document.querySelector(".js-snippet-board-status");
+    var iSaveTimer = null;
+    var blSaving = false;
+    var blSaveAgain = false;
+    var blChanged = false;
+
+    function setSnippetBoardStatus(sText, sState) {
+        if (!oStatus) {
+            return;
+        }
+        oStatus.textContent = sText || "";
+        oStatus.className = "snippet-board-status js-snippet-board-status";
+        if (sState) {
+            addAdminClass(oStatus, "snippet-board-status-" + sState);
+        }
+    }
+
+    function collectSnippetBoardData() {
+        var oData = new FormData();
+        var aTextareas = oForm.querySelectorAll(".js-snippet-board-textarea");
+        var i;
+        oData.append("action", "save_snippet_board");
+        if (window.tinymce && typeof window.tinymce.triggerSave == "function") {
+            window.tinymce.triggerSave();
+        }
+        for (i = 0; i < aTextareas.length; i++) {
+            appendAdminEncodedValue(oData, aTextareas[i].name, aTextareas[i].value);
+        }
+        return oData;
+    }
+
+    function sendSnippetBoardBeacon() {
+        var oData;
+        if (!navigator.sendBeacon || !blChanged) {
+            return false;
+        }
+        oData = collectSnippetBoardData();
+        appendAdminCsrfToken(oData);
+        try {
+            if (navigator.sendBeacon(window.location.href, oData)) {
+                blChanged = false;
+                blSaveAgain = false;
+                return true;
+            }
+        } catch (oException) {
+            logAdminException(oException);
+        }
+        return false;
+    }
+
+    function saveSnippetBoardNow() {
+        var oData;
+        if (!blChanged && !blSaveAgain) {
+            return;
+        }
+        if (iSaveTimer) {
+            window.clearTimeout(iSaveTimer);
+            iSaveTimer = null;
+        }
+        if (blSaving) {
+            blSaveAgain = true;
+            return;
+        }
+        blSaving = true;
+        blSaveAgain = false;
+        blChanged = false;
+        setSnippetBoardStatus("Saving...", "saving");
+        oData = collectSnippetBoardData();
+        submitAdminRequest(oData, function() {
+            blSaving = false;
+            if (blSaveAgain || blChanged) {
+                saveSnippetBoardNow();
+                return;
+            }
+            setSnippetBoardStatus("Saved.", "saved");
+        }, function(sMessage) {
+            blSaving = false;
+            blChanged = true;
+            setSnippetBoardStatus(sMessage || "Save failed.", "error");
+        });
+    }
+
+    function scheduleSnippetBoardSave() {
+        blChanged = true;
+        if (iSaveTimer) {
+            window.clearTimeout(iSaveTimer);
+        }
+        setSnippetBoardStatus("Changed.", "changed");
+        iSaveTimer = window.setTimeout(function() {
+            iSaveTimer = null;
+            saveSnippetBoardNow();
+        }, 650);
+    }
+
+    function bindTextareaChanges() {
+        var aTextareas = oForm.querySelectorAll(".js-snippet-board-textarea");
+        var i;
+        for (i = 0; i < aTextareas.length; i++) {
+            aTextareas[i].addEventListener("input", scheduleSnippetBoardSave);
+            aTextareas[i].addEventListener("change", scheduleSnippetBoardSave);
+        }
+    }
+
+    if (!oForm) {
+        return;
+    }
+    oForm.addEventListener("submit", function(oEvent) {
+        oEvent.preventDefault();
+        saveSnippetBoardNow();
+    });
+    window.addEventListener("beforeunload", function() {
+        if (blChanged && !sendSnippetBoardBeacon()) {
+            saveSnippetBoardNow();
+        }
+    });
+    document.addEventListener("visibilitychange", function() {
+        if (document.visibilityState == "hidden" && blChanged && !sendSnippetBoardBeacon()) {
+            saveSnippetBoardNow();
+        }
+    });
+    bindTextareaChanges();
+}
+
+function bindSnippetBoardTinyMce() {
+    if (!window.tinymce || typeof window.tinymce.init != "function") {
+        return;
+    }
+    try {
+        window.tinymce.init({
+            selector: "textarea.js-snippet-board-textarea",
+            menubar: false,
+            branding: false,
+            promotion: false,
+            browser_spellcheck: true,
+            convert_urls: false,
+            entity_encoding: "raw",
+            height: 320,
+            license_key: "gpl",
+            resize: false,
+            skin: "oxide",
+            statusbar: false,
+            toolbar: "undo redo | blocks | bold italic underline | bullist numlist | link unlink | removeformat code",
+            toolbar_mode: "sliding",
+            plugins: "lists link code autolink",
+            content_style: "body{background:#fff;color:#111;font-family:Arial,sans-serif;font-size:14px;line-height:1.35;margin:8px;}p{margin:0 0 8px;}ul,ol{margin-top:0;}a{color:#075e9e;}",
+            setup: function(oEditor) {
+                oEditor.on("change keyup undo redo input paste", function() {
+                    oEditor.save();
+                    dispatchAdminInputEvent(oEditor.getElement());
+                });
+                oEditor.on("init", function() {
+                    layoutSnippetBoard();
+                });
+            }
+        });
+    } catch (oException) {
+        logAdminException(oException);
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     var aUserAgents = document.querySelectorAll(".js-user-agent");
     var iUserAgentIndex = 0;
@@ -1262,4 +1540,12 @@ document.addEventListener("DOMContentLoaded", function() {
     bindAdminCopyLinks();
     bindMenuAdmin();
     bindAdminSubmitOnChange();
+    bindSnippetBoardTabs();
+    bindSnippetBoardForm();
+    bindSnippetBoardTinyMce();
+    layoutSnippetBoard();
+    window.addEventListener("resize", layoutSnippetBoard);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", layoutSnippetBoard);
+    }
 });

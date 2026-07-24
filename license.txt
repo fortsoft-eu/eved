@@ -25,7 +25,31 @@ SOFTWARE.
 Third-party notices
 ===================
 
-This project includes third-party metadata files under ex/lib/.
+The MIT License above applies to this project's original code unless a file or
+third-party component states a different license. Third-party components
+included with this project remain under their own licenses, as listed below.
+
+
+lm/vendors/tinymce-8.8.1/
+-------------------------
+
+TinyMCE 8.8.1
+
+Copyright (c) 2025 Ephox Corporation DBA Tiny Technologies, Inc.
+
+TinyMCE is licensed under the GNU General Public License Version 2 or later
+(GPLv2+) or under the Tiny Technologies, Inc Software Terms & Conditions of
+Use / Tiny Self-Hosted License Agreement. This project self-hosts TinyMCE in
+GPL mode by configuring TinyMCE with license_key: "gpl".
+
+TinyMCE is a third-party component and is not licensed under this project's
+MIT License. See the bundled TinyMCE license and notices:
+
+lm/vendors/tinymce-8.8.1/license.md
+lm/vendors/tinymce-8.8.1/notices.txt
+
+Source project:
+https://github.com/tinymce/tinymce
 
 
 ex/lib/phone_metadata.xml
