@@ -44,7 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 redirect(getCurrentScriptName());
             }
             $sNextDueAt = trim((string)$aSubscription["next_due_at"]);
-            $oNextDueAt = parseSubscriptionDueAt($sNextDueAt);
+            $oNextDueAt = parseInputDateTime($sNextDueAt);
             if (!$oNextDueAt) {
                 $oPdo->rollBack();
                 if ($blJsonResponse) {
@@ -196,7 +196,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $aRows = fetchSubscriptionAdminRows($oPdo);
 $aFinanceTypes = $blCanEdit ? getFinanceTypes(false) : array();
-$aNewSubscriptionDefaults = $blCanEdit ? getNewSubscriptionDefaults($oPdo) : array("finance_type_id" => 0, "currency" => getDefaultCurrency(), "billing_period" => "monthly");
+$aNewSubscriptionDefaults = $blCanEdit ? getNewSubscriptionDefaults($oPdo) : array("finance_type_id" => 0, "currency" => $sDefaultCurrency, "billing_period" => "monthly");
 
 
 $sToolbarHtml = "";
@@ -243,7 +243,7 @@ echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">S
     "  </p>\n";
 
 ?>
-  <table id="subscriptions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(getCurrencyOptionsJson($oPdo, getDefaultCurrency()), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-default-finance-type-id="<?php echo html((int)$aNewSubscriptionDefaults["finance_type_id"] > 0 ? $aNewSubscriptionDefaults["finance_type_id"] : ""); ?>" data-default-currency="<?php echo html($aNewSubscriptionDefaults["currency"]); ?>" data-default-billing-period="<?php echo html($aNewSubscriptionDefaults["billing_period"]); ?>">
+  <table id="subscriptions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-default-finance-type-id="<?php echo html((int)$aNewSubscriptionDefaults["finance_type_id"] > 0 ? $aNewSubscriptionDefaults["finance_type_id"] : ""); ?>" data-default-currency="<?php echo html($aNewSubscriptionDefaults["currency"]); ?>" data-default-billing-period="<?php echo html($aNewSubscriptionDefaults["billing_period"]); ?>">
     <thead>
       <tr>
         <th class="subscription-in-column">In</th>

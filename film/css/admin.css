@@ -1,5 +1,4 @@
-html,
-body {
+html, body {
     overscroll-behavior-y: none;
 }
 
@@ -43,8 +42,7 @@ form {
     margin: 10px 16px 4px;
 }
 
-.login-fields input[type="text"],
-.login-fields input[type="password"] {
+.login-fields input[type="text"], .login-fields input[type="password"] {
     box-sizing: border-box;
     margin: 0 16px;
     width: calc(100% - 32px);
@@ -156,19 +154,14 @@ form {
     white-space: pre-line;
 }
 
-button,
-select {
+button, select {
     border: 1px solid #C0C0C0;
     width: 100%;
     padding: 4px;
     margin-top: 10px;
 }
 
-input[type="date"],
-input[type="datetime-local"],
-input[type="number"],
-input[type="password"],
-input[type="text"] {
+input[type="date"], input[type="datetime-local"], input[type="number"], input[type="password"], input[type="text"] {
     padding-left: 0;
     padding-right: 0;
 }
@@ -186,10 +179,7 @@ input[type="text"] {
     text-decoration: none;
 }
 
-.button-link-disabled,
-.button-link-disabled:hover,
-.button-link:disabled,
-.button-link:disabled:hover {
+.button-link-disabled, .button-link-disabled:hover, .button-link:disabled, .button-link:disabled:hover {
     background: #E6E6E6;
     border-color: #C8C8C8;
     color: #777;
@@ -371,8 +361,7 @@ table {
     font-weight: bold;
 }
 
-.admin-controls input,
-.admin-controls label {
+.admin-controls input, .admin-controls label {
     margin-top: 0;
 }
 
@@ -445,8 +434,7 @@ table {
     margin: 8px 0;
 }
 
-.menu-link-active,
-.menu-link:hover {
+.menu-link-active, .menu-link:hover {
     background: #DCDCE4;
 }
 
@@ -487,24 +475,19 @@ table {
     table-layout: auto;
 }
 
-.table-filter-target td,
-.table-filter-target th {
+.table-filter-target td, .table-filter-target th {
     height: auto;
     overflow-wrap: normal;
     vertical-align: top;
     word-break: normal;
 }
 
-#extensions-table,
-#streams-table {
+#extensions-table, #streams-table {
     table-layout: auto;
     width: auto;
 }
 
-#extensions-table td,
-#extensions-table th,
-#streams-table td,
-#streams-table th {
+#extensions-table td, #extensions-table th, #streams-table td, #streams-table th {
     overflow-wrap: normal;
     white-space: nowrap;
     word-break: normal;
@@ -520,8 +503,7 @@ table {
     width: 100%;
 }
 
-#database-table td,
-#database-table th {
+#database-table td, #database-table th {
     overflow-wrap: normal;
     white-space: nowrap;
     word-break: normal;
@@ -535,9 +517,7 @@ table {
     white-space: pre;
 }
 
-.condensed-table .database-table-name,
-.condensed-table .database-structure-cell,
-.condensed-table .database-structure-cell pre {
+.condensed-table .database-table-name, .condensed-table .database-structure-cell, .condensed-table .database-structure-cell pre {
     font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
     font-stretch: condensed;
 }
@@ -568,8 +548,7 @@ table {
     word-break: normal;
 }
 
-.ua-table td,
-.ua-table th {
+.ua-table td, .ua-table th {
     vertical-align: top;
 }
 
@@ -579,8 +558,7 @@ table {
     text-overflow: ellipsis;
 }
 
-td,
-th {
+td, th {
     border: 1px solid #C0C0C0;
     padding: 1px 2px;
     text-align: left;
@@ -697,8 +675,7 @@ tr:nth-child(even) {
     text-align: left;
 }
 
-.schema-table td,
-.schema-table th {
+.schema-table td, .schema-table th {
     vertical-align: top;
     height: auto;
     white-space: normal;
@@ -726,13 +703,11 @@ tr:nth-child(even) {
     width: calc(27% - 47px);
 }
 
-.schema-table td:nth-child(1),
-.schema-table th:nth-child(1) {
+.schema-table td:nth-child(1), .schema-table th:nth-child(1) {
     width: 35px;
 }
 
-.schema-table td:nth-child(2),
-.schema-table th:nth-child(2) {
+.schema-table td:nth-child(2), .schema-table th:nth-child(2) {
     width: calc(25% + 59px);
     overflow-wrap: normal;
     white-space: nowrap;
@@ -744,18 +719,15 @@ tr:nth-child(even) {
     white-space: normal;
 }
 
-.schema-table td:nth-child(3),
-.schema-table th:nth-child(3) {
+.schema-table td:nth-child(3), .schema-table th:nth-child(3) {
     width: calc(26% - 8px);
 }
 
-.schema-table td:nth-child(4),
-.schema-table th:nth-child(4) {
+.schema-table td:nth-child(4), .schema-table th:nth-child(4) {
     width: 36px;
 }
 
-.schema-table td:nth-child(5),
-.schema-table th:nth-child(5) {
+.schema-table td:nth-child(5), .schema-table th:nth-child(5) {
     width: calc(27% - 47px);
 }
 
@@ -814,8 +786,7 @@ tr:nth-child(even) {
     margin-top: 24px;
 }
 
-.schema-relations td,
-.schema-relations th {
+.schema-relations td, .schema-relations th {
     vertical-align: top;
 }
 
@@ -845,12 +816,9 @@ tr:nth-child(even) {
     .menu-panel {
         max-width: calc(100vw - 16px);
     }
-
-    .schema-diagram,
-    .schema-relations {
+    .schema-diagram, .schema-relations {
         display: none;
     }
-
     .schema-unavailable-message {
         display: block;
     }
@@ -874,14 +842,11 @@ tr:nth-child(even) {
     width: auto;
 }
 
-#phpinfo-select-form button,
-#phpinfo-select-form label,
-#phpinfo-select-form select {
+#phpinfo-select-form button, #phpinfo-select-form label, #phpinfo-select-form select {
     margin-top: 0;
 }
 
-#phpinfo-select-form button,
-#phpinfo-select-form select {
+#phpinfo-select-form button, #phpinfo-select-form select {
     width: auto;
 }
 
@@ -928,8 +893,7 @@ body.php-generated-output .center th {
     text-align: center !important;
 }
 
-body.php-generated-output td,
-body.php-generated-output th {
+body.php-generated-output td, body.php-generated-output th {
     border: 1px solid #666;
     font-size: inherit;
     padding: 4px 5px;
@@ -1001,38 +965,28 @@ body.php-generated-output hr {
         background: var(--php-dark-grey);
         color: var(--php-light-blue);
     }
-
-    body.php-generated-output .h td,
-    body.php-generated-output td.e,
-    body.php-generated-output th {
+    body.php-generated-output .h td, body.php-generated-output td.e, body.php-generated-output th {
         border-color: #606A90;
     }
-
     body.php-generated-output td {
         border-color: #505153;
     }
-
     body.php-generated-output .e {
         background-color: #404A77;
     }
-
     body.php-generated-output .h {
         background-color: var(--php-dark-blue);
     }
-
     body.php-generated-output .v {
         background-color: var(--php-dark-grey);
     }
-
     body.php-generated-output hr {
         background-color: #505153;
     }
 }
 
 @media print {
-    .admin-controls,
-    .admin-top > form,
-    p:has(.js-table-filter) {
+    .admin-controls, .admin-top > form, p:has(.js-table-filter) {
         display: none;
     }
 }

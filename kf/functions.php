@@ -6,29 +6,19 @@ function redirect($sPath) {
     exit;
 }
 
-function getSettingsDefaults() {
-    return array("use_european_amount_format" => 0);
-}
-
-function getCurrentSettingsPageKey() {
-    return getCurrentScriptName();
-}
-
 function getPageSettingsDefaults($sPageKey = "") {
     if ($sPageKey == "") {
-        $sPageKey = getCurrentSettingsPageKey();
+        $sPageKey = getCurrentScriptName();
     }
     return array("display_currency" => $sPageKey == "subscr.php" ? "" : "CZK");
 }
 
-function getDefaultCurrency() {
-    return "USD";
-}
-
 function getNewSubscriptionDefaults($oPdo) {
+    global $sDefaultCurrency;
+
     $aDefaults = array(
         "finance_type_id" => 0,
-        "currency" => getDefaultCurrency(),
+        "currency" => $sDefaultCurrency,
         "billing_period" => "monthly"
     );
     if (!isset($_SESSION["kf_new_subscription_defaults"]) || !is_array($_SESSION["kf_new_subscription_defaults"])) {
@@ -65,8 +55,8 @@ function saveNewSubscriptionDefaults($iFinanceTypeId, $sCurrency, $sBillingPerio
 }
 
 function getSettings() {
-    $aSettingsDefaults = getSettingsDefaults();
-    $sPageKey = getCurrentSettingsPageKey();
+    $aSettingsDefaults = array("use_european_amount_format" => 0);
+    $sPageKey = getCurrentScriptName();
     $aPageSettingsDefaults = getPageSettingsDefaults($sPageKey);
     $aSettings = array();
     if (!isset($_SESSION["kf_settings"]) || !is_array($_SESSION["kf_settings"])) {
@@ -109,9 +99,9 @@ function saveSettings($aPayload) {
     global $oPdo;
 
     $aSettings = array();
-    $sPageKey = getCurrentSettingsPageKey();
+    $sPageKey = getCurrentScriptName();
     $aPageSettings = array();
-    foreach (getSettingsDefaults() as $sSettingName => $iSettingDefault) {
+    foreach (array("use_european_amount_format" => 0) as $sSettingName => $iSettingDefault) {
         $aSettings[$sSettingName] = isset($aPayload[$sSettingName]) && (string)$aPayload[$sSettingName] == "1" ? 1 : 0;
     }
     if (!isset($_SESSION["kf_page_settings"]) || !is_array($_SESSION["kf_page_settings"])) {
@@ -186,8 +176,10 @@ function normalizeCurrency($sCurrency) {
 }
 
 function normalizeStoredCurrency($sCurrency) {
+    global $sDefaultCurrency;
+
     $sCurrency = normalizeCurrency($sCurrency);
-    return $sCurrency != "" ? $sCurrency : getDefaultCurrency();
+    return $sCurrency != "" ? $sCurrency : $sDefaultCurrency;
 }
 
 function getCurrencyOptions($oPdo, $sSelectedCurrency = "") {
@@ -229,9 +221,6 @@ function isCurrencyAvailable($oPdo, $sCurrency) {
     if ($sCurrency == "CZK") {
         return true;
     }
-    if (!$oPdo) {
-        return false;
-    }
     try {
         $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_exchange_rates WHERE currency_code = :currency_code");
         $oStatement->execute(array("currency_code" => $sCurrency));
@@ -242,13 +231,11 @@ function isCurrencyAvailable($oPdo, $sCurrency) {
     }
 }
 
-function getCurrencyOptionsJson($oPdo, $sSelectedCurrency = "") {
-    return json_encode(getCurrencyOptions($oPdo, $sSelectedCurrency));
-}
-
 function getPostedCurrency($sName = "currency") {
-    $sCurrency = normalizeCurrency(getPostedTrimmedValue($sName, getDefaultCurrency()));
-    return $sCurrency != "" ? $sCurrency : getDefaultCurrency();
+    global $sDefaultCurrency;
+
+    $sCurrency = normalizeCurrency(getPostedTrimmedValue($sName, $sDefaultCurrency));
+    return $sCurrency != "" ? $sCurrency : $sDefaultCurrency;
 }
 
 function getCurrencyRateToCzk($oPdo, $sCurrency, $sDate) {
@@ -258,9 +245,6 @@ function getCurrencyRateToCzk($oPdo, $sCurrency, $sDate) {
     $sDate = formatDate($sDate);
     if ($sCurrency == "CZK") {
         return 1.0;
-    }
-    if (!$oPdo) {
-        return null;
     }
     $sKey = $sCurrency . "|" . $sDate;
     if (array_key_exists($sKey, $aRates)) {
@@ -341,6 +325,8 @@ function formatCurrencyAmount($oPdo, $mAmount, $sSourceCurrency, $sDate, $sDispl
 }
 
 function getDisplayCurrencyTotalAmount($oPdo, $aRows, $sDateColumn, $sDisplayCurrency) {
+    global $sDefaultCurrency;
+
     $sDisplayCurrency = normalizeCurrency($sDisplayCurrency);
     $sTargetCurrency = $sDisplayCurrency;
     $sStoredCurrency = "";
@@ -355,7 +341,7 @@ function getDisplayCurrencyTotalAmount($oPdo, $aRows, $sDateColumn, $sDisplayCur
         }
     }
     if ($sTargetCurrency == "") {
-        $sTargetCurrency = $blMixedCurrencies ? "CZK" : ($sStoredCurrency != "" ? $sStoredCurrency : getDefaultCurrency());
+        $sTargetCurrency = $blMixedCurrencies ? "CZK" : ($sStoredCurrency != "" ? $sStoredCurrency : $sDefaultCurrency);
     }
     $fTotalAmount = 0.0;
     foreach ($aRows as $aRow) {
@@ -654,6 +640,8 @@ function renderTransactionAdminRows($aRows, $blShowActions = true, $blUseEuropea
 }
 
 function getPostedAdditionalTransactions() {
+    global $sDefaultCurrency;
+
     $aRows = array();
     if (!isset($_POST["additional_transactions"]) || !is_array($_POST["additional_transactions"])) {
         return $aRows;
@@ -664,7 +652,7 @@ function getPostedAdditionalTransactions() {
         }
         $iFinanceTypeId = isset($aInput["finance_type_id"]) ? (int)$aInput["finance_type_id"] : 0;
         $sAmount = isset($aInput["amount"]) ? trim((string)$aInput["amount"]) : "";
-        $sCurrency = isset($aInput["currency"]) ? normalizeStoredCurrency($aInput["currency"]) : getDefaultCurrency();
+        $sCurrency = isset($aInput["currency"]) ? normalizeStoredCurrency($aInput["currency"]) : $sDefaultCurrency;
         if ($iFinanceTypeId < 1 && $sAmount == "") {
             continue;
         }
@@ -771,12 +759,8 @@ function getSubscriptionBillingPeriodDateModifier($sBillingPeriod) {
     return isset($aModifiers[$sBillingPeriod]) ? $aModifiers[$sBillingPeriod] : "";
 }
 
-function parseSubscriptionDueAt($sDueAt) {
-    return parseInputDateTime($sDueAt);
-}
-
 function formatSubscriptionDueAt($sDueAt) {
-    $oDueAt = parseSubscriptionDueAt($sDueAt);
+    $oDueAt = parseInputDateTime($sDueAt);
     return $oDueAt ? $oDueAt->format("Y-m-d H:i") : "";
 }
 
@@ -791,12 +775,12 @@ function formatSubscriptionDueForDatabase($sDueAt) {
 }
 
 function getSubscriptionBillingDayFromDueAt($sDueAt) {
-    $oDueAt = parseSubscriptionDueAt($sDueAt);
+    $oDueAt = parseInputDateTime($sDueAt);
     return $oDueAt ? (int)$oDueAt->format("j") : null;
 }
 
 function getSubscriptionBillingDayForSave($sNextDueAt, $sBillingPeriod, $aCurrentSubscription = null) {
-    if (!isSubscriptionAnchoredBillingPeriod($sBillingPeriod) || !parseSubscriptionDueAt($sNextDueAt)) {
+    if (!isSubscriptionAnchoredBillingPeriod($sBillingPeriod) || !parseInputDateTime($sNextDueAt)) {
         return null;
     }
     if (is_array($aCurrentSubscription)
@@ -811,7 +795,7 @@ function getSubscriptionBillingDayForSave($sNextDueAt, $sBillingPeriod, $aCurren
 }
 
 function getSubscriptionDueAtAfterMonths($sDueAt, $iMonths, $iBillingDay = 0) {
-    $oDueAt = parseSubscriptionDueAt($sDueAt);
+    $oDueAt = parseInputDateTime($sDueAt);
     if (!$oDueAt) {
         return "";
     }
@@ -850,7 +834,7 @@ function getSubscriptionNextDueAt($sNextDueAt, $sBillingPeriod, $iBillingDay = 0
         return "";
     }
     try {
-        $oNextDueAt = parseSubscriptionDueAt($sNextDueAt);
+        $oNextDueAt = parseInputDateTime($sNextDueAt);
         if (!$oNextDueAt) {
             return "";
         }
@@ -868,7 +852,7 @@ function formatSubscriptionDueInDays($sNextDueAt) {
     }
     try {
         $oToday = new DateTimeImmutable("today");
-        $oNextDueAt = parseSubscriptionDueAt($sNextDueAt);
+        $oNextDueAt = parseInputDateTime($sNextDueAt);
         if (!$oNextDueAt) {
             return "&mdash;";
         }

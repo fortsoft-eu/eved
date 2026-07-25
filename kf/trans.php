@@ -160,7 +160,7 @@ echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">S
     "  </p>\n";
 
 ?>
-  <table id="transactions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(getCurrencyOptionsJson($oPdo, getDefaultCurrency()), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="transactions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th>Date</th>

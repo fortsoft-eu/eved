@@ -987,7 +987,7 @@ try {
     $aGroups = fetchSubjectGroups($oPdo);
     $aAllGroups = fetchGroups($oPdo);
     $aNotes = fetchSubjectNotes($oPdo);
-    $aBirthdayServedRows = interFetchBirthdayServedRows($oPdo);
+    $aBirthdayServedRows = fetchPersonServedRows($oPdo, "inter_served_at");
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());

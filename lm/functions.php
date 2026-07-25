@@ -1,16 +1,12 @@
 <?php
 
-function menuAdminNormalizePath($sPath) {
-    return normalizeMenuPath($sPath);
-}
-
 function menuAdminDisplayPath($sPath) {
-    $sPath = menuAdminNormalizePath($sPath);
+    $sPath = normalizeMenuPath($sPath);
     return $sPath == "" ? "/" : "/" . $sPath;
 }
 
 function menuAdminPathIsValid($sPath) {
-    $sPath = menuAdminNormalizePath($sPath);
+    $sPath = normalizeMenuPath($sPath);
     if ($sPath == "") {
         return false;
     }
@@ -26,7 +22,7 @@ function menuAdminTargetIsValid($sTarget) {
 }
 
 function menuAdminGroupKey($sPath) {
-    $sPath = menuAdminNormalizePath($sPath);
+    $sPath = normalizeMenuPath($sPath);
     if ($sPath == "") {
         return "";
     }
@@ -35,10 +31,6 @@ function menuAdminGroupKey($sPath) {
         return $aParts[0];
     }
     return "";
-}
-
-function menuAdminGroupLabel($sGroupKey) {
-    return $sGroupKey == "" ? "/" : "/" . $sGroupKey . "/";
 }
 
 function menuAdminCompareRows($aLeft, $aRight) {
@@ -81,7 +73,7 @@ function menuAdminFetchRows($oPdo, $iMenuId = 0) {
             "is_active" => (int)$aRow["is_active"],
             "order" => (int)$aRow["menu_order"],
             "group_key" => $sGroupKey,
-            "group_label" => menuAdminGroupLabel($sGroupKey),
+            "group_label" => $sGroupKey == "" ? "/" : "/" . $sGroupKey . "/",
             "separator" => $aRow["icon"] === null || $aRow["name"] === null || $aRow["title"] === null
         );
     }

@@ -80,6 +80,7 @@ $sContactLandlineEmoji      = "&#128222;";
 $sContactCellEmoji          = "&#128241;";
 $sContactFaxEmoji           = "&#128224;";
 $sContactPagerEmoji         = "&#128223;";
+$sDefaultCurrency           = "USD";
 
 
 $sError = "";

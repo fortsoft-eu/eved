@@ -3183,12 +3183,8 @@ function addressesCompareRows($aFirst, $aSecond) {
     return strcmp((string)$aFirst["address_text"], (string)$aSecond["address_text"]);
 }
 
-function addressesCompareSubjectNames($sFirst, $sSecond) {
-    return strcmp((string)$sFirst, (string)$sSecond);
-}
-
 function addressesCompareSubjects($aFirst, $aSecond) {
-    $iResult = addressesCompareSubjectNames($aFirst["subject_name"], $aSecond["subject_name"]);
+    $iResult = strcmp((string)$aFirst["subject_name"], (string)$aSecond["subject_name"]);
     if ($iResult !== 0) {
         return $iResult;
     }
@@ -3214,24 +3210,12 @@ function addressesAddressFields() {
     );
 }
 
-function addressesRequiredAddressFields() {
-    return array("country");
-}
-
-function addressesSubjectAddressFields() {
-    return array_merge(array("address_type"), addressesAddressFields(), array("note"));
-}
-
 function addressesBuildMatch($aAddress) {
     $aMatch = array();
     foreach (addressesAddressFields() as $sField) {
         $aMatch[$sField] = array_key_exists($sField, $aAddress) && $aAddress[$sField] !== null ? (string)$aAddress[$sField] : null;
     }
     return $aMatch;
-}
-
-function addressesEncodeMatch($aMatch) {
-    return base64_encode(json_encode($aMatch));
 }
 
 function addressesDecodeMatch($sMatch) {
@@ -3252,8 +3236,12 @@ function addressesDecodeMatch($sMatch) {
     return $aMatch;
 }
 
+function addressesSubjectAddressFields() {
+    return array_merge(array("address_type"), addressesAddressFields(), array("note"));
+}
+
 function addressesNullValue($sField, $sValue) {
-    return in_array($sField, addressesRequiredAddressFields(), true) || $sValue != "" ? (string)$sValue : null;
+    return in_array($sField, array("country"), true) || $sValue != "" ? (string)$sValue : null;
 }
 
 function addressesMatchSql($sPrefix) {
@@ -3337,8 +3325,7 @@ function addressesPostedSubjectAddressValues() {
 }
 
 function addressesRenderDataAttributes($aAddressRow) {
-    $sHtml = " data-address-match=\"" . html($aAddressRow["address_match"]) . "\""
-        . renderTimestampTooltipDataAttribute($aAddressRow);
+    $sHtml = " data-address-match=\"" . html($aAddressRow["address_match"]) . "\"" . renderTimestampTooltipDataAttribute($aAddressRow);
     foreach (addressesAddressFields() as $sField) {
         $sAttribute = str_replace("_", "-", $sField);
         $sValue = isset($aAddressRow["address_values"][$sField]) && $aAddressRow["address_values"][$sField] !== null ? (string)$aAddressRow["address_values"][$sField] : "";
@@ -3409,10 +3396,6 @@ function addressesRenderSubjectCell($aSubject, $sAddressFilterText, $blCanEdit) 
     return "        <td class=\"" . html(addressesSubjectCellClass($aSubject)) . " list-item subject-address-item\"" . addressesRenderSubjectDataAttributes($aSubject) . "><span class=\"column-hidden\">" . htmlValue($sAddressFilterText) . "</span><span class=\"" . html($sSubjectValueClass) . "\"" . $sSubjectTimestampTooltipAttribute . ">" . htmlValue($aSubject["subject_name"]) . "</span>" . renderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . $sSubjectPrimaryFlag . $sSubjectActions . "</td>\n";
 }
 
-function addressesTypeLabel($sAddressType) {
-    return ucwords(str_replace("_", " ", (string)$sAddressType));
-}
-
 function addressesFetchRows($oPdo, $aAddressSettings) {
     $aRows = array();
     $aSubjectNames = array();
@@ -3452,7 +3435,7 @@ function addressesFetchRows($oPdo, $aAddressSettings) {
                     "address_text" => $sAddressText,
                     "address_copy_text" => $sAddressCopyText,
                     "address_sort" => addressesNormalizeKey($sAddressText),
-                    "address_match" => addressesEncodeMatch($aAddressMatch),
+                    "address_match" => base64_encode(json_encode($aAddressMatch)),
                     "address_values" => $aAddressMatch,
                     "subjects" => array()
                 );
@@ -3543,10 +3526,6 @@ function fetchPersonServedRows($oPdo, $sServedColumn) {
         $aServedRows[(int)$aRow["subject_id"]] = $aRow;
     }
     return $aServedRows;
-}
-
-function bdFetchBirthdayServedRows($oPdo) {
-    return fetchPersonServedRows($oPdo, "birthday_served_at");
 }
 
 function bdIsBirthdayServed($aServedRows, $iSubjectId, $sBirthdayDate) {
@@ -3640,7 +3619,7 @@ function bdGetSubjectServedInfo($oPdo, $iSubjectId, $aRow) {
     if (!is_array($aBirthdayInfo)) {
         return null;
     }
-    if (bdIsBirthdayServed(bdFetchBirthdayServedRows($oPdo), $iSubjectId, $aBirthdayInfo["birthday_date"])) {
+    if (bdIsBirthdayServed(fetchPersonServedRows($oPdo, "birthday_served_at"), $iSubjectId, $aBirthdayInfo["birthday_date"])) {
         return null;
     }
     return $aBirthdayInfo;
@@ -5816,10 +5795,6 @@ function interGetBirthdayInfo($sCommunicationServedAt) {
     );
 }
 
-function interFetchBirthdayServedRows($oPdo) {
-    return fetchPersonServedRows($oPdo, "inter_served_at");
-}
-
 function interRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings) {
     global $sCommunicationServedEmoji;
 
@@ -5833,7 +5808,7 @@ function interRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGr
 }
 
 function interGetSubjectServedInfo($oPdo, $iSubjectId, $aRow) {
-    $aBirthdayServedRows = interFetchBirthdayServedRows($oPdo);
+    $aBirthdayServedRows = fetchPersonServedRows($oPdo, "inter_served_at");
     $sCommunicationServedAt = isset($aBirthdayServedRows[$iSubjectId]["inter_served_at"]) ? $aBirthdayServedRows[$iSubjectId]["inter_served_at"] : "";
     return interGetBirthdayInfo($sCommunicationServedAt);
 }
@@ -5854,15 +5829,11 @@ function diffEnsureDumpTable(&$aDump, $sTableName) {
     }
 }
 
-function diffDecodeSqlIdentifier($sIdentifier) {
-    return str_replace("``", "`", $sIdentifier);
-}
-
 function diffParseSqlIdentifierList($sSql) {
     $aIdentifiers = array();
     if (preg_match_all("/`((?:``|[^`])*)`/", $sSql, $aMatches)) {
         foreach ($aMatches[1] as $sIdentifier) {
-            $aIdentifiers[] = diffDecodeSqlIdentifier($sIdentifier);
+            $aIdentifiers[] = str_replace("``", "`", $sIdentifier);
         }
     }
     return $aIdentifiers;
@@ -6031,7 +6002,7 @@ function diffParseDatabaseSql($sSql) {
     );
     foreach (diffSplitSqlStatements($sSql) as $sStatement) {
         if (preg_match("/^CREATE\s+TABLE\s+`((?:``|[^`])+)`/is", $sStatement, $aMatches)) {
-            $sTableName = diffDecodeSqlIdentifier($aMatches[1]);
+            $sTableName = str_replace("``", "`", $aMatches[1]);
             if (!preg_match("/^ex_[a-zA-Z0-9_]+$/", $sTableName)) {
                 continue;
             }
@@ -6040,7 +6011,7 @@ function diffParseDatabaseSql($sSql) {
             $aDump["tables"][$sTableName]["create"] = $sCreateSql;
             $aDump["tables"][$sTableName]["primary_keys"] = diffGetPrimaryKeyColumns($sCreateSql);
         } elseif (preg_match("/^INSERT\s+INTO\s+`((?:``|[^`])+)`\s*\((.*)\)\s+VALUES\s*\((.*)\)$/is", $sStatement, $aMatches)) {
-            $sTableName = diffDecodeSqlIdentifier($aMatches[1]);
+            $sTableName = str_replace("``", "`", $aMatches[1]);
             if (!preg_match("/^ex_[a-zA-Z0-9_]+$/", $sTableName)) {
                 continue;
             }
@@ -6357,13 +6328,9 @@ function diffCompareEntityRows($aBackupRows, $aCurrentRows, $aFields) {
     return $aResult;
 }
 
-function diffNormalizeRowForHash($aRow) {
-    ksort($aRow, SORT_STRING);
-    return $aRow;
-}
-
 function diffGetRowHash($aRow) {
-    return sha1(json_encode(diffNormalizeRowForHash($aRow)));
+    ksort($aRow, SORT_STRING);
+    return sha1(json_encode($aRow));
 }
 
 function diffBuildRowKey($aRow, $aPrimaryKeys, $iIndex) {

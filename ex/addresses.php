@@ -474,7 +474,7 @@ if (!$aAddressRows) {
 <?php
 
 foreach (getAddressTypes() as $sAddressType) {
-    echo "            <option value=\"" . html($sAddressType) . "\">" . html(addressesTypeLabel($sAddressType)) . "</option>\n";
+    echo "            <option value=\"" . html($sAddressType) . "\">" . html(ucwords(str_replace("_", " ", (string)$sAddressType))) . "</option>\n";
 }
 
 ?>

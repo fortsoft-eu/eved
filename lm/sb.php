@@ -3,13 +3,12 @@
 include "main.php";
 
 
-$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
 
+$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
 requireFullAccess($aAllowedIps, "portal", "lm_csrf_token", $blJsonResponse);
 
 
@@ -141,6 +140,7 @@ $blTinyMceAvailable = is_file($sTinyMcePath);
 $sTinyMceToken = $blTinyMceAvailable ? dechex(filemtime($sTinyMcePath)) : "";
 $sTitle = getPageTitleText("Snippet Board", $aAllowedIps);
 
+
 $iTime = sendPageHeaders();
 
 ?>
@@ -163,12 +163,16 @@ $iTime = sendPageHeaders();
 <?php
 
 renderMenu();
+echo "    <span class=\"snippet-board-tabs\" role=\"tablist\" aria-label=\"Snippet slots\">\n";
+for ($iSlot = 1; $iSlot <= 6; $iSlot++) {
 
 ?>
-    <span class="snippet-board-tabs" role="tablist" aria-label="Snippet slots">
-<?php for ($iSlot = 1; $iSlot <= 6; $iSlot++) { ?>
       <button type="button" class="button-link snippet-board-tab<?php echo $iSlot == 1 ? " snippet-board-tab-active" : ""; ?>" data-snippet-tab="<?php echo $iSlot; ?>" role="tab" aria-controls="snippet-panel-<?php echo $iSlot; ?>" aria-selected="<?php echo $iSlot == 1 ? "true" : "false"; ?>" aria-label="Snippet <?php echo $iSlot; ?>"><?php echo $iSlot; ?></button>
-<?php } ?>
+<?php
+
+}
+
+?>
     </span>
     <span class="snippet-board-status js-snippet-board-status" aria-live="polite"></span>
   </p>
@@ -176,16 +180,32 @@ renderMenu();
     <input type="hidden" name="action" value="save_snippet_board">
     <input type="hidden" name="lm_csrf_token" value="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
     <div class="snippet-board-grid">
-<?php for ($iSlot = 1; $iSlot <= 6; $iSlot++) { ?>
+<?php
+
+for ($iSlot = 1; $iSlot <= 6; $iSlot++) {
+
+?>
       <section id="snippet-panel-<?php echo $iSlot; ?>" class="snippet-board-panel<?php echo $iSlot == 1 ? " snippet-board-panel-active" : ""; ?>" data-snippet-panel="<?php echo $iSlot; ?>" role="tabpanel">
         <textarea id="snippet-<?php echo $iSlot; ?>" name="snippet_<?php echo $iSlot; ?>" class="snippet-board-textarea js-snippet-board-textarea" rows="18" autocomplete="off" spellcheck="true" aria-label="Snippet <?php echo $iSlot; ?>"><?php echo html($aSnippets[$iSlot]); ?></textarea>
       </section>
-<?php } ?>
+<?php
+
+}
+
+?>
     </div>
   </form>
-<?php if ($blTinyMceAvailable) { ?>
+<?php
+
+if ($blTinyMceAvailable) {
+
+?>
   <script type="text/javascript" src="<?php echo html($sBaseUrl . "vendors/tinymce-8.8.1/tinymce.min.js?sToken=" . $sTinyMceToken); ?>"></script>
-<?php } ?>
+<?php
+
+}
+
+?>
   <script type="text/javascript" src="<?php echo html($sBaseUrl . "js/admin.js?sToken=" . $sScriptToken); ?>"></script>
 </body>
 </html>

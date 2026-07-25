@@ -993,7 +993,7 @@ try {
     $aGroups = fetchSubjectGroups($oPdo);
     $aAllGroups = fetchGroups($oPdo);
     $aNotes = fetchSubjectNotes($oPdo);
-    $aBirthdayServedRows = bdFetchBirthdayServedRows($oPdo);
+    $aBirthdayServedRows = fetchPersonServedRows($oPdo, "birthday_served_at");
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
