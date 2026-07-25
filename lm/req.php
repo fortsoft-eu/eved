@@ -11,7 +11,7 @@ if (!$oPdo) {
 requireFullAccess($aAllowedIps, "portal", "lm_csrf_token");
 
 
-$sTitle = getPageTitleText("LM Dashboard", $aAllowedIps);
+$sTitle = getPageTitleText("Request Overview", $aAllowedIps);
 
 $iTime = sendPageHeaders();
 
