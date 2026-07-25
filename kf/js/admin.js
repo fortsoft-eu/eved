@@ -79,6 +79,10 @@
         return oDate.getFullYear() + "-" + padAdminIsoDateNumber(oDate.getMonth() + 1) + "-" + padAdminIsoDateNumber(oDate.getDate());
     }
 
+    function formatAdminIsoDateTime(oDate) {
+        return formatAdminIsoDate(oDate) + " " + padAdminIsoDateNumber(oDate.getHours()) + ":" + padAdminIsoDateNumber(oDate.getMinutes());
+    }
+
     function createAdminParsedDateTime(iYear, iMonth, iDay, iHour, iMinute, iSecond, blHasTime, blHasSeconds) {
         var oDate;
         iYear = parseInt(iYear, 10);
@@ -2734,7 +2738,7 @@
             oAmount.required = true;
             oCurrency = appendAdminCurrencyField(oDialogData.form, oSubscriptionsTable, oRow ? (oRow.getAttribute("data-currency") || "USD") : sDefaultCurrency);
             oPeriod = appendSubscriptionPeriodField(oDialogData.form, oRow ? (oRow.getAttribute("data-billing-period") || "") : sDefaultBillingPeriod);
-            oNextDueAt = appendSubscriptionDateTimeField(oDialogData.form, "Next Due", "next_due_at", oRow ? (oRow.getAttribute("data-next-due-at") || "") : "");
+            oNextDueAt = appendSubscriptionDateTimeField(oDialogData.form, "Next Due", "next_due_at", oRow ? (oRow.getAttribute("data-next-due-at") || "") : formatAdminIsoDateTime(new Date()));
             oCounterparty = appendSubscriptionTextField(oDialogData.form, "Counterparty", "counterparty", oRow ? (oRow.getAttribute("data-counterparty") || "") : "");
             oNote = appendSubscriptionTextField(oDialogData.form, "Note", "note", oRow ? (oRow.getAttribute("data-note") || "") : "");
             oActive = appendSubscriptionActiveField(oDialogData.form, oRow ? (oRow.getAttribute("data-is-active") || "1") : "1");

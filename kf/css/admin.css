@@ -284,11 +284,7 @@ table {
     width: 154px;
 }
 
-.admin-controls .js-filter-operator, .admin-controls .js-filter-reset {
-    width: 75px;
-}
-
-.admin-controls .js-index-settings-open {
+.admin-controls .js-filter-operator, .admin-controls .js-filter-reset, .admin-controls .js-index-settings-open {
     width: 75px;
 }
 

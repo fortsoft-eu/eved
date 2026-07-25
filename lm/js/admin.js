@@ -1084,6 +1084,512 @@ function bindMenuAdmin() {
     });
 }
 
+function appendIssueDialogField(oGrid, sLabel, oInput) {
+    var oLabel = document.createElement("label");
+    oLabel.htmlFor = oInput.id;
+    oLabel.textContent = sLabel;
+    oGrid.appendChild(oLabel);
+    oGrid.appendChild(oInput);
+}
+
+function createIssueSelect(sId, sValue, aOptions) {
+    var oSelect = document.createElement("select");
+    var oOption;
+    var i;
+    oSelect.id = sId;
+    for (i = 0; i < aOptions.length; i++) {
+        oOption = document.createElement("option");
+        oOption.value = aOptions[i].value;
+        oOption.textContent = aOptions[i].label;
+        if (aOptions[i].value == sValue) {
+            oOption.selected = true;
+        }
+        oSelect.appendChild(oOption);
+    }
+    return oSelect;
+}
+
+function padIssueDateNumber(iValue) {
+    return iValue < 10 ? "0" + iValue : "" + iValue;
+}
+
+function formatIssueLocalDate(oDate) {
+    return oDate.getFullYear() + "-" + padIssueDateNumber(oDate.getMonth() + 1) + "-" + padIssueDateNumber(oDate.getDate());
+}
+
+function parseIssueDateValue(sValue) {
+    var sText = String(sValue || "").replace(/^\s+|\s+$/g, "");
+    var aParts;
+    var iYear;
+    var iMonth;
+    var iDay;
+    var oDate;
+    if (sText == "") {
+        return null;
+    }
+    aParts = sText.match(/^([0-9]{4})[-.\/ ]([0-9]{1,2})[-.\/ ]([0-9]{1,2})$/);
+    if (aParts) {
+        iYear = parseInt(aParts[1], 10);
+        iMonth = parseInt(aParts[2], 10);
+        iDay = parseInt(aParts[3], 10);
+    } else {
+        aParts = sText.match(/^([0-9]{1,2})[-.\/ ]([0-9]{1,2})[-.\/ ]([0-9]{4})$/);
+        if (!aParts) {
+            return null;
+        }
+        iYear = parseInt(aParts[3], 10);
+        iMonth = parseInt(aParts[2], 10);
+        iDay = parseInt(aParts[1], 10);
+    }
+    if (!isFinite(iYear) || !isFinite(iMonth) || !isFinite(iDay) || iYear < 1 || iYear > 9999 || iMonth < 1 || iMonth > 12 || iDay < 1 || iDay > 31) {
+        return null;
+    }
+    oDate = new Date(0);
+    oDate.setFullYear(iYear, iMonth - 1, iDay);
+    oDate.setHours(0, 0, 0, 0);
+    if (oDate.getFullYear() !== iYear || oDate.getMonth() !== iMonth - 1 || oDate.getDate() !== iDay) {
+        return null;
+    }
+    return oDate;
+}
+
+function normalizeIssueDateInput(oInput) {
+    var oDate;
+    if (!oInput || oInput.value.replace(/^\s+|\s+$/g, "") == "") {
+        return;
+    }
+    oDate = parseIssueDateValue(oInput.value);
+    if (oDate) {
+        oInput.value = formatIssueLocalDate(oDate);
+    }
+}
+
+function renderIssueDateCalendar(oInput, oCalendar, oMonthDate) {
+    var aDayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    var iCalendarFirstDay = 1;
+    var oSelectedDate = parseIssueDateValue(oInput.value);
+    var iYear = oMonthDate.getFullYear();
+    var iMonth = oMonthDate.getMonth();
+    var iFirstDay = new Date(iYear, iMonth, 1).getDay();
+    var iOffset = (iFirstDay - iCalendarFirstDay + 7) % 7;
+    var iDays = new Date(iYear, iMonth + 1, 0).getDate();
+    var oHeader = document.createElement("div");
+    var oPrev = document.createElement("button");
+    var oNext = document.createElement("button");
+    var oTitle = document.createElement("span");
+    var oGrid = document.createElement("div");
+    var i;
+    var oEmpty;
+    var oDayLabel;
+    var oDateButton;
+    var oDate;
+    var sDate;
+    oCalendar.innerHTML = "";
+    oCalendar._currentDate = new Date(iYear, iMonth, 1);
+    oHeader.className = "subject-date-calendar-header";
+    oPrev.type = "button";
+    oPrev.className = "subject-date-calendar-nav";
+    oPrev.textContent = "<";
+    oNext.type = "button";
+    oNext.className = "subject-date-calendar-nav";
+    oNext.textContent = ">";
+    oTitle.className = "subject-date-calendar-title";
+    oTitle.textContent = iYear + "-" + padIssueDateNumber(iMonth + 1);
+    oGrid.className = "subject-date-calendar-grid";
+    oPrev.addEventListener("click", function() {
+        renderIssueDateCalendar(oInput, oCalendar, new Date(iYear, iMonth - 1, 1));
+        positionIssueDateCalendar(oInput, oCalendar);
+    });
+    oNext.addEventListener("click", function() {
+        renderIssueDateCalendar(oInput, oCalendar, new Date(iYear, iMonth + 1, 1));
+        positionIssueDateCalendar(oInput, oCalendar);
+    });
+    oHeader.appendChild(oPrev);
+    oHeader.appendChild(oTitle);
+    oHeader.appendChild(oNext);
+    for (i = 0; i < 7; i++) {
+        oDayLabel = document.createElement("div");
+        oDayLabel.className = "subject-date-calendar-day";
+        oDayLabel.textContent = aDayLabels[(iCalendarFirstDay + i) % 7];
+        oGrid.appendChild(oDayLabel);
+    }
+    for (i = 0; i < iOffset; i++) {
+        oEmpty = document.createElement("span");
+        oEmpty.className = "subject-date-calendar-empty";
+        oGrid.appendChild(oEmpty);
+    }
+    for (i = 1; i <= iDays; i++) {
+        oDate = new Date(iYear, iMonth, i);
+        sDate = formatIssueLocalDate(oDate);
+        oDateButton = document.createElement("button");
+        oDateButton.type = "button";
+        oDateButton.className = "subject-date-calendar-date" + (oSelectedDate && formatIssueLocalDate(oSelectedDate) == sDate ? " subject-date-calendar-selected" : "");
+        oDateButton.setAttribute("data-date", sDate);
+        oDateButton.textContent = "" + i;
+        oDateButton.addEventListener("click", function() {
+            oInput.value = this.getAttribute("data-date") || "";
+            oCalendar.style.display = "none";
+        });
+        oGrid.appendChild(oDateButton);
+    }
+    oCalendar.appendChild(oHeader);
+    oCalendar.appendChild(oGrid);
+}
+
+function positionIssueDateCalendar(oInput, oCalendar) {
+    var oRect = oInput.getBoundingClientRect();
+    var iWidth = oCalendar.offsetWidth || 238;
+    var iHeight = oCalendar.offsetHeight || 220;
+    var iLeft = Math.max(4, Math.min(oRect.left, window.innerWidth - iWidth - 4));
+    var iTop = oRect.bottom + 2;
+    if (iTop + iHeight > window.innerHeight - 4) {
+        iTop = oRect.top - iHeight - 2;
+    }
+    if (iTop < 4) {
+        iTop = 4;
+    }
+    oCalendar.style.left = iLeft + "px";
+    oCalendar.style.top = iTop + "px";
+}
+
+function showIssueDateCalendar(oInput, oCalendar) {
+    var oDate = parseIssueDateValue(oInput.value) || oCalendar._currentDate || new Date();
+    renderIssueDateCalendar(oInput, oCalendar, new Date(oDate.getFullYear(), oDate.getMonth(), 1));
+    if (!oCalendar.parentNode) {
+        document.body.appendChild(oCalendar);
+    }
+    oCalendar.style.display = "";
+    positionIssueDateCalendar(oInput, oCalendar);
+}
+
+function removeIssueDateCalendars() {
+    var aCalendars = document.querySelectorAll(".subject-date-calendar");
+    var i;
+    for (i = 0; i < aCalendars.length; i++) {
+        if (aCalendars[i].parentNode) {
+            aCalendars[i].parentNode.removeChild(aCalendars[i]);
+        }
+    }
+}
+
+function appendIssueDateField(oParent, sLabel, sName, sValue) {
+    var oLabel = document.createElement("label");
+    var oWrapper = document.createElement("div");
+    var oInput = document.createElement("input");
+    var oButton = document.createElement("button");
+    var oCalendar = document.createElement("div");
+    oLabel.textContent = sLabel;
+    oWrapper.className = "subject-date-field";
+    oInput.type = "text";
+    oInput.id = sName;
+    oInput.name = sName;
+    oInput.value = sValue || "";
+    oInput.placeholder = "YYYY-MM-DD";
+    oInput.maxLength = 10;
+    oInput.autocomplete = "off";
+    oInput.setAttribute("data-date-input-kind", "date");
+    oInput.title = "Use YYYY-MM-DD.";
+    oButton.type = "button";
+    oButton.className = "subject-date-button";
+    oButton.setAttribute("aria-label", "Open calendar");
+    oButton.textContent = "\u25BE";
+    oCalendar.className = "subject-date-calendar";
+    oCalendar.style.display = "none";
+    oCalendar.addEventListener("mousedown", function(oEvent) {
+        oEvent.preventDefault();
+    });
+    oButton.addEventListener("click", function(oEvent) {
+        oEvent.preventDefault();
+        if (oCalendar.style.display == "none") {
+            showIssueDateCalendar(oInput, oCalendar);
+        } else {
+            oCalendar.style.display = "none";
+        }
+    });
+    oInput.addEventListener("focus", function() {
+        showIssueDateCalendar(oInput, oCalendar);
+    });
+    oInput.addEventListener("input", function() {
+        var oDate = parseIssueDateValue(oInput.value);
+        if (oDate && oCalendar.style.display != "none") {
+            renderIssueDateCalendar(oInput, oCalendar, new Date(oDate.getFullYear(), oDate.getMonth(), 1));
+            positionIssueDateCalendar(oInput, oCalendar);
+        }
+    });
+    oInput.addEventListener("keydown", function(oEvent) {
+        if (oEvent.key == "Escape") {
+            oCalendar.style.display = "none";
+        }
+    });
+    oWrapper.addEventListener("focusout", function() {
+        normalizeIssueDateInput(oInput);
+        window.setTimeout(function() {
+            if (!oWrapper.contains(document.activeElement) && !oCalendar.contains(document.activeElement)) {
+                oCalendar.style.display = "none";
+            }
+        }, 0);
+    });
+    window.addEventListener("resize", function() {
+        if (oCalendar.style.display != "none") {
+            positionIssueDateCalendar(oInput, oCalendar);
+        }
+    });
+    oWrapper.appendChild(oInput);
+    oWrapper.appendChild(oButton);
+    oParent.appendChild(oLabel);
+    oParent.appendChild(oWrapper);
+    return oInput;
+}
+
+function getIssueRowData(oRow) {
+    if (!oRow) {
+        return null;
+    }
+    return {
+        id: parseInt(oRow.getAttribute("data-issue-id") || "0", 10),
+        issueType: oRow.getAttribute("data-issue-type") || "task",
+        status: oRow.getAttribute("data-issue-status") || "open",
+        priority: oRow.getAttribute("data-issue-priority") || "normal",
+        title: oRow.getAttribute("data-issue-title") || "",
+        description: oRow.getAttribute("data-issue-description") || "",
+        dueDate: oRow.getAttribute("data-issue-due-date") || ""
+    };
+}
+
+function findIssueRowById(iIssueId) {
+    return document.querySelector("tr[data-issue-id=\"" + String(iIssueId) + "\"]");
+}
+
+function replaceIssueRows(aData) {
+    var oTable = document.getElementById("issues-table");
+    var oBody = oTable && oTable.tBodies.length ? oTable.tBodies[0] : null;
+    var aRows = {};
+    var aOldRows;
+    var aNewRows;
+    var sIssueId;
+    var i;
+    if (!oBody || !aData.issues_html) {
+        return;
+    }
+    aOldRows = oBody.querySelectorAll("tr[data-issue-id]");
+    for (i = 0; i < aOldRows.length; i++) {
+        sIssueId = aOldRows[i].getAttribute("data-issue-id") || "";
+        if (sIssueId) {
+            aRows[sIssueId] = aOldRows[i];
+        }
+    }
+    oBody.innerHTML = aData.issues_html;
+    if (window.copyAdminTableRowState && window.bindAdminTableRow) {
+        aNewRows = oBody.querySelectorAll("tr[data-issue-id]");
+        for (i = 0; i < aNewRows.length; i++) {
+            sIssueId = aNewRows[i].getAttribute("data-issue-id") || "";
+            if (sIssueId && aRows[sIssueId]) {
+                window.copyAdminTableRowState(aRows[sIssueId], aNewRows[i]);
+            }
+            window.bindAdminTableRow(aNewRows[i]);
+        }
+    }
+    refreshAdminTableFilter();
+}
+
+function openIssueDialog(aRow, oSourceRow) {
+    var oDialog = document.getElementById("admin-reusable-dialog");
+    var oForm;
+    var oBox;
+    var oHeader;
+    var oTitle;
+    var oClose;
+    var oType;
+    var oIssueTitle;
+    var oStatus;
+    var oPriority;
+    var oDueDate;
+    var oDescription;
+    var oError;
+    var oActions;
+    var oSave;
+    var oCancel;
+    var iIssueId = aRow ? aRow.id : 0;
+    var blSaved = false;
+
+    if (!oDialog) {
+        return;
+    }
+
+    oForm = document.createElement("form");
+    oForm.className = "confirm-dialog-box subject-edit-dialog issue-edit-dialog";
+    oBox = oForm;
+
+    oHeader = document.createElement("div");
+    oHeader.className = "confirm-dialog-header";
+    oTitle = document.createElement("strong");
+    oTitle.className = "confirm-dialog-title";
+    oTitle.textContent = iIssueId > 0 ? "Edit issue" : "New issue";
+    oClose = document.createElement("button");
+    oClose.type = "button";
+    oClose.className = "confirm-dialog-close";
+    oClose.setAttribute("aria-label", "Close");
+    oClose.innerHTML = "&times;";
+    oHeader.appendChild(oTitle);
+    oHeader.appendChild(oClose);
+    oBox.appendChild(oHeader);
+
+    oType = createIssueSelect("issue-dialog-type", aRow ? aRow.issueType : "task", [
+        {value: "task", label: "Task"},
+        {value: "bug", label: "Bug"}
+    ]);
+    oIssueTitle = createAdminInput("issue-dialog-title", aRow ? aRow.title : "", true);
+    oStatus = createIssueSelect("issue-dialog-status", aRow ? aRow.status : "open", [
+        {value: "open", label: "Open"},
+        {value: "in_progress", label: "In Progress"},
+        {value: "waiting", label: "Waiting"},
+        {value: "done", label: "Done"}
+    ]);
+    oPriority = createIssueSelect("issue-dialog-priority", aRow ? aRow.priority : "normal", [
+        {value: "low", label: "Low"},
+        {value: "normal", label: "Normal"},
+        {value: "high", label: "High"},
+        {value: "urgent", label: "Urgent"}
+    ]);
+    oDescription = createAdminInput("issue-dialog-description", aRow ? aRow.description : "", false);
+    oDescription.spellcheck = true;
+
+    appendIssueDialogField(oBox, "Type", oType);
+    appendIssueDialogField(oBox, "Title", oIssueTitle);
+    appendIssueDialogField(oBox, "Status", oStatus);
+    appendIssueDialogField(oBox, "Priority", oPriority);
+    oDueDate = appendIssueDateField(oBox, "Due", "issue-dialog-due-date", aRow ? aRow.dueDate : formatIssueLocalDate(new Date()));
+    appendIssueDialogField(oBox, "Description", oDescription);
+
+    oError = document.createElement("div");
+    oError.className = "subject-edit-error";
+    oError.style.display = "none";
+    oBox.appendChild(oError);
+
+    oActions = document.createElement("div");
+    oActions.className = "confirm-dialog-actions";
+    oSave = document.createElement("button");
+    oSave.type = "submit";
+    oSave.className = "confirm-dialog-button";
+    oSave.textContent = "Save";
+    oCancel = document.createElement("button");
+    oCancel.type = "button";
+    oCancel.className = "confirm-dialog-button";
+    oCancel.textContent = "Cancel";
+    oActions.appendChild(oSave);
+    oActions.appendChild(oCancel);
+    oBox.appendChild(oActions);
+
+    function closeIssueDialog() {
+        removeIssueDateCalendars();
+        finishAdminSubjectRowEdit(oSourceRow, blSaved);
+        closeAdminDialog();
+    }
+
+    beginAdminSubjectRowEdit(oSourceRow);
+    oClose.addEventListener("click", closeIssueDialog);
+    oCancel.addEventListener("click", closeIssueDialog);
+    oForm.addEventListener("submit", function(oEvent) {
+        var oData;
+        var iSavedIssueId;
+        var oSavedRow;
+        oEvent.preventDefault();
+        normalizeIssueDateInput(oDueDate);
+        oError.style.display = "none";
+        oError.textContent = "";
+        oData = new FormData();
+        oData.append("action", iIssueId > 0 ? "update_issue" : "create_issue");
+        if (iIssueId > 0) {
+            oData.append("issue_id", String(iIssueId));
+        }
+        oData.append("issue_type", oType.value);
+        appendAdminEncodedValue(oData, "title", oIssueTitle.value);
+        oData.append("status", oStatus.value);
+        oData.append("priority", oPriority.value);
+        oData.append("due_date", oDueDate.value);
+        appendAdminEncodedValue(oData, "description", oDescription.value);
+        submitAdminRequest(oData, function(aData) {
+            iSavedIssueId = aData && aData.issue_id ? parseInt(aData.issue_id, 10) : iIssueId;
+            replaceIssueRows(aData);
+            oSavedRow = iSavedIssueId ? findIssueRowById(iSavedIssueId) : null;
+            finishAdminSubjectRowEdit(oSavedRow || oSourceRow, true);
+            blSaved = true;
+            removeIssueDateCalendars();
+            closeAdminDialog();
+        }, function(sMessage) {
+            oError.textContent = sMessage;
+            oError.style.display = "";
+        });
+    });
+
+    oDialog.innerHTML = "";
+    oDialog.appendChild(oForm);
+    oDialog.hidden = false;
+    window.setTimeout(function() {
+        oIssueTitle.focus();
+        oIssueTitle.select();
+    }, 0);
+}
+
+function bindIssueTracker() {
+    var oAdd = document.querySelector(".js-add-issue");
+    var oTable = document.getElementById("issues-table");
+
+    if (oAdd) {
+        oAdd.addEventListener("click", function() {
+            openIssueDialog(null);
+        });
+    }
+
+    if (!oTable) {
+        return;
+    }
+
+    oTable.addEventListener("click", function(oEvent) {
+        var oButton = oEvent.target.closest(".js-edit-issue, .js-delete-issue, .js-toggle-issue");
+        var oRow = oButton ? oButton.closest("tr[data-issue-id]") : null;
+        var aRow = getIssueRowData(oRow);
+        var oData;
+        if (!oButton || !aRow) {
+            return;
+        }
+        oEvent.preventDefault();
+        if (oButton.classList.contains("js-edit-issue")) {
+            openIssueDialog(aRow, oRow);
+        } else if (oButton.classList.contains("js-delete-issue")) {
+            beginAdminSubjectRowEdit(oRow);
+            openAdminConfirmDialog("Delete issue", "Delete " + aRow.title + "?", "Delete", function() {
+                oData = new FormData();
+                oData.append("action", "delete_issue");
+                oData.append("issue_id", String(aRow.id));
+                submitAdminRequest(oData, function(aData) {
+                    replaceIssueRows(aData);
+                }, function(sMessage) {
+                    finishAdminSubjectRowEdit(oRow, false);
+                    alert(sMessage);
+                });
+            }, function() {
+                finishAdminSubjectRowEdit(oRow, false);
+            });
+        } else if (oButton.classList.contains("js-toggle-issue")) {
+            oData = new FormData();
+            oData.append("action", "toggle_issue_status");
+            oData.append("issue_id", String(aRow.id));
+            beginAdminSubjectRowEdit(oRow);
+            submitAdminRequest(oData, function(aData) {
+                var iSavedIssueId = aData && aData.issue_id ? parseInt(aData.issue_id, 10) : aRow.id;
+                var oSavedRow;
+                replaceIssueRows(aData);
+                oSavedRow = iSavedIssueId ? findIssueRowById(iSavedIssueId) : null;
+                finishAdminSubjectRowEdit(oSavedRow || oRow, true);
+            }, function(sMessage) {
+                finishAdminSubjectRowEdit(oRow, false);
+                alert(sMessage);
+            });
+        }
+    });
+}
+
 function closeAdminMenus(oExceptMenu) {
     var aMenus = document.querySelectorAll("[data-menu]");
     var i;
@@ -1510,8 +2016,8 @@ function bindSnippetBoardForm() {
         appendAdminCsrfToken(oData);
         try {
             if (navigator.sendBeacon(window.location.href, oData)) {
-                blChanged = false;
                 blSaveAgain = false;
+                setSnippetBoardStatus("Saving...", "saving");
                 return true;
             }
         } catch (oException) {
@@ -1598,7 +2104,11 @@ function bindSnippetBoardForm() {
             saveSnippetBoardNow();
         }
         if (document.visibilityState != "hidden") {
-            requestSnippetBoardRevisionCheck(true);
+            if (blChanged) {
+                saveSnippetBoardNow();
+            } else {
+                requestSnippetBoardRevisionCheck(true);
+            }
         }
     });
     window.addEventListener("focus", function() {
@@ -1763,6 +2273,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setupAutoRefresh();
     bindAdminCopyLinks();
     bindMenuAdmin();
+    bindIssueTracker();
     bindAdminSubmitOnChange();
     bindSnippetBoardTabs();
     bindSnippetBoardForm();

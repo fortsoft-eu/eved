@@ -410,36 +410,12 @@ table {
     width: 154px;
 }
 
-.admin-controls .js-filter-operator {
+.admin-controls .js-filter-operator, .admin-controls .js-filter-reset, .admin-controls .js-complex-filter-open, .admin-controls .js-complex-filter-page-reset, .admin-controls .js-index-settings-open, .admin-controls .js-add-subject, .admin-controls .js-add-contact-type, .admin-controls .js-add-group {
     width: 75px;
 }
 
-.admin-controls .js-filter-reset {
-    width: 75px;
-}
-
-.admin-controls .js-complex-filter-open, .admin-controls .js-complex-filter-page-reset {
-    width: 75px;
-}
-
-.admin-controls .complex-filter-active {
+.admin-controls .complex-filter-active, .admin-controls .quick-filter-active {
     font-weight: bold;
-}
-
-.admin-controls .quick-filter-active {
-    font-weight: bold;
-}
-
-.admin-controls .js-index-settings-open {
-    width: 75px;
-}
-
-.admin-controls .js-add-subject {
-    width: 75px;
-}
-
-.admin-controls .js-add-contact-type, .admin-controls .js-add-group {
-    width: 75px;
 }
 
 .admin-controls .database-action-button {
