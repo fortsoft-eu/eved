@@ -1605,6 +1605,10 @@
             return oRow ? (oRow.getAttribute("data-debt-currency") || getDebtDisplayCurrency()) : getDebtDisplayCurrency();
         }
 
+        function getTransactionDisplayCurrency() {
+            return oTransactionsTable ? (oTransactionsTable.getAttribute("data-display-currency") || "USD") : "USD";
+        }
+
         function findAdminDebtRowById(sDebtId) {
             return sDebtId && oDebtsTable ? oDebtsTable.querySelector("tbody tr[data-debt-id=\"" + sDebtId + "\"]") : null;
         }
@@ -2199,6 +2203,33 @@
             return aTypes;
         }
 
+        function appendIncomeExpenseTypeOptions(oSelect, aTypes, sSelectedValue) {
+            var aTypeGroups = {};
+            var oGroup;
+            var oOption;
+            var sKind;
+            for (var iI = 0; iI < aTypes.length; iI += 1) {
+                sKind = aTypes[iI].type_kind == "income" ? "income" : (aTypes[iI].type_kind == "expense" ? "expense" : "");
+                oOption = document.createElement("option");
+                oOption.value = aTypes[iI].id || "";
+                oOption.textContent = (sKind == "income" ? "Income: " : (sKind == "expense" ? "Expense: " : "")) + (aTypes[iI].name || "");
+                if (String(oOption.value) == String(sSelectedValue || "")) {
+                    oOption.selected = true;
+                }
+                if (sKind == "") {
+                    oSelect.appendChild(oOption);
+                    continue;
+                }
+                if (!aTypeGroups[sKind]) {
+                    oGroup = document.createElement("optgroup");
+                    oGroup.label = sKind == "income" ? "Income" : "Expense";
+                    aTypeGroups[sKind] = oGroup;
+                    oSelect.appendChild(oGroup);
+                }
+                aTypeGroups[sKind].appendChild(oOption);
+            }
+        }
+
         function createTransactionDialog(sTitle, oTransactionRow) {
             var oDialogData = {};
             var closeOnEscape;
@@ -2296,19 +2327,10 @@
             var aTypes = getTransactionFinanceTypes();
             var oLabel = document.createElement("label");
             var oSelect = document.createElement("select");
-            var oOption;
             oLabel.textContent = "Type";
             oSelect.name = "finance_type_id";
             oSelect.required = true;
-            for (var iI = 0; iI < aTypes.length; iI += 1) {
-                oOption = document.createElement("option");
-                oOption.value = aTypes[iI].id || "";
-                oOption.textContent = (aTypes[iI].type_kind == "income" ? "Income: " : "Expense: ") + (aTypes[iI].name || "");
-                if (String(oOption.value) == String(sSelectedValue || "")) {
-                    oOption.selected = true;
-                }
-                oSelect.appendChild(oOption);
-            }
+            appendIncomeExpenseTypeOptions(oSelect, aTypes, sSelectedValue);
             oParent.appendChild(oLabel);
             oParent.appendChild(oSelect);
             return oSelect;
@@ -2448,7 +2470,7 @@
             oDate = appendTransactionDateField(oDialogData.form, oRow ? (oRow.getAttribute("data-transaction-date") || "") : new Date().toISOString().slice(0, 10));
             oType = appendTransactionTypeField(oDialogData.form, oRow ? (oRow.getAttribute("data-finance-type-id") || "") : "");
             oAmount = appendTransactionTextField(oDialogData.form, "Amount", "amount", oRow ? (oRow.getAttribute("data-amount") || "") : "");
-            oCurrency = appendAdminCurrencyField(oDialogData.form, oTransactionsTable, oRow ? (oRow.getAttribute("data-currency") || "USD") : "USD");
+            oCurrency = appendAdminCurrencyField(oDialogData.form, oTransactionsTable, oRow ? (oRow.getAttribute("data-currency") || getTransactionDisplayCurrency()) : getTransactionDisplayCurrency());
             oCounterparty = appendTransactionTextField(oDialogData.form, "Counterparty", "counterparty", oRow ? (oRow.getAttribute("data-counterparty") || "") : "");
             oNote = appendTransactionTextField(oDialogData.form, "Note", "note", oRow ? (oRow.getAttribute("data-note") || "") : "");
             appendTransactionAdditionalControls(oDialogData, oType, oCurrency);
@@ -2625,19 +2647,10 @@
             var aTypes = getSubscriptionFinanceTypes();
             var oLabel = document.createElement("label");
             var oSelect = document.createElement("select");
-            var oOption;
             oLabel.textContent = "Type";
             oSelect.name = "finance_type_id";
             oSelect.required = true;
-            for (var iI = 0; iI < aTypes.length; iI += 1) {
-                oOption = document.createElement("option");
-                oOption.value = aTypes[iI].id || "";
-                oOption.textContent = (aTypes[iI].type_kind == "income" ? "Income: " : "Expense: ") + (aTypes[iI].name || "");
-                if (String(oOption.value) == String(sSelectedValue || "")) {
-                    oOption.selected = true;
-                }
-                oSelect.appendChild(oOption);
-            }
+            appendIncomeExpenseTypeOptions(oSelect, aTypes, sSelectedValue);
             oParent.appendChild(oLabel);
             oParent.appendChild(oSelect);
             return oSelect;

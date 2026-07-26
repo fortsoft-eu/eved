@@ -1,5 +1,5 @@
-# Do not track the root reference PDF.
-/reference.pdf
+# Do not track root PDF exports.
+/*.pdf
 
 # In film/img, track only .htaccess.
 /film/img/*

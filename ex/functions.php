@@ -5746,9 +5746,38 @@ function buildFullListComplexFilterSql($aFilter, $aFields, $aOperators) {
 
 function renderFullListComplexFilterFieldOptions($aFields, $sSelected) {
     $sHtml = "<option value=\"\" data-value-type=\"text\"" . ($sSelected == "" ? " selected" : "") . "></option>";
+    $aUngroupedOptions = array();
+    $aGroupedOptions = array();
+    $aGroupOrder = array();
     foreach ($aFields as $sField => $aField) {
+        $sLabel = (string)$aField["label"];
+        $sOptionLabel = $sLabel;
+        $sGroup = "";
+        $iColonPosition = strpos($sLabel, ":");
+        if ($iColonPosition !== false) {
+            $sGroup = trim(substr($sLabel, 0, $iColonPosition));
+        }
         $sValueType = isset($aField["value_type"]) ? (string)$aField["value_type"] : "text";
-        $sHtml .= "<option value=\"" . html($sField) . "\" data-value-type=\"" . html($sValueType) . "\"" . ($sSelected == $sField ? " selected" : "") . ">" . html($aField["label"]) . "</option>";
+        $sOptionHtml = "<option value=\"" . html($sField) . "\" data-value-type=\"" . html($sValueType) . "\"" . ($sSelected == $sField ? " selected" : "") . ">" . html($sOptionLabel) . "</option>";
+        if ($sGroup == "") {
+            $aUngroupedOptions[] = $sOptionHtml;
+            continue;
+        }
+        if (!isset($aGroupedOptions[$sGroup])) {
+            $aGroupedOptions[$sGroup] = array();
+            $aGroupOrder[] = $sGroup;
+        }
+        $aGroupedOptions[$sGroup][] = $sOptionHtml;
+    }
+    foreach ($aUngroupedOptions as $sOptionHtml) {
+        $sHtml .= $sOptionHtml;
+    }
+    foreach ($aGroupOrder as $sGroup) {
+        $sHtml .= "<optgroup label=\"" . html($sGroup) . "\">";
+        foreach ($aGroupedOptions[$sGroup] as $sOptionHtml) {
+            $sHtml .= $sOptionHtml;
+        }
+        $sHtml .= "</optgroup>";
     }
     return $sHtml;
 }
