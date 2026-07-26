@@ -13,6 +13,25 @@
         }
     }
 
+    function getAdminInputDatalist(oInput) {
+        var sListId = oInput ? (oInput.getAttribute("list") || "") : "";
+        return sListId ? document.getElementById(sListId) : null;
+    }
+
+    function openAdminInputDatalist(oInput) {
+        var oList = getAdminInputDatalist(oInput);
+        if (!oInput || oInput.disabled || oInput.readOnly || !oList || !oList.options || oList.options.length < 1 || typeof oInput.showPicker != "function") {
+            return false;
+        }
+        try {
+            oInput.showPicker();
+            return true;
+        } catch (oException) {
+            logAdminException(oException);
+            return false;
+        }
+    }
+
     function getAdminCsrfToken() {
         var oMeta = document.querySelector("meta[name=\"csrf-token\"]");
         return oMeta ? (oMeta.getAttribute("content") || "") : "";
@@ -452,6 +471,10 @@
             }
         });
         oInput.addEventListener("focus", function () {
+            if (oInput._adminProgrammaticFocus) {
+                oInput._adminProgrammaticFocus = false;
+                return;
+            }
             showAdminDateCalendar(oInput, oCalendar);
         });
         oInput.addEventListener("input", function () {
@@ -1121,6 +1144,7 @@
         if (!oElement) {
             return;
         }
+        oElement._adminProgrammaticFocus = true;
         try {
             oElement.focus({
                 "preventScroll": true
@@ -1129,6 +1153,9 @@
             console.error(oException);
             oElement.focus();
         }
+        window.setTimeout(function () {
+            oElement._adminProgrammaticFocus = false;
+        }, 0);
         window.scrollTo(iScrollLeft, iScrollTop);
         if (blSelectText === true && isTextSelectionField(oElement)) {
             selectTextField(oElement);
@@ -1173,6 +1200,8 @@
         var iTimer = 0;
         var iRequestIndex = 0;
         var aSubjectIds = {};
+        var aSubjectNames = {};
+        var aUniqueSubjectIds = {};
         if (!window.XMLHttpRequest || !window.FormData || !window.JSON || !oInput || !oForm || !oIdField || !oList || oInput.getAttribute("data-subject-suggest-bound") == "1") {
             return;
         }
@@ -1184,13 +1213,25 @@
         function hideList() {
             oList.innerHTML = "";
             aSubjectIds = {};
+            aSubjectNames = {};
+            aUniqueSubjectIds = {};
+        }
+
+        function getSubjectOptionValue(sSubjectName, sSubjectId, blUseSubjectId) {
+            return blUseSubjectId ? sSubjectName + " (#" + sSubjectId + ")" : sSubjectName;
         }
 
         function selectSubjectByName(sSubjectName) {
             if (!aSubjectIds[sSubjectName]) {
-                return false;
+                if (!aUniqueSubjectIds[sSubjectName]) {
+                    return false;
+                }
+                oIdField.value = aUniqueSubjectIds[sSubjectName];
+                hideList();
+                return true;
             }
             oIdField.value = aSubjectIds[sSubjectName];
+            oInput.value = aSubjectNames[sSubjectName] || sSubjectName;
             hideList();
             return true;
         }
@@ -1198,21 +1239,37 @@
         function renderSuggestions(aSubjects) {
             oList.innerHTML = "";
             aSubjectIds = {};
+            aSubjectNames = {};
+            aUniqueSubjectIds = {};
             if (!aSubjects || !aSubjects.length) {
                 hideList();
                 return;
             }
+            var aSubjectNameCounts = {};
+            for (var iK = 0; iK < aSubjects.length; iK += 1) {
+                var sCurrentSubjectName = aSubjects[iK].subject_name || "";
+                aSubjectNameCounts[sCurrentSubjectName] = (aSubjectNameCounts[sCurrentSubjectName] || 0) + 1;
+            }
             for (var iJ = 0; iJ < aSubjects.length; iJ += 1) {
                 var sSubjectName = aSubjects[iJ].subject_name || "";
+                var sSubjectId = aSubjects[iJ].subject_id || "";
+                var sSubjectOptionValue = getSubjectOptionValue(sSubjectName, sSubjectId, aSubjectNameCounts[sSubjectName] > 1);
                 var oOption = document.createElement("option");
-                oOption.value = sSubjectName;
-                oOption.setAttribute("data-subject-id", aSubjects[iJ].subject_id || "");
-                aSubjectIds[sSubjectName] = aSubjects[iJ].subject_id || "";
+                oOption.value = sSubjectOptionValue;
+                oOption.label = sSubjectName;
+                oOption.setAttribute("data-subject-id", sSubjectId);
+                aSubjectIds[sSubjectOptionValue] = sSubjectId;
+                aSubjectNames[sSubjectOptionValue] = sSubjectName;
+                if (typeof aUniqueSubjectIds[sSubjectName] == "undefined") {
+                    aUniqueSubjectIds[sSubjectName] = sSubjectId;
+                } else if (aUniqueSubjectIds[sSubjectName] != sSubjectId) {
+                    aUniqueSubjectIds[sSubjectName] = "";
+                }
                 oList.appendChild(oOption);
             }
         }
 
-        function requestSuggestions(sTerm) {
+        function requestSuggestions(sTerm, blOpenPicker) {
             var oRequest = new XMLHttpRequest();
             var oData = new FormData();
             var iCurrentRequest = iRequestIndex;
@@ -1236,6 +1293,9 @@
                     return;
                 }
                 renderSuggestions(aData && aData.success ? aData.subjects : []);
+                if (blOpenPicker === true && document.activeElement == oInput) {
+                    openAdminInputDatalist(oInput);
+                }
             };
             oRequest.open("POST", window.location.href, true);
             oRequest.setRequestHeader("X-Requested-With", "XMLHttpRequest");
@@ -1260,6 +1320,17 @@
                 requestSuggestions(sTerm);
             }, 200);
         });
+        oInput.addEventListener("focus", function () {
+            var sTerm = oInput.value.replace(/^\s+|\s+$/g, "");
+            if (openAdminInputDatalist(oInput) || sTerm.length < iMinLength) {
+                return;
+            }
+            iRequestIndex += 1;
+            if (iTimer) {
+                window.clearTimeout(iTimer);
+            }
+            requestSuggestions(sTerm, true);
+        });
         oInput.addEventListener("change", function () {
             if (oInput.value.replace(/^\s+|\s+$/g, "") == "") {
                 oIdField.value = "";
@@ -1278,13 +1349,6 @@
             } else if (aSubjectIds[oInput.value]) {
                 oIdField.value = aSubjectIds[oInput.value];
             }
-        });
-        document.addEventListener("click", function (oEvent) {
-            var oTarget = oEvent.target;
-            if (oTarget && oTarget.closest && oTarget.closest("[data-subject-suggest]")) {
-                return;
-            }
-            hideList();
         });
     }
 
@@ -1531,6 +1595,14 @@
             oParent.appendChild(oLabel);
             oParent.appendChild(oSelect);
             return oSelect;
+        }
+
+        function getDebtDisplayCurrency() {
+            return oDebtsTable ? (oDebtsTable.getAttribute("data-display-currency") || "USD") : "USD";
+        }
+
+        function getDebtMovementCurrency(oRow) {
+            return oRow ? (oRow.getAttribute("data-debt-currency") || getDebtDisplayCurrency()) : getDebtDisplayCurrency();
         }
 
         function findAdminDebtRowById(sDebtId) {
@@ -1954,6 +2026,7 @@
             oDialogData.actions.appendChild(oDialogData.cancel);
             oDialogData.form.appendChild(oDialogData.actions);
             oDialogData.dialog.appendChild(oDialogData.form);
+            setupSubjectSuggest();
             if (!openAdminDialogElement(oDialogData.dialog, oDialogData.close)) {
                 return;
             }
@@ -2010,7 +2083,7 @@
                 oMovementDate = appendDebtDateField(oDialogData.form, "Movement Date", "movement_date", new Date().toISOString().slice(0, 10));
                 oAmount = appendDebtTextField(oDialogData.form, "Amount", "amount", "");
                 oAmount.required = true;
-                oCurrency = appendAdminCurrencyField(oDialogData.form, oDebtsTable, "USD");
+                oCurrency = appendAdminCurrencyField(oDialogData.form, oDebtsTable, getDebtDisplayCurrency());
                 oMovementNote = appendDebtTextField(oDialogData.form, "Movement Note", "movement_note", "");
             }
             oDialogData.form.addEventListener("submit", function (oEvent) {
@@ -2048,7 +2121,7 @@
             oDate = appendDebtDateField(oDialogData.form, "Date", "movement_date", blNewMovement ? new Date().toISOString().slice(0, 10) : (oMovement.getAttribute("data-movement-date") || ""));
             oAmount = appendDebtTextField(oDialogData.form, "Amount", "amount", blNewMovement ? "" : (oMovement.getAttribute("data-amount") || ""));
             oAmount.required = true;
-            oCurrency = appendAdminCurrencyField(oDialogData.form, oDebtsTable, blNewMovement ? "USD" : (oMovement.getAttribute("data-currency") || "USD"));
+            oCurrency = appendAdminCurrencyField(oDialogData.form, oDebtsTable, blNewMovement ? getDebtMovementCurrency(oRow) : (oMovement.getAttribute("data-currency") || getDebtMovementCurrency(oRow)));
             oNote = appendDebtTextField(oDialogData.form, "Note", "note", blNewMovement ? "" : (oMovement.getAttribute("data-note") || ""));
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();

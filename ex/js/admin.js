@@ -18,6 +18,35 @@ function logAdminException(oException) {
     }
 }
 
+function getAdminInputDatalist(oInput) {
+    var sListId = oInput ? (oInput.getAttribute("list") || "") : "";
+    return sListId ? document.getElementById(sListId) : null;
+}
+
+function openAdminInputDatalist(oInput) {
+    var oList = getAdminInputDatalist(oInput);
+    if (!oInput || oInput.disabled || oInput.readOnly || !oList || !oList.options || oList.options.length < 1 || typeof oInput.showPicker != "function") {
+        return false;
+    }
+    try {
+        oInput.showPicker();
+        return true;
+    } catch (oException) {
+        logAdminException(oException);
+        return false;
+    }
+}
+
+function setupDatalistOpenOnFocus() {
+    document.addEventListener("focusin", function (oEvent) {
+        var oInput = oEvent.target;
+        if (!oInput || !oInput.tagName || oInput.tagName.toLowerCase() != "input" || !oInput.getAttribute("list")) {
+            return;
+        }
+        openAdminInputDatalist(oInput);
+    });
+}
+
 function getAdminCsrfToken() {
     var oMeta = document.querySelector("meta[name=\"csrf-token\"]");
     return oMeta ? (oMeta.getAttribute("content") || "") : "";
@@ -759,6 +788,7 @@ function scheduleRenderThrobberHide() {
 prepareRenderThrobbers();
 
 document.addEventListener("DOMContentLoaded", prepareRenderThrobbers);
+document.addEventListener("DOMContentLoaded", setupDatalistOpenOnFocus);
 
 function setAdminMergeSourceListColumns(oDialog, oSourceList, iRenderedCount) {
     var oBox;

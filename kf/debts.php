@@ -33,12 +33,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } elseif ($sAction == "save_debt") {
         $iId = (int)getPostedTrimmedValue("id", "0");
         $iSubjectId = (int)getPostedTrimmedValue("ex_subjects_id", "0");
+        $sSubjectName = getPostedTrimmedValue("subject_name");
         $sNote = getPostedTrimmedValue("note");
         $sMovementDate = getPostedTrimmedValue("movement_date");
         $sNormalizedMovementDate = normalizeInputDate($sMovementDate);
         $fAmount = parseAmount(getPostedTrimmedValue("amount"));
         $sCurrency = getPostedCurrency();
         $sMovementNote = getPostedTrimmedValue("movement_note");
+        if ($iSubjectId < 1 && $sSubjectName != "") {
+            $aSubjectRow = fetchSingleSubjectInputRow($oPdo, $sSubjectName);
+            if ($aSubjectRow) {
+                $iSubjectId = (int)$aSubjectRow["subject_id"];
+            }
+        }
         if ($iSubjectId < 1 || ($iId < 1 && ($sMovementDate == "" || $fAmount === null))) {
             if ($blJsonResponse) {
                 sendJsonAndExit(array("success" => false, "message" => "The debt could not be saved. Subject, movement date, and amount are required."), 400);
@@ -260,7 +267,7 @@ echo $sToolbarHtml;
 
 ?>
   </p>
-  <table id="debts-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="debts-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-display-currency="<?php echo html($sDisplayCurrency != "" ? $sDisplayCurrency : $sDefaultCurrency); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
         <th>Subject</th>

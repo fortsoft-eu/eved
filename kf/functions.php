@@ -436,6 +436,26 @@ function fetchSubjectNameRow($oPdo, $iSubjectId) {
     return $aRow ? $aRow : null;
 }
 
+function fetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
+    $sTerm = trim((string)$sTerm);
+    if ($sTerm == "") {
+        return array();
+    }
+    $iLimit = (int)$iLimit;
+    if ($iLimit < 1) {
+        $iLimit = 2;
+    }
+    if ($iLimit > 30) {
+        $iLimit = 30;
+    }
+    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name FROM (" . getSubjectNameSelectSql() . ") AS subject_rows WHERE subject_name = :subject_name_term OR subject_sort_name = :subject_sort_name_term ORDER BY subject_sort_name ASC, subject_id ASC LIMIT " . $iLimit);
+    $oStatement->execute(array(
+        "subject_name_term" => $sTerm,
+        "subject_sort_name_term" => $sTerm
+    ));
+    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+}
+
 function fetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
     $sTerm = trim((string)$sTerm);
     if (strlen($sTerm) < 3) {
@@ -455,6 +475,32 @@ function fetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
         "subject_sort_name_term" => $sLike
     ));
     return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function fetchSingleSubjectInputRow($oPdo, $sTerm) {
+    $sTerm = trim((string)$sTerm);
+    if ($sTerm == "") {
+        return null;
+    }
+    if (preg_match('/^(.*) \(#([1-9][0-9]*)\)$/', $sTerm, $aMatches)) {
+        $aRow = fetchSubjectNameRow($oPdo, (int)$aMatches[2]);
+        if ($aRow && (string)$aRow["subject_name"] == trim((string)$aMatches[1])) {
+            return $aRow;
+        }
+        return null;
+    }
+    $aRows = fetchSubjectExactMatches($oPdo, $sTerm, 2);
+    if (count($aRows) == 1) {
+        return $aRows[0];
+    }
+    if (count($aRows) > 1) {
+        return null;
+    }
+    $aRows = fetchSubjectSuggestions($oPdo, $sTerm, 2);
+    if (count($aRows) == 1) {
+        return $aRows[0];
+    }
+    return null;
 }
 
 function getDebtContactSelectSql() {
@@ -555,8 +601,13 @@ function renderDebtAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFo
     $sFormattedAmount = formatAmount($aDisplayAmount["amount"], $blUseEuropeanAmountFormat) . ($aDisplayAmount["conversion_failed"] && $aDisplayAmount["mixed_currencies"] ? "" : " " . $sCurrency);
     $sAmountClass = (float)$aDisplayAmount["amount"] < 0 ? "amount-negative" : ((float)$aDisplayAmount["amount"] > 0 ? "amount-positive" : "amount-zero");
     $sSubjectId = (int)$aRow["ex_subjects_id"] > 0 && (string)$aRow["subject_name"] != "" ? (string)(int)$aRow["ex_subjects_id"] : "";
+    $sDebtCurrency = "";
+    foreach ($aRow["debt_movements"] as $aMovement) {
+        $sDebtCurrency = normalizeStoredCurrency($aMovement["currency"]);
+        break;
+    }
     $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-add-debt-movement\" title=\"New movement\" aria-label=\"New movement\">" . $sAddEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-debt\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-debt\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
-    return "      <tr data-debt-id=\"" . (int)$aRow["id"] . "\" data-ex-subjects-id=\"" . html($sSubjectId) . "\" data-subject-name=\"" . html($aRow["subject_name"]) . "\" data-amount=\"" . html($sFormattedAmount) . "\" data-note=\"" . html($aRow["note"]) . "\">\n"
+    return "      <tr data-debt-id=\"" . (int)$aRow["id"] . "\" data-ex-subjects-id=\"" . html($sSubjectId) . "\" data-subject-name=\"" . html($aRow["subject_name"]) . "\" data-amount=\"" . html($sFormattedAmount) . "\" data-debt-currency=\"" . html($sDebtCurrency) . "\" data-note=\"" . html($aRow["note"]) . "\">\n"
         . "        <td><span class=\"subject-item-value\">" . htmlValue($aRow["subject_name"], $sEmptyValueEmoji) . "</span>" . renderCopyAction($aRow["subject_name"]) . "</td>\n"
         . "        <td class=\"numeric " . $sAmountClass . "\">" . html($sFormattedAmount) . renderCopyAction($sFormattedAmount) . "</td>\n"
         . "        <td class=\"debt-movements-cell\">" . renderDebtMovementValues($aRow["debt_movements"], $blShowActions, $blUseEuropeanAmountFormat, $sDisplayCurrency) . "</td>\n"
