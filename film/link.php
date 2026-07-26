@@ -170,7 +170,7 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo htmlspecialchars(getPageTitleText("Assign Film to Lab Bag", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo $sBaseUrl; ?>css/admin.css" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
 <?php
@@ -180,9 +180,9 @@ if ($sMessage) {
 }
 echo "  <p class=\"admin-controls\">\n";
 renderMenu();
-echo "  </p>\n";
 
 ?>
+  </p>
   <div class="admin-top">
     <form method="post" action="<?php echo $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="film_csrf_token" value="<?php echo htmlspecialchars(getCsrfToken("film_csrf_token"), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
@@ -193,12 +193,10 @@ echo "  </p>\n";
 
 foreach ($aFilms as $aFilm) {
     echo "        <option value=\"" . htmlspecialchars((string)$aFilm["id"], ENT_QUOTES, "UTF-8") . "\">" . formatFilmOptionLabel($aFilm) . "</option>\n";
-
 }
-echo "      </select>\n";
 
 ?>
-
+      </select>
       <label for="order_id">Bag Number:</label>
       <select name="order_id" id="order_id" required>
         <option value="">– Choose bag number –</option>
@@ -208,12 +206,10 @@ foreach ($aOrders as $aOrder) {
     $sLabel = formatOrderOptionLabel($aOrder);
     $blSelected = $iLastBagId !== null && $aOrder["id"] === $iLastBagId;
     echo "        <option value=\"" . htmlspecialchars((string)$aOrder["id"], ENT_QUOTES, "UTF-8") . "\"" . ($blSelected ? " selected" : "") . ">" . $sLabel . "</option>\n";
-
 }
-echo "      </select>\n";
 
 ?>
-
+      </select>
       <button type="submit">Assign</button>
     </form>
     <div class="order-detail" id="order-detail">
@@ -239,7 +235,6 @@ echo "      </select>\n";
       </div>
     </div>
   </div>
-
   <table class="<?php echo trim(getCondensedTableClass()); ?>">
     <thead>
       <tr>
@@ -308,6 +303,6 @@ foreach ($aLinks as $aLink) {
       </div>
     </form>
   </div>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

@@ -150,12 +150,12 @@ $iTime = sendPageHeaders();
   <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
-  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
+  <p class="admin-controls">
 <?php
 
-echo "  <p class=\"admin-controls\">";
 renderMenu();
 
 ?>
@@ -164,11 +164,11 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
+    <button type="button" class="button-link js-index-settings-open">Settings</button>
+  </p>
 <?php
 
-echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">Settings</button>\n",
-    " </p>\n",
-    "  <div id=\"monthly-overview-tables\" data-overview-columns=\"" . (int)$iOverviewColumnsPerTable . "\">\n";
+echo "  <div id=\"monthly-overview-tables\" data-overview-columns=\"" . (int)$iOverviewColumnsPerTable . "\">\n";
 
 foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColumnGroup) {
     echo "  <table id=\"monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target monthly-overview-table" . getCondensedTableClass() . "\">\n",

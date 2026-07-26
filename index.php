@@ -1,22 +1,13 @@
 <?php
 
-include "config.php";
-include "functions.php";
+include "main.php";
 
-
-$sStyleNonce = base64_encode(random_bytes(16));
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET["fingerprint"]) && (string)$_GET["fingerprint"] == "1") {
-    $oPdo = null;
-    try {
-        $oPdo = new PDO("mysql:host=" . $sDbHost . ";dbname=" . $sDbName . ";charset=utf8mb4", $sDbUserName, $sDbUserPass,
-            array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false)
-        );
-    } catch (PDOException $oException) {
-        error_log((string)$oException);
-    }
     sendEvedUaFingerprintResponse($oPdo, $aAllowedIps);
 }
+
+$sStyleNonce = base64_encode(random_bytes(16));
 
 if (in_array($_SERVER["REMOTE_ADDR"], $aAllowedIps, true)) {
     $iTime = sendPageHeaders($sStyleNonce);
@@ -41,8 +32,7 @@ if (in_array($_SERVER["REMOTE_ADDR"], $aAllowedIps, true)) {
   <title>EVED</title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <style type="text/css" nonce="<?php echo html($sStyleNonce); ?>">
-    html,
-    body {
+    html, body {
         overscroll-behavior-y: none;
     }
     html {
@@ -155,20 +145,11 @@ if (in_array($_SERVER["REMOTE_ADDR"], $aAllowedIps, true)) {
     exit;
 }
 
-$iEvedUaId = 0;
-try {
-    $oPdo = new PDO("mysql:host=" . $sDbHost . ";dbname=" . $sDbName . ";charset=utf8mb4", $sDbUserName, $sDbUserPass,
-        array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false)
-    );
-    $iEvedUaId = insertEvedUaRequest($oPdo);
-} catch (Exception $oException) {
-    error_log((string)$oException);
-}
-
-$iTime    = time();
-$iExpires = $iTime + 10;
-$sDate    = gmdate("D, d M Y H:i:s", $iTime);
-$sExpires = gmdate("D, d M Y H:i:s", $iExpires);
+$iEvedUaId = insertEvedUaRequest($oPdo);
+$iTime     = time();
+$iExpires  = $iTime + 10;
+$sDate     = gmdate("D, d M Y H:i:s", $iTime);
+$sExpires  = gmdate("D, d M Y H:i:s", $iExpires);
 
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0", true);
 header("Cache-Control: post-check=0, pre-check=0", false);
@@ -196,32 +177,32 @@ sendSecurityHeaders($sStyleNonce);
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <meta name="eved-ua-id" content="<?php echo (int)$iEvedUaId; ?>">
   <style type="text/css" nonce="<?php echo htmlspecialchars($sStyleNonce, ENT_QUOTES, "UTF-8"); ?>">
-    html,
-    body {
+    html, body {
         overscroll-behavior-y: none;
     }
     body {
         background-color: #FFF;
         font-family: "Times New Roman", Times, serif;
-            color: #000;
-            font-size: 24px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
-            flex-direction: column;
-        }
-        h1, h2 {
-            margin: 10px 0;
-        }
+        color: #000;
+        font-size: 24px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        text-align: center;
+        flex-direction: column;
+        transform: translateY(-8vh);
+    }
+    h1, h2 {
+        margin: 10px 0;
+    }
   </style>
 </head>
 <body>
   <h1>עֶבֶד יְהוָה</h1>
   <h2>וְאָנֹכִי וּבֵיתִי נַעֲבֹד אֶת־יְהוָה</h2>
-  <script type="text/javascript" src="<?php echo htmlspecialchars($sBaseUrl . "film/vendors/bowser-2.14.1/es5.js?sToken=" . dechex(filemtime(__DIR__ . "/film/vendors/bowser-2.14.1/es5.js")), ENT_QUOTES, "UTF-8"); ?>"></script>
-  <script type="text/javascript" src="<?php echo htmlspecialchars($sBaseUrl . "film/js/ua.js?sToken=" . dechex(filemtime(__DIR__ . "/film/js/ua.js")), ENT_QUOTES, "UTF-8"); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>film/vendors/bowser-2.14.1/es5.js"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>film/js/ua.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/film/js/ua.js")); ?>"></script>
 </body>
 </html>

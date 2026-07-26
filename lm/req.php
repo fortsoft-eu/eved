@@ -12,7 +12,6 @@ requireFullAccess($aAllowedIps, "portal", "lm_csrf_token");
 
 
 $sTitle = getPageTitleText("Request Overview", $aAllowedIps);
-
 $iTime = sendPageHeaders();
 
 ?>
@@ -27,7 +26,7 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo html($sBaseUrl . "favicon.ico"); ?>" type="image/x-icon">
   <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
@@ -38,6 +37,6 @@ renderMenu();
 ?>
   </p>
   <pre class="request-overview"><?php echo rtrim(getRequestPlainTextInfo()); ?></pre>
-  <script type="text/javascript" src="<?php echo html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

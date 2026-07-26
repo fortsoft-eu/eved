@@ -19,10 +19,12 @@ $aIndexSettingsDefaults = array(
     "show_inactive_contacts" => 0,
     "show_inactive_notes" => 0
 );
+
 $aIndexSettings = array();
 if (!isset($_SESSION["ex_index_settings"]) || !is_array($_SESSION["ex_index_settings"])) {
     $_SESSION["ex_index_settings"] = array();
 }
+
 foreach ($aIndexSettingsDefaults as $sIndexSettingName => $iIndexSettingDefault) {
     if (isset($_SESSION["ex_index_settings"][$sIndexSettingName])) {
         $aIndexSettings[$sIndexSettingName] = (int)$_SESSION["ex_index_settings"][$sIndexSettingName] == 1 ? 1 : 0;
@@ -40,6 +42,7 @@ try {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
+
 $aFullListComplexFilterFields = getFullListComplexFilterFields($aFullListComplexFilterContactTypes);
 $aFullListComplexFilterOperators = getFullListComplexFilterOperators();
 $aFullListComplexFilter = getDefaultFullListComplexFilter();
@@ -47,14 +50,17 @@ $aFullListComplexFilterDraft = getDefaultFullListComplexFilterDraft();
 if (isset($_SESSION["ex_index_complex_filter"]) && is_array($_SESSION["ex_index_complex_filter"])) {
     $aFullListComplexFilter = normalizeFullListComplexFilter($_SESSION["ex_index_complex_filter"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 }
+
 if (isset($_SESSION["ex_index_complex_filter_draft"]) && is_array($_SESSION["ex_index_complex_filter_draft"])) {
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($_SESSION["ex_index_complex_filter_draft"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 } elseif (count($aFullListComplexFilter["conditions"]) > 0) {
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 }
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("ex_csrf_token", true);
 }
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_index_settings") {
     foreach ($aIndexSettingsDefaults as $sIndexSettingName => $iIndexSettingDefault) {
         $aIndexSettings[$sIndexSettingName] = isset($_POST[$sIndexSettingName]) && (string)$_POST[$sIndexSettingName] == "1" ? 1 : 0;
@@ -66,6 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     header("Location: " . $sBaseUrl, true, 303);
     exit;
 }
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter") {
     $aFullListComplexFilterPayload = getFullListComplexFilterPostPayload();
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
@@ -77,12 +84,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     header("Location: " . $sBaseUrl, true, 303);
     exit;
 }
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter_draft") {
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft(getFullListComplexFilterPostPayload(), $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
     $_SESSION["ex_index_complex_filter_draft"] = $aFullListComplexFilterDraft;
     session_write_close();
     sendJsonAndExit(array("success" => true));
 }
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "reset_full_list_complex_filter") {
     $aFullListComplexFilter = getDefaultFullListComplexFilter();
     $_SESSION["ex_index_complex_filter"] = $aFullListComplexFilter;
@@ -102,6 +111,7 @@ $aAllGroups = array();
 $aNotes = array();
 $aHiddenInactive = array();
 $aFullListComplexFilterSql = buildFullListComplexFilterSql($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+
 try {
     $oPdo->query("SET SESSION group_concat_max_len = 1048576");
     $aRows = fetchSubjectRows($oPdo, 0, $aFullListComplexFilterSql);
@@ -127,6 +137,7 @@ if (!$aIndexSettings["show_inactive_subjects"]) {
     }
     $aRows = $aActiveRows;
 }
+
 if (!$aIndexSettings["show_inactive_nicknames"]) {
     foreach ($aNicknames as $iSubjectId => $aSubjectNicknames) {
         $aActiveNicknames = array();
@@ -138,6 +149,7 @@ if (!$aIndexSettings["show_inactive_nicknames"]) {
         $aNicknames[$iSubjectId] = $aActiveNicknames;
     }
 }
+
 if (!$aIndexSettings["show_inactive_addresses"]) {
     foreach ($aAddresses as $iSubjectId => $aSubjectAddresses) {
         $aActiveAddresses = array();
@@ -149,6 +161,7 @@ if (!$aIndexSettings["show_inactive_addresses"]) {
         $aAddresses[$iSubjectId] = $aActiveAddresses;
     }
 }
+
 if (!$aIndexSettings["show_inactive_contacts"]) {
     foreach ($aContacts as $iSubjectId => $aSubjectContacts) {
         $aActiveContacts = array();
@@ -160,6 +173,7 @@ if (!$aIndexSettings["show_inactive_contacts"]) {
         $aContacts[$iSubjectId] = $aActiveContacts;
     }
 }
+
 if (!$aIndexSettings["show_inactive_notes"]) {
     foreach ($aNotes as $iSubjectId => $aSubjectNotes) {
         $aActiveNotes = array();
@@ -341,7 +355,7 @@ echo renderSettingsScopeNote();
 if (!$aRows) {
     echo "  <p>No visible records found.</p>\n";
 } else {
-echo renderPageThrobber();
+    echo renderPageThrobber();
 
 ?>
   <table id="contacts-table" class="contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
@@ -368,8 +382,12 @@ echo renderPageThrobber();
     foreach ($aRows as $aRow) {
         echo renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aIndexSettings);
     }
-    echo "    </tbody>\n",
-        "  </table>\n";
+
+?>
+    </tbody>
+  </table>
+<?php
+
 }
 echo renderEmojiData();
 

@@ -243,7 +243,7 @@ $iTime = sendPageHeaders();
   <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
-  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
@@ -253,13 +253,13 @@ $iTime = sendPageHeaders();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
+    <button type="button" class="button-link js-index-settings-open">Settings</button>
 <?php
 
-echo "    <button type=\"button\" class=\"button-link js-index-settings-open\">Settings</button>\n",
-    $sToolbarHtml,
-    "  </p>\n";
+echo $sToolbarHtml;
 
 ?>
+  </p>
   <table id="debts-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
@@ -278,16 +278,15 @@ if ($blCanEdit) {
 
 echo "      </tr>\n",
     "    </thead>\n",
-    "    <tbody>\n";
-
-echo renderDebtAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency),
+    "    <tbody>\n",
+    renderDebtAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency),
     "    </tbody>\n",
-    "  </table>\n";
+    "  </table>\n",
+    renderSettingsModal($aSettings),
+    renderEmojiData();
 
 ?>
-<?php echo renderSettingsModal($aSettings); ?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
-<?php echo renderEmojiData(); ?>
   <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>

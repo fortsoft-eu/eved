@@ -78,8 +78,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
 }
 
-$sStyleToken = dechex(filemtime(__DIR__ . "/css/admin.css"));
-$sScriptToken = dechex(filemtime(__DIR__ . "/js/admin.js"));
 $sFilterValue = getQuickTableFilterValue();
 
 $iTime = sendPageHeaders();
@@ -91,14 +89,15 @@ $iTime = sendPageHeaders();
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="author" content="Petr Cervinka">
+  <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
+  <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
   <link rel="icon" href="<?php echo html($sBaseUrl . "favicon.ico"); ?>" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo html($sBaseUrl . "favicon.ico"); ?>" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Menu", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . $sStyleToken); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
@@ -118,6 +117,6 @@ renderMenu();
 <?php echo menuAdminRenderTables($oPdo); ?>
   </div>
   <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
-  <script type="text/javascript" src="<?php echo html($sBaseUrl . "js/admin.js?sToken=" . $sScriptToken); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

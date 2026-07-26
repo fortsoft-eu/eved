@@ -27,9 +27,6 @@ foreach ($oStatement as $aRow) {
     }
 }
 
-$sStyleToken = dechex(filemtime(__DIR__ . "/css/admin.css"));
-$sScriptToken = dechex(filemtime(__DIR__ . "/js/admin.js"));
-
 $iTime = sendPageHeaders();
 
 ?>
@@ -45,7 +42,7 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
   <title>Authors</title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="css/admin.css?sToken=<?php echo $sStyleToken; ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
@@ -87,6 +84,6 @@ if ($aAuthors) {
     </tbody>
   </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
-  <script type="text/javascript" src="js/admin.js?sToken=<?php echo $sScriptToken; ?>"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

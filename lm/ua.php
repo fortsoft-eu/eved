@@ -36,7 +36,7 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo html($sBaseUrl . "favicon.ico"); ?>" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Dashboard Access Log", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
@@ -158,7 +158,6 @@ if (!$aRows) {
         $sScreenPhysical = preg_replace("#^\\s*([0-9]+)\\s*[xX]\\s*([0-9]+)\\s*$#", "$1 &times; $2", $sScreenPhysical);
         $sTimestampRaw = (string)$aRow["timestamp"];
         $sTimestamp = html(substr($sTimestampRaw, 0, 19));
-
         echo "      <tr>\n",
             "        <td title=\"" . html($sTimestampRaw) . "\">" . $sTimestamp . "</td>\n",
             "        <td>" . html((string)$aRow["ip_address"]) . "</td>\n",
@@ -188,6 +187,6 @@ if (!$aRows) {
 ?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
   <script type="text/javascript" src="../film/vendors/bowser-2.14.1/es5.js"></script>
-  <script type="text/javascript" src="<?php echo html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime(__DIR__ . "/js/admin.js"))); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

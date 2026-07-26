@@ -114,7 +114,7 @@ $iTime = sendPageHeaders();
   <title><?php echo html($sTitle); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
-  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime(__DIR__ . "/css/admin.css"))); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
   <p class="admin-controls">
@@ -130,10 +130,10 @@ renderMenu();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php
 
-echo $sToolbarHtml,
-    "  </p>\n";
+echo $sToolbarHtml;
 
 ?>
+  </p>
   <table id="types-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-member-types="<?php echo htmlspecialchars(json_encode($aMemberTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
@@ -144,18 +144,15 @@ echo $sToolbarHtml,
 
 if ($blCanEdit) {
     echo "        <th class=\"admin-action-column\"></th>\n";
-
 }
 echo "      </tr>\n",
     "    </thead>\n",
-    "    <tbody>\n";
-
-echo renderFinanceTypeAdminRows($aRows, $blCanEdit),
-    "    </tbody>\n",
-    "  </table>\n";
-
+    "    <tbody>\n",
+    renderFinanceTypeAdminRows($aRows, $blCanEdit);
 
 ?>
+    </tbody>
+  </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
   <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>

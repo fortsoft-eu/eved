@@ -133,15 +133,8 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
-$sStyleToken = dechex(filemtime(__DIR__ . "/css/admin.css"));
-$sScriptToken = dechex(filemtime(__DIR__ . "/js/admin.js"));
-$sTinyMcePath = __DIR__ . "/vendors/tinymce-8.8.1/tinymce.min.js";
-$blTinyMceAvailable = is_file($sTinyMcePath);
-$sTinyMceToken = $blTinyMceAvailable ? dechex(filemtime($sTinyMcePath)) : "";
-$sTitle = getPageTitleText("Snippet Board", $aAllowedIps);
-
-
 $iTime = sendPageHeaders();
+
 
 ?>
 <!DOCTYPE html>
@@ -153,10 +146,10 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo html($sBaseUrl . "favicon.ico"); ?>" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo html($sBaseUrl . "favicon.ico"); ?>" type="image/x-icon">
-  <title><?php echo html($sTitle); ?></title>
+  <title><?php echo html(getPageTitleText("Snippet Board", $aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
-  <link href="<?php echo html($sBaseUrl . "css/admin.css?sToken=" . $sStyleToken); ?>" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body class="snippet-board-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>" data-snippet-board-revision="<?php echo html($sBoardRevision); ?>">
   <p class="admin-controls">
@@ -195,17 +188,7 @@ for ($iSlot = 1; $iSlot <= 6; $iSlot++) {
 ?>
     </div>
   </form>
-<?php
-
-if ($blTinyMceAvailable) {
-
-?>
-  <script type="text/javascript" src="<?php echo html($sBaseUrl . "vendors/tinymce-8.8.1/tinymce.min.js?sToken=" . $sTinyMceToken); ?>"></script>
-<?php
-
-}
-
-?>
-  <script type="text/javascript" src="<?php echo html($sBaseUrl . "js/admin.js?sToken=" . $sScriptToken); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/tinymce-8.8.1/tinymce.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

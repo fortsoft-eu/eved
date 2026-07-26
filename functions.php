@@ -227,9 +227,6 @@ function getEvedUaFingerprintNullableText($aData, $sName, $iMaxLength = 0) {
 }
 
 function insertEvedUaRequest($oPdo) {
-    if (!$oPdo) {
-        return 0;
-    }
     try {
         $oStatement = $oPdo->prepare("INSERT INTO fs_eved_ua (ip_address, x_real_ip, x_forwarded_for, x_web_id, x_geo_provider, x_geo_continent_code, x_geo_country_code, request_uri, referer, user_agent, accept_language, `timestamp`) VALUES (:ip_address, :x_real_ip, :x_forwarded_for, :x_web_id, :x_geo_provider, :x_geo_continent_code, :x_geo_country_code, :request_uri, :referer, :user_agent, :accept_language, CURRENT_TIMESTAMP(6))");
         $oStatement->execute(array(

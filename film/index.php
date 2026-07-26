@@ -7,27 +7,35 @@ $sVisibility = "public";
 if (isAllowedIp($aAllowedIps)) {
     $sVisibility = "all";
 }
+
 if (!isset($_SESSION["film"]) || !is_array($_SESSION["film"])) {
     $_SESSION["film"] = array();
 }
+
 if (!isset($_SESSION["film"]["gallery"]) || !is_array($_SESSION["film"]["gallery"])) {
     $_SESSION["film"]["gallery"] = array();
 }
+
 if (!isset($_SESSION["film"]["gallery"]["cover"]) || !is_bool($_SESSION["film"]["gallery"]["cover"])) {
     $_SESSION["film"]["gallery"]["cover"] = false;
 }
+
 if (isset($_GET["cover"])) {
     $_SESSION["film"]["gallery"]["cover"] = $_GET["cover"] ? true : false;
 }
+
 if (!isset($_SESSION["film"]["gallery"]["metadata"]) || !is_bool($_SESSION["film"]["gallery"]["metadata"])) {
     $_SESSION["film"]["gallery"]["metadata"] = false;
 }
+
 if (isset($_GET["metadata"])) {
     $_SESSION["film"]["gallery"]["metadata"] = $_GET["metadata"] ? true : false;
 }
+
 if (!isset($_SESSION["film"]["gallery"]["mode"]) || !is_int($_SESSION["film"]["gallery"]["mode"]) || $_SESSION["film"]["gallery"]["mode"] < 0 || $_SESSION["film"]["gallery"]["mode"] > 5) {
     $_SESSION["film"]["gallery"]["mode"] = 0;
 }
+
 if (isset($_GET["mode"])) {
     switch ($_GET["mode"]) {
         case 1:
@@ -195,14 +203,15 @@ if ($iId > 0) {
         }
     }
 }
+
 if (isAllowedIp($aAllowedIps)) {
     unset($_SESSION["film"]["ua"]);
 } else {
     startFilmUaPageRequest($iId > 0 ? $iId : null);
 }
+
 session_write_close();
 $sTitle = $sError ? "Error" : ($sJoined ? htmlspecialchars($sJoined) : "Film Scans");
-$sBaseUrl = htmlspecialchars($sBaseUrl);
 $iTime = sendPageHeaders();
 
 ?>
