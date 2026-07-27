@@ -87,6 +87,32 @@ CREATE TABLE `ex_persons` (
   CONSTRAINT `fk_ex_persons_subject` FOREIGN KEY (`subject_id`) REFERENCES `ex_subjects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
+CREATE TABLE `ex_subject_contacts` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `subject_id` int(10) unsigned NOT NULL,
+  `contact_id` int(10) unsigned NOT NULL,
+  `is_primary` tinyint(1) NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `note` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `ux_ex_subject_contacts_subject_contact` (`subject_id`,`contact_id`) USING BTREE,
+  KEY `ix_ex_subject_contacts_contact_id` (`contact_id`) USING BTREE,
+  KEY `ix_ex_subject_contacts_subject_sort` (`subject_id`,`is_active`,`is_primary`,`id`),
+  CONSTRAINT `fk_ex_subject_contacts_contact` FOREIGN KEY (`contact_id`) REFERENCES `ex_contacts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_ex_subject_contacts_subject` FOREIGN KEY (`subject_id`) REFERENCES `ex_subjects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
+CREATE TABLE `ex_phone_book` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `phone_book` int(10) unsigned NOT NULL DEFAULT 0,
+  `subject_contact_id` int(10) unsigned NOT NULL,
+  `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_ex_phone_book_book_sc` (`phone_book`,`subject_contact_id`),
+  KEY `ix_ex_phone_book_sc` (`subject_contact_id`),
+  CONSTRAINT `fk_ex_phone_book_sc` FOREIGN KEY (`subject_contact_id`) REFERENCES `ex_subject_contacts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
 CREATE TABLE `ex_subject_addresses` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `subject_id` int(10) unsigned NOT NULL,
@@ -114,21 +140,6 @@ CREATE TABLE `ex_subject_addresses` (
   KEY `ix_ex_subject_addresses_city` (`city`),
   KEY `ix_ex_subject_addresses_subject_sort` (`subject_id`,`is_active`,`is_primary`,`id`),
   CONSTRAINT `fk_ex_subject_addresses_subject` FOREIGN KEY (`subject_id`) REFERENCES `ex_subjects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
-
-CREATE TABLE `ex_subject_contacts` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `subject_id` int(10) unsigned NOT NULL,
-  `contact_id` int(10) unsigned NOT NULL,
-  `is_primary` tinyint(1) NOT NULL DEFAULT 0,
-  `is_active` tinyint(1) NOT NULL DEFAULT 1,
-  `note` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `ux_ex_subject_contacts_subject_contact` (`subject_id`,`contact_id`) USING BTREE,
-  KEY `ix_ex_subject_contacts_contact_id` (`contact_id`) USING BTREE,
-  KEY `ix_ex_subject_contacts_subject_sort` (`subject_id`,`is_active`,`is_primary`,`id`),
-  CONSTRAINT `fk_ex_subject_contacts_contact` FOREIGN KEY (`contact_id`) REFERENCES `ex_contacts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_ex_subject_contacts_subject` FOREIGN KEY (`subject_id`) REFERENCES `ex_subjects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `ex_subject_groups` (

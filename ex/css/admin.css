@@ -1303,6 +1303,21 @@ body.phpinfo-page .admin-controls {
     width: auto;
 }
 
+#phone-book-table {
+    table-layout: auto;
+    width: auto;
+}
+
+#phone-book-table td, #phone-book-table th {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+.phone-book-row-inactive > td {
+    background: #FEE;
+}
+
 #contact-types-table td, #contact-types-table th, #external-libraries-table td, #external-libraries-table th, #groups-table td, #groups-table th {
     overflow-wrap: normal;
     white-space: nowrap;

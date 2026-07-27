@@ -5634,6 +5634,138 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
+    var oTable = document.getElementById("phone-book-table");
+    if (!oTable) {
+        return;
+    }
+    var oDeleteDialog = document.getElementById("phone-book-remove-dialog");
+    var oDeleteForm = oDeleteDialog ? oDeleteDialog.querySelector("form") : null;
+    var oDeleteError = oDeleteDialog ? oDeleteDialog.querySelector(".contact-edit-error") : null;
+    var oCurrentRow = null;
+    var closeOnEscape = function (oEvent) {
+        if (oEvent.key == "Escape") {
+            closePhoneBookRemoveDialog(false);
+        }
+    };
+
+    function getField(oForm, sName) {
+        return oForm ? oForm.querySelector("[name=\"" + sName + "\"]") : null;
+    }
+
+    function getPhoneBookRow(oElement) {
+        return oElement && oElement.closest ? oElement.closest("tr[data-phone-book-id]") : null;
+    }
+
+    function addEmptyPhoneBookRow() {
+        var oBody = oTable.tBodies && oTable.tBodies.length ? oTable.tBodies[0] : null;
+        var oRow;
+        var oCell;
+        if (!oBody || oBody.querySelector("tr[data-phone-book-id], .phone-book-empty-row")) {
+            return;
+        }
+        oRow = document.createElement("tr");
+        oCell = document.createElement("td");
+        oRow.className = "phone-book-empty-row";
+        oCell.colSpan = 2;
+        oCell.appendChild(document.createTextNode("No records found."));
+        oRow.appendChild(oCell);
+        oBody.appendChild(oRow);
+    }
+
+    function closePhoneBookRemoveDialog(blSaved) {
+        var oSave = oDeleteForm ? oDeleteForm.querySelector("button[type=\"submit\"]") : null;
+        if (oCurrentRow && oCurrentRow.parentNode) {
+            finishAdminSubjectRowEdit(oCurrentRow, blSaved === true);
+        }
+        if (oSave) {
+            oSave.disabled = false;
+        }
+        document.removeEventListener("keydown", closeOnEscape);
+        closeAdminDialogElement(oDeleteDialog);
+        setAdminDialogError(oDeleteError, "");
+        oCurrentRow = null;
+    }
+
+    function openPhoneBookRemoveDialog(oButton) {
+        var oPhoneBookId = getField(oDeleteForm, "phone_book_id");
+        closeAdminOpenDialog();
+        oCurrentRow = getPhoneBookRow(oButton);
+        setAdminDialogError(oDeleteError, "");
+        if (oPhoneBookId) {
+            oPhoneBookId.value = oButton ? (oButton.getAttribute("data-phone-book-id") || "") : "";
+        }
+        beginAdminSubjectRowEdit(oCurrentRow);
+        if (!openAdminDialogElement(oDeleteDialog, closePhoneBookRemoveDialog)) {
+            return;
+        }
+        document.addEventListener("keydown", closeOnEscape);
+        focusAdminElement(oDeleteForm ? oDeleteForm.querySelector(".js-phone-book-remove-cancel") : null);
+    }
+
+    function submitPhoneBookRemove() {
+        var oData = new FormData();
+        var oPhoneBookId = getField(oDeleteForm, "phone_book_id");
+        var oSave = oDeleteForm ? oDeleteForm.querySelector("button[type=\"submit\"]") : null;
+        var oRemovedRow = oCurrentRow;
+        setAdminDialogError(oDeleteError, "");
+        if (oSave) {
+            oSave.disabled = true;
+        }
+        oData.append("action", "remove_phone_book_contact");
+        oData.append("phone_book_id", oPhoneBookId ? oPhoneBookId.value : "");
+        appendAdminCsrfToken(oData);
+        fetch(window.location.href, {
+            "method": "POST",
+            "body": oData,
+            "credentials": "same-origin",
+            "headers": getAdminAjaxHeaders()
+        }).then(function (oResponse) {
+            return oResponse.json();
+        }).then(function (aData) {
+            if (!aData || !aData.success) {
+                setAdminDialogError(oDeleteError, aData && aData.message ? aData.message : "Contact could not be removed from Phone Book.");
+                if (oSave) {
+                    oSave.disabled = false;
+                }
+                return;
+            }
+            closePhoneBookRemoveDialog(true);
+            if (oRemovedRow && oRemovedRow.parentNode) {
+                oRemovedRow.parentNode.removeChild(oRemovedRow);
+                addEmptyPhoneBookRow();
+                refreshAdminTableFilter();
+            }
+        }).catch(function (oException) {
+            logAdminException(oException);
+            setAdminDialogError(oDeleteError, "Contact could not be removed from Phone Book.");
+            if (oSave) {
+                oSave.disabled = false;
+            }
+        });
+    }
+
+    document.addEventListener("click", function (oEvent) {
+        var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".js-remove-phone-book-contact, .js-phone-book-remove-close, .js-phone-book-remove-cancel") : null;
+        if (!oButton) {
+            return;
+        }
+        oEvent.preventDefault();
+        oEvent.stopPropagation();
+        if (oButton.className.indexOf("js-remove-phone-book-contact") !== -1) {
+            openPhoneBookRemoveDialog(oButton);
+        } else {
+            closePhoneBookRemoveDialog(false);
+        }
+    }, true);
+    if (oDeleteForm) {
+        oDeleteForm.addEventListener("submit", function (oEvent) {
+            oEvent.preventDefault();
+            submitPhoneBookRemove();
+        });
+    }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
     if (!document.getElementById("contacts-table")) {
         return;
     }
@@ -5663,6 +5795,44 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function getField(oForm, sName) {
         return oForm ? oForm.querySelector("[name=\"" + sName + "\"]") : null;
+    }
+
+    function addPhoneBookContact(oButton) {
+        var oData;
+        var sSubjectContactId = oButton ? (oButton.getAttribute("data-subject-contact-id") || "") : "";
+        if (!window.fetch || !window.FormData) {
+            showAdminMessageDialog("Phone Book action is not available.", "Phone Book");
+            return;
+        }
+        if (!sSubjectContactId || oButton.getAttribute("data-phone-book-pending") == "1") {
+            return;
+        }
+        oButton.setAttribute("data-phone-book-pending", "1");
+        oData = new FormData();
+        oData.append("action", "add_phone_book_contact");
+        oData.append("subject_contact_id", sSubjectContactId);
+        appendAdminCsrfToken(oData);
+        fetch(window.location.href, {
+            "method": "POST",
+            "body": oData,
+            "credentials": "same-origin",
+            "headers": getAdminAjaxHeaders()
+        }).then(function (oResponse) {
+            return oResponse.json();
+        }).then(function (aData) {
+            if (!aData || !aData.success) {
+                oButton.removeAttribute("data-phone-book-pending");
+                showAdminMessageDialog(aData && aData.message ? aData.message : "Contact could not be added to Phone Book.", "Phone Book");
+                return;
+            }
+            if (oButton.parentNode) {
+                oButton.parentNode.removeChild(oButton);
+            }
+        }).catch(function (oException) {
+            logAdminException(oException);
+            oButton.removeAttribute("data-phone-book-pending");
+            showAdminMessageDialog("Contact could not be added to Phone Book.", "Phone Book");
+        });
     }
 
     function setDialogError(oError, sMessage) {
@@ -5784,6 +5954,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     document.addEventListener("click", function (oEvent) {
         var oButton = getActionButton(oEvent.target);
+        var oPhoneBookButton;
+        oPhoneBookButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".js-add-phone-book-contact") : null;
+        if (oPhoneBookButton) {
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+            addPhoneBookContact(oPhoneBookButton);
+            return;
+        }
         if (!oButton) {
             return;
         }

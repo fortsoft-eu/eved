@@ -40,6 +40,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
     exit;
 }
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "add_phone_book_contact") {
+    if (!$blCanEdit) {
+        send403AndExit();
+    }
+    $iSubjectContactId = isset($_POST["subject_contact_id"]) ? (int)$_POST["subject_contact_id"] : 0;
+    if ($iSubjectContactId < 1) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid contact link."), 400);
+    }
+    try {
+        if (!addPhoneBookContact($oPdo, $iSubjectContactId)) {
+            sendJsonAndExit(array("success" => false, "message" => "Contact link was not found or is not a phone contact."), 404);
+        }
+        if (isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest") {
+            sendJsonAndExit(array("success" => true));
+        }
+        sendSecurityHeaders();
+        header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
+        exit;
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        send500AndExit("Database error: " . $oException->getMessage());
+    }
+}
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "get_subject") {
     if (!$blCanEdit) {
         sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);

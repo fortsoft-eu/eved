@@ -4465,12 +4465,67 @@ function contactsFilterText($aContactRow) {
     return $sContactFilterText;
 }
 
+function addPhoneBookContact($oPdo, $iSubjectContactId, $iPhoneBook = 0) {
+    $oStatement = $oPdo->prepare("SELECT sc.id, COALESCE(ct.contact_type, '') AS contact_type FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id WHERE sc.id = :id");
+    $oStatement->execute(array("id" => (int)$iSubjectContactId));
+    $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+    if (!$aRow) {
+        return false;
+    }
+    if (!isPhoneContactType(contactTypeKey($aRow["contact_type"]))) {
+        return false;
+    }
+    $oStatement = $oPdo->prepare("INSERT IGNORE INTO ex_phone_book (phone_book, subject_contact_id) VALUES (:phone_book, :subject_contact_id)");
+    $oStatement->execute(array("phone_book" => max(0, (int)$iPhoneBook), "subject_contact_id" => (int)$iSubjectContactId));
+    return true;
+}
+
+function removePhoneBookContact($oPdo, $iPhoneBookId) {
+    $oStatement = $oPdo->prepare("DELETE FROM ex_phone_book WHERE id = :id");
+    $oStatement->execute(array("id" => (int)$iPhoneBookId));
+}
+
+function phoneBookSubjectDisplayName($aRow) {
+    $sLastName = trim((string)$aRow["last_name"]);
+    $sFirstName = trim((string)$aRow["first_name"]);
+    if ($sLastName != "" && $sFirstName != "") {
+        return $sLastName . ", " . $sFirstName;
+    }
+    if ($sLastName != "") {
+        return $sLastName;
+    }
+    if ($sFirstName != "") {
+        return $sFirstName;
+    }
+    return (string)$aRow["subject_name"];
+}
+
+function fetchPhoneBookRows($oPdo, $iPhoneBook = 0) {
+    $sPersonDisplayBase = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.title_before, ''), NULLIF(p.first_name, ''), NULLIF(p.middle_name, ''), NULLIF(p.last_name, ''))), '')";
+    $sPersonDisplayName = "NULLIF(TRIM(CONCAT(COALESCE(" . $sPersonDisplayBase . ", ''), IF(NULLIF(p.title_after, '') IS NULL, '', IF(" . $sPersonDisplayBase . " IS NULL, p.title_after, CONCAT(', ', p.title_after))))), '')";
+    $sPersonSortName = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.last_name, ''), NULLIF(p.first_name, ''))), '')";
+    $sSql = "SELECT pbc.id AS phone_book_id, pbc.phone_book, pbc.subject_contact_id, pbc.created_at AS phone_book_created_at, sc.subject_id, sc.contact_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note, c.contact_type_id, c.contact_value, c.created_at, c.updated_at, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, s.subject_type, s.is_active AS subject_is_active, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), c.contact_value, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), c.contact_value, 'Unnamed subject') AS subject_sort_name, p.first_name, p.last_name FROM ex_phone_book AS pbc INNER JOIN ex_subject_contacts AS sc ON sc.id = pbc.subject_contact_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id INNER JOIN ex_subjects AS s ON s.id = sc.subject_id LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id WHERE pbc.phone_book = :phone_book AND COALESCE(ct.contact_type, '') IN ('landline', 'cell', 'fax', 'pager') ORDER BY subject_sort_name ASC, contact_type_order ASC, c.contact_value ASC, pbc.subject_contact_id ASC";
+    $oStatement = $oPdo->prepare($sSql);
+    $oStatement->execute(array("phone_book" => max(0, (int)$iPhoneBook)));
+    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function contactsRenderPhoneBookAction($aSubject) {
+    $sPhoneBookEmoji = "&#128242;";
+
+    if (!isPhoneContactType(contactTypeKey($aSubject["contact_type"])) || !empty($aSubject["phone_book_contact"]) || (int)$aSubject["is_active"] != 1 || (int)$aSubject["contact_is_active"] != 1) {
+        return "";
+    }
+    return "<a href=\"#\" class=\"item-action js-add-phone-book-contact\" data-subject-contact-id=\"" . html($aSubject["subject_contact_id"]) . "\" title=\"Add to Phone Book\" aria-label=\"Add to Phone Book\">" . $sPhoneBookEmoji . "</a>";
+}
+
 function contactsRenderSubjectCell($aSubject, $sContactFilterText, $blCanEdit) {
     global $sEditEmoji, $sDeleteEmoji, $sPrimaryEmoji, $sInactiveEmoji;
 
     $sSubjectTimestampTooltipText = timestampTooltipText($aSubject);
     $sSubjectTimestampTooltipAttribute = $sSubjectTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", html($sSubjectTimestampTooltipText)) . "\"" : "";
-    $sSubjectActions = $blCanEdit ? "<span class=\"list-item-actions\"><a href=\"#\" class=\"item-action js-edit-subject-contact\" title=\"Edit subject contact\" aria-label=\"Edit subject contact\">" . $sEditEmoji . "</a><a href=\"#\" class=\"item-action js-delete-subject-contact\" title=\"Delete subject contact\" aria-label=\"Delete subject contact\">" . $sDeleteEmoji . "</a></span>" : "";
+    $sPhoneBookAction = $blCanEdit ? contactsRenderPhoneBookAction($aSubject) : "";
+    $sSubjectActions = $blCanEdit ? "<span class=\"list-item-actions\">" . $sPhoneBookAction . "<a href=\"#\" class=\"item-action js-edit-subject-contact\" title=\"Edit subject contact\" aria-label=\"Edit subject contact\">" . $sEditEmoji . "</a><a href=\"#\" class=\"item-action js-delete-subject-contact\" title=\"Delete subject contact\" aria-label=\"Delete subject contact\">" . $sDeleteEmoji . "</a></span>" : "";
     $sSubjectEditAction = $blCanEdit ? "<span class=\"list-item-actions\"><a href=\"#\" class=\"item-action js-edit-subject\" data-subject-id=\"" . html($aSubject["subject_id"]) . "\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a></span>" : "";
     $sSubjectPrimaryFlag = "<span class=\"contact-flags\"><span class=\"contact-primary\" title=\"Primary\">" . ((int)$aSubject["is_primary"] == 1 ? $sPrimaryEmoji : "") . "</span><span class=\"contact-inactive-label\" title=\"Inactive\">" . ((int)$aSubject["contact_is_active"] == 1 ? "" : $sInactiveEmoji) . "</span></span>";
     return "        <td class=\"" . html(contactsSubjectCellClass($aSubject)) . " list-item\"" . contactsRenderSubjectDataAttributes($aSubject) . "><span class=\"column-hidden\">" . htmlValue($sContactFilterText) . "</span><span class=\"subject-item-value\"" . $sSubjectTimestampTooltipAttribute . ">" . htmlValue($aSubject["subject_name"]) . "</span>" . renderCopyAction($aSubject["subject_name"]) . $sSubjectEditAction . "<span class=\"contact-item contact-subject-item\"" . contactsRenderSubjectDataAttributes($aSubject) . "><span class=\"contact-note\">" . ($aSubject["note"] != "" ? "(" . html($aSubject["note"]) . ")" : "") . "</span>" . $sSubjectPrimaryFlag . $sSubjectActions . "</span></td>\n";
@@ -4493,7 +4548,7 @@ function contactsFetchRows($oPdo, $aContactSettings) {
             "updated_at" => (string)$aSubjectRow["updated_at"]
         );
     }
-    $sSql = "SELECT c.id AS contact_id, c.contact_type_id, c.contact_value, c.created_at, c.updated_at, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, sc.id AS subject_contact_id, sc.subject_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note FROM ex_contacts AS c LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id LEFT JOIN ex_subject_contacts AS sc ON sc.contact_id = c.id ORDER BY c.contact_value ASC, COALESCE(ct.`order`, 999999) ASC, COALESCE(ct.name, '') ASC, c.id ASC, sc.is_active DESC, sc.is_primary DESC, sc.id ASC";
+    $sSql = "SELECT c.id AS contact_id, c.contact_type_id, c.contact_value, c.created_at, c.updated_at, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, sc.id AS subject_contact_id, sc.subject_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note, IF(pbc.subject_contact_id IS NULL, 0, 1) AS phone_book_contact FROM ex_contacts AS c LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id LEFT JOIN ex_subject_contacts AS sc ON sc.contact_id = c.id LEFT JOIN ex_phone_book AS pbc ON pbc.subject_contact_id = sc.id AND pbc.phone_book = 0 ORDER BY c.contact_value ASC, COALESCE(ct.`order`, 999999) ASC, COALESCE(ct.name, '') ASC, c.id ASC, sc.is_active DESC, sc.is_primary DESC, sc.id ASC";
     $oStatement = $oPdo->prepare($sSql);
     $oStatement->execute();
     while ($aContact = $oStatement->fetch(PDO::FETCH_ASSOC)) {
@@ -4538,7 +4593,8 @@ function contactsFetchRows($oPdo, $aContactSettings) {
             "contact_display_value" => $sContactDisplayValue,
             "note" => (string)$aContact["note"],
             "is_primary" => (int)$aContact["is_primary"],
-            "contact_is_active" => (int)$aContact["contact_is_active"]
+            "contact_is_active" => (int)$aContact["contact_is_active"],
+            "phone_book_contact" => (int)$aContact["phone_book_contact"]
         ));
     }
     foreach ($aRows as $iContactId => $aRow) {
