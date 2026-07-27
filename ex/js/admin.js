@@ -114,6 +114,57 @@ function setAdminDialogError(oError, sMessage) {
     oError.style.display = sMessage ? "" : "none";
 }
 
+function getAdminElementText(oElement) {
+    return oElement ? (oElement.textContent || "").replace(/\s+/g, " ").trim() : "";
+}
+
+function getAdminContactItemText(oItem) {
+    var sType = oItem ? (oItem.getAttribute("data-contact-type-name") || "") : "";
+    var sValue = oItem ? (oItem.getAttribute("data-contact-value") || "") : "";
+    if (sType != "" && sValue != "") {
+        return sType + ": " + sValue;
+    }
+    return sValue || sType;
+}
+
+function appendAdminConfirmDetail(oParent, sDetail) {
+    var aLines;
+    var iI;
+    if (!oParent || !sDetail) {
+        return;
+    }
+    aLines = String(sDetail).split(/\r?\n/);
+    for (iI = 0; iI < aLines.length; iI += 1) {
+        if (iI > 0) {
+            oParent.appendChild(document.createElement("br"));
+        }
+        oParent.appendChild(document.createTextNode(aLines[iI]));
+    }
+}
+
+function setAdminConfirmMessage(oText, sMessage, sDetail) {
+    var oStrong;
+    if (!oText) {
+        return;
+    }
+    oText.textContent = "";
+    oText.appendChild(document.createTextNode(sMessage));
+    if (sDetail) {
+        oText.appendChild(document.createElement("br"));
+        oStrong = document.createElement("strong");
+        appendAdminConfirmDetail(oStrong, sDetail);
+        oText.appendChild(oStrong);
+    }
+}
+
+function setAdminConfirmDetail(oDialog, sSelector, sDetail) {
+    var oStrong = oDialog ? oDialog.querySelector(sSelector) : null;
+    if (oStrong) {
+        oStrong.textContent = "";
+        appendAdminConfirmDetail(oStrong, sDetail || "");
+    }
+}
+
 function dispatchAdminInputEvent(oElement) {
     var oEvent;
     if (!oElement) {
@@ -3218,7 +3269,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         oDialogData.save.textContent = "Yes";
         oDialogData.cancel.textContent = "No";
-        oText.textContent = "Delete this group?";
+        setAdminConfirmMessage(oText, "Delete this group?", oRow.getAttribute("data-group-name") || "");
         oDialogData.form.appendChild(oText);
         oDialogData.form.addEventListener("submit", function (oEvent) {
             var oData = new FormData();
@@ -3743,7 +3794,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         oDialogData.save.textContent = "Yes";
         oDialogData.cancel.textContent = "No";
-        oText.textContent = "Delete this contact type?";
+        setAdminConfirmMessage(oText, "Delete this contact type?", oRow.getAttribute("data-contact-type-name") || "");
         oDialogData.form.appendChild(oText);
         oDialogData.form.addEventListener("submit", function (oEvent) {
             var oData = new FormData();
@@ -3910,6 +3961,15 @@ document.addEventListener("DOMContentLoaded", function () {
     function getSubjectNoteText(oItem) {
         var oSource = oItem ? oItem.querySelector(".subject-note-source") : null;
         return oSource ? oSource.textContent : getSubjectItemValue(oItem, "data-note-text");
+    }
+
+    function getSubjectItemText(oItem) {
+        var oValue = oItem ? oItem.querySelector(".subject-item-value") : null;
+        return getAdminElementText(oValue);
+    }
+
+    function getSubjectContactText(oItem) {
+        return getAdminContactItemText(oItem);
     }
 
     function getSubjectFlag(aData, sName) {
@@ -5203,13 +5263,13 @@ document.addEventListener("DOMContentLoaded", function () {
         finishSubjectDialog(oDialogData, oNoteText);
     }
 
-    function openDeleteDialog(sTitle, sMessage, aParams, oSubjectRow) {
+    function openDeleteDialog(sTitle, sMessage, aParams, oSubjectRow, sDetail) {
         var oDialogData = createSubjectDialog(sTitle, oSubjectRow);
         var oText = document.createElement("p");
         if (!oDialogData) {
             return;
         }
-        oText.textContent = sMessage;
+        setAdminConfirmMessage(oText, sMessage, sDetail);
         oDialogData.save.textContent = "Yes";
         oDialogData.cancel.textContent = "No";
         oDialogData.form.appendChild(oText);
@@ -5233,7 +5293,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "name": "subject_id",
                     "value": oButton.getAttribute("data-subject-id") || ""
                 }
-            ], getAdminSubjectRow(oButton));
+            ], getAdminSubjectRow(oButton), oButton.getAttribute("data-subject-name") || "");
     }
 
     function openDeleteContactDialog(oItem) {
@@ -5244,7 +5304,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "name": "subject_contact_id",
                     "value": getSubjectItemValue(oItem, "data-subject-contact-id")
                 }
-            ], getAdminSubjectRow(oItem));
+            ], getAdminSubjectRow(oItem), getSubjectContactText(oItem));
     }
 
     function openDeleteNicknameDialog(oItem) {
@@ -5255,7 +5315,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "name": "nickname_id",
                     "value": getSubjectItemValue(oItem, "data-nickname-id")
                 }
-            ], getAdminSubjectRow(oItem));
+            ], getAdminSubjectRow(oItem), getSubjectItemText(oItem));
     }
 
     function openDeleteAddressDialog(oItem) {
@@ -5266,11 +5326,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     "name": "address_id",
                     "value": getSubjectItemValue(oItem, "data-address-id")
                 }
-            ], getAdminSubjectRow(oItem));
+            ], getAdminSubjectRow(oItem), getSubjectItemText(oItem));
     }
 
     function openDeleteGroupDialog(oItem) {
-        openDeleteDialog("Confirm Deletion", "Remove this group from the subject?", [{
+        openDeleteDialog("Confirm Deletion", "Remove the subject from this group?", [{
                     "name": "action",
                     "value": "delete_subject_group"
                 }, {
@@ -5280,7 +5340,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "name": "group_id",
                     "value": getSubjectItemValue(oItem, "data-group-id")
                 }
-            ], getAdminSubjectRow(oItem));
+            ], getAdminSubjectRow(oItem), getSubjectItemValue(oItem, "data-group-name"));
     }
 
     function openDeleteNoteDialog(oItem) {
@@ -5291,7 +5351,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     "name": "note_id",
                     "value": getSubjectItemValue(oItem, "data-note-id")
                 }
-            ], getAdminSubjectRow(oItem));
+            ], getAdminSubjectRow(oItem), getSubjectNoteText(oItem));
     }
 
     document.addEventListener("click", function (oEvent) {
@@ -5679,6 +5739,11 @@ document.addEventListener("DOMContentLoaded", function () {
         return oElement && oElement.closest ? oElement.closest("tr[data-phone-book-id]") : null;
     }
 
+    function getPhoneBookRemoveText(oRow) {
+        var oCell = oRow ? oRow.querySelector(".phone-book-contact") : null;
+        return getAdminContactItemText(oCell);
+    }
+
     function closePhoneBookRemoveDialog(blSaved) {
         var oSave = oDeleteForm ? oDeleteForm.querySelector("button[type=\"submit\"]") : null;
         if (oCurrentRow && oCurrentRow.parentNode) {
@@ -5701,6 +5766,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (oPhoneBookId) {
             oPhoneBookId.value = oButton ? (oButton.getAttribute("data-phone-book-id") || "") : "";
         }
+        setAdminConfirmDetail(oDeleteDialog, ".js-phone-book-remove-value", getPhoneBookRemoveText(oCurrentRow));
         beginAdminSubjectRowEdit(oCurrentRow);
         if (!openAdminDialogElement(oDeleteDialog, closePhoneBookRemoveDialog)) {
             return;
@@ -5908,6 +5974,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (oContactId) {
             oContactId.value = oCell ? (oCell.getAttribute("data-contact-id") || "") : "";
         }
+        setAdminConfirmDetail(oDeleteDialog, ".js-shared-contact-delete-value", getAdminContactItemText(oCell));
         beginAdminSubjectRowEdit(oCell ? oCell.parentNode : null);
         openDialog(oDeleteDialog, oDeleteForm ? oDeleteForm.querySelector(".js-shared-contact-delete-cancel") : null);
     }
@@ -6050,6 +6117,31 @@ document.addEventListener("DOMContentLoaded", function () {
         return oCell.getAttribute("data-" + sAttribute) || "";
     }
 
+    function getAddressCellText(oCell) {
+        var oValue = oCell ? oCell.querySelector(".subject-item-value") : null;
+        return getAdminElementText(oValue);
+    }
+
+    function getSubjectAddressDeleteText(oCell) {
+        var oAddressCell = getAddressCellForSubject(oCell);
+        var sSubject = getAddressCellText(oCell);
+        var sAddress = getAddressCellText(oAddressCell);
+        if (sSubject != "" && sAddress != "") {
+            return sSubject + "\n" + sAddress;
+        }
+        return sSubject || sAddress;
+    }
+
+    function getAddressCellForSubject(oCell) {
+        var oRow = oCell ? oCell.parentNode : null;
+        var oAddressCell = null;
+        while (oRow && !oAddressCell) {
+            oAddressCell = oRow.querySelector ? oRow.querySelector(".address-cell") : null;
+            oRow = oRow.previousElementSibling;
+        }
+        return oAddressCell;
+    }
+
     function setDialogError(oError, sMessage) {
         if (!oError) {
             return;
@@ -6126,6 +6218,7 @@ document.addEventListener("DOMContentLoaded", function () {
         closeAdminOpenDialog();
         oCurrentAddressCell = oCell;
         getField(oDeleteForm, "address_match").value = oCell.getAttribute("data-address-match") || "";
+        setAdminConfirmDetail(oDeleteDialog, ".js-shared-address-delete-value", getAddressCellText(oCell));
         setDialogError(oDeleteError, "");
         if (!openAdminDialogElement(oDeleteDialog, closeSharedAddressDialog)) {
             return;
@@ -6181,6 +6274,7 @@ document.addEventListener("DOMContentLoaded", function () {
         closeAdminOpenDialog();
         oCurrentSubjectCell = oCell;
         getField(oSubjectDeleteForm, "address_id").value = oCell.getAttribute("data-address-id") || "";
+        setAdminConfirmDetail(oSubjectDeleteDialog, ".js-subject-address-delete-value", getSubjectAddressDeleteText(oCell));
         setDialogError(oSubjectDeleteError, "");
         if (!openAdminDialogElement(oSubjectDeleteDialog, closeSubjectAddressDialog)) {
             return;

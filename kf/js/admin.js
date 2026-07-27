@@ -90,6 +90,36 @@
         oError.style.display = sMessage ? "" : "none";
     }
 
+    function appendAdminConfirmDetail(oParent, sDetail) {
+        var aLines;
+        var iI;
+        if (!oParent || !sDetail) {
+            return;
+        }
+        aLines = String(sDetail).split(/\r?\n/);
+        for (iI = 0; iI < aLines.length; iI += 1) {
+            if (iI > 0) {
+                oParent.appendChild(document.createElement("br"));
+            }
+            oParent.appendChild(document.createTextNode(aLines[iI]));
+        }
+    }
+
+    function setAdminConfirmMessage(oText, sMessage, sDetail) {
+        var oStrong;
+        if (!oText) {
+            return;
+        }
+        oText.textContent = "";
+        oText.appendChild(document.createTextNode(sMessage));
+        if (sDetail) {
+            oText.appendChild(document.createElement("br"));
+            oStrong = document.createElement("strong");
+            appendAdminConfirmDetail(oStrong, sDetail);
+            oText.appendChild(oStrong);
+        }
+    }
+
     function padAdminIsoDateNumber(iValue) {
         return iValue < 10 ? "0" + iValue : "" + iValue;
     }
@@ -1629,6 +1659,42 @@
             return oButton && oButton.closest ? oButton.closest(".debt-movement") : null;
         }
 
+        function getDebtMovementConfirmText(oMovement) {
+            var sDate = oMovement ? (oMovement.getAttribute("data-movement-date") || "") : "";
+            var sAmount = oMovement ? (oMovement.getAttribute("data-amount") || "") : "";
+            var sCurrency = oMovement ? (oMovement.getAttribute("data-currency") || "") : "";
+            return (sDate + " " + sAmount + (sCurrency != "" ? " " + sCurrency : "")).trim();
+        }
+
+        function getDebtConfirmText(oRow) {
+            var sSubject = oRow ? (oRow.getAttribute("data-subject-name") || "") : "";
+            var sAmount = oRow ? (oRow.getAttribute("data-amount") || "") : "";
+            if (sSubject != "" && sAmount != "") {
+                return sSubject + "\n" + sAmount;
+            }
+            return sSubject || sAmount;
+        }
+
+        function getTransactionConfirmText(oRow) {
+            var sDate = oRow ? (oRow.getAttribute("data-transaction-date") || "") : "";
+            var sAmount = oRow ? (oRow.getAttribute("data-amount") || "") : "";
+            var sCurrency = oRow ? (oRow.getAttribute("data-currency") || "") : "";
+            var sCounterparty = oRow ? (oRow.getAttribute("data-counterparty") || "") : "";
+            var sText = (sDate + " " + sAmount + (sCurrency != "" ? " " + sCurrency : "")).trim();
+            if (sText != "" && sCounterparty != "") {
+                return sText + "\n" + sCounterparty;
+            }
+            return sText || sCounterparty;
+        }
+
+        function getSubscriptionConfirmText(oRow) {
+            return oRow ? (oRow.getAttribute("data-name") || "") : "";
+        }
+
+        function getTypeConfirmText(oRow) {
+            return oRow ? (oRow.getAttribute("data-type-name") || "") : "";
+        }
+
         function findAdminTransactionRowById(sTransactionId) {
             return sTransactionId && oTransactionsTable ? oTransactionsTable.querySelector("tbody tr[data-transaction-id=\"" + sTransactionId + "\"]") : null;
         }
@@ -2170,7 +2236,7 @@
             oDialogData.errorMessage = "Debt movement could not be deleted.";
             oDialogData.save.textContent = "Yes";
             oDialogData.cancel.textContent = "No";
-            oText.textContent = "Delete this debt movement?";
+            setAdminConfirmMessage(oText, "Delete this debt movement?", getDebtMovementConfirmText(oMovement));
             oDialogData.form.appendChild(oText);
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();
@@ -2193,7 +2259,7 @@
             }
             oDialogData.save.textContent = "Yes";
             oDialogData.cancel.textContent = "No";
-            oText.textContent = "Delete this debt?";
+            setAdminConfirmMessage(oText, "Delete this debt?", getDebtConfirmText(oRow));
             oDialogData.form.appendChild(oText);
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();
@@ -2521,7 +2587,7 @@
             }
             oDialogData.save.textContent = "Yes";
             oDialogData.cancel.textContent = "No";
-            oText.textContent = "Delete this transaction?";
+            setAdminConfirmMessage(oText, "Delete this transaction?", getTransactionConfirmText(oRow));
             oDialogData.form.appendChild(oText);
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();
@@ -2876,7 +2942,7 @@
             }
             oDialogData.save.textContent = "Yes";
             oDialogData.cancel.textContent = "No";
-            oText.textContent = "Delete this subscription?";
+            setAdminConfirmMessage(oText, "Delete this subscription?", getSubscriptionConfirmText(oRow));
             oDialogData.form.appendChild(oText);
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();
@@ -3149,7 +3215,7 @@
             }
             oDialogData.save.textContent = "Yes";
             oDialogData.cancel.textContent = "No";
-            oText.textContent = "Delete this type?";
+            setAdminConfirmMessage(oText, "Delete this type?", getTypeConfirmText(oRow));
             oDialogData.form.appendChild(oText);
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();

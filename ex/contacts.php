@@ -509,7 +509,7 @@ echo "      </select>\n";
         <strong>Confirm Deletion</strong>
         <button type="button" class="confirm-dialog-close js-shared-contact-delete-close" aria-label="Close">&times;</button>
       </div>
-      <p class="confirm-dialog-message">Delete this shared contact from all subjects using it?</p>
+      <p class="confirm-dialog-message">Delete this shared contact from all subjects using it?<br><strong class="js-shared-contact-delete-value"></strong></p>
       <div class="contact-edit-error" hidden></div>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Delete</button>

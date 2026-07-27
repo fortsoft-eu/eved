@@ -458,7 +458,7 @@ foreach ($aAddressRows as $aAddressRow) {
         <strong>Confirm Deletion</strong>
         <button type="button" class="confirm-dialog-close js-shared-address-delete-close" aria-label="Close">&times;</button>
       </div>
-      <p class="confirm-dialog-message">Delete this exact shared address from all subjects using it?</p>
+      <p class="confirm-dialog-message">Delete this exact shared address from all subjects using it?<br><strong class="js-shared-address-delete-value"></strong></p>
       <div class="subject-edit-error" hidden></div>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Delete</button>
@@ -518,7 +518,7 @@ foreach (getAddressTypes() as $sAddressType) {
         <strong>Confirm Deletion</strong>
         <button type="button" class="confirm-dialog-close js-subject-address-delete-close" aria-label="Close">&times;</button>
       </div>
-      <p class="confirm-dialog-message">Delete this address from this subject?</p>
+      <p class="confirm-dialog-message">Delete this address from this subject?<br><strong class="js-subject-address-delete-value"></strong></p>
       <div class="subject-edit-error" hidden></div>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Delete</button>
