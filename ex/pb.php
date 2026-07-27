@@ -89,7 +89,7 @@ if (!$aPhoneBookRows) {
     }
 
 ?>
-  <table id="phone-book-table" class="phone-book-table table-filter-target<?php echo getCondensedTableClass(); ?>">
+  <table id="phone-book-table" class="contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
         <th>Subject</th>

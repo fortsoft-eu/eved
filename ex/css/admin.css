@@ -1047,6 +1047,10 @@ body.phpinfo-page .admin-controls {
     white-space: normal;
 }
 
+#phone-book-table thead th, #contacts-table thead th, #addresses-table thead th {
+    width: 50%;
+}
+
 #contacts-table thead th, #birthdays-table thead th, #interactions-table thead th {
     overflow-wrap: normal;
     white-space: nowrap;
@@ -1063,7 +1067,7 @@ body.phpinfo-page .admin-controls {
     color: #D00;
 }
 
-.contacts-table .column-hidden, .phone-book-table .column-hidden, .contacts-table .column-step-one, .contacts-table .column-step-three, .contacts-table .column-step-two {
+.contacts-table .column-hidden, .contacts-table .column-step-one, .contacts-table .column-step-three, .contacts-table .column-step-two {
     display: none;
 }
 
@@ -1307,17 +1311,6 @@ body.phpinfo-page .admin-controls {
 #contact-types-table, #external-libraries-table, #groups-table {
     table-layout: auto;
     width: auto;
-}
-
-#phone-book-table {
-    table-layout: auto;
-    width: auto;
-}
-
-#phone-book-table td, #phone-book-table th {
-    overflow-wrap: normal;
-    white-space: nowrap;
-    word-break: normal;
 }
 
 .phone-book-row-inactive > td {
