@@ -1908,3 +1908,49 @@ function getDumpVarIndentation($mVar) {
     }
     return $sOutput;
 }
+
+function runKfExchangeRateProcess($oPdo, $sError = "") {
+    $sKfFunctionsPath = __DIR__ . "/kf/functions.php";
+    $sRequestedFor = "";
+    if (!$oPdo) {
+        error_log("kf/proc.php database error: " . $sError);
+        return array("result" => "ERR", "status_code" => 500);
+    }
+    if (!is_file($sKfFunctionsPath)) {
+        error_log("kf/proc.php path error: " . $sKfFunctionsPath);
+        return array("result" => "ERR", "status_code" => 500);
+    }
+    include_once $sKfFunctionsPath;
+    try {
+        $sRequestedFor = getExchangeRateRequestedFor();
+        if (!reserveExchangeRateFetchAttempt($oPdo, $sRequestedFor)) {
+            return array("result" => "OK", "status_code" => 200);
+        }
+        $aResponse = fetchExchangeRateApiResponse($sRequestedFor);
+        if (!$aResponse["success"]) {
+            $sErrorMessage = getExchangeRateApiErrorMessage($aResponse);
+            recordExchangeRateFetchError($oPdo, $sRequestedFor, (int)$aResponse["status_code"], $sErrorMessage);
+            error_log("kf/proc.php exchange rate fetch failed: " . $sErrorMessage);
+            return array("result" => "ERR", "status_code" => 502);
+        }
+        $sParseError = "";
+        $aRows = parseExchangeRateApiResponse($aResponse["body"], $sParseError);
+        if ($aRows === false) {
+            recordExchangeRateFetchError($oPdo, $sRequestedFor, (int)$aResponse["status_code"], $sParseError);
+            error_log("kf/proc.php exchange rate parse failed: " . $sParseError);
+            return array("result" => "ERR", "status_code" => 502);
+        }
+        saveExchangeRates($oPdo, $sRequestedFor, $aRows, (int)$aResponse["status_code"]);
+        return array("result" => "OK", "status_code" => 200);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($sRequestedFor != "") {
+            try {
+                recordExchangeRateFetchError($oPdo, $sRequestedFor, 0, $oException->getMessage());
+            } catch (Exception $oIgnoredException) {
+                error_log((string)$oIgnoredException);
+            }
+        }
+    }
+    return array("result" => "ERR", "status_code" => 500);
+}

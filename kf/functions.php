@@ -1037,7 +1037,7 @@ function reserveExchangeRateFetchAttempt($oPdo, $sRequestedFor) {
         }
         $oStatement = $oPdo->prepare("INSERT INTO kf_exrates_fetches (requested_for, status) VALUES (:requested_for, 'pending') ON DUPLICATE KEY UPDATE requested_for = requested_for");
         $oStatement->execute(array("requested_for" => $sRequestedFor));
-        $oStatement = $oPdo->prepare("SELECT last_attempt_at, succeeded_at FROM kf_exrates_fetches WHERE requested_for = :requested_for FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT status, last_attempt_at, succeeded_at FROM kf_exrates_fetches WHERE requested_for = :requested_for FOR UPDATE");
         $oStatement->execute(array("requested_for" => $sRequestedFor));
         $aFetch = $oStatement->fetch(PDO::FETCH_ASSOC);
         if ($aFetch && trim((string)$aFetch["succeeded_at"]) != "") {
@@ -1046,7 +1046,8 @@ function reserveExchangeRateFetchAttempt($oPdo, $sRequestedFor) {
         }
         if ($aFetch && trim((string)$aFetch["last_attempt_at"]) != "") {
             $iLastAttempt = strtotime((string)$aFetch["last_attempt_at"]);
-            if ($iLastAttempt !== false && $iLastAttempt > time() - 3600) {
+            $iRetryAfter = (string)$aFetch["status"] == "error" ? 14400 : 3600;
+            if ($iLastAttempt !== false && $iLastAttempt > time() - $iRetryAfter) {
                 $oPdo->commit();
                 return false;
             }

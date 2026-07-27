@@ -1,6 +1,41 @@
+var iAdminModalCount = 0;
+var sAdminBodyOverflow = "";
+var iAdminScrollLeft = 0;
+var iAdminScrollTop = 0;
+
 function logAdminException(oException) {
     if (window.console && window.console.error) {
         window.console.error(oException);
+    }
+}
+
+function isAdminRenderThrobberActive() {
+    var oRoot = document.documentElement;
+    return oRoot && oRoot.getAttribute("data-render-throbber-lock-active") == "1";
+}
+
+function isAdminOverlayActive() {
+    return iAdminModalCount > 0 || isAdminRenderThrobberActive();
+}
+
+function lockAdminModalScroll() {
+    if (iAdminModalCount === 0) {
+        sAdminBodyOverflow = document.body.style.overflow || "";
+        iAdminScrollLeft = window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft || 0;
+        iAdminScrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+        document.body.style.overflow = "hidden";
+        window.scrollTo(iAdminScrollLeft, iAdminScrollTop);
+    }
+    iAdminModalCount += 1;
+}
+
+function unlockAdminModalScroll() {
+    if (iAdminModalCount > 0) {
+        iAdminModalCount -= 1;
+    }
+    if (iAdminModalCount === 0) {
+        document.body.style.overflow = sAdminBodyOverflow;
+        window.scrollTo(iAdminScrollLeft, iAdminScrollTop);
     }
 }
 
@@ -401,6 +436,10 @@ function setupFilterFocusButton() {
         if ((oEvent.key != "F8" && oEvent.keyCode != 119) || oEvent.altKey || oEvent.ctrlKey || oEvent.metaKey || oEvent.shiftKey) {
             return;
         }
+        if (isAdminOverlayActive()) {
+            oEvent.preventDefault();
+            return;
+        }
         oEvent.preventDefault();
         oButton.click();
     });
@@ -694,7 +733,12 @@ function closeAdminDialog() {
     if (!oDialog) {
         return;
     }
-    oDialog.hidden = true;
+    if (!oDialog.hidden) {
+        oDialog.hidden = true;
+        unlockAdminModalScroll();
+    } else {
+        oDialog.hidden = true;
+    }
     oDialog.innerHTML = "";
 }
 
@@ -912,6 +956,9 @@ function openMenuItemDialog(aRow, oSourceRow) {
 
     oDialog.innerHTML = "";
     oDialog.appendChild(oForm);
+    if (oDialog.hidden) {
+        lockAdminModalScroll();
+    }
     oDialog.hidden = false;
     refreshSeparatorFields();
     window.setTimeout(function() {
@@ -984,6 +1031,9 @@ function openAdminConfirmDialog(sTitle, sMessage, sConfirmText, fConfirm, fCance
     });
     oDialog.innerHTML = "";
     oDialog.appendChild(oBox);
+    if (oDialog.hidden) {
+        lockAdminModalScroll();
+    }
     oDialog.hidden = false;
     window.setTimeout(function() {
         oConfirm.focus();
@@ -1571,6 +1621,9 @@ function openIssueDialog(aRow, oSourceRow) {
 
     oDialog.innerHTML = "";
     oDialog.appendChild(oForm);
+    if (oDialog.hidden) {
+        lockAdminModalScroll();
+    }
     oDialog.hidden = false;
     window.setTimeout(function() {
         oIssueTitle.focus();

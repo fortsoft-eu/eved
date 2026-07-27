@@ -7,6 +7,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET["fingerprint"]) && (stri
     sendEvedUaFingerprintResponse($oPdo, $aAllowedIps);
 }
 
+runKfExchangeRateProcess($oPdo, $sError);
+
 $sStyleNonce = base64_encode(random_bytes(16));
 
 if (in_array($_SERVER["REMOTE_ADDR"], $aAllowedIps, true)) {

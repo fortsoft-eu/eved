@@ -13,6 +13,15 @@
         }
     }
 
+    function isAdminRenderThrobberActive() {
+        var oRoot = document.documentElement;
+        return oRoot && oRoot.getAttribute("data-render-throbber-lock-active") == "1";
+    }
+
+    function isAdminOverlayActive() {
+        return iAdminModalCount > 0 || isAdminRenderThrobberActive();
+    }
+
     function getAdminInputDatalist(oInput) {
         var sListId = oInput ? (oInput.getAttribute("list") || "") : "";
         return sListId ? document.getElementById(sListId) : null;
@@ -507,6 +516,11 @@
             }
             showAdminDateCalendar(oInput, oCalendar);
         });
+        oInput.addEventListener("mousedown", function () {
+            if (oCalendar.style.display == "none") {
+                showAdminDateCalendar(oInput, oCalendar);
+            }
+        });
         oInput.addEventListener("input", function () {
             var oDate = parseAdminIsoDate(getAdminDateInputDateValue(oInput));
             if (oDate && oCalendar.style.display != "none") {
@@ -967,6 +981,10 @@
         });
         document.addEventListener("keydown", function (oEvent) {
             if ((oEvent.key != "F8" && oEvent.keyCode != 119) || oEvent.altKey || oEvent.ctrlKey || oEvent.metaKey || oEvent.shiftKey) {
+                return;
+            }
+            if (isAdminOverlayActive()) {
+                oEvent.preventDefault();
                 return;
             }
             oEvent.preventDefault();
