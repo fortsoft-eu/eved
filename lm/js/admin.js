@@ -1690,6 +1690,501 @@ function bindIssueTracker() {
     });
 }
 
+function getDashboardServiceRowData(oRow) {
+    if (!oRow) {
+        return null;
+    }
+    return {
+        id: parseInt(oRow.getAttribute("data-dashboard-service-id") || "0", 10),
+        name: oRow.getAttribute("data-dashboard-service-name") || "",
+        url: oRow.getAttribute("data-dashboard-service-url") || "",
+        checkType: oRow.getAttribute("data-dashboard-service-check-type") || "auto",
+        httpCode: oRow.getAttribute("data-dashboard-service-http-code") || "200",
+        matchType: oRow.getAttribute("data-dashboard-service-match-type") || "contains",
+        matchText: oRow.getAttribute("data-dashboard-service-match-text") || "",
+        active: oRow.getAttribute("data-dashboard-service-active") == "1",
+        checkedAtTs: parseInt(oRow.getAttribute("data-dashboard-service-checked-at-ts") || "0", 10),
+        updatedAtTs: parseInt(oRow.getAttribute("data-dashboard-service-updated-at-ts") || "0", 10),
+        ok: oRow.getAttribute("data-dashboard-service-ok")
+    };
+}
+
+function findDashboardServiceRowById(iServiceId) {
+    return document.querySelector("tr[data-dashboard-service-id=\"" + String(iServiceId) + "\"]");
+}
+
+function setDashboardServiceText(oElement, sText) {
+    if (oElement) {
+        oElement.textContent = sText || "-";
+    }
+}
+
+function updateDashboardServiceCheckCells(oRow, sState, aData) {
+    var oStatus = oRow ? oRow.querySelector(".js-dashboard-service-status") : null;
+    var oHttp = oRow ? oRow.querySelector(".js-dashboard-service-http") : null;
+    var oChecked = oRow ? oRow.querySelector(".js-dashboard-service-checked") : null;
+    var oDetail = oRow ? oRow.querySelector(".js-dashboard-service-detail") : null;
+    var sStatusText = "Waiting";
+    if (!oRow) {
+        return;
+    }
+    if (sState == "checking") {
+        sStatusText = "Checking";
+    } else if (sState == "ok") {
+        sStatusText = "OK";
+    } else if (sState == "failed") {
+        sStatusText = "Failed";
+    } else if (sState == "error") {
+        sStatusText = "Error";
+    } else if (sState == "inactive") {
+        sStatusText = "Inactive";
+    }
+    if (oStatus) {
+        oStatus.className = "dashboard-status js-dashboard-service-status dashboard-status-" + sState;
+        oStatus.textContent = sStatusText;
+    }
+    setDashboardServiceText(oHttp, aData && aData.http_status ? aData.http_status : "");
+    setDashboardServiceText(oChecked, aData && aData.checked_at ? aData.checked_at : "");
+    setDashboardServiceText(oDetail, aData && aData.message ? aData.message : "");
+    if (aData && typeof aData.checked_at_ts != "undefined") {
+        oRow.setAttribute("data-dashboard-service-checked-at-ts", String(aData.checked_at_ts || "0"));
+    }
+    if (aData && typeof aData.ok != "undefined") {
+        oRow.setAttribute("data-dashboard-service-ok", aData.ok === null ? "" : (aData.ok ? "1" : "0"));
+    }
+}
+
+function getDashboardServiceCheckUrl(iServiceId, blForce) {
+    var sUrl = window.location.href.split("#")[0].split("?")[0];
+    return sUrl + "?action=check_dashboard_service&service_id=" + encodeURIComponent(String(iServiceId)) + (blForce ? "&force=1" : "");
+}
+
+var iDashboardServiceCycleInterval = 60 * 60 * 1000;
+var iDashboardServiceRowDelay = 2 * 60 * 1000;
+var iDashboardServicePendingInterval = 2 * 60 * 1000;
+var iDashboardServiceTimer = null;
+var iDashboardServiceRunId = 0;
+
+function isDashboardServiceCheckDue(aRow) {
+    var iAge;
+    if (!aRow || !aRow.active) {
+        return false;
+    }
+    if (!aRow.checkedAtTs || aRow.checkedAtTs < 1) {
+        return true;
+    }
+    if (aRow.updatedAtTs && aRow.updatedAtTs > aRow.checkedAtTs) {
+        return true;
+    }
+    iAge = (new Date()).getTime() - (aRow.checkedAtTs * 1000);
+    if (aRow.ok == "") {
+        return iAge >= iDashboardServicePendingInterval;
+    }
+    return iAge >= iDashboardServiceCycleInterval;
+}
+
+function checkDashboardServiceRow(oRow, blForce) {
+    var aRow = getDashboardServiceRowData(oRow);
+    if (!aRow || aRow.id < 1) {
+        return window.Promise ? window.Promise.resolve() : null;
+    }
+    if (!aRow.active) {
+        updateDashboardServiceCheckCells(oRow, "inactive", {
+            message: "Service is inactive."
+        });
+        return window.Promise ? window.Promise.resolve() : null;
+    }
+    updateDashboardServiceCheckCells(oRow, "checking", {
+        message: "Checking service..."
+    });
+    if (!window.fetch) {
+        updateDashboardServiceCheckCells(oRow, "error", {
+            message: "Fetch API is not available."
+        });
+        return window.Promise ? window.Promise.resolve() : null;
+    }
+    return window.fetch(getDashboardServiceCheckUrl(aRow.id, blForce === true), {
+        method: "GET",
+        headers: getAdminAjaxHeaders(),
+        credentials: "same-origin"
+    }).then(function(oResponse) {
+        return oResponse.text().then(function(sText) {
+            var aData = null;
+            try {
+                aData = JSON.parse(sText);
+            } catch (oException) {
+                aData = {
+                    success: false,
+                    message: "Unexpected server response."
+                };
+            }
+            if (!oResponse.ok || !aData.success) {
+                throw aData;
+            }
+            return aData;
+        });
+    }).then(function(aData) {
+        updateDashboardServiceCheckCells(oRow, aData.state ? aData.state : (aData.ok ? "ok" : "failed"), aData);
+    }).catch(function(oError) {
+        updateDashboardServiceCheckCells(oRow, "error", {
+            message: oError && oError.message ? oError.message : "Request failed."
+        });
+    });
+}
+
+function getDashboardServiceRows(blOnlyDue) {
+    var aNodeRows = document.querySelectorAll("#dashboard-services-table tbody tr[data-dashboard-service-id]");
+    var aRows = [];
+    var aRow;
+    var i;
+    for (i = 0; i < aNodeRows.length; i++) {
+        aRow = getDashboardServiceRowData(aNodeRows[i]);
+        if (!blOnlyDue || isDashboardServiceCheckDue(aRow)) {
+            aRows.push(aNodeRows[i]);
+        }
+    }
+    return aRows;
+}
+
+function clearDashboardServiceTimer() {
+    if (iDashboardServiceTimer) {
+        window.clearTimeout(iDashboardServiceTimer);
+        iDashboardServiceTimer = null;
+    }
+}
+
+function scheduleDashboardServiceNextCycle(iRunId, iCycleStartedAt) {
+    var iElapsed;
+    var iDelay;
+    if (iRunId != iDashboardServiceRunId) {
+        return;
+    }
+    iElapsed = (new Date()).getTime() - iCycleStartedAt;
+    iDelay = Math.max(0, iDashboardServiceCycleInterval - iElapsed);
+    iDashboardServiceTimer = window.setTimeout(function() {
+        runDashboardServiceCycle();
+    }, iDelay);
+}
+
+function runDashboardServiceRow(aRows, iIndex, iRunId, iCycleStartedAt) {
+    var oResult;
+    if (iRunId != iDashboardServiceRunId) {
+        return;
+    }
+    if (iIndex >= aRows.length) {
+        scheduleDashboardServiceNextCycle(iRunId, iCycleStartedAt);
+        return;
+    }
+    oResult = checkDashboardServiceRow(aRows[iIndex]);
+    function scheduleNextRow() {
+        if (iRunId != iDashboardServiceRunId) {
+            return;
+        }
+        iDashboardServiceTimer = window.setTimeout(function() {
+            runDashboardServiceRow(aRows, iIndex + 1, iRunId, iCycleStartedAt);
+        }, iDashboardServiceRowDelay);
+    }
+    if (oResult && typeof oResult.then == "function") {
+        oResult.then(scheduleNextRow).catch(scheduleNextRow);
+    } else {
+        scheduleNextRow();
+    }
+}
+
+function runDashboardServiceCycle() {
+    var aRows = getDashboardServiceRows(true);
+    var iRunId;
+    var iCycleStartedAt = (new Date()).getTime();
+    clearDashboardServiceTimer();
+    iDashboardServiceRunId += 1;
+    iRunId = iDashboardServiceRunId;
+    if (!aRows.length) {
+        scheduleDashboardServiceNextCycle(iRunId, iCycleStartedAt);
+        return;
+    }
+    runDashboardServiceRow(aRows, 0, iRunId, iCycleStartedAt);
+}
+
+function restartDashboardServiceChecks() {
+    clearDashboardServiceTimer();
+    runDashboardServiceCycle();
+}
+
+function replaceDashboardServiceRows(aData) {
+    var oTable = document.getElementById("dashboard-services-table");
+    var oBody = oTable && oTable.tBodies.length ? oTable.tBodies[0] : null;
+    var aRows = {};
+    var aOldRows;
+    var aNewRows;
+    var sServiceId;
+    var i;
+    if (!aData || typeof aData.services_html == "undefined") {
+        return;
+    }
+    if (!oBody || aData.services_html == "") {
+        window.location.reload();
+        return;
+    }
+    aOldRows = oBody.querySelectorAll("tr[data-dashboard-service-id]");
+    for (i = 0; i < aOldRows.length; i++) {
+        sServiceId = aOldRows[i].getAttribute("data-dashboard-service-id") || "";
+        if (sServiceId) {
+            aRows[sServiceId] = aOldRows[i];
+        }
+    }
+    oBody.innerHTML = aData.services_html;
+    if (window.copyAdminTableRowState && window.bindAdminTableRow) {
+        aNewRows = oBody.querySelectorAll("tr[data-dashboard-service-id]");
+        for (i = 0; i < aNewRows.length; i++) {
+            sServiceId = aNewRows[i].getAttribute("data-dashboard-service-id") || "";
+            if (sServiceId && aRows[sServiceId]) {
+                window.copyAdminTableRowState(aRows[sServiceId], aNewRows[i]);
+            }
+            window.bindAdminTableRow(aNewRows[i]);
+        }
+    }
+    refreshAdminTableFilter();
+    restartDashboardServiceChecks();
+}
+
+function createDashboardServiceDeleteMessage(aRow) {
+    var oFragment = document.createDocumentFragment();
+    var oStrong = document.createElement("strong");
+    oStrong.textContent = aRow.name;
+    oFragment.appendChild(document.createTextNode("Delete service?"));
+    oFragment.appendChild(document.createElement("br"));
+    oFragment.appendChild(oStrong);
+    return oFragment;
+}
+
+function openDashboardServiceDialog(aRow, oSourceRow) {
+    var oDialog = document.getElementById("admin-reusable-dialog");
+    var oForm;
+    var oBox;
+    var oHeader;
+    var oTitle;
+    var oClose;
+    var oName;
+    var oUrl;
+    var oCheckType;
+    var oHttpCode;
+    var oMatchType;
+    var oMatchText;
+    var oActive;
+    var oError;
+    var oActions;
+    var oSave;
+    var oCancel;
+    var iServiceId = aRow ? aRow.id : 0;
+    var blSaved = false;
+
+    if (!oDialog) {
+        return;
+    }
+
+    oForm = document.createElement("form");
+    oForm.className = "confirm-dialog-box subject-edit-dialog dashboard-service-edit-dialog";
+    oBox = oForm;
+
+    oHeader = document.createElement("div");
+    oHeader.className = "confirm-dialog-header";
+    oTitle = document.createElement("strong");
+    oTitle.className = "confirm-dialog-title";
+    oTitle.textContent = iServiceId > 0 ? "Edit Service" : "New Service";
+    oClose = document.createElement("button");
+    oClose.type = "button";
+    oClose.className = "confirm-dialog-close";
+    oClose.setAttribute("aria-label", "Close");
+    oClose.innerHTML = "&times;";
+    oHeader.appendChild(oTitle);
+    oHeader.appendChild(oClose);
+    oBox.appendChild(oHeader);
+
+    oName = createAdminInput("dashboard-service-dialog-name", aRow ? aRow.name : "", true);
+    oUrl = createAdminInput("dashboard-service-dialog-url", aRow ? aRow.url : "https://", true);
+    oCheckType = createIssueSelect("dashboard-service-dialog-check-type", aRow ? aRow.checkType : "auto", [
+        {value: "auto", label: "Auto"},
+        {value: "http", label: "HTTP"},
+        {value: "stream", label: "Stream"},
+        {value: "tcp", label: "TCP"}
+    ]);
+    oHttpCode = createAdminInput("dashboard-service-dialog-http-code", aRow ? aRow.httpCode : "200", true);
+    oMatchType = createIssueSelect("dashboard-service-dialog-match-type", aRow ? aRow.matchType : "starts_with", [
+        {value: "starts_with", label: "Starts With"},
+        {value: "contains", label: "Contains"}
+    ]);
+    oMatchText = createAdminInput("dashboard-service-dialog-match-text", aRow ? aRow.matchText : "", false);
+    oActive = document.createElement("input");
+    oActive.type = "checkbox";
+    oActive.checked = aRow ? aRow.active : true;
+
+    oHttpCode.type = "number";
+    oHttpCode.min = "100";
+    oHttpCode.max = "599";
+    oHttpCode.step = "1";
+    oHttpCode.inputMode = "numeric";
+
+    appendMenuDialogField(oBox, "Name", oName);
+    appendMenuDialogField(oBox, "Endpoint", oUrl);
+    appendMenuDialogField(oBox, "Check Type", oCheckType);
+    appendMenuDialogField(oBox, "HTTP Code", oHttpCode);
+    appendMenuDialogField(oBox, "Body Match", oMatchType);
+    appendMenuDialogField(oBox, "Match Text", oMatchText);
+    appendMenuDialogCheck(oBox, "Active", oActive);
+
+    oError = document.createElement("div");
+    oError.className = "subject-edit-error";
+    oError.style.display = "none";
+    oBox.appendChild(oError);
+
+    oActions = document.createElement("div");
+    oActions.className = "confirm-dialog-actions";
+    oSave = document.createElement("button");
+    oSave.type = "submit";
+    oSave.className = "confirm-dialog-button";
+    oSave.textContent = "Save";
+    oCancel = document.createElement("button");
+    oCancel.type = "button";
+    oCancel.className = "confirm-dialog-button";
+    oCancel.textContent = "Cancel";
+    oActions.appendChild(oSave);
+    oActions.appendChild(oCancel);
+    oBox.appendChild(oActions);
+
+    function closeDashboardServiceDialog() {
+        finishAdminSubjectRowEdit(oSourceRow, blSaved);
+        closeAdminDialog();
+    }
+
+    function getDashboardServiceDialogScheme() {
+        var aMatch = String(oUrl.value || "").match(/^([A-Za-z][A-Za-z0-9+.\-]*):/);
+        return aMatch ? aMatch[1].toLowerCase() : "";
+    }
+
+    function refreshDashboardServiceDialogFields() {
+        var sScheme = getDashboardServiceDialogScheme();
+        var blNetworkOnly = oCheckType.value == "tcp" || oCheckType.value == "stream";
+        if (oCheckType.value == "auto" && sScheme != "" && sScheme != "http" && sScheme != "https") {
+            blNetworkOnly = true;
+        }
+        oHttpCode.disabled = blNetworkOnly;
+        oMatchType.disabled = blNetworkOnly;
+        oMatchText.disabled = blNetworkOnly;
+    }
+
+    beginAdminSubjectRowEdit(oSourceRow);
+    oClose.addEventListener("click", closeDashboardServiceDialog);
+    oCancel.addEventListener("click", closeDashboardServiceDialog);
+    oCheckType.addEventListener("change", refreshDashboardServiceDialogFields);
+    oUrl.addEventListener("input", refreshDashboardServiceDialogFields);
+    oForm.addEventListener("submit", function(oEvent) {
+        var oData;
+        var iSavedServiceId;
+        var oSavedRow;
+        oEvent.preventDefault();
+        oError.style.display = "none";
+        oError.textContent = "";
+        oData = new FormData();
+        oData.append("action", iServiceId > 0 ? "update_dashboard_service" : "create_dashboard_service");
+        if (iServiceId > 0) {
+            oData.append("service_id", String(iServiceId));
+        }
+        appendAdminEncodedValue(oData, "name", oName.value);
+        appendAdminEncodedValue(oData, "url", oUrl.value);
+        oData.append("check_type", oCheckType.value);
+        oData.append("http_code", oHttpCode.value);
+        oData.append("match_type", oMatchType.value);
+        appendAdminEncodedValue(oData, "match_text", oMatchText.value);
+        if (oActive.checked) {
+            oData.append("is_active", "1");
+        }
+        submitAdminRequest(oData, function(aData) {
+            iSavedServiceId = aData && aData.service_id ? parseInt(aData.service_id, 10) : iServiceId;
+            replaceDashboardServiceRows(aData);
+            oSavedRow = iSavedServiceId ? findDashboardServiceRowById(iSavedServiceId) : null;
+            finishAdminSubjectRowEdit(oSavedRow || oSourceRow, true);
+            blSaved = true;
+            closeAdminDialog();
+        }, function(sMessage) {
+            oError.textContent = sMessage;
+            oError.style.display = "";
+        });
+    });
+
+    oDialog.innerHTML = "";
+    oDialog.appendChild(oForm);
+    if (oDialog.hidden) {
+        lockAdminModalScroll();
+    }
+    oDialog.hidden = false;
+    refreshDashboardServiceDialogFields();
+    window.setTimeout(function() {
+        oName.focus();
+        oName.select();
+    }, 0);
+}
+
+function bindDashboardServices() {
+    var oAdd = document.querySelector(".js-add-dashboard-service");
+    var oTable = document.getElementById("dashboard-services-table");
+
+    if (oAdd) {
+        oAdd.addEventListener("click", function() {
+            openDashboardServiceDialog(null);
+        });
+    }
+
+    if (oTable) {
+        oTable.addEventListener("click", function(oEvent) {
+            var oButton = oEvent.target.closest(".js-edit-dashboard-service, .js-delete-dashboard-service, .js-check-dashboard-service, .js-move-dashboard-service-up, .js-move-dashboard-service-down");
+            var oRow = oButton ? oButton.closest("tr[data-dashboard-service-id]") : null;
+            var aRow = getDashboardServiceRowData(oRow);
+            var oData;
+            if (!oButton || !aRow) {
+                return;
+            }
+            oEvent.preventDefault();
+            if (oButton.classList.contains("js-edit-dashboard-service")) {
+                openDashboardServiceDialog(aRow, oRow);
+            } else if (oButton.classList.contains("js-delete-dashboard-service")) {
+                beginAdminSubjectRowEdit(oRow);
+                openAdminConfirmDialog("Confirm Deletion", createDashboardServiceDeleteMessage(aRow), "Yes", function() {
+                    oData = new FormData();
+                    oData.append("action", "delete_dashboard_service");
+                    oData.append("service_id", String(aRow.id));
+                    submitAdminRequest(oData, function(aData) {
+                        replaceDashboardServiceRows(aData);
+                    }, function(sMessage) {
+                        finishAdminSubjectRowEdit(oRow, false);
+                        alert(sMessage);
+                    });
+                }, function() {
+                    finishAdminSubjectRowEdit(oRow, false);
+                }, "No");
+            } else if (oButton.classList.contains("js-move-dashboard-service-up") || oButton.classList.contains("js-move-dashboard-service-down")) {
+                oData = new FormData();
+                oData.append("action", "move_dashboard_service");
+                oData.append("service_id", String(aRow.id));
+                oData.append("direction", oButton.classList.contains("js-move-dashboard-service-up") ? "up" : "down");
+                beginAdminSubjectRowEdit(oRow);
+                submitAdminRequest(oData, function(aData) {
+                    var iSavedServiceId = aData && aData.service_id ? parseInt(aData.service_id, 10) : aRow.id;
+                    var oSavedRow;
+                    replaceDashboardServiceRows(aData);
+                    oSavedRow = iSavedServiceId ? findDashboardServiceRowById(iSavedServiceId) : null;
+                    finishAdminSubjectRowEdit(oSavedRow || oRow, true);
+                }, function(sMessage) {
+                    finishAdminSubjectRowEdit(oRow, false);
+                    alert(sMessage);
+                });
+            } else if (oButton.classList.contains("js-check-dashboard-service")) {
+                checkDashboardServiceRow(oRow, true);
+            }
+        });
+        restartDashboardServiceChecks();
+    }
+}
+
 function closeAdminMenus(oExceptMenu) {
     var aMenus = document.querySelectorAll("[data-menu]");
     var i;
@@ -2373,6 +2868,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setupAutoRefresh();
     bindAdminCopyLinks();
     bindMenuAdmin();
+    bindDashboardServices();
     bindIssueTracker();
     bindAdminSubmitOnChange();
     bindSnippetBoardTabs();

@@ -804,7 +804,7 @@ body.phpinfo-page .admin-controls {
     margin: 10px 16px 4px;
 }
 
-.subject-edit-dialog input[type="text"], .subject-edit-dialog input[type="password"], .subject-edit-dialog input[type="date"], .subject-edit-dialog input[type="datetime-local"], .subject-edit-dialog select {
+.subject-edit-dialog input[type="text"], .subject-edit-dialog input[type="password"], .subject-edit-dialog input[type="date"], .subject-edit-dialog input[type="datetime-local"], .subject-edit-dialog input[type="number"], .subject-edit-dialog input[type="url"], .subject-edit-dialog select {
     box-sizing: border-box;
     margin: 0 16px;
     width: calc(100% - 32px);
@@ -1346,6 +1346,66 @@ td.numeric, th.numeric {
     overflow-wrap: normal;
     white-space: normal;
     word-break: normal;
+}
+
+.dashboard-services-table {
+    min-width: 103em;
+    table-layout: auto;
+    width: 100%;
+}
+
+.dashboard-services-table th {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+.dashboard-service-url, .dashboard-service-expected, .dashboard-service-detail {
+    overflow-wrap: normal;
+    white-space: normal;
+    word-break: normal;
+}
+
+.dashboard-service-http, .dashboard-service-checked, .dashboard-services-table .admin-action-column {
+    white-space: nowrap;
+}
+
+#dashboard-services-table th:last-child, #dashboard-services-table td:last-child {
+    max-width: 8em;
+    min-width: 8em;
+    width: 8em;
+}
+
+.dashboard-status {
+    border: 1px solid #C0C0C0;
+    box-sizing: border-box;
+    display: inline-block;
+    line-height: 1.2;
+    min-width: 5.5em;
+    padding: 2px 5px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.dashboard-status-waiting, .dashboard-status-checking {
+    background: #FCF8E3;
+}
+
+.dashboard-status-ok {
+    background: #DFF0D8;
+}
+
+.dashboard-status-failed, .dashboard-status-error {
+    background: #F9D6D5;
+    font-weight: bold;
+}
+
+.dashboard-status-inactive {
+    background: #EEE;
+}
+
+.dashboard-service-inactive > td {
+    color: #777;
 }
 
 .issues-table {

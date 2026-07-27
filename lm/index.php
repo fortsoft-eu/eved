@@ -1,0 +1,145 @@
+<?php
+
+include "main.php";
+
+
+$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
+
+if (!$oPdo) {
+    send500AndExit("Database error: " . $sError);
+}
+
+
+requireFullAccess($aAllowedIps, "portal", "lm_csrf_token", $blJsonResponse);
+
+
+$sAction = $_SERVER["REQUEST_METHOD"] == "POST" ? getPostedValue("action") : (isset($_GET["action"]) ? (string)$_GET["action"] : "");
+
+if ($_SERVER["REQUEST_METHOD"] == "GET" && $blJsonResponse && $sAction == "check_dashboard_service") {
+    dashboardServiceSendCheckJson($oPdo, isset($_GET["service_id"]) ? (int)$_GET["service_id"] : 0, isset($_GET["force"]) && (string)$_GET["force"] == "1");
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    requireNamedCsrfToken("lm_csrf_token", true);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "create_dashboard_service") {
+    dashboardServiceCreateOrUpdate($oPdo, 0);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "update_dashboard_service") {
+    $iServiceId = isset($_POST["service_id"]) ? (int)$_POST["service_id"] : 0;
+    if ($iServiceId < 1) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid service."), 400);
+    }
+    dashboardServiceCreateOrUpdate($oPdo, $iServiceId);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "delete_dashboard_service") {
+    dashboardServiceDelete($oPdo, isset($_POST["service_id"]) ? (int)$_POST["service_id"] : 0);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "move_dashboard_service") {
+    $iServiceId = isset($_POST["service_id"]) ? (int)$_POST["service_id"] : 0;
+    $sDirection = isset($_POST["direction"]) ? (string)$_POST["direction"] : "";
+    if ($iServiceId < 1 || ($sDirection != "up" && $sDirection != "down")) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid order change."), 400);
+    }
+    try {
+        $oPdo->beginTransaction();
+        dashboardServiceMove($oPdo, $iServiceId, $sDirection);
+        $oPdo->commit();
+        sendJsonAndExit(array("success" => true, "service_id" => $iServiceId, "services_html" => dashboardServiceRenderRows($oPdo)));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
+try {
+    $sServicesHtml = dashboardServiceRenderRows($oPdo);
+} catch (Exception $oException) {
+    error_log((string)$oException);
+    send500AndExit("Database error: " . $oException->getMessage());
+}
+
+$sFilterValue = getQuickTableFilterValue();
+$sTitle = getPageTitleText("Dashboard", $aAllowedIps);
+
+$iTime = sendPageHeaders();
+
+?>
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
+  <meta name="contact" content="cervinka@fortsoft.cz">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
+  <link rel="icon" href="<?php echo html($sBaseUrl . "favicon.ico"); ?>" type="image/x-icon">
+  <link rel="shortcut icon" href="<?php echo html($sBaseUrl . "favicon.ico"); ?>" type="image/x-icon">
+  <title><?php echo html($sTitle); ?></title>
+  <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
+  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
+</head>
+<body>
+  <p class="admin-controls">
+<?php
+
+renderMenu();
+
+?>
+    <label for="table-filter">Filter:</label>
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="dashboard-services-table" value="<?php echo html($sFilterValue); ?>" autocomplete="off" spellcheck="false">
+    <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
+    <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
+    <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
+    <button type="button" class="button-link js-add-dashboard-service">New</button>
+  </p>
+<?php
+
+if ($sServicesHtml == "") {
+    echo "  <p>No records found.</p>\n";
+} else {
+
+?>
+  <table id="dashboard-services-table" class="table-filter-target dashboard-services-table<?php echo getCondensedTableClass(); ?>">
+    <colgroup><col class="dashboard-service-col-status"><col class="dashboard-service-col-type"><col class="dashboard-service-col-name"><col class="dashboard-service-col-url"><col class="dashboard-service-col-expected"><col class="dashboard-service-col-http"><col class="dashboard-service-col-checked"><col class="dashboard-service-col-detail"><col class="dashboard-service-col-active"><col class="dashboard-service-col-move"><col class="dashboard-service-col-actions"></colgroup>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Endpoint</th>
+        <th>Expected</th>
+        <th>Code</th>
+        <th>Checked</th>
+        <th>Detail</th>
+        <th>Active</th>
+        <th class="admin-action-column">Order</th>
+        <th class="admin-action-column"></th>
+      </tr>
+    </thead>
+    <tbody>
+<?php
+
+    echo $sServicesHtml;
+
+?>
+    </tbody>
+  </table>
+<?php
+
+}
+
+?>
+  <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+</body>
+</html>

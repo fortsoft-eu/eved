@@ -454,6 +454,748 @@ function menuAdminCreateOrUpdate($oPdo, $iMenuId) {
     }
 }
 
+function dashboardServiceCheckTypeLabels() {
+    return array(
+        "auto" => "Auto",
+        "http" => "HTTP",
+        "stream" => "Stream",
+        "tcp" => "TCP"
+    );
+}
+
+function dashboardServiceNormalizeCheckType($sValue) {
+    $sValue = trim((string)$sValue);
+    $aLabels = dashboardServiceCheckTypeLabels();
+    return isset($aLabels[$sValue]) ? $sValue : "auto";
+}
+
+function dashboardServiceMatchLabels() {
+    return array(
+        "contains" => "Contains",
+        "starts_with" => "Starts With"
+    );
+}
+
+function dashboardServiceNormalizeMatch($sValue) {
+    $sValue = trim((string)$sValue);
+    $aLabels = dashboardServiceMatchLabels();
+    return isset($aLabels[$sValue]) ? $sValue : "contains";
+}
+
+function dashboardServiceDefaultPort($sScheme) {
+    $aPorts = array(
+        "ftp" => 21,
+        "ftps" => 990,
+        "http" => 80,
+        "https" => 443,
+        "imap" => 143,
+        "imaps" => 993,
+        "ldap" => 389,
+        "ldaps" => 636,
+        "mysql" => 3306,
+        "pop3" => 110,
+        "pop3s" => 995,
+        "postgres" => 5432,
+        "rdp" => 3389,
+        "redis" => 6379,
+        "rtmp" => 1935,
+        "rtmps" => 443,
+        "rtsp" => 554,
+        "rtsps" => 322,
+        "sftp" => 22,
+        "smtp" => 25,
+        "smtps" => 465,
+        "ssh" => 22,
+        "telnet" => 23
+    );
+    $sScheme = strtolower((string)$sScheme);
+    return isset($aPorts[$sScheme]) ? (int)$aPorts[$sScheme] : 0;
+}
+
+function dashboardServiceParseEndpoint($sUrl) {
+    $aUrl = parse_url((string)$sUrl);
+    if (!is_array($aUrl) || !isset($aUrl["scheme"]) || !isset($aUrl["host"])) {
+        return null;
+    }
+    $sScheme = strtolower((string)$aUrl["scheme"]);
+    $iPort = isset($aUrl["port"]) ? (int)$aUrl["port"] : dashboardServiceDefaultPort($sScheme);
+    if ($iPort < 1 || $iPort > 65535) {
+        return null;
+    }
+    return array(
+        "scheme" => $sScheme,
+        "host" => (string)$aUrl["host"],
+        "port" => $iPort
+    );
+}
+
+function dashboardServiceResolveCheckType($sCheckType, $sUrl) {
+    $sCheckType = dashboardServiceNormalizeCheckType($sCheckType);
+    if ($sCheckType != "auto") {
+        return $sCheckType;
+    }
+    $aEndpoint = dashboardServiceParseEndpoint($sUrl);
+    if ($aEndpoint && ($aEndpoint["scheme"] == "http" || $aEndpoint["scheme"] == "https")) {
+        return "http";
+    }
+    if ($aEndpoint && in_array($aEndpoint["scheme"], array("rtmp", "rtmps", "rtsp", "rtsps"), true)) {
+        return "stream";
+    }
+    return "tcp";
+}
+
+function dashboardServiceUrlIsValid($sUrl, $sCheckType = "auto") {
+    $aEndpoint = dashboardServiceParseEndpoint($sUrl);
+    if (!$aEndpoint) {
+        return false;
+    }
+    if (dashboardServiceResolveCheckType($sCheckType, $sUrl) == "http") {
+        return $aEndpoint["scheme"] == "http" || $aEndpoint["scheme"] == "https";
+    }
+    return true;
+}
+
+function dashboardServiceFetchRows($oPdo, $iServiceId = 0) {
+    $aRows = array();
+    if ($iServiceId > 0) {
+        $oStatement = $oPdo->prepare("SELECT id, name, url, check_type, http_code, match_type, match_text, is_active, `order` AS service_order, UNIX_TIMESTAMP(checked_at) AS checked_at_ts, UNIX_TIMESTAMP(updated_at) AS updated_at_ts, `ok` AS check_ok, `code` AS check_code, `message` AS check_message, DATE_FORMAT(checked_at, '%Y-%m-%d %H:%i:%s') AS checked_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text FROM fs_dashboard WHERE id = :id");
+        $oStatement->execute(array("id" => $iServiceId));
+    } else {
+        $oStatement = $oPdo->query("SELECT id, name, url, check_type, http_code, match_type, match_text, is_active, `order` AS service_order, UNIX_TIMESTAMP(checked_at) AS checked_at_ts, UNIX_TIMESTAMP(updated_at) AS updated_at_ts, `ok` AS check_ok, `code` AS check_code, `message` AS check_message, DATE_FORMAT(checked_at, '%Y-%m-%d %H:%i:%s') AS checked_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text FROM fs_dashboard ORDER BY is_active DESC, `order` ASC, name ASC, id ASC");
+    }
+    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        $aRows[] = array(
+            "id" => (int)$aRow["id"],
+            "name" => (string)$aRow["name"],
+            "url" => (string)$aRow["url"],
+            "check_type" => dashboardServiceNormalizeCheckType($aRow["check_type"]),
+            "http_code" => (int)$aRow["http_code"],
+            "match_type" => dashboardServiceNormalizeMatch($aRow["match_type"]),
+            "match_text" => $aRow["match_text"] === null ? "" : (string)$aRow["match_text"],
+            "is_active" => (int)$aRow["is_active"],
+            "order" => (int)$aRow["service_order"],
+            "checked_at_ts" => $aRow["checked_at_ts"] === null ? 0 : (int)$aRow["checked_at_ts"],
+            "updated_at_ts" => $aRow["updated_at_ts"] === null ? 0 : (int)$aRow["updated_at_ts"],
+            "checked_at" => (string)$aRow["checked_at_text"],
+            "ok" => $aRow["check_ok"] === null ? null : (int)$aRow["check_ok"],
+            "code" => $aRow["check_code"] === null ? "" : (string)$aRow["check_code"],
+            "message" => $aRow["check_message"] === null ? "" : (string)$aRow["check_message"],
+            "created_at" => (string)$aRow["created_at_text"],
+            "updated_at" => (string)$aRow["updated_at_text"]
+        );
+    }
+    return $aRows;
+}
+
+function dashboardServiceFetchRow($oPdo, $iServiceId) {
+    $aRows = dashboardServiceFetchRows($oPdo, $iServiceId);
+    return $aRows ? $aRows[0] : null;
+}
+
+function dashboardServiceRenderCheckType($aRow) {
+    $sResolvedType = dashboardServiceResolveCheckType($aRow["check_type"], $aRow["url"]);
+    if ($aRow["check_type"] == "auto") {
+        return "Auto " . strtoupper($sResolvedType);
+    }
+    return strtoupper($sResolvedType);
+}
+
+function dashboardServiceRenderExpected($aRow) {
+    $sResolvedType = dashboardServiceResolveCheckType($aRow["check_type"], $aRow["url"]);
+    if ($sResolvedType == "tcp") {
+        $aEndpoint = dashboardServiceParseEndpoint($aRow["url"]);
+        return html($aEndpoint ? "TCP " . $aEndpoint["host"] . ":" . $aEndpoint["port"] : "TCP connection");
+    }
+    if ($sResolvedType == "stream") {
+        $aEndpoint = dashboardServiceParseEndpoint($aRow["url"]);
+        return html($aEndpoint ? "Stream " . $aEndpoint["host"] . ":" . $aEndpoint["port"] : "Stream response");
+    }
+    $sText = "HTTP " . (int)$aRow["http_code"];
+    $sMatchText = (string)$aRow["match_text"];
+    if ($sMatchText != "") {
+        $sText .= "; body " . ($aRow["match_type"] == "starts_with" ? "starts with" : "contains") . " \"" . $sMatchText . "\"";
+    }
+    return html($sText);
+}
+
+function dashboardServiceStatusData($aRow) {
+    if ((int)$aRow["is_active"] != 1) {
+        return array("class" => "dashboard-status-inactive", "text" => "Inactive");
+    }
+    if ((int)$aRow["checked_at_ts"] < 1) {
+        return array("class" => "dashboard-status-waiting", "text" => "Waiting");
+    }
+    if ($aRow["ok"] === null) {
+        return array("class" => "dashboard-status-checking", "text" => "Checking");
+    }
+    if ((int)$aRow["ok"] == 1) {
+        return array("class" => "dashboard-status-ok", "text" => "OK");
+    }
+    return array("class" => "dashboard-status-failed", "text" => "Failed");
+}
+
+function dashboardServiceRenderRow($aRow) {
+    global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji, $sEmptyValueEmoji;
+
+    $sRowClass = (int)$aRow["is_active"] == 1 ? "" : " class=\"dashboard-service-inactive\"";
+    $aStatus = dashboardServiceStatusData($aRow);
+    $sMatchText = (string)$aRow["match_text"];
+    return "      <tr" . $sRowClass . " data-dashboard-service-id=\"" . (int)$aRow["id"] . "\""
+        . " data-dashboard-service-name=\"" . html($aRow["name"]) . "\""
+        . " data-dashboard-service-url=\"" . html($aRow["url"]) . "\""
+        . " data-dashboard-service-check-type=\"" . html($aRow["check_type"]) . "\""
+        . " data-dashboard-service-http-code=\"" . (int)$aRow["http_code"] . "\""
+        . " data-dashboard-service-match-type=\"" . html($aRow["match_type"]) . "\""
+        . " data-dashboard-service-match-text=\"" . html($sMatchText) . "\""
+        . " data-dashboard-service-active=\"" . ((int)$aRow["is_active"] == 1 ? "1" : "0") . "\""
+        . " data-dashboard-service-checked-at-ts=\"" . (int)$aRow["checked_at_ts"] . "\""
+        . " data-dashboard-service-updated-at-ts=\"" . (int)$aRow["updated_at_ts"] . "\""
+        . " data-dashboard-service-ok=\"" . ($aRow["ok"] === null ? "" : (int)$aRow["ok"]) . "\""
+        . ">"
+        . "<td><span class=\"dashboard-status " . $aStatus["class"] . " js-dashboard-service-status\">" . html($aStatus["text"]) . "</span></td>"
+        . "<td>" . html(dashboardServiceRenderCheckType($aRow)) . "</td>"
+        . "<td><strong>" . html($aRow["name"]) . "</strong></td>"
+        . "<td class=\"dashboard-service-url\"><a href=\"" . html($aRow["url"]) . "\" target=\"_blank\" rel=\"noopener\">" . html($aRow["url"]) . "</a></td>"
+        . "<td class=\"dashboard-service-expected\">" . dashboardServiceRenderExpected($aRow) . "</td>"
+        . "<td class=\"dashboard-service-http js-dashboard-service-http\">" . ($aRow["code"] != "" ? html($aRow["code"]) : $sEmptyValueEmoji) . "</td>"
+        . "<td class=\"dashboard-service-checked js-dashboard-service-checked\">" . ($aRow["checked_at"] != "" ? html($aRow["checked_at"]) : $sEmptyValueEmoji) . "</td>"
+        . "<td class=\"dashboard-service-detail js-dashboard-service-detail\">" . ($aRow["message"] != "" ? html($aRow["message"]) : $sEmptyValueEmoji) . "</td>"
+        . "<td>" . ((int)$aRow["is_active"] == 1 ? "Yes" : "No") . "</td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-dashboard-service-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-dashboard-service-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-check-dashboard-service\" title=\"Check\" aria-label=\"Check\">&#128260;</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-dashboard-service\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-dashboard-service\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
+        . "</tr>\n";
+}
+
+function dashboardServiceRenderRows($oPdo) {
+    $aRows = dashboardServiceFetchRows($oPdo);
+    if (!$aRows) {
+        return "";
+    }
+    $sHtml = "";
+    foreach ($aRows as $aRow) {
+        $sHtml .= dashboardServiceRenderRow($aRow);
+    }
+    return $sHtml;
+}
+
+function dashboardServiceFetchLockedRows($oPdo) {
+    $aRows = array();
+    $oStatement = $oPdo->query("SELECT id, `order` AS service_order FROM fs_dashboard ORDER BY `order` ASC, id ASC FOR UPDATE");
+    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        $aRows[] = array(
+            "id" => (int)$aRow["id"],
+            "order" => (int)$aRow["service_order"]
+        );
+    }
+    return $aRows;
+}
+
+function dashboardServiceNormalizeOrder($oPdo, $aRows = null) {
+    if ($aRows === null) {
+        $aRows = dashboardServiceFetchLockedRows($oPdo);
+    }
+    $iOrder = 10;
+    $oStatement = $oPdo->prepare("UPDATE fs_dashboard SET `order` = :order WHERE id = :id");
+    foreach ($aRows as $aRow) {
+        $oStatement->execute(array("order" => $iOrder, "id" => (int)$aRow["id"]));
+        $iOrder += 10;
+    }
+}
+
+function dashboardServiceNextOrder($oPdo) {
+    $iMaxOrder = 0;
+    $aRows = dashboardServiceFetchLockedRows($oPdo);
+    foreach ($aRows as $aRow) {
+        if ((int)$aRow["order"] > $iMaxOrder) {
+            $iMaxOrder = (int)$aRow["order"];
+        }
+    }
+    return $iMaxOrder + 10;
+}
+
+function dashboardServiceMove($oPdo, $iServiceId, $sDirection) {
+    $aRows = dashboardServiceFetchLockedRows($oPdo);
+    $iOrder = 10;
+    $iCurrentIndex = -1;
+    foreach ($aRows as $iIndex => $aRow) {
+        $aRows[$iIndex]["order"] = $iOrder;
+        if ((int)$aRow["id"] === $iServiceId) {
+            $iCurrentIndex = $iIndex;
+        }
+        $iOrder += 10;
+    }
+    if ($iCurrentIndex < 0) {
+        throw new RuntimeException("Service was not found.");
+    }
+    $iTargetIndex = $sDirection == "up" ? $iCurrentIndex - 1 : $iCurrentIndex + 1;
+    if (!isset($aRows[$iTargetIndex])) {
+        dashboardServiceNormalizeOrder($oPdo, $aRows);
+        return;
+    }
+    $iCurrentOrder = (int)$aRows[$iCurrentIndex]["order"];
+    $iTargetOrder = (int)$aRows[$iTargetIndex]["order"];
+    $oStatement = $oPdo->prepare("UPDATE fs_dashboard SET `order` = :order WHERE id = :id");
+    foreach ($aRows as $aRow) {
+        $iNewOrder = (int)$aRow["order"];
+        if ((int)$aRow["id"] === (int)$aRows[$iCurrentIndex]["id"]) {
+            $iNewOrder = $iTargetOrder;
+        } elseif ((int)$aRow["id"] === (int)$aRows[$iTargetIndex]["id"]) {
+            $iNewOrder = $iCurrentOrder;
+        }
+        $oStatement->execute(array("order" => $iNewOrder, "id" => (int)$aRow["id"]));
+    }
+}
+
+function dashboardServiceCreateOrUpdate($oPdo, $iServiceId) {
+    $sName = getPostedTrimmedValue("name");
+    $sUrl = getPostedTrimmedValue("url");
+    $sCheckType = dashboardServiceNormalizeCheckType(getPostedTrimmedValue("check_type", "auto"));
+    $iHttpCode = (int)getPostedTrimmedValue("http_code", "200");
+    $sMatchType = dashboardServiceNormalizeMatch(getPostedTrimmedValue("match_type", "contains"));
+    $sMatchText = getPostedTrimmedValue("match_text");
+    $mMatchText = $sMatchText == "" ? null : $sMatchText;
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
+
+    if ($sName == "") {
+        sendJsonAndExit(array("success" => false, "message" => "Name is required."), 400);
+    }
+    if (strlen($sName) > 255) {
+        sendJsonAndExit(array("success" => false, "message" => "Name is too long."), 400);
+    }
+    if ($sUrl == "" || !dashboardServiceUrlIsValid($sUrl, $sCheckType)) {
+        sendJsonAndExit(array("success" => false, "message" => "Endpoint is invalid."), 400);
+    }
+    if (strlen($sUrl) > 2048) {
+        sendJsonAndExit(array("success" => false, "message" => "Endpoint is too long."), 400);
+    }
+    if ($iHttpCode < 100 || $iHttpCode > 599) {
+        sendJsonAndExit(array("success" => false, "message" => "HTTP code is invalid."), 400);
+    }
+    if (strlen($sMatchText) > 1024) {
+        sendJsonAndExit(array("success" => false, "message" => "Match text is too long."), 400);
+    }
+    try {
+        $oPdo->beginTransaction();
+        if ($iServiceId > 0) {
+            $oStatement = $oPdo->prepare("SELECT id FROM fs_dashboard WHERE id = :id FOR UPDATE");
+            $oStatement->execute(array("id" => $iServiceId));
+            if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+                $oPdo->rollBack();
+                sendJsonAndExit(array("success" => false, "message" => "Service was not found."), 404);
+            }
+            $oStatement = $oPdo->prepare("UPDATE fs_dashboard SET name = :name, url = :url, check_type = :check_type, http_code = :http_code, match_type = :match_type, match_text = :match_text, is_active = :is_active WHERE id = :id");
+            $oStatement->execute(array(
+                "name" => $sName,
+                "url" => $sUrl,
+                "check_type" => $sCheckType,
+                "http_code" => $iHttpCode,
+                "match_type" => $sMatchType,
+                "match_text" => $mMatchText,
+                "is_active" => $iIsActive,
+                "id" => $iServiceId
+            ));
+        } else {
+            $iOrder = dashboardServiceNextOrder($oPdo);
+            $oStatement = $oPdo->prepare("INSERT INTO fs_dashboard (name, url, check_type, http_code, match_type, match_text, is_active, `order`) VALUES (:name, :url, :check_type, :http_code, :match_type, :match_text, :is_active, :order)");
+            $oStatement->execute(array(
+                "name" => $sName,
+                "url" => $sUrl,
+                "check_type" => $sCheckType,
+                "http_code" => $iHttpCode,
+                "match_type" => $sMatchType,
+                "match_text" => $mMatchText,
+                "is_active" => $iIsActive,
+                "order" => $iOrder
+            ));
+            $iServiceId = (int)$oPdo->lastInsertId();
+        }
+        $oPdo->commit();
+        sendJsonAndExit(array("success" => true, "service_id" => $iServiceId, "services_html" => dashboardServiceRenderRows($oPdo)));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
+function dashboardServiceDelete($oPdo, $iServiceId) {
+    if ($iServiceId < 1) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid service."), 400);
+    }
+    try {
+        $oPdo->beginTransaction();
+        $oStatement = $oPdo->prepare("DELETE FROM fs_dashboard WHERE id = :id");
+        $oStatement->execute(array("id" => $iServiceId));
+        if ($oStatement->rowCount() < 1) {
+            $oPdo->rollBack();
+            sendJsonAndExit(array("success" => false, "message" => "Service was not found."), 404);
+        }
+        dashboardServiceNormalizeOrder($oPdo);
+        $oPdo->commit();
+        sendJsonAndExit(array("success" => true, "service_id" => $iServiceId, "services_html" => dashboardServiceRenderRows($oPdo)));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
+function dashboardServiceGetHttpStatusCode($aHeaders) {
+    $iStatusCode = 0;
+    foreach ($aHeaders as $sHeader) {
+        if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", (string)$sHeader, $aMatches)) {
+            $iStatusCode = (int)$aMatches[1];
+        }
+    }
+    return $iStatusCode;
+}
+
+function dashboardServiceFetchUrl($sUrl) {
+    if (function_exists("curl_init")) {
+        $oCurl = curl_init($sUrl);
+        if (!$oCurl) {
+            return array(
+                "status_code" => 0,
+                "body" => "",
+                "error" => "HTTP client could not be initialized."
+            );
+        }
+        curl_setopt($oCurl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($oCurl, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($oCurl, CURLOPT_TIMEOUT, 20);
+        curl_setopt($oCurl, CURLOPT_HTTPHEADER, array("Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"));
+        curl_setopt($oCurl, CURLOPT_USERAGENT, "eved-lm");
+        @curl_setopt($oCurl, CURLOPT_FOLLOWLOCATION, true);
+        @curl_setopt($oCurl, CURLOPT_MAXREDIRS, 5);
+        $sBody = curl_exec($oCurl);
+        $iStatusCode = (int)curl_getinfo($oCurl, CURLINFO_RESPONSE_CODE);
+        $sError = curl_errno($oCurl) ? curl_error($oCurl) : "";
+        if (PHP_VERSION_ID < 80000) {
+            curl_close($oCurl);
+        }
+        return array(
+            "status_code" => $iStatusCode,
+            "body" => $sBody !== false ? (string)$sBody : "",
+            "error" => $sError
+        );
+    }
+    $aContext = array(
+        "http" => array(
+            "method" => "GET",
+            "header" => "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\nUser-Agent: eved-lm\r\n",
+            "timeout" => 20,
+            "ignore_errors" => true,
+            "follow_location" => 1,
+            "max_redirects" => 5
+        )
+    );
+    $sBody = @file_get_contents($sUrl, false, stream_context_create($aContext));
+    $aHeaders = isset($http_response_header) && is_array($http_response_header) ? $http_response_header : array();
+    $iStatusCode = dashboardServiceGetHttpStatusCode($aHeaders);
+    $aError = error_get_last();
+    return array(
+        "status_code" => $iStatusCode,
+        "body" => $sBody !== false ? (string)$sBody : "",
+        "error" => $sBody !== false ? "" : (isset($aError["message"]) ? (string)$aError["message"] : "HTTP request failed.")
+    );
+}
+
+function dashboardServiceCheckTcpEndpoint($aEndpoint) {
+    $iErrorNumber = 0;
+    $sErrorText = "";
+    $oSocket = @fsockopen($aEndpoint["host"], $aEndpoint["port"], $iErrorNumber, $sErrorText, 10);
+    if ($oSocket) {
+        fclose($oSocket);
+        return array(
+            "ok" => true,
+            "http_status" => "",
+            "checked_at" => date("Y-m-d H:i:s"),
+            "message" => "TCP connection established on " . $aEndpoint["host"] . ":" . $aEndpoint["port"] . "."
+        );
+    }
+    if ($sErrorText == "") {
+        $sErrorText = "Connection failed.";
+    }
+    if ($iErrorNumber > 0) {
+        $sErrorText .= " (" . $iErrorNumber . ")";
+    }
+    return array(
+        "ok" => false,
+        "http_status" => "",
+        "checked_at" => date("Y-m-d H:i:s"),
+        "message" => $sErrorText
+    );
+}
+
+function dashboardServiceOpenSocket($aEndpoint, &$iErrorNumber, &$sErrorText) {
+    $sHost = $aEndpoint["host"];
+    if ($aEndpoint["scheme"] == "rtsps" || $aEndpoint["scheme"] == "rtmps") {
+        $sHost = "ssl://" . $sHost;
+    }
+    return @fsockopen($sHost, $aEndpoint["port"], $iErrorNumber, $sErrorText, 10);
+}
+
+function dashboardServiceCheckStreamEndpoint($aEndpoint, $sUrl) {
+    $iErrorNumber = 0;
+    $sErrorText = "";
+    $oSocket = dashboardServiceOpenSocket($aEndpoint, $iErrorNumber, $sErrorText);
+    $sLine = "";
+    $aInfo = array();
+
+    if (!$oSocket) {
+        if ($sErrorText == "") {
+            $sErrorText = "Stream connection failed.";
+        }
+        if ($iErrorNumber > 0) {
+            $sErrorText .= " (" . $iErrorNumber . ")";
+        }
+        return array(
+            "ok" => false,
+            "http_status" => "",
+            "checked_at" => date("Y-m-d H:i:s"),
+            "message" => $sErrorText
+        );
+    }
+    stream_set_timeout($oSocket, 5);
+    if ($aEndpoint["scheme"] == "rtsp" || $aEndpoint["scheme"] == "rtsps") {
+        fwrite($oSocket, "OPTIONS " . $sUrl . " RTSP/1.0\r\nCSeq: 1\r\nUser-Agent: eved-lm\r\nConnection: close\r\n\r\n");
+        $sLine = fgets($oSocket, 512);
+        $aInfo = stream_get_meta_data($oSocket);
+        fclose($oSocket);
+        if (preg_match("#^RTSP/\\S+\\s+([0-9]{3})\\b#i", (string)$sLine, $aMatches)) {
+            $iCode = (int)$aMatches[1];
+            return array(
+                "ok" => $iCode > 0 && $iCode < 500,
+                "http_status" => (string)$iCode,
+                "checked_at" => date("Y-m-d H:i:s"),
+                "message" => "RTSP response received."
+            );
+        }
+        return array(
+            "ok" => false,
+            "http_status" => "",
+            "checked_at" => date("Y-m-d H:i:s"),
+            "message" => isset($aInfo["timed_out"]) && $aInfo["timed_out"] ? "RTSP response timed out." : "RTSP response was not received."
+        );
+    }
+    fclose($oSocket);
+    return array(
+        "ok" => true,
+        "http_status" => "",
+        "checked_at" => date("Y-m-d H:i:s"),
+        "message" => "Stream port accepted connection on " . $aEndpoint["host"] . ":" . $aEndpoint["port"] . "."
+    );
+}
+
+function dashboardServiceCheckRow($aRow) {
+    $aEndpoint = dashboardServiceParseEndpoint($aRow["url"]);
+    $sCheckType = dashboardServiceResolveCheckType($aRow["check_type"], $aRow["url"]);
+    if (!$aEndpoint || !dashboardServiceUrlIsValid($aRow["url"], $aRow["check_type"])) {
+        return array(
+            "ok" => false,
+            "http_status" => "",
+            "checked_at" => date("Y-m-d H:i:s"),
+            "message" => "Endpoint is invalid."
+        );
+    }
+    if ($sCheckType == "tcp") {
+        return dashboardServiceCheckTcpEndpoint($aEndpoint);
+    }
+    if ($sCheckType == "stream") {
+        return dashboardServiceCheckStreamEndpoint($aEndpoint, $aRow["url"]);
+    }
+    $aResponse = dashboardServiceFetchUrl($aRow["url"]);
+    $iHttpCode = (int)$aRow["http_code"];
+    $iStatusCode = (int)$aResponse["status_code"];
+    $sMatchText = (string)$aRow["match_text"];
+    $sMessage = "";
+    $blOk = false;
+
+    if ((string)$aResponse["error"] != "") {
+        $sMessage = (string)$aResponse["error"];
+    } elseif ($iStatusCode !== $iHttpCode) {
+        $sMessage = "Expected HTTP " . $iHttpCode . ", got " . ($iStatusCode > 0 ? $iStatusCode : "no status") . ".";
+    } elseif ($sMatchText != "") {
+        if ($aRow["match_type"] == "starts_with") {
+            $blOk = strpos(ltrim((string)$aResponse["body"]), $sMatchText) === 0;
+            if (!$blOk) {
+                $sMessage = "Response body does not start with match text.";
+            }
+        } else {
+            $blOk = strpos((string)$aResponse["body"], $sMatchText) !== false;
+            if (!$blOk) {
+                $sMessage = "Response body does not contain match text.";
+            }
+        }
+    } else {
+        $blOk = true;
+    }
+    if ($sMessage == "" && $blOk) {
+        $sMessage = "HTTP response matched.";
+    }
+    return array(
+        "ok" => $blOk,
+        "http_status" => $iStatusCode > 0 ? (string)$iStatusCode : "",
+        "checked_at" => date("Y-m-d H:i:s"),
+        "message" => $sMessage
+    );
+}
+
+function dashboardServiceResultCacheSeconds() {
+    return 3600;
+}
+
+function dashboardServicePendingCacheSeconds() {
+    return 120;
+}
+
+function dashboardServiceFreshResultIsAvailable($aRow) {
+    $iCheckedAt = isset($aRow["checked_at_ts"]) ? (int)$aRow["checked_at_ts"] : 0;
+    $iUpdatedAt = isset($aRow["updated_at_ts"]) ? (int)$aRow["updated_at_ts"] : 0;
+    $iAge = $iCheckedAt > 0 ? time() - $iCheckedAt : 0;
+    if ($iCheckedAt < 1) {
+        return false;
+    }
+    if ($iUpdatedAt > $iCheckedAt) {
+        return false;
+    }
+    if ($aRow["ok"] === null) {
+        return $iAge >= 0 && $iAge < dashboardServicePendingCacheSeconds();
+    }
+    return $iAge >= 0 && $iAge < dashboardServiceResultCacheSeconds();
+}
+
+function dashboardServiceCheckState($mOk) {
+    if ($mOk === null) {
+        return "checking";
+    }
+    return (int)$mOk == 1 ? "ok" : "failed";
+}
+
+function dashboardServiceCheckStatusText($mOk) {
+    if ($mOk === null) {
+        return "Checking";
+    }
+    return (int)$mOk == 1 ? "OK" : "Failed";
+}
+
+function dashboardServiceBuildCheckJson($iServiceId, $aResult) {
+    return array(
+        "success" => true,
+        "service_id" => $iServiceId,
+        "ok" => $aResult["ok"],
+        "state" => dashboardServiceCheckState($aResult["ok"]),
+        "status_text" => dashboardServiceCheckStatusText($aResult["ok"]),
+        "http_status" => (string)$aResult["http_status"],
+        "checked_at" => (string)$aResult["checked_at"],
+        "checked_at_ts" => isset($aResult["checked_at_ts"]) ? (int)$aResult["checked_at_ts"] : time(),
+        "message" => (string)$aResult["message"]
+    );
+}
+
+function dashboardServiceBuildCachedResult($aRow) {
+    return array(
+        "ok" => $aRow["ok"],
+        "http_status" => (string)$aRow["code"],
+        "checked_at" => (string)$aRow["checked_at"],
+        "checked_at_ts" => (int)$aRow["checked_at_ts"],
+        "message" => (string)$aRow["message"]
+    );
+}
+
+function dashboardServiceFetchRowForUpdate($oPdo, $iServiceId) {
+    $oStatement = $oPdo->prepare("SELECT id, name, url, check_type, http_code, match_type, match_text, is_active, `order` AS service_order, UNIX_TIMESTAMP(checked_at) AS checked_at_ts, UNIX_TIMESTAMP(updated_at) AS updated_at_ts, `ok` AS check_ok, `code` AS check_code, `message` AS check_message, DATE_FORMAT(checked_at, '%Y-%m-%d %H:%i:%s') AS checked_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text FROM fs_dashboard WHERE id = :id FOR UPDATE");
+    $oStatement->execute(array("id" => $iServiceId));
+    $aRows = array();
+    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        $aRows[] = array(
+            "id" => (int)$aRow["id"],
+            "name" => (string)$aRow["name"],
+            "url" => (string)$aRow["url"],
+            "check_type" => dashboardServiceNormalizeCheckType($aRow["check_type"]),
+            "http_code" => (int)$aRow["http_code"],
+            "match_type" => dashboardServiceNormalizeMatch($aRow["match_type"]),
+            "match_text" => $aRow["match_text"] === null ? "" : (string)$aRow["match_text"],
+            "is_active" => (int)$aRow["is_active"],
+            "order" => (int)$aRow["service_order"],
+            "checked_at_ts" => $aRow["checked_at_ts"] === null ? 0 : (int)$aRow["checked_at_ts"],
+            "updated_at_ts" => $aRow["updated_at_ts"] === null ? 0 : (int)$aRow["updated_at_ts"],
+            "checked_at" => (string)$aRow["checked_at_text"],
+            "ok" => $aRow["check_ok"] === null ? null : (int)$aRow["check_ok"],
+            "code" => $aRow["check_code"] === null ? "" : (string)$aRow["check_code"],
+            "message" => $aRow["check_message"] === null ? "" : (string)$aRow["check_message"],
+            "created_at" => (string)$aRow["created_at_text"],
+            "updated_at" => (string)$aRow["updated_at_text"]
+        );
+    }
+    return $aRows ? $aRows[0] : null;
+}
+
+function dashboardServiceMarkCheckStarted($oPdo, $iServiceId) {
+    $oStatement = $oPdo->prepare("UPDATE fs_dashboard SET checked_at = CURRENT_TIMESTAMP(6), `ok` = NULL, `code` = NULL, `message` = :message WHERE id = :id");
+    $oStatement->execute(array(
+        "message" => "Checking...",
+        "id" => $iServiceId
+    ));
+}
+
+function dashboardServiceSaveCheckResult($oPdo, $iServiceId, $aResult) {
+    $oStatement = $oPdo->prepare("UPDATE fs_dashboard SET checked_at = CURRENT_TIMESTAMP(6), `ok` = :ok, `code` = :code, `message` = :message WHERE id = :id");
+    $oStatement->execute(array(
+        "ok" => !empty($aResult["ok"]) ? 1 : 0,
+        "code" => (string)$aResult["http_status"] != "" ? (string)$aResult["http_status"] : null,
+        "message" => (string)$aResult["message"],
+        "id" => $iServiceId
+    ));
+}
+
+function dashboardServiceSendCheckJson($oPdo, $iServiceId, $blForce = false) {
+    if ($iServiceId < 1) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid service."), 400);
+    }
+    try {
+        $oPdo->beginTransaction();
+        $aRow = dashboardServiceFetchRowForUpdate($oPdo, $iServiceId);
+        if (!$aRow) {
+            $oPdo->rollBack();
+            sendJsonAndExit(array("success" => false, "message" => "Service was not found."), 404);
+        }
+        if ((int)$aRow["is_active"] != 1) {
+            $oPdo->commit();
+            sendJsonAndExit(array(
+                "success" => true,
+                "service_id" => $iServiceId,
+                "ok" => null,
+                "state" => "inactive",
+                "status_text" => "Inactive",
+                "http_status" => (string)$aRow["code"],
+                "checked_at" => (string)$aRow["checked_at"],
+                "checked_at_ts" => (int)$aRow["checked_at_ts"],
+                "message" => "Service is inactive."
+            ));
+        }
+        if (!$blForce && dashboardServiceFreshResultIsAvailable($aRow)) {
+            $oPdo->commit();
+            sendJsonAndExit(dashboardServiceBuildCheckJson($iServiceId, dashboardServiceBuildCachedResult($aRow)));
+        }
+        dashboardServiceMarkCheckStarted($oPdo, $iServiceId);
+        $oPdo->commit();
+        $aResult = dashboardServiceCheckRow($aRow);
+        dashboardServiceSaveCheckResult($oPdo, $iServiceId, $aResult);
+        sendJsonAndExit(dashboardServiceBuildCheckJson($iServiceId, $aResult));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
 function issueTrackerTypeLabels() {
     return array(
         "task" => "Task",
