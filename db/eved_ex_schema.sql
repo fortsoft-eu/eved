@@ -104,8 +104,8 @@ CREATE TABLE `ex_subject_contacts` (
 
 CREATE TABLE `ex_phone_book` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `phone_book` int(10) unsigned NOT NULL DEFAULT 0,
   `subject_contact_id` int(10) unsigned NOT NULL,
+  `phone_book` int(10) unsigned NOT NULL,
   `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   PRIMARY KEY (`id`),
   UNIQUE KEY `ux_ex_phone_book_book_sc` (`phone_book`,`subject_contact_id`),
