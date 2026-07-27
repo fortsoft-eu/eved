@@ -3855,6 +3855,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var iSubjectCalendarFirstDay = 1;
     var sSubjectDateInputFormat = "YYYY-MM-DD";
     var blHideSubjectBirthNumber = false;
+    var blShowComputedSubjectName = false;
     var aSubjectCountryCodes = ("AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CS CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW").split(" ");
     var aSubjectCountryOptions = null;
     if (aSubjectButtons.length === 0 || !window.fetch || !window.FormData || !window.JSON) {
@@ -3864,6 +3865,7 @@ document.addEventListener("DOMContentLoaded", function () {
         iSubjectCalendarFirstDay = parseInt(document.body.getAttribute("data-calendar-first-day") || "1", 10);
         sSubjectDateInputFormat = document.body.getAttribute("data-date-input-format") || sSubjectDateInputFormat;
         blHideSubjectBirthNumber = document.body.getAttribute("data-hide-subject-birth-number") == "1";
+        blShowComputedSubjectName = document.body.getAttribute("data-show-computed-subject-name") == "1";
     }
     if (isNaN(iSubjectCalendarFirstDay) || iSubjectCalendarFirstDay < 0 || iSubjectCalendarFirstDay > 6) {
         iSubjectCalendarFirstDay = 1;
@@ -4115,6 +4117,17 @@ document.addEventListener("DOMContentLoaded", function () {
         oParent.appendChild(oLabel);
         oParent.appendChild(oInput);
         return oInput;
+    }
+
+    function appendSubjectDisplayField(oParent, sLabel, sValue) {
+        var oLabel = document.createElement("label");
+        var oValue = document.createElement("div");
+        oLabel.textContent = sLabel;
+        oValue.className = "subject-computed-name";
+        oValue.textContent = sValue || "";
+        oParent.appendChild(oLabel);
+        oParent.appendChild(oValue);
+        return oValue;
     }
 
     function appendSubjectCheckbox(oParent, sLabel, sName, blChecked) {
@@ -4764,6 +4777,9 @@ document.addEventListener("DOMContentLoaded", function () {
             oType.disabled = true;
         }
         oActive = appendSubjectCheckbox(oDialogData.form, "Active", "is_active", getSubjectFlag(aSubject, "is_active"));
+        if (!blNewSubject && blShowComputedSubjectName) {
+            appendSubjectDisplayField(oDialogData.form, "Computed Name", getSubjectValue(aSubject, "subject_name"));
+        }
         oSubjectName = appendSubjectTextField(oDialogData.form, "Name", "subject_name_value", getSubjectValue(aSubject, "subject_name_value"));
         oTitleBefore = appendSubjectTextField(oDialogData.form, "Title Before", "title_before", getSubjectValue(aSubject, "title_before"));
         oFirstName = appendSubjectTextField(oDialogData.form, "First Name", "first_name", getSubjectValue(aSubject, "first_name"));

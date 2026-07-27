@@ -3144,11 +3144,27 @@ function getUpdatedSubjectResponse($oPdo, $iSubjectId, $aVisibilitySettings = nu
     return array("success" => true, "subject_id" => $iSubjectId, "row_html" => $sRowHtml);
 }
 
+function subjectFilterText($aSubjectRow) {
+    $aFields = array("subject_name", "subject_type", "title_before", "first_name", "middle_name", "last_name", "title_after", "birth_name", "birth_number", "birth_date", "death_date");
+    $aText = array();
+    foreach ($aFields as $sField) {
+        if (isset($aSubjectRow[$sField]) && trim((string)$aSubjectRow[$sField]) != "") {
+            $aText[] = (string)$aSubjectRow[$sField];
+        }
+    }
+    return implode(" ", $aText);
+}
+
 function fetchSubjectEditorData($oPdo, $iSubjectId) {
     $oStatement = $oPdo->prepare("SELECT s.id AS subject_id, s.subject_type, s.is_active, subn.name AS subject_name_value, p.title_before, p.first_name, p.middle_name, p.last_name, p.title_after, p.birth_name, p.birth_number, p.birth_date, p.death_date FROM ex_subjects AS s LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id WHERE s.id = :subject_id");
     $oStatement->execute(array("subject_id" => $iSubjectId));
     $aSubject = $oStatement->fetch(PDO::FETCH_ASSOC);
-    return $aSubject ? $aSubject : null;
+    if (!$aSubject) {
+        return null;
+    }
+    $aSubjectRows = fetchSubjectRows($oPdo, $iSubjectId);
+    $aSubject["subject_name"] = $aSubjectRows ? (string)$aSubjectRows[0]["subject_name"] : "";
+    return $aSubject;
 }
 
 function fetchSubjectPortalEditorData($oPdo, $iSubjectId) {
@@ -3365,7 +3381,7 @@ function addressesSubjectCellClass($aSubject) {
 function addressesFilterText($aAddressRow) {
     $sAddressFilterText = (string)$aAddressRow["address_text"];
     foreach ($aAddressRow["subjects"] as $aFilterSubject) {
-        $sAddressFilterText .= " " . (string)$aFilterSubject["subject_name"];
+        $sAddressFilterText .= " " . (string)$aFilterSubject["subject_filter_text"];
     }
     return $sAddressFilterText;
 }
@@ -3407,6 +3423,7 @@ function addressesFetchRows($oPdo, $aAddressSettings) {
         $aSubjectNames[(int)$aSubjectRow["subject_id"]] = array(
             "subject_id" => (int)$aSubjectRow["subject_id"],
             "subject_name" => (string)$aSubjectRow["subject_name"],
+            "subject_filter_text" => subjectFilterText($aSubjectRow),
             "subject_type" => (string)$aSubjectRow["subject_type"],
             "is_active" => (int)$aSubjectRow["is_active"] == 1,
             "created_at" => (string)$aSubjectRow["created_at"],
@@ -4460,7 +4477,7 @@ function contactsRenderSubjectDataAttributes($aSubject) {
 function contactsFilterText($aContactRow) {
     $sContactFilterText = (string)$aContactRow["contact_type_name"] . " " . (string)$aContactRow["contact_display_value"];
     foreach ($aContactRow["subjects"] as $aFilterSubject) {
-        $sContactFilterText .= " " . (string)$aFilterSubject["subject_name"];
+        $sContactFilterText .= " " . (string)$aFilterSubject["subject_filter_text"];
     }
     return $sContactFilterText;
 }
@@ -4504,7 +4521,7 @@ function fetchPhoneBookRows($oPdo, $iPhoneBook = 0) {
     $sPersonDisplayBase = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.title_before, ''), NULLIF(p.first_name, ''), NULLIF(p.middle_name, ''), NULLIF(p.last_name, ''))), '')";
     $sPersonDisplayName = "NULLIF(TRIM(CONCAT(COALESCE(" . $sPersonDisplayBase . ", ''), IF(NULLIF(p.title_after, '') IS NULL, '', IF(" . $sPersonDisplayBase . " IS NULL, p.title_after, CONCAT(', ', p.title_after))))), '')";
     $sPersonSortName = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.last_name, ''), NULLIF(p.first_name, ''))), '')";
-    $sSql = "SELECT pbc.id AS phone_book_id, pbc.phone_book, pbc.subject_contact_id, pbc.created_at AS phone_book_created_at, sc.subject_id, sc.contact_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note, c.contact_type_id, c.contact_value, c.created_at, c.updated_at, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, s.subject_type, s.is_active AS subject_is_active, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), c.contact_value, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), c.contact_value, 'Unnamed subject') AS subject_sort_name, p.first_name, p.last_name FROM ex_phone_book AS pbc INNER JOIN ex_subject_contacts AS sc ON sc.id = pbc.subject_contact_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id INNER JOIN ex_subjects AS s ON s.id = sc.subject_id LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id WHERE pbc.phone_book = :phone_book AND COALESCE(ct.contact_type, '') IN ('landline', 'cell', 'fax', 'pager') ORDER BY subject_sort_name ASC, contact_type_order ASC, c.contact_value ASC, pbc.subject_contact_id ASC";
+    $sSql = "SELECT pbc.id AS phone_book_id, pbc.phone_book, pbc.subject_contact_id, pbc.created_at AS phone_book_created_at, sc.subject_id, sc.contact_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note, c.contact_type_id, c.contact_value, c.created_at, c.updated_at, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, s.subject_type, s.is_active AS subject_is_active, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), c.contact_value, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), c.contact_value, 'Unnamed subject') AS subject_sort_name, p.first_name, p.last_name FROM ex_phone_book AS pbc INNER JOIN ex_subject_contacts AS sc ON sc.id = pbc.subject_contact_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id INNER JOIN ex_subjects AS s ON s.id = sc.subject_id LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id WHERE pbc.phone_book = :phone_book AND COALESCE(ct.contact_type, '') IN ('landline', 'cell', 'fax', 'pager') ORDER BY subject_sort_name ASC, sc.subject_id ASC, contact_type_order ASC, c.contact_value ASC, pbc.subject_contact_id ASC";
     $oStatement = $oPdo->prepare($sSql);
     $oStatement->execute(array("phone_book" => max(0, (int)$iPhoneBook)));
     return $oStatement->fetchAll(PDO::FETCH_ASSOC);
@@ -4542,6 +4559,7 @@ function contactsFetchRows($oPdo, $aContactSettings) {
         $aSubjectNames[(int)$aSubjectRow["subject_id"]] = array(
             "subject_id" => (int)$aSubjectRow["subject_id"],
             "subject_name" => (string)$aSubjectRow["subject_name"],
+            "subject_filter_text" => subjectFilterText($aSubjectRow),
             "subject_type" => (string)$aSubjectRow["subject_type"],
             "is_active" => (int)$aSubjectRow["is_active"] == 1,
             "created_at" => (string)$aSubjectRow["created_at"],

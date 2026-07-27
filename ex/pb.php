@@ -96,17 +96,42 @@ if (!$aPhoneBookRows) {
     <tbody>
 <?php
 
-    foreach ($aPhoneBookRows as $aPhoneBookRow) {
+    $iPhoneBookRowCount = count($aPhoneBookRows);
+    $aPhoneBookSubjectRowspans = array();
+    $aPhoneBookFilterTexts = array();
+    for ($iPhoneBookIndex = 0; $iPhoneBookIndex < $iPhoneBookRowCount; $iPhoneBookIndex++) {
+        if (isset($aPhoneBookFilterTexts[$iPhoneBookIndex])) {
+            continue;
+        }
+        $iSubjectId = (int)$aPhoneBookRows[$iPhoneBookIndex]["subject_id"];
+        $aFilterTexts = array(phoneBookSubjectDisplayName($aPhoneBookRows[$iPhoneBookIndex]));
+        $iSubjectRowspan = 0;
+        for ($iSubjectIndex = $iPhoneBookIndex; $iSubjectIndex < $iPhoneBookRowCount && (int)$aPhoneBookRows[$iSubjectIndex]["subject_id"] === $iSubjectId; $iSubjectIndex++) {
+            $iSubjectRowspan++;
+            $aFilterTexts[] = (string)$aPhoneBookRows[$iSubjectIndex]["contact_type_name"];
+            $aFilterTexts[] = contactDisplayValue($aPhoneBookRows[$iSubjectIndex]["contact_type"], $aPhoneBookRows[$iSubjectIndex]["contact_value"]);
+            $aFilterTexts[] = (string)$aPhoneBookRows[$iSubjectIndex]["note"];
+        }
+        $aPhoneBookSubjectRowspans[$iPhoneBookIndex] = $iSubjectRowspan;
+        $sPhoneBookFilterText = implode(" ", $aFilterTexts);
+        for ($iSubjectIndex = $iPhoneBookIndex; $iSubjectIndex < $iPhoneBookIndex + $iSubjectRowspan; $iSubjectIndex++) {
+            $aPhoneBookFilterTexts[$iSubjectIndex] = $sPhoneBookFilterText;
+        }
+    }
+    foreach ($aPhoneBookRows as $iPhoneBookIndex => $aPhoneBookRow) {
         $sSubjectName = phoneBookSubjectDisplayName($aPhoneBookRow);
+        $iSubjectRowspan = isset($aPhoneBookSubjectRowspans[$iPhoneBookIndex]) ? (int)$aPhoneBookSubjectRowspans[$iPhoneBookIndex] : 0;
         $sContactDisplayValue = contactDisplayValue($aPhoneBookRow["contact_type"], $aPhoneBookRow["contact_value"]);
         $sNote = trim((string)$aPhoneBookRow["note"]);
         $blIsPrimary = (int)$aPhoneBookRow["is_primary"] == 1;
         $blIsContactActive = (int)$aPhoneBookRow["contact_is_active"] == 1;
         $sRowClass = (int)$aPhoneBookRow["subject_is_active"] == 1 && (int)$aPhoneBookRow["contact_is_active"] == 1 ? "" : " class=\"phone-book-row-inactive\"";
         $sContactActions = $blCanEdit ? "<span class=\"list-item-actions\"><a href=\"#\" class=\"item-action js-remove-phone-book-contact\" data-phone-book-id=\"" . html($aPhoneBookRow["phone_book_id"]) . "\" title=\"Remove from Phone Book\" aria-label=\"Remove from Phone Book\">" . $sDeleteEmoji . "</a></span>" : "";
-        echo "      <tr data-phone-book-id=\"" . html($aPhoneBookRow["phone_book_id"]) . "\"" . $sRowClass . ">\n",
-            "        <td class=\"phone-book-subject\">" . htmlValue($sSubjectName) . renderCopyAction($sSubjectName) . "</td>\n",
-            "        <td class=\"phone-book-contact contact-cell contact-item list-item" . ($blIsContactActive ? "" : " contact-item-inactive") . "\" data-phone-book-id=\"" . html($aPhoneBookRow["phone_book_id"]) . "\" data-contact-id=\"" . html($aPhoneBookRow["contact_id"]) . "\" data-contact-type-id=\"" . html($aPhoneBookRow["contact_type_id"]) . "\" data-contact-type=\"" . html($aPhoneBookRow["contact_type"]) . "\" data-contact-type-name=\"" . html($aPhoneBookRow["contact_type_name"]) . "\" data-contact-value=\"" . html($sContactDisplayValue) . "\"><span class=\"contact-db-values\"><span class=\"contact-type\">" . html($aPhoneBookRow["contact_type_name"]) . "</span>: " . renderContactValueText($aPhoneBookRow["contact_type"], $aPhoneBookRow["contact_value"]) . "</span>" . renderContactValueActions($aPhoneBookRow["contact_type"], $aPhoneBookRow["contact_value"], true, true) . "<span class=\"contact-note\">" . ($sNote != "" ? "(" . html($sNote) . ")" : "") . "</span><span class=\"contact-flags\"><span class=\"contact-primary\" title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span class=\"contact-inactive-label\" title=\"Inactive\">" . ($blIsContactActive ? "" : $sInactiveEmoji) . "</span></span>" . $sContactActions . "</td>\n",
+        echo "      <tr data-phone-book-id=\"" . html($aPhoneBookRow["phone_book_id"]) . "\"" . $sRowClass . ">\n";
+        if ($iSubjectRowspan > 0) {
+            echo "        <td class=\"phone-book-subject\" rowspan=\"" . html($iSubjectRowspan) . "\">" . htmlValue($sSubjectName) . renderCopyAction($sSubjectName) . "</td>\n";
+        }
+        echo "        <td class=\"phone-book-contact contact-cell contact-item list-item" . ($blIsContactActive ? "" : " contact-item-inactive") . "\" data-phone-book-id=\"" . html($aPhoneBookRow["phone_book_id"]) . "\" data-contact-id=\"" . html($aPhoneBookRow["contact_id"]) . "\" data-contact-type-id=\"" . html($aPhoneBookRow["contact_type_id"]) . "\" data-contact-type=\"" . html($aPhoneBookRow["contact_type"]) . "\" data-contact-type-name=\"" . html($aPhoneBookRow["contact_type_name"]) . "\" data-contact-value=\"" . html($sContactDisplayValue) . "\"><span class=\"column-hidden\">" . htmlValue($aPhoneBookFilterTexts[$iPhoneBookIndex]) . "</span><span class=\"contact-db-values\"><span class=\"contact-type\">" . html($aPhoneBookRow["contact_type_name"]) . "</span>: " . renderContactValueText($aPhoneBookRow["contact_type"], $aPhoneBookRow["contact_value"]) . "</span>" . renderContactValueActions($aPhoneBookRow["contact_type"], $aPhoneBookRow["contact_value"], true, true) . "<span class=\"contact-note\">" . ($sNote != "" ? "(" . html($sNote) . ")" : "") . "</span><span class=\"contact-flags\"><span class=\"contact-primary\" title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span class=\"contact-inactive-label\" title=\"Inactive\">" . ($blIsContactActive ? "" : $sInactiveEmoji) . "</span></span>" . $sContactActions . "</td>\n",
             "      </tr>\n";
     }
 

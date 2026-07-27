@@ -1063,7 +1063,7 @@ body.phpinfo-page .admin-controls {
     color: #D00;
 }
 
-.contacts-table .column-hidden, .contacts-table .column-step-one, .contacts-table .column-step-three, .contacts-table .column-step-two {
+.contacts-table .column-hidden, .phone-book-table .column-hidden, .contacts-table .column-step-one, .contacts-table .column-step-three, .contacts-table .column-step-two {
     display: none;
 }
 
@@ -1622,6 +1622,14 @@ body.phpinfo-page .admin-controls {
 .subject-edit-dialog input[type="text"], .subject-edit-dialog input[type="password"], .subject-edit-dialog input[type="number"], .subject-edit-dialog input[type="date"], .subject-edit-dialog select {
     box-sizing: border-box;
     margin: 0 16px;
+    width: calc(100% - 32px);
+}
+
+.subject-edit-dialog .subject-computed-name {
+    box-sizing: border-box;
+    margin: 0 16px;
+    min-height: 24px;
+    overflow-wrap: break-word;
     width: calc(100% - 32px);
 }
 

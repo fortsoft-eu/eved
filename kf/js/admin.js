@@ -1087,6 +1087,7 @@
             window.addEventListener("pageshow", function () {
                 refreshFilterFocusButton(oFilter);
             });
+            focusElement(oFilter, true);
         }
 
         for (var iI = 0; iI < aFilters.length; iI += 1) {

@@ -555,6 +555,7 @@ function setupTableFilter() {
         window.addEventListener("pageshow", function () {
             refreshFilterFocusButton(oFilter);
         });
+        focusAdminElement(oFilter, true);
     }
 
     for (var iI = 0; iI < aFilters.length; iI += 1) {
