@@ -46,6 +46,13 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
   </p>
+<?php
+
+if (!$aRows) {
+    echo "  <p>No records found.</p>\n";
+} else {
+
+?>
   <table id="exchange-rates-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
@@ -62,11 +69,16 @@ renderMenu();
     <tbody>
 <?php
 
-echo renderExchangeRateRows($aRows);
+    echo renderExchangeRateRows($aRows);
 
 ?>
     </tbody>
   </table>
+<?php
+
+}
+
+?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>

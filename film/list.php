@@ -42,7 +42,7 @@ $iTime = sendPageHeaders();
 if ($sError) {
     echo "  <p><strong>Error:</strong> " . htmlspecialchars($sError) . "</p>\n";
 } elseif (!$aRows) {
-    echo "  <p>No records found in <code>fs_film_scans</code>.</p>\n";
+    echo "  <p>No records found.</p>\n";
 } else {
 echo "  <p class=\"admin-controls\">\n";
 renderMenu();

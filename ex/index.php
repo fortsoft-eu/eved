@@ -353,7 +353,7 @@ echo renderSettingsScopeNote();
 <?php
 
 if (!$aRows) {
-    echo "  <p>No visible records found.</p>\n";
+    echo "  <p>" . ($blFullListComplexFilterActive ? "<strong>Complex Filter: </strong>" : "") . "No records found.</p>\n";
 } else {
     echo renderPageThrobber();
 

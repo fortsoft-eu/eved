@@ -267,6 +267,14 @@ echo $sToolbarHtml;
 
 ?>
   </p>
+  <div id="debts-data" data-display-currency="<?php echo html($sDisplayCurrency != "" ? $sDisplayCurrency : $sDefaultCurrency); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" hidden></div>
+<?php
+
+if (!$aRows) {
+    echo "  <p>No records found.</p>\n";
+} else {
+
+?>
   <table id="debts-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-display-currency="<?php echo html($sDisplayCurrency != "" ? $sDisplayCurrency : $sDefaultCurrency); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
@@ -279,16 +287,18 @@ echo $sToolbarHtml;
         <th>Note</th>
 <?php
 
-if ($blCanEdit) {
-    echo "        <th class=\"admin-action-column\"></th>\n";
-}
+    if ($blCanEdit) {
+        echo "        <th class=\"admin-action-column\"></th>\n";
+    }
 
-echo "      </tr>\n",
-    "    </thead>\n",
-    "    <tbody>\n",
-    renderDebtAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency),
-    "    </tbody>\n",
-    "  </table>\n",
+    echo "      </tr>\n",
+        "    </thead>\n",
+        "    <tbody>\n",
+        renderDebtAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency),
+        "    </tbody>\n",
+        "  </table>\n";
+}
+echo
     renderSettingsModal($aSettings),
     renderEmojiData();
 

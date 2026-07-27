@@ -1211,7 +1211,7 @@ foreach ($aContactTypes as $aContactType) {
 }
 echo "  </select>\n";
 if (!$aRows) {
-    echo "  <p>" . ($blFullListComplexFilterActive ? "<strong>Complex Filter: </strong>" : "") . "No visible records found.</p>\n";
+    echo "  <p>" . ($blFullListComplexFilterActive ? "<strong>Complex Filter: </strong>" : "") . "No records found.</p>\n";
 } else {
     echo renderPageThrobber();
 

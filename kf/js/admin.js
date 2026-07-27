@@ -1537,12 +1537,16 @@
         var aOpeners = document.querySelectorAll("[data-modal-target]");
         var aModals = document.querySelectorAll(".confirm-dialog");
         var oDebtsTable = document.getElementById("debts-table");
+        var oDebtsData = oDebtsTable || document.getElementById("debts-data");
         var oAddDebt = document.querySelector(".js-add-debt");
         var oTransactionsTable = document.getElementById("transactions-table");
+        var oTransactionsData = oTransactionsTable || document.getElementById("transactions-data");
         var oAddTransaction = document.querySelector(".js-add-transaction");
         var oSubscriptionsTable = document.getElementById("subscriptions-table");
+        var oSubscriptionsData = oSubscriptionsTable || document.getElementById("subscriptions-data");
         var oAddSubscription = document.querySelector(".js-add-subscription");
         var oTypesTable = document.getElementById("types-table");
+        var oTypesData = oTypesTable || document.getElementById("types-data");
         var oAddType = document.querySelector(".js-add-type");
         var oBox;
         var oHeader;
@@ -1598,7 +1602,7 @@
         }
 
         function getDebtDisplayCurrency() {
-            return oDebtsTable ? (oDebtsTable.getAttribute("data-display-currency") || "USD") : "USD";
+            return oDebtsData ? (oDebtsData.getAttribute("data-display-currency") || "USD") : "USD";
         }
 
         function getDebtMovementCurrency(oRow) {
@@ -1606,7 +1610,7 @@
         }
 
         function getTransactionDisplayCurrency() {
-            return oTransactionsTable ? (oTransactionsTable.getAttribute("data-display-currency") || "USD") : "USD";
+            return oTransactionsData ? (oTransactionsData.getAttribute("data-display-currency") || "USD") : "USD";
         }
 
         function findAdminDebtRowById(sDebtId) {
@@ -1659,7 +1663,8 @@
         function replaceDebtRows(sRowsHtml) {
             var oBody = document.createElement("tbody");
             var aStates = getDebtRowStates();
-            if (!oDebtsTable || !oDebtsTable.querySelector("tbody")) {
+            if (!oDebtsTable || !oDebtsTable.querySelector("tbody") || sRowsHtml == "") {
+                window.location.reload();
                 return;
             }
             oBody.innerHTML = sRowsHtml || "";
@@ -1706,7 +1711,8 @@
         function replaceTransactionRows(sRowsHtml) {
             var oBody = document.createElement("tbody");
             var aStates = getTransactionRowStates();
-            if (!oTransactionsTable || !oTransactionsTable.querySelector("tbody")) {
+            if (!oTransactionsTable || !oTransactionsTable.querySelector("tbody") || sRowsHtml == "") {
+                window.location.reload();
                 return;
             }
             oBody.innerHTML = sRowsHtml || "";
@@ -1753,7 +1759,8 @@
         function replaceSubscriptionRows(sRowsHtml) {
             var oBody = document.createElement("tbody");
             var aStates = getSubscriptionRowStates();
-            if (!oSubscriptionsTable || !oSubscriptionsTable.querySelector("tbody")) {
+            if (!oSubscriptionsTable || !oSubscriptionsTable.querySelector("tbody") || sRowsHtml == "") {
+                window.location.reload();
                 return;
             }
             oBody.innerHTML = sRowsHtml || "";
@@ -1800,7 +1807,8 @@
         function replaceTypeRows(sRowsHtml) {
             var oBody = document.createElement("tbody");
             var aStates = getTypeRowStates();
-            if (!oTypesTable || !oTypesTable.querySelector("tbody")) {
+            if (!oTypesTable || !oTypesTable.querySelector("tbody") || sRowsHtml == "") {
+                window.location.reload();
                 return;
             }
             oBody.innerHTML = sRowsHtml || "";
@@ -2055,7 +2063,7 @@
                     oDialogData.save.disabled = false;
                     return;
                 }
-                if (aData.rows_html) {
+                if (typeof aData.rows_html != "undefined") {
                     replaceDebtRows(aData.rows_html);
                 } else if (aData.debt_deleted) {
                     removeDebtRow(aData.debt_id);
@@ -2087,7 +2095,7 @@
                 oMovementDate = appendDebtDateField(oDialogData.form, "Movement Date", "movement_date", new Date().toISOString().slice(0, 10));
                 oAmount = appendDebtTextField(oDialogData.form, "Amount", "amount", "");
                 oAmount.required = true;
-                oCurrency = appendAdminCurrencyField(oDialogData.form, oDebtsTable, getDebtDisplayCurrency());
+                oCurrency = appendAdminCurrencyField(oDialogData.form, oDebtsData, getDebtDisplayCurrency());
                 oMovementNote = appendDebtTextField(oDialogData.form, "Movement Note", "movement_note", "");
             }
             oDialogData.form.addEventListener("submit", function (oEvent) {
@@ -2125,7 +2133,7 @@
             oDate = appendDebtDateField(oDialogData.form, "Date", "movement_date", blNewMovement ? new Date().toISOString().slice(0, 10) : (oMovement.getAttribute("data-movement-date") || ""));
             oAmount = appendDebtTextField(oDialogData.form, "Amount", "amount", blNewMovement ? "" : (oMovement.getAttribute("data-amount") || ""));
             oAmount.required = true;
-            oCurrency = appendAdminCurrencyField(oDialogData.form, oDebtsTable, blNewMovement ? getDebtMovementCurrency(oRow) : (oMovement.getAttribute("data-currency") || getDebtMovementCurrency(oRow)));
+            oCurrency = appendAdminCurrencyField(oDialogData.form, oDebtsData, blNewMovement ? getDebtMovementCurrency(oRow) : (oMovement.getAttribute("data-currency") || getDebtMovementCurrency(oRow)));
             oNote = appendDebtTextField(oDialogData.form, "Note", "note", blNewMovement ? "" : (oMovement.getAttribute("data-note") || ""));
             oDialogData.form.addEventListener("submit", function (oEvent) {
                 var oData = new FormData();
@@ -2191,11 +2199,11 @@
 
         function getTransactionFinanceTypes() {
             var aTypes = [];
-            if (!oTransactionsTable) {
+            if (!oTransactionsData) {
                 return aTypes;
             }
             try {
-                aTypes = JSON.parse(oTransactionsTable.getAttribute("data-finance-types") || "[]");
+                aTypes = JSON.parse(oTransactionsData.getAttribute("data-finance-types") || "[]");
             } catch (oException) {
                 logAdminException(oException);
                 aTypes = [];
@@ -2348,7 +2356,7 @@
             oWrapper.appendChild(oTitle);
             oType = appendTransactionTypeField(oWrapper, sSelectedValue);
             oAmount = appendTransactionTextField(oWrapper, "Amount", "additional_amount", "");
-            oCurrency = appendAdminCurrencyField(oWrapper, oTransactionsTable, sSelectedCurrency || "USD");
+            oCurrency = appendAdminCurrencyField(oWrapper, oTransactionsData, sSelectedCurrency || "USD");
             oDialogData.additionalContainer.appendChild(oWrapper);
             oDialogData.additionalTransactions.push({
                 type: oType,
@@ -2441,7 +2449,7 @@
                     oDialogData.save.disabled = false;
                     return;
                 }
-                if (aData.rows_html) {
+                if (typeof aData.rows_html != "undefined") {
                     replaceTransactionRows(aData.rows_html);
                 } else if (aData.transaction_deleted) {
                     removeTransactionRow(aData.transaction_id);
@@ -2470,7 +2478,7 @@
             oDate = appendTransactionDateField(oDialogData.form, oRow ? (oRow.getAttribute("data-transaction-date") || "") : new Date().toISOString().slice(0, 10));
             oType = appendTransactionTypeField(oDialogData.form, oRow ? (oRow.getAttribute("data-finance-type-id") || "") : "");
             oAmount = appendTransactionTextField(oDialogData.form, "Amount", "amount", oRow ? (oRow.getAttribute("data-amount") || "") : "");
-            oCurrency = appendAdminCurrencyField(oDialogData.form, oTransactionsTable, oRow ? (oRow.getAttribute("data-currency") || getTransactionDisplayCurrency()) : getTransactionDisplayCurrency());
+            oCurrency = appendAdminCurrencyField(oDialogData.form, oTransactionsData, oRow ? (oRow.getAttribute("data-currency") || getTransactionDisplayCurrency()) : getTransactionDisplayCurrency());
             oCounterparty = appendTransactionTextField(oDialogData.form, "Counterparty", "counterparty", oRow ? (oRow.getAttribute("data-counterparty") || "") : "");
             oNote = appendTransactionTextField(oDialogData.form, "Note", "note", oRow ? (oRow.getAttribute("data-note") || "") : "");
             appendTransactionAdditionalControls(oDialogData, oType, oCurrency);
@@ -2519,11 +2527,11 @@
 
         function getSubscriptionFinanceTypes() {
             var aTypes = [];
-            if (!oSubscriptionsTable) {
+            if (!oSubscriptionsData) {
                 return aTypes;
             }
             try {
-                aTypes = JSON.parse(oSubscriptionsTable.getAttribute("data-finance-types") || "[]");
+                aTypes = JSON.parse(oSubscriptionsData.getAttribute("data-finance-types") || "[]");
             } catch (oException) {
                 logAdminException(oException);
                 aTypes = [];
@@ -2532,12 +2540,12 @@
         }
 
         function setNewSubscriptionDefaults(sFinanceTypeId, sCurrency, sBillingPeriod) {
-            if (!oSubscriptionsTable) {
+            if (!oSubscriptionsData) {
                 return;
             }
-            oSubscriptionsTable.setAttribute("data-default-finance-type-id", sFinanceTypeId || "");
-            oSubscriptionsTable.setAttribute("data-default-currency", sCurrency || "USD");
-            oSubscriptionsTable.setAttribute("data-default-billing-period", sBillingPeriod || "monthly");
+            oSubscriptionsData.setAttribute("data-default-finance-type-id", sFinanceTypeId || "");
+            oSubscriptionsData.setAttribute("data-default-currency", sCurrency || "USD");
+            oSubscriptionsData.setAttribute("data-default-billing-period", sBillingPeriod || "monthly");
         }
 
         function getSubscriptionBillingPeriods() {
@@ -2722,7 +2730,7 @@
                     oDialogData.save.disabled = false;
                     return;
                 }
-                if (aData.rows_html) {
+                if (typeof aData.rows_html != "undefined") {
                     replaceSubscriptionRows(aData.rows_html);
                 } else if (aData.subscription_deleted) {
                     removeSubscriptionRow(aData.subscription_id);
@@ -2785,7 +2793,7 @@
                     showAdminMessageDialog(aData && aData.message ? aData.message : sDefaultMessage);
                     return;
                 }
-                if (aData.rows_html) {
+                if (typeof aData.rows_html != "undefined") {
                     replaceSubscriptionRows(aData.rows_html);
                 }
                 oCurrentRow = findAdminSubscriptionRowById(aData.subscription_id || "");
@@ -2810,9 +2818,9 @@
             var oCounterparty;
             var oNote;
             var oActive;
-            var sDefaultFinanceTypeId = blNewSubscription && oSubscriptionsTable ? (oSubscriptionsTable.getAttribute("data-default-finance-type-id") || "") : "";
-            var sDefaultCurrency = blNewSubscription && oSubscriptionsTable ? (oSubscriptionsTable.getAttribute("data-default-currency") || "USD") : "USD";
-            var sDefaultBillingPeriod = blNewSubscription && oSubscriptionsTable ? (oSubscriptionsTable.getAttribute("data-default-billing-period") || "monthly") : "monthly";
+            var sDefaultFinanceTypeId = blNewSubscription && oSubscriptionsData ? (oSubscriptionsData.getAttribute("data-default-finance-type-id") || "") : "";
+            var sDefaultCurrency = blNewSubscription && oSubscriptionsData ? (oSubscriptionsData.getAttribute("data-default-currency") || "USD") : "USD";
+            var sDefaultBillingPeriod = blNewSubscription && oSubscriptionsData ? (oSubscriptionsData.getAttribute("data-default-billing-period") || "monthly") : "monthly";
             if (!oDialogData) {
                 return;
             }
@@ -2822,7 +2830,7 @@
             oType = appendSubscriptionTypeField(oDialogData.form, oRow ? (oRow.getAttribute("data-finance-type-id") || "") : sDefaultFinanceTypeId);
             oAmount = appendSubscriptionTextField(oDialogData.form, "Amount", "amount", oRow ? (oRow.getAttribute("data-amount") || "") : "");
             oAmount.required = true;
-            oCurrency = appendAdminCurrencyField(oDialogData.form, oSubscriptionsTable, oRow ? (oRow.getAttribute("data-currency") || "USD") : sDefaultCurrency);
+            oCurrency = appendAdminCurrencyField(oDialogData.form, oSubscriptionsData, oRow ? (oRow.getAttribute("data-currency") || "USD") : sDefaultCurrency);
             oPeriod = appendSubscriptionPeriodField(oDialogData.form, oRow ? (oRow.getAttribute("data-billing-period") || "") : sDefaultBillingPeriod);
             oNextDueAt = appendSubscriptionDateTimeField(oDialogData.form, "Next Due", "next_due_at", oRow ? (oRow.getAttribute("data-next-due-at") || "") : formatAdminIsoDateTime(new Date()));
             oCounterparty = appendSubscriptionTextField(oDialogData.form, "Counterparty", "counterparty", oRow ? (oRow.getAttribute("data-counterparty") || "") : "");
@@ -2874,11 +2882,11 @@
 
         function getTypeMemberTypes() {
             var aTypes = [];
-            if (!oTypesTable) {
+            if (!oTypesData) {
                 return aTypes;
             }
             try {
-                aTypes = JSON.parse(oTypesTable.getAttribute("data-member-types") || "[]");
+                aTypes = JSON.parse(oTypesData.getAttribute("data-member-types") || "[]");
             } catch (oException) {
                 logAdminException(oException);
                 aTypes = [];
@@ -3079,7 +3087,7 @@
                     oDialogData.save.disabled = false;
                     return;
                 }
-                if (aData.rows_html) {
+                if (typeof aData.rows_html != "undefined") {
                     replaceTypeRows(aData.rows_html);
                 } else if (aData.type_deleted) {
                     removeTypeRow(aData.type_id);

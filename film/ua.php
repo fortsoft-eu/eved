@@ -57,7 +57,7 @@ renderMenu();
 <?php
 
 if (!$aRows) {
-    echo "  <p>No records found in <code>fs_film_ua</code>.</p>\n";
+    echo "  <p>No records found.</p>\n";
 } else {
 
 ?>

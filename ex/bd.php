@@ -1099,7 +1099,7 @@ foreach ($aContactTypes as $aContactType) {
 }
 echo "  </select>\n";
 if (!$aBirthdayRows) {
-    echo "  <p>No visible records found.</p>\n";
+    echo "  <p>No records found.</p>\n";
 } else {
 
 ?>

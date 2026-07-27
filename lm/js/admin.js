@@ -1403,7 +1403,11 @@ function replaceIssueRows(aData) {
     var aNewRows;
     var sIssueId;
     var i;
-    if (!oBody || !aData.issues_html) {
+    if (!aData || typeof aData.issues_html == "undefined") {
+        return;
+    }
+    if (!oBody || aData.issues_html == "") {
+        window.location.reload();
         return;
     }
     aOldRows = oBody.querySelectorAll("tr[data-issue-id]");

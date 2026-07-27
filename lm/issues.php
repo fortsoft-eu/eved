@@ -81,6 +81,13 @@ renderMenu();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="button" class="button-link js-add-issue">New</button>
   </p>
+<?php
+
+if ($sIssuesHtml == "") {
+    echo "  <p>No records found.</p>\n";
+} else {
+
+?>
   <table id="issues-table" class="table-filter-target issues-table<?php echo getCondensedTableClass(); ?>">
     <colgroup><col class="issue-col-type"><col class="issue-col-status"><col class="issue-col-priority"><col class="issue-col-title"><col class="issue-col-date"><col class="issue-col-date"><col class="issue-col-actions"></colgroup>
     <thead>
@@ -97,11 +104,16 @@ renderMenu();
     <tbody>
 <?php
 
-echo $sIssuesHtml;
+    echo $sIssuesHtml;
 
 ?>
     </tbody>
   </table>
+<?php
+
+}
+
+?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
   <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>

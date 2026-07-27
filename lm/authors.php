@@ -57,6 +57,13 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
   </p>
+<?php
+
+if (!$aAuthors) {
+    echo "  <p>No records found.</p>\n";
+} else {
+
+?>
   <table id="authors-table" class="table-filter-target authors-table<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
@@ -67,22 +74,21 @@ renderMenu();
     <tbody>
 <?php
 
-if ($aAuthors) {
     foreach ($aAuthors as $aAuthor) {
         echo "      <tr>\n",
             "        <td>" . html($aAuthor["name"]) . "</td>\n",
             "        <td class=\"pages\">" . ($aAuthor["pages"] ? html(implode(", ", $aAuthor["pages"])) : "&mdash;") . "</td>\n",
             "      </tr>\n";
     }
-} else {
-    echo "      <tr>\n",
-        "        <td colspan=\"2\">No authors found.</td>\n",
-        "      </tr>\n";
-}
 
 ?>
     </tbody>
   </table>
+<?php
+
+}
+
+?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>

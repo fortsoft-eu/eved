@@ -134,6 +134,14 @@ echo $sToolbarHtml;
 
 ?>
   </p>
+  <div id="types-data" data-member-types="<?php echo htmlspecialchars(json_encode($aMemberTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" hidden></div>
+<?php
+
+if (!$aRows) {
+    echo "  <p>No records found.</p>\n";
+} else {
+
+?>
   <table id="types-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-member-types="<?php echo htmlspecialchars(json_encode($aMemberTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
     <thead>
       <tr>
@@ -142,17 +150,22 @@ echo $sToolbarHtml;
         <th>Group Members</th>
 <?php
 
-if ($blCanEdit) {
-    echo "        <th class=\"admin-action-column\"></th>\n";
-}
-echo "      </tr>\n",
-    "    </thead>\n",
-    "    <tbody>\n",
-    renderFinanceTypeAdminRows($aRows, $blCanEdit);
+    if ($blCanEdit) {
+        echo "        <th class=\"admin-action-column\"></th>\n";
+    }
+    echo "      </tr>\n",
+        "    </thead>\n",
+        "    <tbody>\n",
+        renderFinanceTypeAdminRows($aRows, $blCanEdit);
 
 ?>
     </tbody>
   </table>
+<?php
+
+}
+
+?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
   <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>

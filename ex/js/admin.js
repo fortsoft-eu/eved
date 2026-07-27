@@ -5656,22 +5656,6 @@ document.addEventListener("DOMContentLoaded", function () {
         return oElement && oElement.closest ? oElement.closest("tr[data-phone-book-id]") : null;
     }
 
-    function addEmptyPhoneBookRow() {
-        var oBody = oTable.tBodies && oTable.tBodies.length ? oTable.tBodies[0] : null;
-        var oRow;
-        var oCell;
-        if (!oBody || oBody.querySelector("tr[data-phone-book-id], .phone-book-empty-row")) {
-            return;
-        }
-        oRow = document.createElement("tr");
-        oCell = document.createElement("td");
-        oRow.className = "phone-book-empty-row";
-        oCell.colSpan = 2;
-        oCell.appendChild(document.createTextNode("No records found."));
-        oRow.appendChild(oCell);
-        oBody.appendChild(oRow);
-    }
-
     function closePhoneBookRemoveDialog(blSaved) {
         var oSave = oDeleteForm ? oDeleteForm.querySelector("button[type=\"submit\"]") : null;
         if (oCurrentRow && oCurrentRow.parentNode) {
@@ -5732,7 +5716,10 @@ document.addEventListener("DOMContentLoaded", function () {
             closePhoneBookRemoveDialog(true);
             if (oRemovedRow && oRemovedRow.parentNode) {
                 oRemovedRow.parentNode.removeChild(oRemovedRow);
-                addEmptyPhoneBookRow();
+                if (!oTable.querySelector("tbody tr[data-phone-book-id]")) {
+                    window.location.reload();
+                    return;
+                }
                 refreshAdminTableFilter();
             }
         }).catch(function (oException) {

@@ -180,6 +180,13 @@ foreach ($aTables as $sTableName => $aColumns) {
       </div>
     </div>
   </div>
+<?php
+
+if (!$aRelations) {
+    echo "  <p>No records found.</p>\n";
+} else {
+
+?>
   <table class="schema-relations">
     <thead>
       <tr>
@@ -191,61 +198,62 @@ foreach ($aTables as $sTableName => $aColumns) {
     <tbody>
 <?php
 
-foreach ($aRelations as $aRelation) {
-    $sRelationKey = $aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"] . ">" . $aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"];
-    $sRouteAttributes = "";
-    if (isset($aSchemaRelationRoutes[$sRelationKey])) {
-        $sRouteAttributes = " data-source-side=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source"]) . "\""
-            . " data-target-side=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target"]) . "\"";
-        if (isset($aSchemaRelationRoutes[$sRelationKey]["curve"])) {
-            $sRouteAttributes .= " data-curve=\"" . html($aSchemaRelationRoutes[$sRelationKey]["curve"]) . "\"";
+    foreach ($aRelations as $aRelation) {
+        $sRelationKey = $aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"] . ">" . $aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"];
+        $sRouteAttributes = "";
+        if (isset($aSchemaRelationRoutes[$sRelationKey])) {
+            $sRouteAttributes = " data-source-side=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source"]) . "\""
+                . " data-target-side=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target"]) . "\"";
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["curve"])) {
+                $sRouteAttributes .= " data-curve=\"" . html($aSchemaRelationRoutes[$sRelationKey]["curve"]) . "\"";
+            }
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["source-x"])) {
+                $sRouteAttributes .= " data-source-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source-x"]) . "\"";
+            }
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["source-y"])) {
+                $sRouteAttributes .= " data-source-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source-y"]) . "\"";
+            }
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["target-x"])) {
+                $sRouteAttributes .= " data-target-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target-x"]) . "\"";
+            }
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["target-y"])) {
+                $sRouteAttributes .= " data-target-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target-y"]) . "\"";
+            }
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["via-x"])) {
+                $sRouteAttributes .= " data-via-x=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-x"]) . "\"";
+            }
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"])) {
+                $sRouteAttributes .= " data-via-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"]) . "\"";
+            }
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["via-y"])) {
+                $sRouteAttributes .= " data-via-y=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-y"]) . "\"";
+            }
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"])) {
+                $sRouteAttributes .= " data-via-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"]) . "\"";
+            }
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"])) {
+                $sRouteAttributes .= " data-via-table-bottom-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"]) . "\"";
+            }
         }
-        if (isset($aSchemaRelationRoutes[$sRelationKey]["source-x"])) {
-            $sRouteAttributes .= " data-source-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source-x"]) . "\"";
-        }
-        if (isset($aSchemaRelationRoutes[$sRelationKey]["source-y"])) {
-            $sRouteAttributes .= " data-source-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source-y"]) . "\"";
-        }
-        if (isset($aSchemaRelationRoutes[$sRelationKey]["target-x"])) {
-            $sRouteAttributes .= " data-target-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target-x"]) . "\"";
-        }
-        if (isset($aSchemaRelationRoutes[$sRelationKey]["target-y"])) {
-            $sRouteAttributes .= " data-target-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target-y"]) . "\"";
-        }
-        if (isset($aSchemaRelationRoutes[$sRelationKey]["via-x"])) {
-            $sRouteAttributes .= " data-via-x=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-x"]) . "\"";
-        }
-        if (isset($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"])) {
-            $sRouteAttributes .= " data-via-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"]) . "\"";
-        }
-        if (isset($aSchemaRelationRoutes[$sRelationKey]["via-y"])) {
-            $sRouteAttributes .= " data-via-y=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-y"]) . "\"";
-        }
-        if (isset($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"])) {
-            $sRouteAttributes .= " data-via-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"]) . "\"";
-        }
-        if (isset($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"])) {
-            $sRouteAttributes .= " data-via-table-bottom-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"]) . "\"";
-        }
+        echo "      <tr data-source-table=\"" . html($aRelation["TABLE_NAME"]),
+            "\" data-source-column=\"" . html($aRelation["COLUMN_NAME"]),
+            "\" data-target-table=\"" . html($aRelation["REFERENCED_TABLE_NAME"]),
+            "\" data-target-column=\"" . html($aRelation["REFERENCED_COLUMN_NAME"]) . "\"",
+            $sRouteAttributes . ">\n",
+            "        <td>" . html($aRelation["CONSTRAINT_NAME"]) . "</td>\n",
+            "        <td>" . html($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"]) . "</td>\n",
+            "        <td>" . html($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"]) . "</td>\n",
+            "      </tr>\n";
     }
-    echo "      <tr data-source-table=\"" . html($aRelation["TABLE_NAME"]),
-        "\" data-source-column=\"" . html($aRelation["COLUMN_NAME"]),
-        "\" data-target-table=\"" . html($aRelation["REFERENCED_TABLE_NAME"]),
-        "\" data-target-column=\"" . html($aRelation["REFERENCED_COLUMN_NAME"]) . "\"",
-        $sRouteAttributes . ">\n",
-        "        <td>" . html($aRelation["CONSTRAINT_NAME"]) . "</td>\n",
-        "        <td>" . html($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"]) . "</td>\n",
-        "        <td>" . html($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"]) . "</td>\n",
-        "      </tr>\n";
-}
-
-if (!$aRelations) {
-    echo "      <tr><td colspan=\"3\">No relations found.</td></tr>\n";
-}
 
 ?>
     </tbody>
   </table>
+<?php
+
+}
+
+?>
   <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>

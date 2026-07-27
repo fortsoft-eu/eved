@@ -243,6 +243,14 @@ echo $sToolbarHtml;
 
 ?>
   </p>
+  <div id="subscriptions-data" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-default-finance-type-id="<?php echo html((int)$aNewSubscriptionDefaults["finance_type_id"] > 0 ? $aNewSubscriptionDefaults["finance_type_id"] : ""); ?>" data-default-currency="<?php echo html($aNewSubscriptionDefaults["currency"]); ?>" data-default-billing-period="<?php echo html($aNewSubscriptionDefaults["billing_period"]); ?>" hidden></div>
+<?php
+
+if (!$aRows) {
+    echo "  <p>No records found.</p>\n";
+} else {
+
+?>
   <table id="subscriptions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-default-finance-type-id="<?php echo html((int)$aNewSubscriptionDefaults["finance_type_id"] > 0 ? $aNewSubscriptionDefaults["finance_type_id"] : ""); ?>" data-default-currency="<?php echo html($aNewSubscriptionDefaults["currency"]); ?>" data-default-billing-period="<?php echo html($aNewSubscriptionDefaults["billing_period"]); ?>">
     <thead>
       <tr>
@@ -257,16 +265,17 @@ echo $sToolbarHtml;
         <th>Status</th>
 <?php
 
-if ($blCanEdit) {
-    echo "        <th class=\"admin-action-column\"></th>\n";
+    if ($blCanEdit) {
+        echo "        <th class=\"admin-action-column\"></th>\n";
+    }
+    echo "      </tr>\n",
+        "    </thead>\n",
+        "    <tbody>\n",
+        renderSubscriptionAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency),
+        "    </tbody>\n",
+        "  </table>\n";
 }
-
-echo "      </tr>\n",
-    "    </thead>\n",
-    "    <tbody>\n",
-    renderSubscriptionAdminRows($aRows, $blCanEdit, $blUseEuropeanAmountFormat, $sDisplayCurrency),
-    "    </tbody>\n",
-    "  </table>\n",
+echo
     renderSettingsModal($aSettings);
 
 ?>

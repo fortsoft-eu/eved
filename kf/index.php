@@ -168,57 +168,57 @@ renderMenu();
   </p>
 <?php
 
-echo "  <div id=\"monthly-overview-tables\" data-overview-columns=\"" . (int)$iOverviewColumnsPerTable . "\">\n";
-
-foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColumnGroup) {
-    echo "  <table id=\"monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target monthly-overview-table" . getCondensedTableClass() . "\">\n",
-        "    <thead>\n",
-        "      <tr>\n",
-        "        <th>Month</th>\n";
-    foreach ($aOverviewColumnGroup as $aOverviewColumn) {
-        echo "        <th class=\"numeric\">" . html($aOverviewColumn["title"]) . "</th>\n";
-    }
-    echo "      </tr>\n",
-        "    </thead>\n",
-        "    <tbody>\n";
-    foreach ($aMonths as $sMonth) {
-        $fIncome = isset($aSummaryTotals[$sMonth]["income"]) ? $aSummaryTotals[$sMonth]["income"] : 0;
-        $fExpense = isset($aSummaryTotals[$sMonth]["expense"]) ? $aSummaryTotals[$sMonth]["expense"] : 0;
-        $fNet = $fIncome + $fExpense;
-        echo "      <tr data-month=\"" . html($sMonth) . "\">\n",
-            "        <td class=\"nowrap\">" . html(monthLabel($sMonth)) . "</td>\n";
+if (!$aMonths) {
+    echo "  <p>No records found.</p>\n";
+} else {
+    echo "  <div id=\"monthly-overview-tables\" data-overview-columns=\"" . (int)$iOverviewColumnsPerTable . "\">\n";
+    foreach ($aOverviewColumnGroups as $iOverviewColumnGroupIndex => $aOverviewColumnGroup) {
+        echo "  <table id=\"monthly-overview-table-" . ($iOverviewColumnGroupIndex + 1) . "\" class=\"table-filter-target monthly-overview-table" . getCondensedTableClass() . "\">\n",
+            "    <thead>\n",
+            "      <tr>\n",
+            "        <th>Month</th>\n";
         foreach ($aOverviewColumnGroup as $aOverviewColumn) {
-            $blConversionFailed = false;
-            if ($aOverviewColumn["type"] == "type") {
-                $fAmount = isset($aTypeTotals[$sMonth][(int)$aOverviewColumn["id"]]) ? $aTypeTotals[$sMonth][(int)$aOverviewColumn["id"]] : 0;
-                $blConversionFailed = !empty($aTypeConversionFailures[$sMonth][(int)$aOverviewColumn["id"]]);
-            } elseif ($aOverviewColumn["type"] == "group") {
-                $fAmount = isset($aGroupTotals[$sMonth][(int)$aOverviewColumn["id"]]) ? $aGroupTotals[$sMonth][(int)$aOverviewColumn["id"]] : 0;
-                $blConversionFailed = !empty($aGroupConversionFailures[$sMonth][(int)$aOverviewColumn["id"]]);
-            } elseif ($aOverviewColumn["key"] == "income") {
-                $fAmount = $fIncome;
-                $blConversionFailed = !empty($aSummaryConversionFailures[$sMonth]["income"]);
-            } elseif ($aOverviewColumn["key"] == "expense") {
-                $fAmount = $fExpense;
-                $blConversionFailed = !empty($aSummaryConversionFailures[$sMonth]["expense"]);
-            } else {
-                $fAmount = $fNet;
-                $blConversionFailed = !empty($aSummaryConversionFailures[$sMonth]["income"]) || !empty($aSummaryConversionFailures[$sMonth]["expense"]);
-            }
-            $sAmountClass = $fAmount < 0 ? "amount-negative" : ($fAmount > 0 ? "amount-positive" : "amount-zero");
-            $sFormattedAmount = formatAmount($fAmount, $blUseEuropeanAmountFormat) . ($sDisplayCurrency != "" && !$blConversionFailed ? " " . $sDisplayCurrency : "");
-            echo "        <td class=\"numeric " . $sAmountClass . "\">" . html($sFormattedAmount) . "</td>\n";
+            echo "        <th class=\"numeric\">" . html($aOverviewColumn["title"]) . "</th>\n";
         }
-        echo "      </tr>\n";
+        echo "      </tr>\n",
+            "    </thead>\n",
+            "    <tbody>\n";
+        foreach ($aMonths as $sMonth) {
+            $fIncome = isset($aSummaryTotals[$sMonth]["income"]) ? $aSummaryTotals[$sMonth]["income"] : 0;
+            $fExpense = isset($aSummaryTotals[$sMonth]["expense"]) ? $aSummaryTotals[$sMonth]["expense"] : 0;
+            $fNet = $fIncome + $fExpense;
+            echo "      <tr data-month=\"" . html($sMonth) . "\">\n",
+                "        <td class=\"nowrap\">" . html(monthLabel($sMonth)) . "</td>\n";
+            foreach ($aOverviewColumnGroup as $aOverviewColumn) {
+                $blConversionFailed = false;
+                if ($aOverviewColumn["type"] == "type") {
+                    $fAmount = isset($aTypeTotals[$sMonth][(int)$aOverviewColumn["id"]]) ? $aTypeTotals[$sMonth][(int)$aOverviewColumn["id"]] : 0;
+                    $blConversionFailed = !empty($aTypeConversionFailures[$sMonth][(int)$aOverviewColumn["id"]]);
+                } elseif ($aOverviewColumn["type"] == "group") {
+                    $fAmount = isset($aGroupTotals[$sMonth][(int)$aOverviewColumn["id"]]) ? $aGroupTotals[$sMonth][(int)$aOverviewColumn["id"]] : 0;
+                    $blConversionFailed = !empty($aGroupConversionFailures[$sMonth][(int)$aOverviewColumn["id"]]);
+                } elseif ($aOverviewColumn["key"] == "income") {
+                    $fAmount = $fIncome;
+                    $blConversionFailed = !empty($aSummaryConversionFailures[$sMonth]["income"]);
+                } elseif ($aOverviewColumn["key"] == "expense") {
+                    $fAmount = $fExpense;
+                    $blConversionFailed = !empty($aSummaryConversionFailures[$sMonth]["expense"]);
+                } else {
+                    $fAmount = $fNet;
+                    $blConversionFailed = !empty($aSummaryConversionFailures[$sMonth]["income"]) || !empty($aSummaryConversionFailures[$sMonth]["expense"]);
+                }
+                $sAmountClass = $fAmount < 0 ? "amount-negative" : ($fAmount > 0 ? "amount-positive" : "amount-zero");
+                $sFormattedAmount = formatAmount($fAmount, $blUseEuropeanAmountFormat) . ($sDisplayCurrency != "" && !$blConversionFailed ? " " . $sDisplayCurrency : "");
+                echo "        <td class=\"numeric " . $sAmountClass . "\">" . html($sFormattedAmount) . "</td>\n";
+            }
+            echo "      </tr>\n";
+        }
+        echo "    </tbody>\n",
+            "  </table>\n";
     }
-    if (!$aMonths) {
-        echo "      <tr><td colspan=\"" . (count($aOverviewColumnGroup) + 1) . "\">No transactions found.</td></tr>\n";
-    }
-    echo "    </tbody>\n",
-        "  </table>\n";
+    echo "  </div>\n";
 }
-
-echo "  </div>\n",
+echo
     renderSettingsModal($aSettings);
 
 ?>

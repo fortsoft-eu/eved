@@ -376,9 +376,10 @@ echo renderSettingsScopeNote();
   </div>
 <?php
 
-if (count($aAddressRows) > 0) {
+if (!$aAddressRows) {
+    echo "  <p>No records found.</p>\n";
+} else {
     echo renderPageThrobber();
-}
 
 ?>
   <table id="addresses-table" class="contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
@@ -405,15 +406,13 @@ foreach ($aAddressRows as $aAddressRow) {
     }
 }
 
-if (!$aAddressRows) {
-    echo "      <tr>\n",
-        "        <td colspan=\"2\">No visible records found.</td>\n",
-        "      </tr>\n";
-}
-
 ?>
     </tbody>
   </table>
+<?php
+}
+
+?>
   <div class="confirm-dialog" id="shared-address-edit-dialog" hidden>
     <form class="confirm-dialog-box subject-edit-dialog subject-address-edit-dialog" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="address_match" value="">

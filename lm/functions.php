@@ -364,12 +364,7 @@ function menuAdminRenderSectionGap() {
 function menuAdminRenderTables($oPdo) {
     $aRows = menuAdminFetchRows($oPdo);
     if (!$aRows) {
-        return menuAdminRenderTableStart()
-            . "        <tbody>\n"
-            . menuAdminRenderSectionHeader("/")
-            . "          <tr><td colspan=\"10\" class=\"empty-table-message\">No menu items found.</td></tr>\n"
-            . "        </tbody>\n"
-            . "      </table>\n";
+        return "  <p>No records found.</p>\n";
     }
     $sHtml = menuAdminRenderTableStart()
         . "        <tbody>\n";
@@ -568,7 +563,7 @@ function issueTrackerRenderRow($aRow) {
 function issueTrackerRenderRows($oPdo) {
     $aRows = issueTrackerFetchRows($oPdo);
     if (!$aRows) {
-        return "      <tr><td colspan=\"7\" class=\"empty-table-message\">No issues found.</td></tr>\n";
+        return "";
     }
     $sHtml = "";
     foreach ($aRows as $aRow) {

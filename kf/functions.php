@@ -640,8 +640,6 @@ function renderDebtAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmount
     if ($aRows) {
         $sFormattedTotal = formatAmount($fTotal, $blUseEuropeanAmountFormat) . ($blTotalConversionFailed ? "" : " " . $sTotalCurrency);
         $sHtml .= "      <tr><td class=\"debt-total\">Total</td><td class=\"numeric debt-total\">" . html($sFormattedTotal) . renderCopyAction($sFormattedTotal) . "</td><td colspan=\"" . ($blShowActions ? 6 : 5) . "\"></td></tr>\n";
-    } else {
-        $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 8 : 7) . "\">No debts found.</td></tr>\n";
     }
     return $sHtml;
 }
@@ -683,9 +681,6 @@ function renderTransactionAdminRows($aRows, $blShowActions = true, $blUseEuropea
     $sHtml = "";
     foreach ($aRows as $aRow) {
         $sHtml .= renderTransactionAdminRow($aRow, $blShowActions, $blUseEuropeanAmountFormat, $sDisplayCurrency);
-    }
-    if (!$aRows) {
-        $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 6 : 5) . "\">No transactions found.</td></tr>\n";
     }
     return $sHtml;
 }
@@ -964,9 +959,6 @@ function renderSubscriptionAdminRows($aRows, $blShowActions = true, $blUseEurope
     foreach ($aRows as $aRow) {
         $sHtml .= renderSubscriptionAdminRow($aRow, $blShowActions, $blUseEuropeanAmountFormat, $sDisplayCurrency);
     }
-    if (!$aRows) {
-        $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 10 : 9) . "\">No subscriptions found.</td></tr>\n";
-    }
     return $sHtml;
 }
 
@@ -1007,9 +999,6 @@ function renderExchangeRateRows($aRows) {
             . "        <td class=\"numeric\">" . html(formatExchangeRateValue($aRow["rate"]) . " CZK") . "</td>\n"
             . "        <td class=\"nowrap\">" . $sFetchedAtDisplay . "</td>\n"
             . "      </tr>\n";
-    }
-    if (!$aRows) {
-        $sHtml .= "      <tr><td colspan=\"8\">No exchange rates found.</td></tr>\n";
     }
     return $sHtml;
 }
@@ -1279,9 +1268,6 @@ function renderFinanceTypeAdminRows($aRows, $blShowActions = true) {
     $sHtml = "";
     foreach ($aRows as $aRow) {
         $sHtml .= renderFinanceTypeAdminRow($aRow, $blShowActions);
-    }
-    if (!$aRows) {
-        $sHtml .= "      <tr><td colspan=\"" . ($blShowActions ? 4 : 3) . "\">No types found.</td></tr>\n";
     }
     return $sHtml;
 }
