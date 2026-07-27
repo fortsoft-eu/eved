@@ -80,9 +80,9 @@ try {
 $aSchemaRelationRoutes = array(
     "kf_fin_groups.group_type_id>kf_fin_types.id" => array("source" => "right", "target" => "left", "curve" => "36", "target-y" => "-10"),
     "kf_fin_groups.member_type_id>kf_fin_types.id" => array("source" => "right", "target" => "left", "curve" => "54", "target-y" => "10"),
-    "kf_fin_transactions.finance_type_id>kf_fin_types.id" => array("source" => "left", "target" => "right", "curve" => "72", "target-y" => "-10"),
+    "kf_fin_transactions.finance_type_id>kf_fin_types.id" => array("source" => "left", "target" => "right", "curve" => "24", "target-y" => "-10", "via-x-offset" => "54"),
     "kf_debt_movements.debt_id>kf_debts.id" => array("source" => "left", "target" => "right", "curve" => "52"),
-    "kf_subscriptions.finance_type_id>kf_fin_types.id" => array("source" => "left", "target" => "right", "curve" => "72", "target-y" => "10")
+    "kf_subscriptions.finance_type_id>kf_fin_types.id" => array("source" => "left", "target" => "right", "curve" => "24", "target-y" => "10", "via-x-offset" => "34")
 );
 
 

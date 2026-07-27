@@ -1047,8 +1047,10 @@ body.phpinfo-page .admin-controls {
     white-space: normal;
 }
 
-#phone-book-table thead th, #contacts-table thead th, #addresses-table thead th {
-    width: 50%;
+@media (min-width: 601px) {
+    #phone-book-table thead th, #contacts-table thead th, #addresses-table thead th {
+        width: 50%;
+    }
 }
 
 #contacts-table thead th, #birthdays-table thead th, #interactions-table thead th {
