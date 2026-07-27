@@ -1015,7 +1015,8 @@ foreach ($aRows as $aRow) {
 usort($aBirthdayRows, "bdCompareRows");
 
 
-$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aBirthdayRows) > 0);
+$blRenderPageThrobber = count($aBirthdayRows) > $iRenderThrobberRowLimit;
+$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes($blRenderPageThrobber);
 $iTime = sendPageHeaders();
 
 ?>
@@ -1094,7 +1095,9 @@ echo "  </select>\n";
 if (!$aBirthdayRows) {
     echo "  <p>No records found.</p>\n";
 } else {
-    echo renderPageThrobber();
+    if ($blRenderPageThrobber) {
+        echo renderPageThrobber();
+    }
 
 ?>
   <table id="interactions-table" class="contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">

@@ -93,6 +93,7 @@ $sContactWebEmoji               = "&#127760;";
 $sContactTelegramEmoji          = "&#9992;&#65039;";
 $sContactMessageEmoji           = "&#128172;";
 $sContactYouTubeEmoji           = "&#9654;&#65039;";
+$iRenderThrobberRowLimit        = 300;
 $iCalendarFirstDay              = 1;
 $iBirthdayDisplayMinDays        = -2;
 $iBirthdayDisplayMaxDays        = 17;

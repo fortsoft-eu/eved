@@ -314,7 +314,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
 
 $aAddressRows = addressesFetchRows($oPdo, $aAddressSettings);
-$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aAddressRows) > 0);
+$iRenderThrobberRowCount = 0;
+foreach ($aAddressRows as $aAddressRow) {
+    $iRenderThrobberRowCount += count($aAddressRow["subjects"]);
+}
+$blRenderPageThrobber = $iRenderThrobberRowCount > $iRenderThrobberRowLimit;
+$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes($blRenderPageThrobber);
 $iTime = sendPageHeaders();
 
 ?>
@@ -379,7 +384,9 @@ echo renderSettingsScopeNote();
 if (!$aAddressRows) {
     echo "  <p>No records found.</p>\n";
 } else {
-    echo renderPageThrobber();
+    if ($blRenderPageThrobber) {
+        echo renderPageThrobber();
+    }
 
 ?>
   <table id="addresses-table" class="contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">

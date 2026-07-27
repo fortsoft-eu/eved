@@ -360,7 +360,12 @@ try {
 }
 
 
-$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aContactRows) > 0);
+$iRenderThrobberRowCount = 0;
+foreach ($aContactRows as $aContactRow) {
+    $iRenderThrobberRowCount += max(1, count($aContactRow["subjects"]));
+}
+$blRenderPageThrobber = $iRenderThrobberRowCount > $iRenderThrobberRowLimit;
+$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes($blRenderPageThrobber);
 $iTime = sendPageHeaders();
 
 ?>
@@ -421,7 +426,9 @@ echo "  </select>\n";
 if (!$aContactRows) {
     echo "  <p>No records found.</p>\n";
 } else {
-    echo renderPageThrobber();
+    if ($blRenderPageThrobber) {
+        echo renderPageThrobber();
+    }
 
 ?>
   <table id="contacts-table" class="contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">

@@ -559,7 +559,8 @@ $aDummySubjectPortals = array(
     107 => array("subject_id" => 107, "subject_name" => "Foreign Archive Office", "subject_type" => "organization", "portal_user" => array("has_user" => 0, "user_name" => "", "is_active" => 1, "direct_permission_keys" => array(), "effective_permission_keys" => array()), "portal_permissions" => $aDummyPortalPermissions)
 );
 
-$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aRows) > 0);
+$blRenderPageThrobber = count($aRows) > $iRenderThrobberRowLimit;
+$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes($blRenderPageThrobber);
 $iTime = sendPageHeaders();
 
 ?>
@@ -699,7 +700,9 @@ echo "  </select>\n";
 if (!$aRows) {
     echo "  <p>" . ($blFullListComplexFilterActive ? "<strong>Complex Filter: </strong>" : "") . "No records found.</p>\n";
 } else {
-    echo renderPageThrobber();
+    if ($blRenderPageThrobber) {
+        echo renderPageThrobber();
+    }
 
 ?>
   <table id="subjects-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">

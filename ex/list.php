@@ -1063,7 +1063,8 @@ foreach (getAddressTypes() as $sAddressType) {
 }
 
 
-$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aRows) > 0);
+$blRenderPageThrobber = count($aRows) > $iRenderThrobberRowLimit;
+$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes($blRenderPageThrobber);
 $iTime = sendPageHeaders();
 
 ?>
@@ -1213,7 +1214,9 @@ echo "  </select>\n";
 if (!$aRows) {
     echo "  <p>" . ($blFullListComplexFilterActive ? "<strong>Complex Filter: </strong>" : "") . "No records found.</p>\n";
 } else {
-    echo renderPageThrobber();
+    if ($blRenderPageThrobber) {
+        echo renderPageThrobber();
+    }
 
 ?>
   <table id="subjects-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">

@@ -46,7 +46,8 @@ try {
 }
 
 
-$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes(count($aPhoneBookRows) > 0);
+$blRenderPageThrobber = count($aPhoneBookRows) > $iRenderThrobberRowLimit;
+$sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes($blRenderPageThrobber);
 $iTime = sendPageHeaders();
 
 ?>
@@ -83,7 +84,9 @@ renderMenu();
 if (!$aPhoneBookRows) {
     echo "  <p>No records found.</p>\n";
 } else {
-    echo renderPageThrobber();
+    if ($blRenderPageThrobber) {
+        echo renderPageThrobber();
+    }
 
 ?>
   <table id="phone-book-table" class="phone-book-table table-filter-target<?php echo getCondensedTableClass(); ?>">
