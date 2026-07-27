@@ -935,6 +935,13 @@
                 window.scrollTo(iScrollLeft, 0);
             }, 0);
         });
+        document.addEventListener("keydown", function (oEvent) {
+            if ((oEvent.key != "F8" && oEvent.keyCode != 119) || oEvent.altKey || oEvent.ctrlKey || oEvent.metaKey || oEvent.shiftKey) {
+                return;
+            }
+            oEvent.preventDefault();
+            oButton.click();
+        });
     }
 
     function setupTableFilter() {

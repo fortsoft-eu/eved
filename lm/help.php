@@ -55,7 +55,7 @@ renderMenu();
     </dd>
     <dt>Quick Filter</dt>
     <dd>
-      <p>Dashboard table pages use the quick filter. It narrows already rendered rows in the browser, stores the value per page and filter id in the session, and supports AND and OR operators.</p>
+      <p>Dashboard table pages use the quick filter. It narrows already rendered rows in the browser, stores the value per page and filter id in the session, supports AND and OR operators, and uses F8 as the shortcut for focusing the filter input.</p>
     </dd>
   </dl>
   <h3>Menu Pages</h3>
@@ -198,7 +198,7 @@ renderMenu();
     </dd>
     <dt>Rychlý filtr</dt>
     <dd>
-      <p>Tabulkové stránky Dashboardu používají rychlý filtr. V prohlížeči zužuje už vykreslené řádky, hodnotu ukládá do session podle stránky a id filtru a podporuje operátory AND a OR.</p>
+      <p>Tabulkové stránky Dashboardu používají rychlý filtr. V prohlížeči zužuje už vykreslené řádky, hodnotu ukládá do session podle stránky a id filtru, podporuje operátory AND a OR a používá F8 jako zkratku pro zaostření vstupu filtru.</p>
     </dd>
   </dl>
   <h3>Stránky v menu</h3>

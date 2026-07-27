@@ -55,10 +55,11 @@ renderMenu();
     <dt>Quick Filter</dt>
     <dd>
       <p>The quick filter searches the rendered text already present in the current table. It is a client-side narrowing tool and does not change the SQL query or stored finance data.</p>
-      <p>The AND and OR buttons insert logical operators into the filter expression. Reset clears the stored quick filter for the current page. The floating Filter button focuses the filter input without changing the table contents.</p>
+      <p>The AND and OR buttons insert logical operators into the filter expression. Reset clears the stored quick filter for the current page. The floating Filter button and F8 focus the filter input without changing the table contents.</p>
       <ul>
         <li><strong>Scope:</strong> Visible rendered table text only.</li>
         <li><strong>Operators:</strong> AND and OR are client-side filter operators.</li>
+        <li><strong>Focus:</strong> The floating Filter button and F8 focus the filter input.</li>
         <li><strong>Reset:</strong> Clears the saved quick filter value for the page.</li>
       </ul>
     </dd>
@@ -211,10 +212,11 @@ renderMenu();
     <dt>Rychlý filtr</dt>
     <dd>
       <p>Rychlý filtr hledá ve vykresleném textu, který už je v aktuální tabulce. Je to klientské zúžení výpisu a nemění SQL dotaz ani uložená finanční data.</p>
-      <p>Tlačítka AND a OR vkládají logické operátory do filtrovacího výrazu. Reset smaže uložený rychlý filtr pro aktuální stránku. Plovoucí tlačítko Filter pouze zaostří vstup filtru bez změny obsahu tabulky.</p>
+      <p>Tlačítka AND a OR vkládají logické operátory do filtrovacího výrazu. Reset smaže uložený rychlý filtr pro aktuální stránku. Plovoucí tlačítko Filter a klávesa F8 pouze zaostří vstup filtru bez změny obsahu tabulky.</p>
       <ul>
         <li><strong>Rozsah:</strong> Jen viditelný vykreslený text tabulky.</li>
         <li><strong>Operátory:</strong> AND a OR jsou klientské operátory filtru.</li>
+        <li><strong>Fokus:</strong> Plovoucí tlačítko Filter a klávesa F8 zaostří vstup filtru.</li>
         <li><strong>Reset:</strong> Smaže uloženou hodnotu rychlého filtru stránky.</li>
       </ul>
     </dd>

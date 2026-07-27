@@ -61,10 +61,11 @@ renderMenu();
     <dt>Quick Filter</dt>
     <dd>
       <p>The quick filter searches the rendered text that is currently present in the table. It is meant for fast narrowing after the server has already built the page. It does not change the SQL query and does not create or modify database rows.</p>
-      <p>The AND and OR buttons insert logical operators used by the client-side filter expression. Reset clears the stored filter for the current page. Because the filter works on visible text, hidden columns and hidden inactive items cannot match until the page settings make them visible.</p>
+      <p>The AND and OR buttons insert logical operators used by the client-side filter expression. Reset clears the stored filter for the current page. The floating Filter button and F8 focus the filter input. Because the filter works on visible text, hidden columns and hidden inactive items cannot match until the page settings make them visible.</p>
       <ul>
         <li><strong>Scope:</strong> Visible rendered table text only.</li>
         <li><strong>Operators:</strong> AND and OR are inserted into the client-side filter expression.</li>
+        <li><strong>Focus:</strong> The floating Filter button and F8 focus the filter input.</li>
         <li><strong>Reset:</strong> Clears the stored quick filter for the current page.</li>
       </ul>
     </dd>
@@ -331,10 +332,11 @@ renderMenu();
     <dt>Rychlý filtr</dt>
     <dd>
       <p>Rychlý filtr hledá ve vykresleném textu, který je právě v tabulce. Je určený k rychlému zúžení poté, co server stránku sestavil. Nemění SQL dotaz a nevytváří ani neupravuje databázové řádky.</p>
-      <p>Tlačítka AND a OR vkládají logické operátory používané klientským filtrovacím výrazem. Reset smaže uložený filtr aktuální stránky. Protože filtr pracuje s viditelným textem, skryté sloupce a skryté neaktivní položky se nemohou najít, dokud je nastavení stránky nezobrazí.</p>
+      <p>Tlačítka AND a OR vkládají logické operátory používané klientským filtrovacím výrazem. Reset smaže uložený filtr aktuální stránky. Plovoucí tlačítko Filter a klávesa F8 zaostří vstup filtru. Protože filtr pracuje s viditelným textem, skryté sloupce a skryté neaktivní položky se nemohou najít, dokud je nastavení stránky nezobrazí.</p>
       <ul>
         <li><strong>Rozsah:</strong> Jen viditelný vykreslený text tabulky.</li>
         <li><strong>Operátory:</strong> AND a OR se vkládají do klientského filtrovacího výrazu.</li>
+        <li><strong>Fokus:</strong> Plovoucí tlačítko Filter a klávesa F8 zaostří vstup filtru.</li>
         <li><strong>Reset:</strong> Smaže uložený rychlý filtr aktuální stránky.</li>
       </ul>
     </dd>

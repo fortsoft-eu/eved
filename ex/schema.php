@@ -79,6 +79,7 @@ $aSchemaRelationRoutes = array(
     "ex_group_permissions.group_id>ex_groups.id" => array("source" => "right", "target" => "left", "curve" => "74"),
     "ex_group_permissions.permission_id>ex_permissions.id" => array("source" => "right", "target" => "right", "curve" => "24", "target-y" => "-18", "via-x-offset" => "36"),
     "ex_persons.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "70", "target-y" => "-53"),
+    "ex_phone_book.subject_contact_id>ex_subject_contacts.id" => array("source" => "right", "target" => "right", "curve" => "24", "via-x-offset" => "32"),
     "ex_subject_addresses.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "24", "target-y" => "-24", "via-x-offset" => "96"),
     "ex_subject_contacts.contact_id>ex_contacts.id" => array("source" => "left", "target" => "right", "curve" => "70"),
     "ex_subject_contacts.subject_id>ex_subjects.id" => array("source" => "left", "target" => "left", "curve" => "24", "target-y" => "48", "via-x-offset" => "-35"),

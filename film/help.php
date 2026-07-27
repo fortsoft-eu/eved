@@ -55,11 +55,11 @@ renderMenu();
     <dt>Quick Filter</dt>
     <dd>
       <p>Most table pages include a quick filter. It works on the rendered table text in the browser, so it narrows what is already visible instead of changing the SQL query. The filter value is stored per page and per filter id in the session.</p>
-      <p>The AND and OR buttons insert operators into the client-side filter expression. Reset clears the stored value for that page. The floating filter button focuses the filter input on long tables where the control row has scrolled away.</p>
+      <p>The AND and OR buttons insert operators into the client-side filter expression. Reset clears the stored value for that page. The floating filter button and F8 focus the filter input on long tables where the control row has scrolled away.</p>
       <ul>
         <li><strong>Scope:</strong> Visible table text only.</li>
         <li><strong>Storage:</strong> Session state, separated by page.</li>
-        <li><strong>Controls:</strong> Filter input, AND, OR, Reset, and a floating focus button.</li>
+        <li><strong>Controls:</strong> Filter input, AND, OR, Reset, a floating focus button, and F8.</li>
       </ul>
     </dd>
     <dt>Diagnostics and Safety</dt>
@@ -286,11 +286,11 @@ renderMenu();
     <dt>Rychlý filtr</dt>
     <dd>
       <p>Většina tabulkových stránek obsahuje rychlý filtr. Pracuje s vykresleným textem tabulky v prohlížeči, takže zužuje už viditelný výstup a nemění SQL dotaz. Hodnota filtru se ukládá do session odděleně podle stránky a id filtru.</p>
-      <p>Tlačítka AND a OR vkládají operátory do klientského filtrovacího výrazu. Reset smaže uloženou hodnotu pro danou stránku. Plovoucí tlačítko filtru vrací fokus do vstupu na dlouhých tabulkách, kde ovládací řádek odroloval.</p>
+      <p>Tlačítka AND a OR vkládají operátory do klientského filtrovacího výrazu. Reset smaže uloženou hodnotu pro danou stránku. Plovoucí tlačítko filtru a klávesa F8 vrací fokus do vstupu na dlouhých tabulkách, kde ovládací řádek odroloval.</p>
       <ul>
         <li><strong>Rozsah:</strong> Pouze viditelný text tabulky.</li>
         <li><strong>Uložení:</strong> Session stav oddělený podle stránky.</li>
-        <li><strong>Ovládání:</strong> Vstup filtru, AND, OR, Reset a plovoucí tlačítko fokusu.</li>
+        <li><strong>Ovládání:</strong> Vstup filtru, AND, OR, Reset, plovoucí tlačítko fokusu a F8.</li>
       </ul>
     </dd>
     <dt>Diagnostika a bezpečnost</dt>
