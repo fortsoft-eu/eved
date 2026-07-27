@@ -154,6 +154,126 @@ form {
     white-space: pre-line;
 }
 
+.film-link-page .admin-top {
+    align-items: flex-start;
+    background: #F8F8F8;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 320px minmax(0, 1fr);
+    padding-bottom: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.film-link-page .admin-controls {
+    background: #F8F8F8;
+    position: static;
+    top: auto;
+    z-index: auto;
+}
+
+.film-link-page .admin-top > form {
+    background: #FFF;
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: 10px;
+    width: 320px;
+}
+
+.film-link-page .admin-top form label {
+    display: block;
+    margin: 10px 0 4px;
+}
+
+.film-link-page .admin-top form label:first-of-type {
+    margin-top: 0;
+}
+
+.film-link-page .admin-top select {
+    margin-top: 0;
+    width: 100%;
+}
+
+.film-link-page .admin-top button {
+    margin-top: 8px;
+}
+
+.film-link-page .order-detail {
+    background: #FFF;
+    box-sizing: border-box;
+    min-width: 0;
+    overflow: visible;
+    overscroll-behavior: auto;
+    padding: 4px 10px 4px 10px;
+    position: static;
+    width: 100%;
+}
+
+.film-link-page .order-detail h2 {
+    margin-bottom: 8px;
+}
+
+.film-link-page .order-detail-columns {
+    grid-template-columns: 230px 160px 160px 160px;
+}
+
+.film-link-page .order-detail dt {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+.film-link-page .order-detail dl {
+    align-items: start;
+    row-gap: 2px;
+}
+
+.film-link-page .order-detail-main, .film-link-page .order-detail-invoice, .film-link-page .order-detail-dates {
+    column-gap: 6px;
+    grid-template-columns: 112px max-content;
+    min-width: 0;
+}
+
+.film-link-page .order-detail dd {
+    margin-bottom: 2px;
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+.film-link-page .order-detail dd.multiline {
+    white-space: pre;
+}
+
+.film-link-page .film-link-table-scroll {
+    background: #FFF;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+}
+
+.film-link-page .film-link-table {
+    margin-top: 0;
+    min-width: 100%;
+    table-layout: auto;
+    width: max-content;
+}
+
+.film-link-page .film-link-table thead th {
+    background: #F0F0F0;
+}
+
+body.film-link-page[data-pmd-like="0"] .film-link-table-scroll {
+    max-width: none;
+    min-width: 100%;
+    overflow: visible;
+    width: max-content;
+}
+
 button, select {
     border: 1px solid #C0C0C0;
     width: 100%;
@@ -812,6 +932,70 @@ tr:nth-child(even) {
     max-width: 980px;
 }
 
+body.film-link-page[data-pmd-like="1"] .admin-top {
+    display: contents;
+    grid-template-columns: 1fr;
+    position: static;
+    top: auto;
+    z-index: auto;
+}
+
+body.film-link-page[data-pmd-like="1"] .admin-top > form, body.film-link-page[data-pmd-like="1"] .order-detail {
+    justify-self: stretch;
+    width: 100%;
+}
+
+body.film-link-page[data-pmd-like="1"] .admin-top > form {
+    margin-bottom: 8px;
+}
+
+body.film-link-page[data-pmd-like="1"] .order-detail {
+    margin-bottom: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+body.film-link-page[data-pmd-like="1"] .order-detail-columns {
+    grid-template-columns: 250px;
+    min-width: 250px;
+    row-gap: 2px;
+    width: 250px;
+}
+
+@media (max-width: 1280px) {
+    .film-link-page .admin-top {
+        display: contents;
+        grid-template-columns: 1fr;
+        position: static;
+        top: auto;
+        z-index: auto;
+    }
+    .film-link-page .admin-top > form, .film-link-page .order-detail {
+        justify-self: stretch;
+        width: 100%;
+    }
+    .film-link-page .admin-top > form {
+        margin-bottom: 8px;
+    }
+    .film-link-page .order-detail {
+        margin-bottom: 8px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+}
+
+@media (max-width: 952px) {
+    .film-link-page .order-detail-columns {
+        column-gap: 6px;
+        grid-template-columns: 250px 250px;
+        min-width: 506px;
+        row-gap: 2px;
+        width: 506px;
+    }
+}
+
 @media (max-width: 600px) {
     .menu-panel {
         max-width: calc(100vw - 16px);
@@ -821,6 +1005,21 @@ tr:nth-child(even) {
     }
     .schema-unavailable-message {
         display: block;
+    }
+}
+
+@media (max-width: 520px) {
+    .film-link-page .order-detail-columns {
+        grid-template-columns: 250px;
+        min-width: 250px;
+        row-gap: 2px;
+        width: 250px;
+    }
+}
+
+@media (max-width: 440px) {
+    .film-link-page .admin-top > form {
+        width: 100%;
     }
 }
 

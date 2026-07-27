@@ -21,6 +21,140 @@ function menuAdminTargetIsValid($sTarget) {
     return $sTarget == "" || preg_match("/^(_blank|_self|_parent|_top|[A-Za-z][A-Za-z0-9_\\-]*)$/", $sTarget);
 }
 
+function menuAdminGetScriptPath($sPath) {
+    $sPath = normalizeMenuPath($sPath);
+    if ($sPath == "") {
+        return "index.php";
+    }
+    if (strtolower(substr($sPath, -4)) == ".php") {
+        return $sPath;
+    }
+    $sTrimmedPath = rtrim($sPath, "/");
+    $iLastSlash = strrpos($sTrimmedPath, "/");
+    $sLastPart = $iLastSlash === false ? $sTrimmedPath : substr($sTrimmedPath, $iLastSlash + 1);
+    if (substr($sPath, -1) == "/" || strpos($sLastPart, ".") === false) {
+        return $sTrimmedPath == "" ? "index.php" : $sTrimmedPath . "/index.php";
+    }
+    return "";
+}
+
+function menuAdminStripPhpComments($sSource) {
+    $sCode = "";
+    foreach (token_get_all($sSource) as $mToken) {
+        if (is_array($mToken)) {
+            if ($mToken[0] == T_COMMENT || $mToken[0] == T_DOC_COMMENT) {
+                continue;
+            }
+            $sCode .= $mToken[1];
+        } else {
+            $sCode .= $mToken;
+        }
+    }
+    return $sCode;
+}
+
+function menuAdminAppendUniqueValue(&$aValues, $sValue) {
+    if ($sValue == "" || in_array($sValue, $aValues, true)) {
+        return;
+    }
+    $aValues[] = $sValue;
+}
+
+function menuAdminFindAccessProjects($sCode, $sFunctionName) {
+    $aProjects = array();
+    if (preg_match_all("/\\b" . preg_quote($sFunctionName, "/") . "\\s*\\(\\s*\\\$aAllowedIps\\s*,\\s*([\"'])((?:\\\\\\\\.|(?!\\1).)*)\\1/s", $sCode, $aMatches, PREG_SET_ORDER)) {
+        foreach ($aMatches as $aMatch) {
+            menuAdminAppendUniqueValue($aProjects, stripcslashes($aMatch[2]));
+        }
+    }
+    return $aProjects;
+}
+
+function menuAdminResolveScriptFile($sPath) {
+    $sPath = menuAdminGetScriptPath($sPath);
+    if ($sPath == "" || !menuAdminPathIsValid($sPath)) {
+        return "";
+    }
+    $sRootPath = realpath(dirname(__DIR__));
+    $sScriptPath = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace("/", DIRECTORY_SEPARATOR, $sPath);
+    $sRealPath = realpath($sScriptPath);
+    if (!$sRootPath || !$sRealPath || !is_file($sRealPath)) {
+        return "";
+    }
+    $sRootPath = rtrim(str_replace("\\", "/", $sRootPath), "/") . "/";
+    $sRealPathForCheck = str_replace("\\", "/", $sRealPath);
+    if (stripos($sRealPathForCheck, $sRootPath) !== 0) {
+        return "";
+    }
+    return $sRealPath;
+}
+
+function menuAdminGetScriptAccess($sPath) {
+    $aAccess = array(
+        "view" => array(),
+        "full" => array(),
+        "full_flag" => array(),
+        "message" => ""
+    );
+    $sPath = normalizeMenuPath($sPath);
+    if ($sPath != "" && !menuAdminPathIsValid($sPath)) {
+        $aAccess["message"] = "Invalid path";
+        return $aAccess;
+    }
+    $sScriptPath = menuAdminGetScriptPath($sPath);
+    if ($sScriptPath == "") {
+        $aAccess["message"] = "Not PHP";
+        return $aAccess;
+    }
+    if (!menuAdminPathIsValid($sScriptPath)) {
+        $aAccess["message"] = "Invalid path";
+        return $aAccess;
+    }
+    $sScriptFile = menuAdminResolveScriptFile($sScriptPath);
+    if ($sScriptFile == "") {
+        $aAccess["message"] = "File not found";
+        return $aAccess;
+    }
+    $sSource = file_get_contents($sScriptFile);
+    if ($sSource === false) {
+        $aAccess["message"] = "Unreadable";
+        return $aAccess;
+    }
+    $sCode = menuAdminStripPhpComments($sSource);
+    $aAccess["view"] = menuAdminFindAccessProjects($sCode, "requireViewAccess");
+    $aAccess["full"] = menuAdminFindAccessProjects($sCode, "requireFullAccess");
+    $aAccess["full_flag"] = menuAdminFindAccessProjects($sCode, "isFullAccessAllowed");
+    if (!$aAccess["view"] && !$aAccess["full"] && !$aAccess["full_flag"]) {
+        $aAccess["message"] = "No access check found";
+    }
+    return $aAccess;
+}
+
+function menuAdminRenderScriptAccess($aRow) {
+    global $sEmptyValueEmoji;
+
+    if (!$aRow || $aRow["separator"]) {
+        return $sEmptyValueEmoji;
+    }
+    $aAccess = menuAdminGetScriptAccess($aRow["path"]);
+    if ($aAccess["message"] != "") {
+        return html($aAccess["message"]);
+    }
+    $aLabels = array();
+    if ($aAccess["view"]) {
+        $aLabels[] = "View: " . implode(", ", $aAccess["view"]);
+    }
+    if ($aAccess["full"]) {
+        $aLabels[] = "Full: " . implode(", ", $aAccess["full"]);
+    }
+    foreach ($aAccess["full_flag"] as $sProject) {
+        if (!in_array($sProject, $aAccess["full"], true)) {
+            $aLabels[] = "Full UI: " . $sProject;
+        }
+    }
+    return $aLabels ? html(implode("; ", $aLabels)) : html("No access check found");
+}
+
 function menuAdminGroupKey($sPath) {
     $sPath = normalizeMenuPath($sPath);
     if ($sPath == "") {
@@ -182,6 +316,7 @@ function menuAdminRenderRow($aRow) {
     $sName = $aRow["separator"] ? $sEmptyValueEmoji : htmlValue($aRow["name"]);
     $sTitle = $aRow["separator"] ? $sEmptyValueEmoji : htmlValue($aRow["title"]);
     $sTarget = $aRow["target"] === null ? $sEmptyValueEmoji : htmlValue($aRow["target"]);
+    $sAccess = menuAdminRenderScriptAccess($aRow);
     return "          <tr data-menu-id=\"" . (int)$aRow["id"] . "\""
         . " data-menu-path=\"" . html($aRow["path"]) . "\""
         . " data-menu-icon=\"" . html($aRow["icon"]) . "\""
@@ -196,6 +331,7 @@ function menuAdminRenderRow($aRow) {
         . "<td>" . $sName . "</td>"
         . "<td>" . $sTitle . "</td>"
         . "<td class=\"monospace\">" . $sTarget . "</td>"
+        . "<td>" . $sAccess . "</td>"
         . "<td>" . ((int)$aRow["is_active"] == 1 ? "Yes" : "No") . "</td>"
         . "<td>" . ($aRow["separator"] ? "Yes" : "No") . "</td>"
         . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-menu-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-menu-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
@@ -203,30 +339,50 @@ function menuAdminRenderRow($aRow) {
         . "</tr>\n";
 }
 
-function menuAdminRenderTableStart($sCaption) {
+function menuAdminRenderTableStart() {
     return "      <table class=\"menu-admin-table\">\n"
-        . "        <caption>" . html($sCaption) . "</caption>\n"
-        . "        <colgroup><col class=\"menu-col-path\"><col class=\"menu-col-icon\"><col class=\"menu-col-name\"><col class=\"menu-col-title\"><col class=\"menu-col-target\"><col class=\"menu-col-active\"><col class=\"menu-col-separator\"><col class=\"menu-col-order\"><col class=\"menu-col-actions\"></colgroup>\n"
-        . "        <thead><tr><th>Path</th><th>Icon</th><th>Name</th><th>Title</th><th>Target</th><th>Active</th><th>Separator</th><th class=\"admin-action-column\">Order</th><th class=\"admin-action-column\"></th></tr></thead>\n";
+        . "        <colgroup><col class=\"menu-col-path\"><col class=\"menu-col-icon\"><col class=\"menu-col-name\"><col class=\"menu-col-title\"><col class=\"menu-col-target\"><col class=\"menu-col-access\"><col class=\"menu-col-active\"><col class=\"menu-col-separator\"><col class=\"menu-col-order\"><col class=\"menu-col-actions\"></colgroup>\n";
+}
+
+function menuAdminRenderGroupRow($sLabel) {
+    return "          <tr class=\"menu-admin-group-row admin-static-row quick-filter-static-row\"><th colspan=\"10\">" . html($sLabel) . "</th></tr>\n";
+}
+
+function menuAdminRenderColumnHeaderRow() {
+    return "          <tr class=\"menu-admin-column-row admin-static-row quick-filter-static-row\"><th>Path</th><th>Icon</th><th>Name</th><th>Title</th><th>Target</th><th>Access</th><th>Active</th><th>Separator</th><th class=\"admin-action-column\">Order</th><th class=\"admin-action-column\"></th></tr>\n";
+}
+
+function menuAdminRenderSectionHeader($sLabel) {
+    return menuAdminRenderGroupRow($sLabel)
+        . menuAdminRenderColumnHeaderRow();
+}
+
+function menuAdminRenderSectionGap() {
+    return "          <tr class=\"menu-admin-section-gap admin-static-row quick-filter-static-row\"><td colspan=\"10\"></td></tr>\n";
 }
 
 function menuAdminRenderTables($oPdo) {
     $aRows = menuAdminFetchRows($oPdo);
     if (!$aRows) {
-        return menuAdminRenderTableStart("/")
-            . "        <tbody><tr><td colspan=\"9\" class=\"empty-table-message\">No menu items found.</td></tr></tbody>\n"
+        return menuAdminRenderTableStart()
+            . "        <tbody>\n"
+            . menuAdminRenderSectionHeader("/")
+            . "          <tr><td colspan=\"10\" class=\"empty-table-message\">No menu items found.</td></tr>\n"
+            . "        </tbody>\n"
             . "      </table>\n";
     }
-    $sHtml = "";
+    $sHtml = menuAdminRenderTableStart()
+        . "        <tbody>\n";
     $sCurrentGroup = null;
+    $blFirstGroup = true;
     foreach ($aRows as $aRow) {
         if ($sCurrentGroup !== $aRow["group_key"]) {
-            if ($sCurrentGroup !== null) {
-                $sHtml .= "        </tbody>\n      </table>\n";
+            if (!$blFirstGroup) {
+                $sHtml .= menuAdminRenderSectionGap();
             }
             $sCurrentGroup = $aRow["group_key"];
-            $sHtml .= menuAdminRenderTableStart($aRow["group_label"])
-                . "        <tbody>\n";
+            $sHtml .= menuAdminRenderSectionHeader($aRow["group_label"]);
+            $blFirstGroup = false;
         }
         $sHtml .= menuAdminRenderRow($aRow);
     }
@@ -386,11 +542,12 @@ function issueTrackerRenderRow($aRow) {
     $sDueDate = (string)$aRow["due_date"];
     $sDueClass = "";
     $sToggleTitle = $aRow["status"] == "done" ? "Reopen" : "Mark done";
-    $sToggleEmoji = $aRow["status"] == "done" ? "&#8634;" : "&#10004;";
+    $sToggleEmoji = $aRow["status"] == "done" ? "&#128260;" : "&#9989;";
+    $sRowClass = $aRow["status"] == "done" ? " class=\"issue-row-done\"" : "";
     if ($aRow["status"] != "done" && $sDueDate != "" && $sDueDate < date("Y-m-d")) {
         $sDueClass = " issue-due-overdue";
     }
-    return "      <tr data-issue-id=\"" . (int)$aRow["id"] . "\""
+    return "      <tr" . $sRowClass . " data-issue-id=\"" . (int)$aRow["id"] . "\""
         . " data-issue-type=\"" . html($aRow["issue_type"]) . "\""
         . " data-issue-status=\"" . html($aRow["status"]) . "\""
         . " data-issue-priority=\"" . html($aRow["priority"]) . "\""
@@ -404,7 +561,7 @@ function issueTrackerRenderRow($aRow) {
         . "<td class=\"issue-title-cell\"><strong>" . html($aRow["title"]) . "</strong>" . ($sDescription != "" ? "<div class=\"issue-description\">" . nl2br(html($sDescription), false) . "</div>" : "") . "</td>"
         . "<td class=\"issue-date" . $sDueClass . "\">" . ($sDueDate != "" ? html($sDueDate) : "&mdash;") . "</td>"
         . "<td class=\"issue-date\">" . html($aRow["updated_at"]) . "</td>"
-        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-toggle-issue\" title=\"" . html($sToggleTitle) . "\" aria-label=\"" . html($sToggleTitle) . "\">" . $sToggleEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-issue\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-issue\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-toggle-issue\" title=\"" . html($sToggleTitle) . "\" aria-label=\"" . html($sToggleTitle) . "\">" . $sToggleEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-issue\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-issue issue-delete-action\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
         . "</tr>\n";
 }
 

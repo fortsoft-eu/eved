@@ -159,10 +159,15 @@ function setupTableRows() {
 
     function getEventTableRow(oEvent) {
         var oTarget = oEvent ? oEvent.target : null;
+        var oRow;
         if (oTarget && oTarget.nodeType == 3) {
             oTarget = oTarget.parentNode;
         }
-        return oTarget && oTarget.closest ? oTarget.closest("table tbody tr") : null;
+        oRow = oTarget && oTarget.closest ? oTarget.closest("table tbody tr") : null;
+        if (oRow && (" " + oRow.className + " ").indexOf(" admin-static-row ") !== -1) {
+            return null;
+        }
+        return oRow;
     }
 
     function isInsideTableRow(oRow, oTarget) {
@@ -456,6 +461,12 @@ function setupTableFilter() {
                 aRows = oTable ? oTable.querySelectorAll("tbody tr") : [];
             }
             for (var iJ = 0; iJ < aRows.length; iJ += 1) {
+                if ((" " + aRows[iJ].className + " ").indexOf(" quick-filter-static-row ") !== -1) {
+                    if (aRows[iJ].style.display != "") {
+                        aRows[iJ].style.display = "";
+                    }
+                    continue;
+                }
                 if (typeof aRows[iJ]._quickTableFilterText != "string") {
                     aCells = aRows[iJ].cells ? aRows[iJ].cells : aRows[iJ].querySelectorAll("th, td");
                     aTexts = [];
@@ -792,7 +803,7 @@ function openMenuItemDialog(aRow, oSourceRow) {
     oHeader.className = "confirm-dialog-header";
     oTitle = document.createElement("strong");
     oTitle.className = "confirm-dialog-title";
-    oTitle.textContent = iMenuId > 0 ? "Edit menu item" : "New menu item";
+    oTitle.textContent = iMenuId > 0 ? "Edit Menu Item" : "New Menu Item";
     oClose = document.createElement("button");
     oClose.type = "button";
     oClose.className = "confirm-dialog-close";
@@ -901,7 +912,7 @@ function openMenuItemDialog(aRow, oSourceRow) {
     }, 0);
 }
 
-function openAdminConfirmDialog(sTitle, sMessage, sConfirmText, fConfirm, fCancel) {
+function openAdminConfirmDialog(sTitle, sMessage, sConfirmText, fConfirm, fCancel, sCancelText) {
     var oDialog = document.getElementById("admin-reusable-dialog");
     var oBox;
     var oHeader;
@@ -936,7 +947,11 @@ function openAdminConfirmDialog(sTitle, sMessage, sConfirmText, fConfirm, fCance
     oHeader.appendChild(oClose);
     oBox.appendChild(oHeader);
     oMessage = document.createElement("p");
-    oMessage.textContent = sMessage;
+    if (sMessage && sMessage.nodeType) {
+        oMessage.appendChild(sMessage);
+    } else {
+        oMessage.textContent = sMessage;
+    }
     oBox.appendChild(oMessage);
     oActions = document.createElement("div");
     oActions.className = "confirm-dialog-actions";
@@ -947,7 +962,7 @@ function openAdminConfirmDialog(sTitle, sMessage, sConfirmText, fConfirm, fCance
     oCancel = document.createElement("button");
     oCancel.type = "button";
     oCancel.className = "confirm-dialog-button";
-    oCancel.textContent = "Cancel";
+    oCancel.textContent = sCancelText ? sCancelText : "Cancel";
     oActions.appendChild(oConfirm);
     oActions.appendChild(oCancel);
     oBox.appendChild(oActions);
@@ -965,6 +980,26 @@ function openAdminConfirmDialog(sTitle, sMessage, sConfirmText, fConfirm, fCance
     window.setTimeout(function() {
         oConfirm.focus();
     }, 0);
+}
+
+function createIssueDeleteMessage(sTitle) {
+    var oFragment = document.createDocumentFragment();
+    var oStrong = document.createElement("strong");
+    oStrong.textContent = sTitle;
+    oFragment.appendChild(document.createTextNode("Delete "));
+    oFragment.appendChild(oStrong);
+    oFragment.appendChild(document.createTextNode("?"));
+    return oFragment;
+}
+
+function createMenuDeleteMessage(sPath) {
+    var oFragment = document.createDocumentFragment();
+    var oStrong = document.createElement("strong");
+    oStrong.textContent = sPath;
+    oFragment.appendChild(document.createTextNode("Delete "));
+    oFragment.appendChild(oStrong);
+    oFragment.appendChild(document.createTextNode("?"));
+    return oFragment;
 }
 
 function copyAdminTextWithInput(sText) {
@@ -1051,7 +1086,7 @@ function bindMenuAdmin() {
             openMenuItemDialog(aRow, oRow);
         } else if (oButton.classList.contains("js-delete-menu-item")) {
             beginAdminSubjectRowEdit(oRow);
-            openAdminConfirmDialog("Delete menu item", "Delete " + aRow.path + "?", "Delete", function() {
+            openAdminConfirmDialog("Confirm Deletion", createMenuDeleteMessage(aRow.path), "Yes", function() {
                 oData = new FormData();
                 oData.append("action", "delete_menu_item");
                 oData.append("menu_id", String(aRow.id));
@@ -1063,7 +1098,7 @@ function bindMenuAdmin() {
                 });
             }, function() {
                 finishAdminSubjectRowEdit(oRow, false);
-            });
+            }, "No");
         } else if (oButton.classList.contains("js-move-menu-up") || oButton.classList.contains("js-move-menu-down")) {
             oData = new FormData();
             oData.append("action", "move_menu_item");
@@ -1424,7 +1459,7 @@ function openIssueDialog(aRow, oSourceRow) {
     oHeader.className = "confirm-dialog-header";
     oTitle = document.createElement("strong");
     oTitle.className = "confirm-dialog-title";
-    oTitle.textContent = iIssueId > 0 ? "Edit issue" : "New issue";
+    oTitle.textContent = iIssueId > 0 ? "Edit Issue" : "New Issue";
     oClose = document.createElement("button");
     oClose.type = "button";
     oClose.className = "confirm-dialog-close";
@@ -1558,7 +1593,7 @@ function bindIssueTracker() {
             openIssueDialog(aRow, oRow);
         } else if (oButton.classList.contains("js-delete-issue")) {
             beginAdminSubjectRowEdit(oRow);
-            openAdminConfirmDialog("Delete issue", "Delete " + aRow.title + "?", "Delete", function() {
+            openAdminConfirmDialog("Confirm Deletion", createIssueDeleteMessage(aRow.title), "Yes", function() {
                 oData = new FormData();
                 oData.append("action", "delete_issue");
                 oData.append("issue_id", String(aRow.id));
@@ -1570,7 +1605,7 @@ function bindIssueTracker() {
                 });
             }, function() {
                 finishAdminSubjectRowEdit(oRow, false);
-            });
+            }, "No");
         } else if (oButton.classList.contains("js-toggle-issue")) {
             oData = new FormData();
             oData.append("action", "toggle_issue_status");

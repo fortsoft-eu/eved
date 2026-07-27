@@ -172,7 +172,7 @@ $iTime = sendPageHeaders();
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
-<body>
+<body class="film-link-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>">
 <?php
 
 if ($sMessage) {
@@ -235,7 +235,8 @@ foreach ($aOrders as $aOrder) {
       </div>
     </div>
   </div>
-  <table class="<?php echo trim(getCondensedTableClass()); ?>">
+  <div class="film-link-table-scroll js-film-link-table-scroll">
+  <table class="<?php echo trim(getCondensedTableClass() . " film-link-table"); ?>">
     <thead>
       <tr>
         <th style="text-align: right; width: 1px;">#</th>
@@ -288,6 +289,7 @@ foreach ($aLinks as $aLink) {
 ?>
     </tbody>
   </table>
+  </div>
   <div class="confirm-dialog" id="film-unassign-confirm-dialog" hidden>
     <form class="confirm-dialog-box" method="post" action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES, "UTF-8"); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="film_csrf_token" value="<?php echo htmlspecialchars(getCsrfToken("film_csrf_token"), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">

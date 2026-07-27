@@ -1268,21 +1268,34 @@ td.numeric, th.numeric {
 }
 
 .menu-admin-table {
-    table-layout: fixed;
-    width: 100%;
+    min-width: 100%;
+    table-layout: auto;
+    width: auto;
 }
 
-.menu-admin-table caption {
+.menu-admin-table td, .menu-admin-table th {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+.menu-admin-table .menu-admin-group-row th {
     background: #DDD;
     border: 1px solid #C0C0C0;
-    border-bottom: 0;
     font-weight: bold;
     padding: 8px;
     text-align: left;
 }
 
+.menu-admin-table .menu-admin-section-gap td {
+    background: #F8F8F8;
+    border: 0;
+    height: 14px;
+    padding: 0;
+}
+
 .menu-admin-table .menu-col-path {
-    width: 27%;
+    width: 23%;
 }
 
 .menu-admin-table .menu-col-icon {
@@ -1294,11 +1307,15 @@ td.numeric, th.numeric {
 }
 
 .menu-admin-table .menu-col-title {
-    width: 29%;
+    width: 25%;
 }
 
 .menu-admin-table .menu-col-target {
     width: 8em;
+}
+
+.menu-admin-table .menu-col-access {
+    width: 12em;
 }
 
 .menu-admin-table .menu-col-active {
@@ -1332,6 +1349,7 @@ td.numeric, th.numeric {
 }
 
 .issues-table {
+    min-width: 71em;
     table-layout: fixed;
     width: 100%;
 }
@@ -1353,16 +1371,40 @@ td.numeric, th.numeric {
 }
 
 .issues-table .issue-col-actions {
-    width: 7em;
+    width: 8em;
+}
+
+#issues-table .admin-action-column {
+    max-width: 8em;
+    min-width: 8em;
+    width: 8em;
+}
+
+#issues-table .admin-action-column .issue-delete-action {
+    margin-left: 0;
+}
+
+.issues-table .issue-row-done > td {
+    background: #EEF7EA;
+}
+
+.issues-table .issue-row-done .issue-title-cell strong {
+    text-decoration: line-through;
 }
 
 .issue-title-cell {
     line-height: 1.3;
+    overflow-wrap: normal;
+    white-space: normal;
+    word-break: normal;
 }
 
 .issue-description {
     color: #555;
     margin-top: 3px;
+    overflow-wrap: normal;
+    white-space: normal;
+    word-break: normal;
 }
 
 .issue-date {
@@ -1372,7 +1414,7 @@ td.numeric, th.numeric {
 }
 
 .issue-due-overdue {
-    color: #A40000;
+    color: #D00;
     font-weight: bold;
 }
 
