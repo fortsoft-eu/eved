@@ -199,6 +199,9 @@ function setupTableRows() {
             oTarget = oTarget.parentNode;
         }
         oRow = oTarget && oTarget.closest ? oTarget.closest("table tbody tr") : null;
+        if (oRow && oRow.closest && oRow.closest(".business-hours-table")) {
+            return null;
+        }
         if (oRow && (" " + oRow.className + " ").indexOf(" admin-static-row ") !== -1) {
             return null;
         }
@@ -341,6 +344,39 @@ function selectAdminTextField(oElement) {
         } catch (oException) {
             logAdminException(oException);
         }
+    }
+}
+
+function getAdminInputDatalist(oInput) {
+    var sListId = oInput ? (oInput.getAttribute("list") || "") : "";
+    var oRoot = oInput ? oInput.form : null;
+    var aLists;
+    var i;
+    if (!sListId) {
+        return null;
+    }
+    if (oRoot && typeof oRoot.querySelectorAll == "function") {
+        aLists = oRoot.querySelectorAll("datalist");
+        for (i = 0; i < aLists.length; i++) {
+            if (aLists[i].id == sListId) {
+                return aLists[i];
+            }
+        }
+    }
+    return document.getElementById(sListId);
+}
+
+function openAdminInputDatalist(oInput) {
+    var oList = getAdminInputDatalist(oInput);
+    if (!oInput || oInput.disabled || oInput.readOnly || !oList || !oList.options || oList.options.length < 1 || typeof oInput.showPicker != "function") {
+        return false;
+    }
+    try {
+        oInput.showPicker();
+        return true;
+    } catch (oException) {
+        logAdminException(oException);
+        return false;
     }
 }
 
@@ -2185,6 +2221,797 @@ function bindDashboardServices() {
     }
 }
 
+var aBusinessHoursDays = [
+    {key: "mon", label: "Mon"},
+    {key: "tue", label: "Tue"},
+    {key: "wed", label: "Wed"},
+    {key: "thu", label: "Thu"},
+    {key: "fri", label: "Fri"},
+    {key: "sat", label: "Sat"},
+    {key: "sun", label: "Sun"}
+];
+
+function isBusinessHoursPmdLike() {
+    return document.body && document.body.getAttribute("data-pmd-like") == "1";
+}
+
+function getBusinessHoursColumnCount(iViewportWidth) {
+    var iGap = 8;
+    var iMinCardWidth = 320;
+    var iColumns;
+    if (isBusinessHoursPmdLike()) {
+        return 1;
+    }
+    iColumns = Math.floor((iViewportWidth + iGap) / (iMinCardWidth + iGap));
+    if (iColumns < 1) {
+        return 1;
+    }
+    if (iColumns > 6) {
+        return 6;
+    }
+    return iColumns;
+}
+
+function getBusinessHoursCardWidth(iViewportWidth) {
+    if (iViewportWidth < 320) {
+        return iViewportWidth;
+    }
+    return 320;
+}
+
+function layoutBusinessHours() {
+    var oGrid = document.getElementById("business-hours-cards");
+    var aCards = oGrid ? oGrid.querySelectorAll("section[data-business-hours-id]") : [];
+    var oVisualViewport = window.visualViewport || null;
+    var iViewportWidth = oVisualViewport ? Math.floor(oVisualViewport.width) : (window.innerWidth || document.documentElement.clientWidth || 1024);
+    var iViewportHeight = oVisualViewport ? Math.floor(oVisualViewport.height) : (window.innerHeight || document.documentElement.clientHeight || 768);
+    var iGridWidth = oGrid ? Math.floor(oGrid.getBoundingClientRect().width) : iViewportWidth;
+    var blPmdLike = isBusinessHoursPmdLike();
+    var iColumns = getBusinessHoursColumnCount(iGridWidth);
+    var iCardWidth = getBusinessHoursCardWidth(iGridWidth);
+    var iTop = oGrid ? oGrid.getBoundingClientRect().top - (oVisualViewport ? oVisualViewport.offsetTop : 0) : 0;
+    var iAvailableHeight = Math.max(220, Math.floor(iViewportHeight - iTop - 6));
+    var i;
+    if (!oGrid) {
+        return;
+    }
+    oGrid.style.height = "";
+    oGrid.style.maxHeight = iAvailableHeight + "px";
+    oGrid.style.gridTemplateColumns = "repeat(" + iColumns + ", " + iCardWidth + "px)";
+    oGrid.style.gridAutoRows = "auto";
+    oGrid.setAttribute("data-columns", String(iColumns));
+    oGrid.removeAttribute("data-rows");
+    oGrid.removeAttribute("data-card-height");
+    for (i = 0; i < aCards.length; i++) {
+        aCards[i].style.height = "";
+    }
+}
+
+function getBusinessHoursDefaultHours() {
+    var aHours = {};
+    var sKey;
+    var i;
+    for (i = 0; i < aBusinessHoursDays.length; i++) {
+        sKey = aBusinessHoursDays[i].key;
+        aHours[sKey] = {
+            closed: sKey == "sat" || sKey == "sun",
+            open: sKey == "sat" || sKey == "sun" ? "" : "08:00",
+            breakStart: "",
+            breakEnd: "",
+            close: sKey == "sat" || sKey == "sun" ? "" : "17:00"
+        };
+    }
+    return aHours;
+}
+
+function normalizeBusinessHoursData(aSource) {
+    var aHours = getBusinessHoursDefaultHours();
+    var sKey;
+    var aDay;
+    var i;
+    if (!aSource) {
+        return aHours;
+    }
+    for (i = 0; i < aBusinessHoursDays.length; i++) {
+        sKey = aBusinessHoursDays[i].key;
+        aDay = aSource[sKey] || {};
+        aHours[sKey] = {
+            closed: aDay.closed == 1 || aDay.closed === true,
+            open: aDay.open || "",
+            breakStart: aDay.break_start || aDay.breakStart || "",
+            breakEnd: aDay.break_end || aDay.breakEnd || "",
+            close: aDay.close || ""
+        };
+    }
+    return aHours;
+}
+
+function parseBusinessHoursData(sHours) {
+    var aData = null;
+    try {
+        aData = JSON.parse(sHours || "{}");
+    } catch (oException) {
+        logAdminException(oException);
+        aData = null;
+    }
+    return normalizeBusinessHoursData(aData);
+}
+
+function getBusinessHoursCardData(oCard) {
+    if (!oCard) {
+        return null;
+    }
+    return {
+        id: parseInt(oCard.getAttribute("data-business-hours-id") || "0", 10),
+        subjectId: parseInt(oCard.getAttribute("data-business-hours-subject-id") || "0", 10),
+        addressId: parseInt(oCard.getAttribute("data-business-hours-address-id") || "0", 10),
+        subjectName: oCard.getAttribute("data-business-hours-subject-name") || "",
+        addressText: oCard.getAttribute("data-business-hours-address-text") || "",
+        hours: parseBusinessHoursData(oCard.getAttribute("data-business-hours-hours") || ""),
+        active: oCard.getAttribute("data-business-hours-active") == "1"
+    };
+}
+
+function findBusinessHoursCardById(iId) {
+    return document.querySelector("section[data-business-hours-id=\"" + String(iId) + "\"]");
+}
+
+function copyBusinessHoursCardState(oSourceCard, oTargetCard) {
+    if (!oSourceCard || !oTargetCard) {
+        return;
+    }
+    if ((" " + oSourceCard.className + " ").indexOf(" admin-row-modal ") !== -1) {
+        addAdminClass(oTargetCard, "admin-row-modal");
+    }
+    if ((" " + oSourceCard.className + " ").indexOf(" business-hours-card-active ") !== -1) {
+        addAdminClass(oTargetCard, "business-hours-card-active");
+    }
+}
+
+function activateBusinessHoursCard(iId) {
+    var aCards = document.querySelectorAll("section[data-business-hours-id]");
+    var aTabs = document.querySelectorAll("[data-business-hours-tab-id]");
+    var sId = String(iId || "");
+    var blFound = false;
+    var i;
+    if (sId == "" && aCards.length) {
+        sId = aCards[0].getAttribute("data-business-hours-id") || "";
+    }
+    for (i = 0; i < aCards.length; i++) {
+        if (aCards[i].getAttribute("data-business-hours-id") == sId) {
+            addAdminClass(aCards[i], "business-hours-card-active");
+            blFound = true;
+        } else {
+            removeAdminClass(aCards[i], "business-hours-card-active");
+        }
+    }
+    if (!blFound && aCards.length) {
+        sId = aCards[0].getAttribute("data-business-hours-id") || "";
+        addAdminClass(aCards[0], "business-hours-card-active");
+    }
+    for (i = 0; i < aTabs.length; i++) {
+        if (aTabs[i].getAttribute("data-business-hours-tab-id") == sId) {
+            addAdminClass(aTabs[i], "business-hours-tab-active");
+            aTabs[i].setAttribute("aria-selected", "true");
+        } else {
+            removeAdminClass(aTabs[i], "business-hours-tab-active");
+            aTabs[i].setAttribute("aria-selected", "false");
+        }
+    }
+}
+
+function bindBusinessHoursTabs() {
+    var oTabs = document.getElementById("business-hours-tabs");
+    if (!oTabs || oTabs.getAttribute("data-business-hours-tabs-bound") == "1") {
+        return;
+    }
+    oTabs.setAttribute("data-business-hours-tabs-bound", "1");
+    oTabs.addEventListener("click", function(oEvent) {
+        var oButton = oEvent.target.closest("[data-business-hours-tab-id]");
+        if (!oButton) {
+            return;
+        }
+        oEvent.preventDefault();
+        activateBusinessHoursCard(parseInt(oButton.getAttribute("data-business-hours-tab-id") || "0", 10));
+    });
+}
+
+function replaceBusinessHoursCards(aData) {
+    var oGrid = document.getElementById("business-hours-cards");
+    var oTabs = document.getElementById("business-hours-tabs");
+    var aCards = {};
+    var aOldCards;
+    var aNewCards;
+    var sId;
+    var iSavedId = aData && aData.business_hours_id ? parseInt(aData.business_hours_id, 10) : 0;
+    var i;
+    if (!aData || typeof aData.cards_html == "undefined" || !oGrid) {
+        return;
+    }
+    aOldCards = oGrid.querySelectorAll("section[data-business-hours-id]");
+    for (i = 0; i < aOldCards.length; i++) {
+        sId = aOldCards[i].getAttribute("data-business-hours-id") || "";
+        if (sId) {
+            aCards[sId] = aOldCards[i];
+        }
+    }
+    oGrid.innerHTML = aData.cards_html;
+    if (oTabs && typeof aData.tabs_html != "undefined") {
+        oTabs.innerHTML = aData.tabs_html;
+    }
+    aNewCards = oGrid.querySelectorAll("section[data-business-hours-id]");
+    for (i = 0; i < aNewCards.length; i++) {
+        sId = aNewCards[i].getAttribute("data-business-hours-id") || "";
+        if (sId && aCards[sId]) {
+            copyBusinessHoursCardState(aCards[sId], aNewCards[i]);
+        }
+    }
+    activateBusinessHoursCard(iSavedId);
+    layoutBusinessHours();
+}
+
+function createBusinessHoursDeleteMessage(aRow) {
+    var oFragment = document.createDocumentFragment();
+    var oStrong = document.createElement("strong");
+    oStrong.textContent = aRow.subjectName;
+    oFragment.appendChild(document.createTextNode("Delete business hours?"));
+    oFragment.appendChild(document.createElement("br"));
+    oFragment.appendChild(oStrong);
+    if (aRow.addressText != "") {
+        oFragment.appendChild(document.createElement("br"));
+        oFragment.appendChild(document.createTextNode(aRow.addressText));
+    }
+    return oFragment;
+}
+
+function appendBusinessHoursHiddenField(oParent, sName, sValue) {
+    var oInput = document.createElement("input");
+    oInput.type = "hidden";
+    oInput.name = sName;
+    oInput.value = sValue || "";
+    oParent.appendChild(oInput);
+    return oInput;
+}
+
+function normalizeBusinessHoursTimeValue(sValue) {
+    var sText = String(sValue || "").replace(/^\s+|\s+$/g, "").replace(/\s+/g, " ");
+    var aMatches;
+    var iHour;
+    var iMinute = 0;
+    if (sText == "") {
+        return "";
+    }
+    aMatches = sText.match(/^([0-9]{1,2})[\s:.]+([0-9]{1,2})$/);
+    if (aMatches) {
+        iHour = parseInt(aMatches[1], 10);
+        iMinute = parseInt(aMatches[2], 10);
+    } else if (/^[0-9]{3,4}$/.test(sText)) {
+        iHour = parseInt(sText.slice(0, -2), 10);
+        iMinute = parseInt(sText.slice(-2), 10);
+    } else if (/^[0-9]{1,2}$/.test(sText)) {
+        iHour = parseInt(sText, 10);
+    } else {
+        return false;
+    }
+    if (!isFinite(iHour) || !isFinite(iMinute) || iHour < 0 || iHour > 23 || iMinute < 0 || iMinute > 59) {
+        return false;
+    }
+    return (iHour < 10 ? "0" : "") + iHour + ":" + (iMinute < 10 ? "0" : "") + iMinute;
+}
+
+function normalizeBusinessHoursTimeInput(oInput) {
+    var sValue = normalizeBusinessHoursTimeValue(oInput.value);
+    if (sValue !== false) {
+        oInput.value = sValue;
+    }
+}
+
+function createBusinessHoursTimeInput(sValue, sLabel) {
+    var oInput = document.createElement("input");
+    oInput.type = "text";
+    oInput.value = sValue || "";
+    oInput.placeholder = sLabel;
+    oInput.maxLength = 5;
+    oInput.autocomplete = "off";
+    oInput.spellcheck = false;
+    oInput.inputMode = "numeric";
+    oInput.addEventListener("blur", function() {
+        normalizeBusinessHoursTimeInput(oInput);
+    });
+    return oInput;
+}
+
+function appendBusinessHoursDayRow(oParent, aDayInfo, aDayData) {
+    var oRow = document.createElement("div");
+    var oDayLabel = document.createElement("strong");
+    var oClosedLabel = document.createElement("label");
+    var oClosed = document.createElement("input");
+    var oOpen = createBusinessHoursTimeInput(aDayData.open, "Open");
+    var oBreakStart = createBusinessHoursTimeInput(aDayData.breakStart, "Break From");
+    var oBreakEnd = createBusinessHoursTimeInput(aDayData.breakEnd, "Break To");
+    var oClose = createBusinessHoursTimeInput(aDayData.close, "Close");
+    oRow.className = "business-hours-day-row";
+    oDayLabel.className = "business-hours-day-name";
+    oDayLabel.textContent = aDayInfo.label;
+    oClosed.type = "checkbox";
+    oClosed.checked = aDayData.closed ? true : false;
+    oClosedLabel.className = "checkbox-label business-hours-closed-label";
+    oClosedLabel.appendChild(oClosed);
+    oClosedLabel.appendChild(document.createTextNode("Closed"));
+    oRow.appendChild(oDayLabel);
+    oRow.appendChild(oClosedLabel);
+    oRow.appendChild(oOpen);
+    oRow.appendChild(oBreakStart);
+    oRow.appendChild(oBreakEnd);
+    oRow.appendChild(oClose);
+    oParent.appendChild(oRow);
+
+    function refreshDayFields() {
+        var blClosed = oClosed.checked;
+        oOpen.disabled = blClosed;
+        oBreakStart.disabled = blClosed;
+        oBreakEnd.disabled = blClosed;
+        oClose.disabled = blClosed;
+    }
+
+    oClosed.addEventListener("change", function() {
+        refreshDayFields();
+        if (!oClosed.checked) {
+            focusAdminElement(oOpen, true);
+        }
+    });
+    refreshDayFields();
+    return {
+        key: aDayInfo.key,
+        closed: oClosed,
+        open: oOpen,
+        breakStart: oBreakStart,
+        breakEnd: oBreakEnd,
+        close: oClose
+    };
+}
+
+function bindBusinessHoursSuggestInput(oInput, aSettings) {
+    var oIdField = aSettings.idField;
+    var oList = getAdminInputDatalist(oInput);
+    var iMinLength = typeof aSettings.minLength == "number" ? aSettings.minLength : 3;
+    var iTimer = 0;
+    var iRequestIndex = 0;
+    var aIds = {};
+    var aNames = {};
+    var aUniqueIds = {};
+    if (!window.fetch || !window.FormData || !oInput || !oIdField || !oList || oInput.getAttribute("data-business-hours-suggest-bound") == "1") {
+        return;
+    }
+    oInput.setAttribute("data-business-hours-suggest-bound", "1");
+
+    function hideList() {
+        oList.innerHTML = "";
+        aIds = {};
+        aNames = {};
+        aUniqueIds = {};
+    }
+
+    function getOptionValue(sName, sId, blUseId) {
+        return blUseId ? sName + " (#" + sId + ")" : sName;
+    }
+
+    function selectByName(sName) {
+        if (!aIds[sName]) {
+            if (!aUniqueIds[sName]) {
+                return false;
+            }
+            oIdField.value = aUniqueIds[sName];
+            if (typeof aSettings.onSelect == "function") {
+                aSettings.onSelect(oIdField.value, sName);
+            }
+            hideList();
+            return true;
+        }
+        oIdField.value = aIds[sName];
+        oInput.value = aNames[sName] || sName;
+        if (typeof aSettings.onSelect == "function") {
+            aSettings.onSelect(oIdField.value, oInput.value);
+        }
+        hideList();
+        return true;
+    }
+
+    function renderSuggestions(aItems) {
+        var aNameCounts = {};
+        var sName;
+        var sId;
+        var sValue;
+        var oOption;
+        var i;
+        hideList();
+        if (!aItems || !aItems.length) {
+            return;
+        }
+        for (i = 0; i < aItems.length; i++) {
+            sName = aItems[i][aSettings.textKey] || "";
+            aNameCounts[sName] = (aNameCounts[sName] || 0) + 1;
+        }
+        for (i = 0; i < aItems.length; i++) {
+            sName = aItems[i][aSettings.textKey] || "";
+            sId = aItems[i][aSettings.idKey] || "";
+            sValue = getOptionValue(sName, sId, aNameCounts[sName] > 1);
+            oOption = document.createElement("option");
+            oOption.value = sValue;
+            oOption.label = sName;
+            oList.appendChild(oOption);
+            aIds[sValue] = sId;
+            aNames[sValue] = sName;
+            if (typeof aUniqueIds[sName] == "undefined") {
+                aUniqueIds[sName] = sId;
+            } else if (aUniqueIds[sName] != sId) {
+                aUniqueIds[sName] = "";
+            }
+        }
+    }
+
+    function requestSuggestions(sTerm, blOpenPicker) {
+        var oData;
+        var iCurrentRequest = iRequestIndex;
+        var sSubjectId = aSettings.subjectIdField ? (aSettings.subjectIdField.value || "") : "";
+        if (aSettings.subjectIdField && parseInt(sSubjectId || "0", 10) < 1) {
+            hideList();
+            return;
+        }
+        oData = new FormData();
+        oData.append("action", aSettings.action);
+        oData.append("term", sTerm);
+        if (aSettings.subjectIdField) {
+            oData.append("subject_id", sSubjectId);
+        }
+        appendAdminCsrfToken(oData);
+        window.fetch(window.location.href, {
+            method: "POST",
+            headers: getAdminAjaxHeaders(),
+            body: oData,
+            credentials: "same-origin"
+        }).then(function(oResponse) {
+            return oResponse.text().then(function(sText) {
+                var aData = null;
+                try {
+                    aData = JSON.parse(sText);
+                } catch (oException) {
+                    aData = null;
+                }
+                if (!oResponse.ok || !aData || !aData.success) {
+                    throw aData || {};
+                }
+                return aData;
+            });
+        }).then(function(aData) {
+            if (iCurrentRequest != iRequestIndex) {
+                return;
+            }
+            renderSuggestions(aData[aSettings.resultKey] || []);
+            if (document.activeElement == oInput && (blOpenPicker === true || (aData[aSettings.resultKey] && aData[aSettings.resultKey].length))) {
+                openAdminInputDatalist(oInput);
+            }
+        }).catch(function(oException) {
+            logAdminException(oException);
+            hideList();
+        });
+    }
+
+    oInput.addEventListener("input", function() {
+        var sTerm = oInput.value.replace(/^\s+|\s+$/g, "");
+        iRequestIndex += 1;
+        if (iTimer) {
+            window.clearTimeout(iTimer);
+        }
+        if (selectByName(sTerm)) {
+            return;
+        }
+        oIdField.value = "";
+        if (typeof aSettings.onClear == "function") {
+            aSettings.onClear();
+        }
+        if (sTerm.length < iMinLength) {
+            hideList();
+            return;
+        }
+        iTimer = window.setTimeout(function() {
+            requestSuggestions(sTerm, false);
+        }, 200);
+    });
+    oInput.addEventListener("focus", function() {
+        var sTerm = oInput.value.replace(/^\s+|\s+$/g, "");
+        if (openAdminInputDatalist(oInput)) {
+            return;
+        }
+        if (sTerm.length < iMinLength) {
+            if (iMinLength > 0) {
+                return;
+            }
+            sTerm = "";
+        }
+        iRequestIndex += 1;
+        if (iTimer) {
+            window.clearTimeout(iTimer);
+        }
+        requestSuggestions(sTerm, true);
+    });
+    oInput.addEventListener("change", function() {
+        if (oInput.value.replace(/^\s+|\s+$/g, "") == "") {
+            oIdField.value = "";
+            if (typeof aSettings.onClear == "function") {
+                aSettings.onClear();
+            }
+        } else {
+            selectByName(oInput.value);
+        }
+    });
+    oInput.addEventListener("keydown", function(oEvent) {
+        if (oEvent.key == "Escape") {
+            hideList();
+        }
+    });
+}
+
+function openBusinessHoursDialog(aRow, oSourceCard) {
+    var oDialog = document.getElementById("admin-reusable-dialog");
+    var oForm;
+    var oBox;
+    var oHeader;
+    var oTitle;
+    var oClose;
+    var oSubjectId;
+    var oSubject;
+    var oSubjectList;
+    var oAddressId;
+    var oAddress;
+    var oAddressList;
+    var oDays;
+    var aDayInputs = [];
+    var oActive;
+    var oError;
+    var oActions;
+    var oSave;
+    var oCancel;
+    var iId = aRow ? aRow.id : 0;
+    var aHours = aRow ? aRow.hours : getBusinessHoursDefaultHours();
+    var blSaved = false;
+    var i;
+
+    if (!oDialog) {
+        return;
+    }
+
+    oForm = document.createElement("form");
+    oForm.className = "confirm-dialog-box subject-edit-dialog business-hours-edit-dialog";
+    oBox = oForm;
+
+    oHeader = document.createElement("div");
+    oHeader.className = "confirm-dialog-header";
+    oTitle = document.createElement("strong");
+    oTitle.className = "confirm-dialog-title";
+    oTitle.textContent = iId > 0 ? "Edit Business Hours" : "New Business Hours";
+    oClose = document.createElement("button");
+    oClose.type = "button";
+    oClose.className = "confirm-dialog-close";
+    oClose.setAttribute("aria-label", "Close");
+    oClose.innerHTML = "&times;";
+    oHeader.appendChild(oTitle);
+    oHeader.appendChild(oClose);
+    oBox.appendChild(oHeader);
+
+    oSubjectId = appendBusinessHoursHiddenField(oBox, "subject_id", aRow ? String(aRow.subjectId) : "");
+    oSubject = createAdminInput("business-hours-dialog-subject", aRow ? aRow.subjectName : "", true);
+    oSubject.setAttribute("list", "business-hours-subject-list");
+    oSubjectList = document.createElement("datalist");
+    oSubjectList.id = "business-hours-subject-list";
+    appendMenuDialogField(oBox, "Subject", oSubject);
+    oBox.appendChild(oSubjectList);
+
+    oAddressId = appendBusinessHoursHiddenField(oBox, "address_id", aRow ? String(aRow.addressId) : "");
+    oAddress = createAdminInput("business-hours-dialog-address", aRow ? aRow.addressText : "", true);
+    oAddress.setAttribute("list", "business-hours-address-list");
+    oAddressList = document.createElement("datalist");
+    oAddressList.id = "business-hours-address-list";
+    appendMenuDialogField(oBox, "Address", oAddress);
+    oBox.appendChild(oAddressList);
+
+    oDays = document.createElement("div");
+    oDays.className = "business-hours-days";
+    for (i = 0; i < aBusinessHoursDays.length; i++) {
+        aDayInputs.push(appendBusinessHoursDayRow(oDays, aBusinessHoursDays[i], aHours[aBusinessHoursDays[i].key]));
+    }
+    oBox.appendChild(oDays);
+
+    oActive = document.createElement("input");
+    oActive.type = "checkbox";
+    oActive.checked = aRow ? aRow.active : true;
+    appendMenuDialogCheck(oBox, "Active", oActive);
+
+    oError = document.createElement("div");
+    oError.className = "subject-edit-error";
+    oError.style.display = "none";
+    oBox.appendChild(oError);
+
+    oActions = document.createElement("div");
+    oActions.className = "confirm-dialog-actions";
+    oSave = document.createElement("button");
+    oSave.type = "submit";
+    oSave.className = "confirm-dialog-button";
+    oSave.textContent = "Save";
+    oCancel = document.createElement("button");
+    oCancel.type = "button";
+    oCancel.className = "confirm-dialog-button";
+    oCancel.textContent = "Cancel";
+    oActions.appendChild(oSave);
+    oActions.appendChild(oCancel);
+    oBox.appendChild(oActions);
+
+    function refreshAddressField() {
+        var blDisabled = parseInt(oSubjectId.value || "0", 10) < 1;
+        oAddress.disabled = blDisabled;
+        if (blDisabled) {
+            oAddress.value = "";
+            oAddressId.value = "";
+            oAddressList.innerHTML = "";
+        }
+    }
+
+    function clearAddressField() {
+        oAddress.value = "";
+        oAddressId.value = "";
+        oAddressList.innerHTML = "";
+        refreshAddressField();
+    }
+
+    function closeBusinessHoursDialog() {
+        finishAdminSubjectRowEdit(oSourceCard, blSaved);
+        closeAdminDialog();
+    }
+
+    bindBusinessHoursSuggestInput(oSubject, {
+        action: "suggest_business_hours_subjects",
+        resultKey: "subjects",
+        idKey: "subject_id",
+        textKey: "subject_name",
+        idField: oSubjectId,
+        minLength: 3,
+        onSelect: function() {
+            clearAddressField();
+            refreshAddressField();
+        },
+        onClear: clearAddressField
+    });
+    bindBusinessHoursSuggestInput(oAddress, {
+        action: "suggest_business_hours_addresses",
+        resultKey: "addresses",
+        idKey: "address_id",
+        textKey: "address_text",
+        idField: oAddressId,
+        subjectIdField: oSubjectId,
+        minLength: 0
+    });
+
+    beginAdminSubjectRowEdit(oSourceCard);
+    oClose.addEventListener("click", closeBusinessHoursDialog);
+    oCancel.addEventListener("click", closeBusinessHoursDialog);
+    oForm.addEventListener("submit", function(oEvent) {
+        var oData;
+        var iSavedId;
+        var oSavedCard;
+        oEvent.preventDefault();
+        oError.style.display = "none";
+        oError.textContent = "";
+        oData = new FormData();
+        oData.append("action", iId > 0 ? "update_business_hours" : "create_business_hours");
+        if (iId > 0) {
+            oData.append("business_hours_id", String(iId));
+        }
+        oData.append("subject_id", oSubjectId.value);
+        oData.append("address_id", oAddressId.value);
+        appendAdminEncodedValue(oData, "subject_name", oSubject.value);
+        appendAdminEncodedValue(oData, "address_text", oAddress.value);
+        for (i = 0; i < aDayInputs.length; i++) {
+            normalizeBusinessHoursTimeInput(aDayInputs[i].open);
+            normalizeBusinessHoursTimeInput(aDayInputs[i].breakStart);
+            normalizeBusinessHoursTimeInput(aDayInputs[i].breakEnd);
+            normalizeBusinessHoursTimeInput(aDayInputs[i].close);
+        }
+        for (i = 0; i < aDayInputs.length; i++) {
+            if (aDayInputs[i].closed.checked) {
+                oData.append("closed_" + aDayInputs[i].key, "1");
+            }
+            oData.append("open_" + aDayInputs[i].key, aDayInputs[i].open.value);
+            oData.append("break_start_" + aDayInputs[i].key, aDayInputs[i].breakStart.value);
+            oData.append("break_end_" + aDayInputs[i].key, aDayInputs[i].breakEnd.value);
+            oData.append("close_" + aDayInputs[i].key, aDayInputs[i].close.value);
+        }
+        if (oActive.checked) {
+            oData.append("is_active", "1");
+        }
+        oSave.disabled = true;
+        submitAdminRequest(oData, function(aData) {
+            iSavedId = aData && aData.business_hours_id ? parseInt(aData.business_hours_id, 10) : iId;
+            replaceBusinessHoursCards(aData);
+            oSavedCard = iSavedId ? findBusinessHoursCardById(iSavedId) : null;
+            finishAdminSubjectRowEdit(oSavedCard || oSourceCard, true);
+            blSaved = true;
+            closeAdminDialog();
+        }, function(sMessage) {
+            oSave.disabled = false;
+            oError.textContent = sMessage;
+            oError.style.display = "";
+        });
+    });
+
+    oDialog.innerHTML = "";
+    oDialog.appendChild(oForm);
+    if (oDialog.hidden) {
+        lockAdminModalScroll();
+    }
+    oDialog.hidden = false;
+    refreshAddressField();
+    window.setTimeout(function() {
+        focusAdminElement(oSubject, true);
+    }, 0);
+}
+
+function bindBusinessHours() {
+    var oAdd = document.querySelector(".js-add-business-hours");
+    var oGrid = document.getElementById("business-hours-cards");
+    bindBusinessHoursTabs();
+    if (oAdd) {
+        oAdd.addEventListener("click", function() {
+            openBusinessHoursDialog(null);
+        });
+    }
+    if (oGrid) {
+        oGrid.addEventListener("click", function(oEvent) {
+            var oButton = oEvent.target.closest(".js-edit-business-hours, .js-delete-business-hours, .js-move-business-hours-up, .js-move-business-hours-down");
+            var oCard = oButton ? oButton.closest("section[data-business-hours-id]") : null;
+            var aRow = getBusinessHoursCardData(oCard);
+            var oData;
+            if (!oButton || !aRow) {
+                return;
+            }
+            oEvent.preventDefault();
+            if (oButton.classList.contains("js-edit-business-hours")) {
+                openBusinessHoursDialog(aRow, oCard);
+            } else if (oButton.classList.contains("js-delete-business-hours")) {
+                beginAdminSubjectRowEdit(oCard);
+                openAdminConfirmDialog("Confirm Deletion", createBusinessHoursDeleteMessage(aRow), "Yes", function() {
+                    oData = new FormData();
+                    oData.append("action", "delete_business_hours");
+                    oData.append("business_hours_id", String(aRow.id));
+                    submitAdminRequest(oData, function(aData) {
+                        replaceBusinessHoursCards(aData);
+                    }, function(sMessage) {
+                        finishAdminSubjectRowEdit(oCard, false);
+                        alert(sMessage);
+                    });
+                }, function() {
+                    finishAdminSubjectRowEdit(oCard, false);
+                }, "No");
+            } else if (oButton.classList.contains("js-move-business-hours-up") || oButton.classList.contains("js-move-business-hours-down")) {
+                oData = new FormData();
+                oData.append("action", "move_business_hours");
+                oData.append("business_hours_id", String(aRow.id));
+                oData.append("direction", oButton.classList.contains("js-move-business-hours-up") ? "up" : "down");
+                submitAdminRequest(oData, function(aData) {
+                    var iSavedId = aData && aData.business_hours_id ? parseInt(aData.business_hours_id, 10) : aRow.id;
+                    var oSavedCard;
+                    replaceBusinessHoursCards(aData);
+                    oSavedCard = iSavedId ? findBusinessHoursCardById(iSavedId) : null;
+                    finishAdminSubjectRowEdit(oSavedCard || oCard, true);
+                }, function(sMessage) {
+                    finishAdminSubjectRowEdit(oCard, false);
+                    alert(sMessage);
+                });
+            }
+        });
+        activateBusinessHoursCard(0);
+    }
+}
+
 function closeAdminMenus(oExceptMenu) {
     var aMenus = document.querySelectorAll("[data-menu]");
     var i;
@@ -2869,14 +3696,18 @@ document.addEventListener("DOMContentLoaded", function() {
     bindAdminCopyLinks();
     bindMenuAdmin();
     bindDashboardServices();
+    bindBusinessHours();
+    layoutBusinessHours();
     bindIssueTracker();
     bindAdminSubmitOnChange();
     bindSnippetBoardTabs();
     bindSnippetBoardForm();
     bindSnippetBoardTinyMce();
     layoutSnippetBoard();
+    window.addEventListener("resize", layoutBusinessHours);
     window.addEventListener("resize", layoutSnippetBoard);
     if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", layoutBusinessHours);
         window.visualViewport.addEventListener("resize", layoutSnippetBoard);
     }
 });

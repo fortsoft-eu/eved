@@ -454,6 +454,644 @@ function menuAdminCreateOrUpdate($oPdo, $iMenuId) {
     }
 }
 
+function businessHoursDayLabels() {
+    return array(
+        "mon" => "Mon",
+        "tue" => "Tue",
+        "wed" => "Wed",
+        "thu" => "Thu",
+        "fri" => "Fri",
+        "sat" => "Sat",
+        "sun" => "Sun"
+    );
+}
+
+function businessHoursDefaultHours() {
+    $aHours = array();
+    foreach (businessHoursDayLabels() as $sDay => $sLabel) {
+        $aHours[$sDay] = array(
+            "closed" => $sDay == "sat" || $sDay == "sun" ? 1 : 0,
+            "open" => $sDay == "sat" || $sDay == "sun" ? "" : "08:00",
+            "break_start" => "",
+            "break_end" => "",
+            "close" => $sDay == "sat" || $sDay == "sun" ? "" : "17:00"
+        );
+    }
+    return $aHours;
+}
+
+function businessHoursNormalizeTime($sValue) {
+    $sValue = trim((string)$sValue);
+    if ($sValue == "") {
+        return "";
+    }
+    $sValue = preg_replace("/\s+/", " ", $sValue);
+    if (preg_match("/^([0-9]{1,2})[\s:.]+([0-9]{1,2})$/", $sValue, $aMatches)) {
+        $iHour = (int)$aMatches[1];
+        $iMinute = (int)$aMatches[2];
+    } elseif (preg_match("/^[0-9]{3,4}$/", $sValue)) {
+        $iHour = (int)substr($sValue, 0, -2);
+        $iMinute = (int)substr($sValue, -2);
+    } elseif (preg_match("/^[0-9]{1,2}$/", $sValue)) {
+        $iHour = (int)$sValue;
+        $iMinute = 0;
+    } else {
+        return false;
+    }
+    if ($iHour < 0 || $iHour > 23 || $iMinute < 0 || $iMinute > 59) {
+        return false;
+    }
+    return sprintf("%02d:%02d", $iHour, $iMinute);
+}
+
+function businessHoursTimeToMinutes($sValue) {
+    $aParts = explode(":", (string)$sValue);
+    return ((int)$aParts[0] * 60) + (int)$aParts[1];
+}
+
+function businessHoursReadPostedDay($sDay, $sLabel) {
+    $blClosed = isset($_POST["closed_" . $sDay]) && (string)$_POST["closed_" . $sDay] == "1";
+    $sOpen = businessHoursNormalizeTime(getPostedTrimmedValue("open_" . $sDay));
+    $sBreakStart = businessHoursNormalizeTime(getPostedTrimmedValue("break_start_" . $sDay));
+    $sBreakEnd = businessHoursNormalizeTime(getPostedTrimmedValue("break_end_" . $sDay));
+    $sClose = businessHoursNormalizeTime(getPostedTrimmedValue("close_" . $sDay));
+    $iOpen = 0;
+    $iClose = 0;
+    $iBreakStart = 0;
+    $iBreakEnd = 0;
+
+    if ($sOpen === false || $sBreakStart === false || $sBreakEnd === false || $sClose === false) {
+        sendJsonAndExit(array("success" => false, "message" => $sLabel . " contains invalid time."), 400);
+    }
+    if ($blClosed) {
+        return array(
+            "closed" => 1,
+            "open" => "",
+            "break_start" => "",
+            "break_end" => "",
+            "close" => ""
+        );
+    }
+    if ($sOpen == "" || $sClose == "") {
+        sendJsonAndExit(array("success" => false, "message" => $sLabel . " must have opening and closing time or be closed."), 400);
+    }
+    $iOpen = businessHoursTimeToMinutes($sOpen);
+    $iClose = businessHoursTimeToMinutes($sClose);
+    if ($iClose <= $iOpen) {
+        $iClose += 1440;
+    }
+    if (($sBreakStart == "") !== ($sBreakEnd == "")) {
+        sendJsonAndExit(array("success" => false, "message" => $sLabel . " break must have both start and end time."), 400);
+    }
+    if ($sBreakStart != "") {
+        $iBreakStart = businessHoursTimeToMinutes($sBreakStart);
+        $iBreakEnd = businessHoursTimeToMinutes($sBreakEnd);
+        if ($iBreakStart <= $iOpen) {
+            $iBreakStart += 1440;
+        }
+        if ($iBreakEnd <= $iBreakStart) {
+            $iBreakEnd += 1440;
+        }
+        if (!($iOpen < $iBreakStart && $iBreakStart < $iBreakEnd && $iBreakEnd < $iClose)) {
+            sendJsonAndExit(array("success" => false, "message" => $sLabel . " break must be inside opening hours."), 400);
+        }
+    }
+    return array(
+        "closed" => 0,
+        "open" => $sOpen,
+        "break_start" => $sBreakStart,
+        "break_end" => $sBreakEnd,
+        "close" => $sClose
+    );
+}
+
+function businessHoursReadPostedHoursJson() {
+    $aHours = array();
+    foreach (businessHoursDayLabels() as $sDay => $sLabel) {
+        $aHours[$sDay] = businessHoursReadPostedDay($sDay, $sLabel);
+    }
+    $sJson = json_encode($aHours);
+    if ($sJson === false) {
+        sendJsonAndExit(array("success" => false, "message" => "Business hours could not be saved."), 500);
+    }
+    return $sJson;
+}
+
+function businessHoursNormalizeHours($sJson) {
+    $aDefaults = businessHoursDefaultHours();
+    $aData = json_decode((string)$sJson, true);
+    if (!is_array($aData)) {
+        return $aDefaults;
+    }
+    foreach ($aDefaults as $sDay => $aDefaultDay) {
+        if (!isset($aData[$sDay]) || !is_array($aData[$sDay])) {
+            $aData[$sDay] = $aDefaultDay;
+        }
+        foreach ($aDefaultDay as $sKey => $sValue) {
+            if (!isset($aData[$sDay][$sKey])) {
+                $aData[$sDay][$sKey] = $sValue;
+            }
+        }
+        $aData[$sDay]["closed"] = (int)$aData[$sDay]["closed"] == 1 ? 1 : 0;
+        $aData[$sDay]["open"] = businessHoursNormalizeTime($aData[$sDay]["open"]);
+        $aData[$sDay]["break_start"] = businessHoursNormalizeTime($aData[$sDay]["break_start"]);
+        $aData[$sDay]["break_end"] = businessHoursNormalizeTime($aData[$sDay]["break_end"]);
+        $aData[$sDay]["close"] = businessHoursNormalizeTime($aData[$sDay]["close"]);
+        if ($aData[$sDay]["open"] === false || $aData[$sDay]["break_start"] === false || $aData[$sDay]["break_end"] === false || $aData[$sDay]["close"] === false) {
+            $aData[$sDay] = $aDefaultDay;
+        }
+    }
+    return $aData;
+}
+
+function businessHoursEncodeHours($aHours) {
+    $sJson = json_encode($aHours);
+    return $sJson === false ? "{}" : $sJson;
+}
+
+function businessHoursGetSubjectNameSelectSql() {
+    $sPersonDisplayBase = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.title_before, ''), NULLIF(p.first_name, ''), NULLIF(p.middle_name, ''), NULLIF(p.last_name, ''))), '')";
+    $sPersonDisplayName = "NULLIF(TRIM(CONCAT(COALESCE(" . $sPersonDisplayBase . ", ''), IF(NULLIF(p.title_after, '') IS NULL, '', IF(" . $sPersonDisplayBase . " IS NULL, p.title_after, CONCAT(', ', p.title_after))))), '')";
+    $sPersonSortName = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.last_name, ''), NULLIF(p.first_name, ''))), '')";
+    return "SELECT s.id AS subject_id, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_sort_name FROM ex_subjects AS s LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id LEFT JOIN (SELECT sc.subject_id, SUBSTRING_INDEX(GROUP_CONCAT(c.contact_value ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id GROUP BY sc.subject_id) AS c ON c.subject_id = s.id LEFT JOIN (SELECT subject_id, SUBSTRING_INDEX(GROUP_CONCAT(nickname ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n'), '\n', 1) AS primary_nickname FROM ex_subject_nicknames GROUP BY subject_id) AS n ON n.subject_id = s.id";
+}
+
+function businessHoursFetchSubjectNameRow($oPdo, $iSubjectId) {
+    if ((int)$iSubjectId < 1) {
+        return null;
+    }
+    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name, subject_sort_name FROM (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows WHERE subject_id = :subject_id");
+    $oStatement->execute(array("subject_id" => (int)$iSubjectId));
+    $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+    return $aRow ? $aRow : null;
+}
+
+function businessHoursFetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
+    $sTerm = trim((string)$sTerm);
+    if ($sTerm == "") {
+        return array();
+    }
+    $iLimit = (int)$iLimit;
+    if ($iLimit < 1) {
+        $iLimit = 2;
+    }
+    if ($iLimit > 30) {
+        $iLimit = 30;
+    }
+    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name FROM (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows WHERE subject_name = :subject_name_term OR subject_sort_name = :subject_sort_name_term ORDER BY subject_sort_name COLLATE utf8mb4_czech_ci ASC, subject_id ASC LIMIT " . $iLimit);
+    $oStatement->execute(array(
+        "subject_name_term" => $sTerm,
+        "subject_sort_name_term" => $sTerm
+    ));
+    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function businessHoursFetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
+    $sTerm = trim((string)$sTerm);
+    if (strlen($sTerm) < 3) {
+        return array();
+    }
+    $iLimit = (int)$iLimit;
+    if ($iLimit < 1) {
+        $iLimit = 12;
+    }
+    if ($iLimit > 30) {
+        $iLimit = 30;
+    }
+    $sLike = "%" . strtr($sTerm, array("!" => "!!", "%" => "!%", "_" => "!_")) . "%";
+    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name FROM (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows WHERE LOWER(subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' ORDER BY subject_sort_name COLLATE utf8mb4_czech_ci ASC, subject_id ASC LIMIT " . $iLimit);
+    $oStatement->execute(array(
+        "subject_name_term" => $sLike,
+        "subject_sort_name_term" => $sLike
+    ));
+    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function businessHoursFetchSingleSubjectInputRow($oPdo, $sTerm) {
+    $sTerm = trim((string)$sTerm);
+    if ($sTerm == "") {
+        return null;
+    }
+    if (preg_match('/^(.*) \(#([1-9][0-9]*)\)$/', $sTerm, $aMatches)) {
+        $aRow = businessHoursFetchSubjectNameRow($oPdo, (int)$aMatches[2]);
+        if ($aRow && (string)$aRow["subject_name"] == trim((string)$aMatches[1])) {
+            return $aRow;
+        }
+        return null;
+    }
+    $aRows = businessHoursFetchSubjectExactMatches($oPdo, $sTerm, 2);
+    if (count($aRows) == 1) {
+        return $aRows[0];
+    }
+    if (count($aRows) > 1) {
+        return null;
+    }
+    $aRows = businessHoursFetchSubjectSuggestions($oPdo, $sTerm, 2);
+    if (count($aRows) == 1) {
+        return $aRows[0];
+    }
+    return null;
+}
+
+function businessHoursAddressText($aAddress, $blIncludeOrganization = true) {
+    $aParts = array();
+    $sNumber = trim(trim((string)$aAddress["house_number"]) . ((string)$aAddress["orientation_number"] != "" ? "/" . trim((string)$aAddress["orientation_number"]) . trim((string)$aAddress["orientation_suffix"]) : ""));
+    if ($sNumber == "" && (string)$aAddress["evidence_number"] != "") {
+        $sNumber = "ev. " . trim((string)$aAddress["evidence_number"]);
+    }
+    $sStreet = trim(trim((string)$aAddress["street_name"]) . " " . $sNumber);
+    if ($blIncludeOrganization && trim((string)$aAddress["organization_name"]) != "") {
+        $aParts[] = trim((string)$aAddress["organization_name"]);
+    }
+    foreach (array("department_name", "care_of") as $sColumn) {
+        if (trim((string)$aAddress[$sColumn]) != "") {
+            $aParts[] = trim((string)$aAddress[$sColumn]);
+        }
+    }
+    if ($sStreet != "") {
+        $aParts[] = $sStreet;
+    }
+    if (trim((string)$aAddress["address_line2"]) != "") {
+        $aParts[] = trim((string)$aAddress["address_line2"]);
+    }
+    $sCityLine = trim(implode(" ", array_filter(array(trim((string)$aAddress["postal_code"]), trim((string)$aAddress["city"]), trim((string)$aAddress["city_part"])))));
+    if ($sCityLine != "") {
+        $aParts[] = $sCityLine;
+    }
+    if (trim((string)$aAddress["region"]) != "") {
+        $aParts[] = trim((string)$aAddress["region"]);
+    }
+    $sText = trim(implode(", ", $aParts));
+    return $sText != "" ? $sText : "Address #" . (int)$aAddress["id"];
+}
+
+function businessHoursFetchAddressRows($oPdo, $iSubjectId, $iAddressId = 0, $sTerm = "", $iLimit = 30) {
+    $aRows = array();
+    if ((int)$iSubjectId < 1) {
+        return $aRows;
+    }
+    $sSql = "SELECT id, subject_id, address_type, organization_name, department_name, care_of, street_name, house_number, evidence_number, orientation_number, orientation_suffix, address_line2, city, city_part, postal_code, region, country, is_primary, is_active, note FROM ex_subject_addresses WHERE subject_id = :subject_id";
+    if ((int)$iAddressId > 0) {
+        $sSql .= " AND id = :address_id";
+    }
+    $sSql .= " ORDER BY is_active DESC, is_primary DESC, id ASC";
+    $oStatement = $oPdo->prepare($sSql);
+    $aParams = array("subject_id" => (int)$iSubjectId);
+    if ((int)$iAddressId > 0) {
+        $aParams["address_id"] = (int)$iAddressId;
+    }
+    $oStatement->execute($aParams);
+    $sTerm = trim((string)$sTerm);
+    $iLimit = (int)$iLimit;
+    if ($iLimit < 1) {
+        $iLimit = 30;
+    }
+    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        $aRow["address_id"] = (int)$aRow["id"];
+        $aRow["address_text"] = businessHoursAddressText($aRow);
+        if ($sTerm != "" && stripos($aRow["address_text"], $sTerm) === false) {
+            continue;
+        }
+        $aRows[] = $aRow;
+        if (count($aRows) >= $iLimit) {
+            break;
+        }
+    }
+    return $aRows;
+}
+
+function businessHoursFetchAddressRow($oPdo, $iSubjectId, $iAddressId) {
+    $aRows = businessHoursFetchAddressRows($oPdo, $iSubjectId, $iAddressId, "", 1);
+    return $aRows ? $aRows[0] : null;
+}
+
+function businessHoursFetchSingleAddressInputRow($oPdo, $iSubjectId, $sTerm) {
+    $sTerm = trim((string)$sTerm);
+    if ((int)$iSubjectId < 1 || $sTerm == "") {
+        return null;
+    }
+    if (preg_match('/^(.*) \(#([1-9][0-9]*)\)$/', $sTerm, $aMatches)) {
+        $aRow = businessHoursFetchAddressRow($oPdo, $iSubjectId, (int)$aMatches[2]);
+        if ($aRow && (string)$aRow["address_text"] == trim((string)$aMatches[1])) {
+            return $aRow;
+        }
+        return null;
+    }
+    $aRows = businessHoursFetchAddressRows($oPdo, $iSubjectId, 0, "", 200);
+    $aMatches = array();
+    foreach ($aRows as $aRow) {
+        if ((string)$aRow["address_text"] == $sTerm) {
+            $aMatches[] = $aRow;
+        }
+    }
+    if (count($aMatches) == 1) {
+        return $aMatches[0];
+    }
+    return null;
+}
+
+function businessHoursFetchRows($oPdo, $iId = 0) {
+    $aRows = array();
+    $sSql = "SELECT bh.id, bh.subject_id, bh.address_id, bh.hours, bh.is_active, bh.`order` AS bh_order, DATE_FORMAT(bh.created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(bh.updated_at, '%Y-%m-%d %H:%i') AS updated_at_text, subject_rows.subject_name, subject_rows.subject_sort_name, a.address_type, a.organization_name, a.department_name, a.care_of, a.street_name, a.house_number, a.evidence_number, a.orientation_number, a.orientation_suffix, a.address_line2, a.city, a.city_part, a.postal_code, a.region, a.country, a.is_primary AS address_primary, a.is_active AS address_active, a.note AS address_note FROM fs_business_hours AS bh LEFT JOIN (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows ON subject_rows.subject_id = bh.subject_id LEFT JOIN ex_subject_addresses AS a ON a.id = bh.address_id";
+    if ((int)$iId > 0) {
+        $oStatement = $oPdo->prepare($sSql . " WHERE bh.id = :id");
+        $oStatement->execute(array("id" => (int)$iId));
+    } else {
+        $oStatement = $oPdo->query($sSql . " ORDER BY bh.is_active DESC, bh.`order` ASC, subject_rows.subject_sort_name COLLATE utf8mb4_czech_ci ASC, bh.id ASC");
+    }
+    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        $aAddress = array(
+            "id" => (int)$aRow["address_id"],
+            "subject_id" => (int)$aRow["subject_id"],
+            "address_type" => (string)$aRow["address_type"],
+            "organization_name" => (string)$aRow["organization_name"],
+            "department_name" => (string)$aRow["department_name"],
+            "care_of" => (string)$aRow["care_of"],
+            "street_name" => (string)$aRow["street_name"],
+            "house_number" => (string)$aRow["house_number"],
+            "evidence_number" => (string)$aRow["evidence_number"],
+            "orientation_number" => (string)$aRow["orientation_number"],
+            "orientation_suffix" => (string)$aRow["orientation_suffix"],
+            "address_line2" => (string)$aRow["address_line2"],
+            "city" => (string)$aRow["city"],
+            "city_part" => (string)$aRow["city_part"],
+            "postal_code" => (string)$aRow["postal_code"],
+            "region" => (string)$aRow["region"],
+            "country" => (string)$aRow["country"],
+            "is_primary" => (int)$aRow["address_primary"],
+            "is_active" => (int)$aRow["address_active"],
+            "note" => (string)$aRow["address_note"]
+        );
+        $aHours = businessHoursNormalizeHours($aRow["hours"]);
+        $aRows[] = array(
+            "id" => (int)$aRow["id"],
+            "subject_id" => (int)$aRow["subject_id"],
+            "address_id" => (int)$aRow["address_id"],
+            "subject_name" => (string)$aRow["subject_name"] != "" ? (string)$aRow["subject_name"] : "Subject #" . (int)$aRow["subject_id"],
+            "organization_name" => trim((string)$aAddress["organization_name"]),
+            "address_text" => businessHoursAddressText($aAddress),
+            "address_display_text" => businessHoursAddressText($aAddress, false),
+            "hours" => businessHoursEncodeHours($aHours),
+            "hours_data" => $aHours,
+            "is_active" => (int)$aRow["is_active"],
+            "order" => (int)$aRow["bh_order"],
+            "created_at" => (string)$aRow["created_at_text"],
+            "updated_at" => (string)$aRow["updated_at_text"]
+        );
+    }
+    return $aRows;
+}
+
+function businessHoursRenderHours($aHours) {
+    $blHasBreak = false;
+    foreach (businessHoursDayLabels() as $sDay => $sLabel) {
+        $aDay = isset($aHours[$sDay]) && is_array($aHours[$sDay]) ? $aHours[$sDay] : array();
+        if (empty($aDay["closed"]) && (string)$aDay["break_start"] != "" && (string)$aDay["break_end"] != "") {
+            $blHasBreak = true;
+            break;
+        }
+    }
+    if ($blHasBreak) {
+        $sHtml = "<table class=\"business-hours-table business-hours-table-with-breaks\"><colgroup><col class=\"business-hours-col-day\"><col class=\"business-hours-col-interval\"><col class=\"business-hours-col-divider\"><col class=\"business-hours-col-interval\"></colgroup><tbody>";
+    } else {
+        $sHtml = "<table class=\"business-hours-table business-hours-table-plain\"><colgroup><col class=\"business-hours-col-day\"><col class=\"business-hours-col-hours\"></colgroup><tbody>";
+    }
+    foreach (businessHoursDayLabels() as $sDay => $sLabel) {
+        $aDay = isset($aHours[$sDay]) && is_array($aHours[$sDay]) ? $aHours[$sDay] : array();
+        $sHtml .= "<tr><th scope=\"row\">" . html($sLabel) . "</th>";
+        if (!empty($aDay["closed"])) {
+            $sHtml .= "<td class=\"business-hours-closed\"" . ($blHasBreak ? " colspan=\"3\"" : "") . ">Closed</td>";
+        } elseif (!$blHasBreak) {
+            $sHtml .= "<td class=\"business-hours-hours\">" . html((string)$aDay["open"]) . "&mdash;" . html((string)$aDay["close"]) . "</td>";
+        } else {
+            if ((string)$aDay["break_start"] != "" && (string)$aDay["break_end"] != "") {
+                $sHtml .= "<td class=\"business-hours-time-range\">" . html((string)$aDay["open"]) . "&mdash;" . html((string)$aDay["break_start"]) . "</td>";
+                $sHtml .= "<td></td>";
+                $sHtml .= "<td class=\"business-hours-time-range business-hours-time-range-second\">" . html((string)$aDay["break_end"]) . "&mdash;" . html((string)$aDay["close"]) . "</td>";
+            } else {
+                $sHtml .= "<td class=\"business-hours-time-open\">" . html((string)$aDay["open"]) . "</td>";
+                $sHtml .= "<td class=\"business-hours-divider\">&mdash;</td>";
+                $sHtml .= "<td class=\"business-hours-time-close\">" . html((string)$aDay["close"]) . "</td>";
+            }
+        }
+        $sHtml .= "</tr>";
+    }
+    return $sHtml . "</tbody></table>";
+}
+
+function businessHoursRenderCard($aRow) {
+    global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
+
+    $sCardClass = (int)$aRow["is_active"] == 1 ? "business-hours-card" : "business-hours-card business-hours-card-inactive";
+    $sOrganizationName = trim((string)$aRow["organization_name"]);
+    $sAddressText = isset($aRow["address_display_text"]) ? (string)$aRow["address_display_text"] : (string)$aRow["address_text"];
+    if ($sOrganizationName != "") {
+        $sTitleHtml = "<span class=\"business-hours-card-title\"><strong>" . html($sOrganizationName) . "</strong><span>" . html($aRow["subject_name"]) . "</span></span>";
+    } else {
+        $sTitleHtml = "<span class=\"business-hours-card-title\"><strong>" . html($aRow["subject_name"]) . "</strong></span>";
+    }
+    return "    <section class=\"" . $sCardClass . "\" data-business-hours-id=\"" . (int)$aRow["id"] . "\""
+        . " data-business-hours-subject-id=\"" . (int)$aRow["subject_id"] . "\""
+        . " data-business-hours-address-id=\"" . (int)$aRow["address_id"] . "\""
+        . " data-business-hours-subject-name=\"" . html($aRow["subject_name"]) . "\""
+        . " data-business-hours-address-text=\"" . html($aRow["address_text"]) . "\""
+        . " data-business-hours-hours=\"" . html($aRow["hours"]) . "\""
+        . " data-business-hours-active=\"" . ((int)$aRow["is_active"] == 1 ? "1" : "0") . "\">\n"
+        . "      <header class=\"business-hours-card-header\">" . $sTitleHtml . "<span class=\"business-hours-card-actions\"><a href=\"#\" class=\"item-action js-move-business-hours-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-business-hours-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-business-hours\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-business-hours\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></span></header>\n"
+        . "      <div class=\"business-hours-address\">" . html($sAddressText) . "</div>\n"
+        . "      " . businessHoursRenderHours($aRow["hours_data"]) . "\n"
+        . "    </section>\n";
+}
+
+function businessHoursRenderCards($aRows) {
+    if (!$aRows) {
+        return "    <p class=\"business-hours-empty\">No records found.</p>\n";
+    }
+    $sHtml = "";
+    foreach ($aRows as $aRow) {
+        $sHtml .= businessHoursRenderCard($aRow);
+    }
+    return $sHtml;
+}
+
+function businessHoursRenderTabs($aRows) {
+    $sHtml = "";
+    $iIndex = 1;
+    foreach ($aRows as $aRow) {
+        $sHtml .= "      <button type=\"button\" class=\"button-link business-hours-tab" . ($iIndex == 1 ? " business-hours-tab-active" : "") . "\" data-business-hours-tab-id=\"" . (int)$aRow["id"] . "\" role=\"tab\" aria-selected=\"" . ($iIndex == 1 ? "true" : "false") . "\" aria-label=\"Business Hours " . $iIndex . "\">" . $iIndex . "</button>\n";
+        $iIndex++;
+    }
+    return $sHtml;
+}
+
+function businessHoursFetchLockedRows($oPdo) {
+    $aRows = array();
+    $oStatement = $oPdo->query("SELECT id, `order` AS bh_order FROM fs_business_hours ORDER BY `order` ASC, id ASC FOR UPDATE");
+    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        $aRows[] = array(
+            "id" => (int)$aRow["id"],
+            "order" => (int)$aRow["bh_order"]
+        );
+    }
+    return $aRows;
+}
+
+function businessHoursNormalizeOrder($oPdo, $aRows = null) {
+    if ($aRows === null) {
+        $aRows = businessHoursFetchLockedRows($oPdo);
+    }
+    $iOrder = 10;
+    $oStatement = $oPdo->prepare("UPDATE fs_business_hours SET `order` = :order WHERE id = :id");
+    foreach ($aRows as $aRow) {
+        $oStatement->execute(array("order" => $iOrder, "id" => (int)$aRow["id"]));
+        $iOrder += 10;
+    }
+}
+
+function businessHoursNextOrder($oPdo) {
+    $iMaxOrder = 0;
+    $aRows = businessHoursFetchLockedRows($oPdo);
+    foreach ($aRows as $aRow) {
+        if ((int)$aRow["order"] > $iMaxOrder) {
+            $iMaxOrder = (int)$aRow["order"];
+        }
+    }
+    return $iMaxOrder + 10;
+}
+
+function businessHoursMove($oPdo, $iId, $sDirection) {
+    $aRows = businessHoursFetchLockedRows($oPdo);
+    $iOrder = 10;
+    $iCurrentIndex = -1;
+    foreach ($aRows as $iIndex => $aRow) {
+        $aRows[$iIndex]["order"] = $iOrder;
+        if ((int)$aRow["id"] === $iId) {
+            $iCurrentIndex = $iIndex;
+        }
+        $iOrder += 10;
+    }
+    if ($iCurrentIndex < 0) {
+        throw new RuntimeException("Business hours were not found.");
+    }
+    $iTargetIndex = $sDirection == "up" ? $iCurrentIndex - 1 : $iCurrentIndex + 1;
+    if (!isset($aRows[$iTargetIndex])) {
+        businessHoursNormalizeOrder($oPdo, $aRows);
+        return;
+    }
+    $iCurrentOrder = (int)$aRows[$iCurrentIndex]["order"];
+    $iTargetOrder = (int)$aRows[$iTargetIndex]["order"];
+    $oStatement = $oPdo->prepare("UPDATE fs_business_hours SET `order` = :order WHERE id = :id");
+    foreach ($aRows as $aRow) {
+        $iNewOrder = (int)$aRow["order"];
+        if ((int)$aRow["id"] === (int)$aRows[$iCurrentIndex]["id"]) {
+            $iNewOrder = $iTargetOrder;
+        } elseif ((int)$aRow["id"] === (int)$aRows[$iTargetIndex]["id"]) {
+            $iNewOrder = $iCurrentOrder;
+        }
+        $oStatement->execute(array("order" => $iNewOrder, "id" => (int)$aRow["id"]));
+    }
+}
+
+function businessHoursBuildResponse($oPdo, $iId = 0) {
+    $aRows = businessHoursFetchRows($oPdo);
+    return array(
+        "success" => true,
+        "business_hours_id" => (int)$iId,
+        "cards_html" => businessHoursRenderCards($aRows),
+        "tabs_html" => businessHoursRenderTabs($aRows)
+    );
+}
+
+function businessHoursCreateOrUpdate($oPdo, $iId) {
+    $iSubjectId = (int)getPostedTrimmedValue("subject_id", "0");
+    $iAddressId = (int)getPostedTrimmedValue("address_id", "0");
+    $sSubjectName = getPostedTrimmedValue("subject_name");
+    $sAddressText = getPostedTrimmedValue("address_text");
+    $sHours = businessHoursReadPostedHoursJson();
+    $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
+
+    if ($iSubjectId < 1 && $sSubjectName != "") {
+        $aSubjectRow = businessHoursFetchSingleSubjectInputRow($oPdo, $sSubjectName);
+        if ($aSubjectRow) {
+            $iSubjectId = (int)$aSubjectRow["subject_id"];
+        }
+    }
+    if ($iSubjectId < 1 || !businessHoursFetchSubjectNameRow($oPdo, $iSubjectId)) {
+        sendJsonAndExit(array("success" => false, "message" => "Subject is required."), 400);
+    }
+    if ($iAddressId < 1 && $sAddressText != "") {
+        $aAddressRow = businessHoursFetchSingleAddressInputRow($oPdo, $iSubjectId, $sAddressText);
+        if ($aAddressRow) {
+            $iAddressId = (int)$aAddressRow["address_id"];
+        }
+    }
+    if ($iAddressId < 1 || !businessHoursFetchAddressRow($oPdo, $iSubjectId, $iAddressId)) {
+        sendJsonAndExit(array("success" => false, "message" => "Address is required."), 400);
+    }
+    try {
+        $oPdo->beginTransaction();
+        if ($iId > 0) {
+            $oStatement = $oPdo->prepare("SELECT id FROM fs_business_hours WHERE id = :id FOR UPDATE");
+            $oStatement->execute(array("id" => $iId));
+            if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+                $oPdo->rollBack();
+                sendJsonAndExit(array("success" => false, "message" => "Business hours were not found."), 404);
+            }
+            $oStatement = $oPdo->prepare("UPDATE fs_business_hours SET subject_id = :subject_id, address_id = :address_id, hours = :hours, is_active = :is_active WHERE id = :id");
+            $oStatement->execute(array(
+                "subject_id" => $iSubjectId,
+                "address_id" => $iAddressId,
+                "hours" => $sHours,
+                "is_active" => $iIsActive,
+                "id" => $iId
+            ));
+        } else {
+            $iOrder = businessHoursNextOrder($oPdo);
+            $oStatement = $oPdo->prepare("INSERT INTO fs_business_hours (subject_id, address_id, hours, is_active, `order`) VALUES (:subject_id, :address_id, :hours, :is_active, :order)");
+            $oStatement->execute(array(
+                "subject_id" => $iSubjectId,
+                "address_id" => $iAddressId,
+                "hours" => $sHours,
+                "is_active" => $iIsActive,
+                "order" => $iOrder
+            ));
+            $iId = (int)$oPdo->lastInsertId();
+        }
+        $oPdo->commit();
+        sendJsonAndExit(businessHoursBuildResponse($oPdo, $iId));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
+function businessHoursDelete($oPdo, $iId) {
+    if ($iId < 1) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid business hours."), 400);
+    }
+    try {
+        $oPdo->beginTransaction();
+        $oStatement = $oPdo->prepare("DELETE FROM fs_business_hours WHERE id = :id");
+        $oStatement->execute(array("id" => $iId));
+        if ($oStatement->rowCount() < 1) {
+            $oPdo->rollBack();
+            sendJsonAndExit(array("success" => false, "message" => "Business hours were not found."), 404);
+        }
+        businessHoursNormalizeOrder($oPdo);
+        $oPdo->commit();
+        sendJsonAndExit(businessHoursBuildResponse($oPdo, $iId));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
 function dashboardServiceCheckTypeLabels() {
     return array(
         "auto" => "Auto",
