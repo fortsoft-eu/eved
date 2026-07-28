@@ -1023,9 +1023,9 @@ function getExchangeRateRequestedFor() {
 }
 
 function hasExchangeRatesForDate($oPdo, $sValidFor) {
-    $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_exchange_rates WHERE valid_for = :valid_for");
-    $oStatement->execute(array("valid_for" => $sValidFor));
-    return (int)$oStatement->fetchColumn() > 0;
+    $oStatement = $oPdo->query("SELECT MAX(valid_for) FROM kf_exchange_rates");
+    $sLastValidFor = (string)$oStatement->fetchColumn();
+    return $sLastValidFor != "" && $sLastValidFor >= $sValidFor;
 }
 
 function reserveExchangeRateFetchAttempt($oPdo, $sRequestedFor) {
@@ -1066,9 +1066,11 @@ function reserveExchangeRateFetchAttempt($oPdo, $sRequestedFor) {
 
 function getExchangeRateHttpStatusCode($aHeaders) {
     $iStatusCode = 0;
-    foreach ($aHeaders as $sHeader) {
-        if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", (string)$sHeader, $aMatches)) {
-            $iStatusCode = (int)$aMatches[1];
+    if ($aHeaders) {
+        foreach ($aHeaders as $sHeader) {
+            if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", (string)$sHeader, $aMatches)) {
+                $iStatusCode = (int)$aMatches[1];
+            }
         }
     }
     return $iStatusCode;
@@ -1086,9 +1088,6 @@ function fetchExchangeRateApiResponse($sRequestedFor) {
         $sBody = curl_exec($oCurl);
         $iStatusCode = (int)curl_getinfo($oCurl, CURLINFO_RESPONSE_CODE);
         $sError = curl_errno($oCurl) ? curl_error($oCurl) : "";
-        if (PHP_VERSION_ID < 80000) {
-            curl_close($oCurl);
-        }
         return array(
             "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
             "status_code" => $iStatusCode,
@@ -1105,8 +1104,7 @@ function fetchExchangeRateApiResponse($sRequestedFor) {
         )
     );
     $sBody = @file_get_contents($sUrl, false, stream_context_create($aContext));
-    $aHeaders = isset($http_response_header) && is_array($http_response_header) ? $http_response_header : array();
-    $iStatusCode = getExchangeRateHttpStatusCode($aHeaders);
+    $iStatusCode = getExchangeRateHttpStatusCode(http_get_last_response_headers());
     $aError = error_get_last();
     return array(
         "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
