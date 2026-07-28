@@ -1715,7 +1715,7 @@ function findDashboardServiceRowById(iServiceId) {
 
 function setDashboardServiceText(oElement, sText) {
     if (oElement) {
-        oElement.textContent = sText || "-";
+        oElement.textContent = sText || "";
     }
 }
 

@@ -3637,267 +3637,6 @@
         window.bindAdminTableRow = bindTableRow;
     }
 
-    function setupSchemaRelations() {
-        var oCanvas = document.getElementById("schema-canvas");
-        var oSvg = document.getElementById("schema-lines");
-        var aRelations = document.querySelectorAll(".schema-relations tbody tr");
-        if (!oCanvas || !oSvg) {
-            return;
-        }
-
-        function getColumnId(sTableName, sColumnName) {
-            return "column-" + (sTableName + "-" + sColumnName).replace(/[^a-zA-Z0-9_-]/g, "-");
-        }
-
-        function getTableElement(oRow) {
-            return oRow.parentNode.parentNode;
-        }
-
-        function getRoute(oRelation) {
-            var sSourceSide = oRelation.getAttribute("data-source-side");
-            if (!sSourceSide) {
-                return null;
-            }
-            return {
-                "source": sSourceSide,
-                "target": oRelation.getAttribute("data-target-side") || sSourceSide,
-                "curve": parseInt(oRelation.getAttribute("data-curve") || "0", 10),
-                "sourceXOffset": parseInt(oRelation.getAttribute("data-source-x-offset") || "0", 10),
-                "sourceYOffset": parseInt(oRelation.getAttribute("data-source-y-offset") || "0", 10),
-                "targetXOffset": parseInt(oRelation.getAttribute("data-target-x-offset") || "0", 10),
-                "targetYOffset": parseInt(oRelation.getAttribute("data-target-y-offset") || "0", 10),
-                "viaX": parseInt(oRelation.getAttribute("data-via-x") || "", 10),
-                "viaXOffset": parseInt(oRelation.getAttribute("data-via-x-offset") || "", 10),
-                "viaY": parseInt(oRelation.getAttribute("data-via-y") || "", 10),
-                "viaYOffset": parseInt(oRelation.getAttribute("data-via-y-offset") || "", 10),
-                "viaTableBottomOffset": parseInt(oRelation.getAttribute("data-via-table-bottom-offset") || "", 10)
-            };
-        }
-
-        function getSides(oSourceTableRect, oTargetTableRect, iIndex) {
-            var iSourceCenterX = oSourceTableRect.left + oSourceTableRect.width / 2;
-            var iTargetCenterX = oTargetTableRect.left + oTargetTableRect.width / 2;
-            if (Math.abs(iSourceCenterX - iTargetCenterX) < 24) {
-                var sSide = iIndex % 2 === 0 ? "right" : "left";
-                return {
-                    "source": sSide,
-                    "target": sSide
-                };
-            }
-            return {
-                "source": iSourceCenterX < iTargetCenterX ? "right" : "left",
-                "target": iSourceCenterX < iTargetCenterX ? "left" : "right"
-            };
-        }
-
-        function getAnchor(oRowRect, oCanvasRect, sSide, iXOffset, iYOffset) {
-            if (sSide == "top") {
-                return {
-                    "x": oRowRect.left + oRowRect.width / 2 - oCanvasRect.left + iXOffset,
-                    "y": oRowRect.top - oCanvasRect.top + iYOffset
-                };
-            }
-            if (sSide == "bottom") {
-                return {
-                    "x": oRowRect.left + oRowRect.width / 2 - oCanvasRect.left + iXOffset,
-                    "y": oRowRect.bottom - oCanvasRect.top + iYOffset
-                };
-            }
-            return {
-                "x": (sSide == "right" ? oRowRect.right : oRowRect.left) - oCanvasRect.left + iXOffset,
-                "y": oRowRect.top + oRowRect.height / 2 - oCanvasRect.top + iYOffset
-            };
-        }
-
-        function getDirection(sSide) {
-            if (sSide == "top") {
-                return {
-                    "x": 0,
-                    "y": -1
-                };
-            }
-            if (sSide == "bottom") {
-                return {
-                    "x": 0,
-                    "y": 1
-                };
-            }
-            return {
-                "x": sSide == "right" ? 1 : -1,
-                "y": 0
-            };
-        }
-
-        function getCurveSize(oStart, oEnd, aRoute) {
-            if (aRoute && !isNaN(aRoute.curve) && aRoute.curve > 0) {
-                return aRoute.curve;
-            }
-            return Math.max(72, Math.abs(oEnd.x - oStart.x) * 0.45);
-        }
-
-        function getRoundedPolylinePath(aPoints, iRadius) {
-            var sPath = "M " + aPoints[0].x + " " + aPoints[0].y;
-            for (var iI = 1; iI < aPoints.length - 1; iI += 1) {
-                var oPrevious = aPoints[iI - 1];
-                var oPoint = aPoints[iI];
-                var oNext = aPoints[iI + 1];
-                var iPreviousDistance = Math.sqrt(Math.pow(oPoint.x - oPrevious.x, 2) + Math.pow(oPoint.y - oPrevious.y, 2));
-                var iNextDistance = Math.sqrt(Math.pow(oNext.x - oPoint.x, 2) + Math.pow(oNext.y - oPoint.y, 2));
-                var iCornerRadius = Math.min(iRadius, iPreviousDistance / 2, iNextDistance / 2);
-                if (iCornerRadius <= 0) {
-                    sPath += " L " + oPoint.x + " " + oPoint.y;
-                    continue;
-                }
-                var oBefore = {
-                    "x": oPoint.x + (oPrevious.x - oPoint.x) * iCornerRadius / iPreviousDistance,
-                    "y": oPoint.y + (oPrevious.y - oPoint.y) * iCornerRadius / iPreviousDistance
-                };
-                var oAfter = {
-                    "x": oPoint.x + (oNext.x - oPoint.x) * iCornerRadius / iNextDistance,
-                    "y": oPoint.y + (oNext.y - oPoint.y) * iCornerRadius / iNextDistance
-                };
-                sPath += " L " + oBefore.x + " " + oBefore.y + " Q " + oPoint.x + " " + oPoint.y + " " + oAfter.x + " " + oAfter.y;
-            }
-            sPath += " L " + aPoints[aPoints.length - 1].x + " " + aPoints[aPoints.length - 1].y;
-            return sPath;
-        }
-
-        function removeSchemaRelationElements() {
-            var aElements = oSvg.querySelectorAll(".schema-relation, .schema-relation-source, .schema-relation-target");
-            for (var iI = 0; iI < aElements.length; iI += 1) {
-                aElements[iI].parentNode.removeChild(aElements[iI]);
-            }
-        }
-
-        function drawRelations() {
-            var oCanvasRect = oCanvas.getBoundingClientRect();
-            var aSchemaTables = oCanvas.querySelectorAll(".schema-table");
-            var iTablesBottom = 0;
-            var iI;
-            removeSchemaRelationElements();
-            oSvg.setAttribute("width", oCanvas.scrollWidth);
-            oSvg.setAttribute("height", oCanvas.scrollHeight);
-            oSvg.setAttribute("viewBox", "0 0 " + oCanvas.scrollWidth + " " + oCanvas.scrollHeight);
-            for (iI = 0; iI < aSchemaTables.length; iI += 1) {
-                iTablesBottom = Math.max(iTablesBottom, aSchemaTables[iI].getBoundingClientRect().bottom - oCanvasRect.top);
-            }
-            for (iI = 0; iI < aRelations.length; iI += 1) {
-                var oRelation = aRelations[iI];
-                var oSource = document.getElementById(getColumnId(oRelation.getAttribute("data-source-table"), oRelation.getAttribute("data-source-column")));
-                var oTarget = document.getElementById(getColumnId(oRelation.getAttribute("data-target-table"), oRelation.getAttribute("data-target-column")));
-                if (!oSource || !oTarget) {
-                    continue;
-                }
-                var oSourceRect = oSource.getBoundingClientRect();
-                var oTargetRect = oTarget.getBoundingClientRect();
-                var oSourceTableRect = getTableElement(oSource).getBoundingClientRect();
-                var oTargetTableRect = getTableElement(oTarget).getBoundingClientRect();
-                var aRoute = getRoute(oRelation);
-                var aSides;
-                if (aRoute) {
-                    aSides = {
-                        "source": aRoute.source,
-                        "target": aRoute.target
-                    };
-                } else {
-                    aSides = getSides(oSourceTableRect, oTargetTableRect, iI);
-                }
-                var oStart = getAnchor(oSourceRect, oCanvasRect, aSides.source, aRoute && !isNaN(aRoute.sourceXOffset) ? aRoute.sourceXOffset : 0, aRoute && !isNaN(aRoute.sourceYOffset) ? aRoute.sourceYOffset : 0);
-                var oEnd = getAnchor(oTargetRect, oCanvasRect, aSides.target, aRoute && !isNaN(aRoute.targetXOffset) ? aRoute.targetXOffset : 0, aRoute && !isNaN(aRoute.targetYOffset) ? aRoute.targetYOffset : 0);
-                var iCurve = getCurveSize(oStart, oEnd, aRoute);
-                var oSourceDirection = getDirection(aSides.source);
-                var oTargetDirection = getDirection(aSides.target);
-                var oControl1 = {
-                    "x": oStart.x + oSourceDirection.x * iCurve,
-                    "y": oStart.y + oSourceDirection.y * iCurve
-                };
-                var oControl2 = {
-                    "x": oEnd.x + oTargetDirection.x * iCurve,
-                    "y": oEnd.y + oTargetDirection.y * iCurve
-                };
-                var sPath;
-                var iRouteViaX = aRoute && !isNaN(aRoute.viaX) ? aRoute.viaX : NaN;
-                var iRouteViaY = aRoute && !isNaN(aRoute.viaY) ? aRoute.viaY : NaN;
-                if (aRoute && isNaN(iRouteViaX) && !isNaN(aRoute.viaXOffset)) {
-                    iRouteViaX = oEnd.x + aRoute.viaXOffset;
-                }
-                if (aRoute && isNaN(iRouteViaY) && !isNaN(aRoute.viaTableBottomOffset)) {
-                    iRouteViaY = iTablesBottom + aRoute.viaTableBottomOffset;
-                }
-                if (aRoute && isNaN(iRouteViaY) && !isNaN(aRoute.viaYOffset)) {
-                    iRouteViaY = Math.max(oStart.y, oEnd.y, oControl1.y, oControl2.y) + aRoute.viaYOffset;
-                }
-                if (aRoute && (!isNaN(iRouteViaX) || !isNaN(iRouteViaY))) {
-                    var aPoints = [];
-                    aPoints.push(oStart);
-                    aPoints.push(oControl1);
-                    if (!isNaN(iRouteViaX) && !isNaN(iRouteViaY)) {
-                        aPoints.push({
-                            "x": iRouteViaX,
-                            "y": oControl1.y
-                        });
-                        aPoints.push({
-                            "x": iRouteViaX,
-                            "y": iRouteViaY
-                        });
-                        aPoints.push({
-                            "x": oControl2.x,
-                            "y": iRouteViaY
-                        });
-                    } else if (!isNaN(iRouteViaX)) {
-                        aPoints.push({
-                            "x": iRouteViaX,
-                            "y": oControl1.y
-                        });
-                        aPoints.push({
-                            "x": iRouteViaX,
-                            "y": oControl2.y
-                        });
-                    } else {
-                        aPoints.push({
-                            "x": oControl1.x,
-                            "y": iRouteViaY
-                        });
-                        aPoints.push({
-                            "x": oControl2.x,
-                            "y": iRouteViaY
-                        });
-                    }
-                    aPoints.push(oControl2);
-                    aPoints.push(oEnd);
-                    sPath = getRoundedPolylinePath(aPoints, 18);
-                } else {
-                    sPath = "M " + oStart.x + " " + oStart.y + " C " + oControl1.x + " " + oControl1.y + ", " + oControl2.x + " " + oControl2.y + ", " + oEnd.x + " " + oEnd.y;
-                }
-                var oPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                var oCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                var oTargetCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-                var oTitle = document.createElementNS("http://www.w3.org/2000/svg", "title");
-                oPath.setAttribute("class", "schema-relation");
-                oPath.setAttribute("marker-end", "url(#schema-arrow)");
-                oPath.setAttribute("d", sPath);
-                oTitle.appendChild(document.createTextNode(oRelation.getAttribute("data-source-table") + "." + oRelation.getAttribute("data-source-column") + " -> " + oRelation.getAttribute("data-target-table") + "." + oRelation.getAttribute("data-target-column")));
-                oPath.appendChild(oTitle);
-                oCircle.setAttribute("class", "schema-relation-source");
-                oCircle.setAttribute("cx", oStart.x);
-                oCircle.setAttribute("cy", oStart.y);
-                oCircle.setAttribute("r", "4");
-                oTargetCircle.setAttribute("class", "schema-relation-target");
-                oTargetCircle.setAttribute("cx", oEnd.x);
-                oTargetCircle.setAttribute("cy", oEnd.y);
-                oTargetCircle.setAttribute("r", "3");
-                oSvg.appendChild(oPath);
-                oSvg.appendChild(oCircle);
-                oSvg.appendChild(oTargetCircle);
-            }
-        }
-
-        window.setTimeout(drawRelations, 0);
-        window.addEventListener("load", drawRelations);
-        window.addEventListener("resize", function () {
-            window.setTimeout(drawRelations, 0);
-        });
-    }
 
     document.addEventListener("DOMContentLoaded", function () {
         setupMonthlyOverviewColumns();
@@ -3912,6 +3651,295 @@
         setupCopyLinks();
         setupCopyActions();
         setupTableRows();
-        setupSchemaRelations();
     });
 })();
+
+document.addEventListener("DOMContentLoaded", function () {
+    var oCanvas = document.getElementById("schema-canvas");
+    var oSvg = document.getElementById("schema-lines");
+    var aRelations = document.querySelectorAll(".schema-relations tbody tr");
+    if (!oCanvas || !oSvg) {
+        return;
+    }
+
+    function getColumnId(sTableName, sColumnName) {
+        return "column-" + (sTableName + "-" + sColumnName).replace(/[^a-zA-Z0-9_-]/g, "-");
+    }
+
+    function getTableElement(oRow) {
+        return oRow.parentNode.parentNode;
+    }
+
+    function getRoute(oRelation) {
+        var sSourceSide = oRelation.getAttribute("data-source-side");
+        if (!sSourceSide) {
+            return null;
+        }
+        return {
+            "source": sSourceSide,
+            "target": oRelation.getAttribute("data-target-side") || sSourceSide,
+            "curve": parseInt(oRelation.getAttribute("data-curve") || "0", 10),
+            "sourceXOffset": parseInt(oRelation.getAttribute("data-source-x-offset") || "0", 10),
+            "sourceYOffset": parseInt(oRelation.getAttribute("data-source-y-offset") || "0", 10),
+            "targetXOffset": parseInt(oRelation.getAttribute("data-target-x-offset") || "0", 10),
+            "targetYOffset": parseInt(oRelation.getAttribute("data-target-y-offset") || "0", 10),
+            "viaX": parseInt(oRelation.getAttribute("data-via-x") || "", 10),
+            "viaXOffset": parseInt(oRelation.getAttribute("data-via-x-offset") || "", 10),
+            "viaY": parseInt(oRelation.getAttribute("data-via-y") || "", 10),
+            "viaYOffset": parseInt(oRelation.getAttribute("data-via-y-offset") || "", 10),
+            "viaTableBottomOffset": parseInt(oRelation.getAttribute("data-via-table-bottom-offset") || "", 10)
+        };
+    }
+
+    function getSides(oSourceTableRect, oTargetTableRect, iIndex) {
+        var iSourceCenterX = oSourceTableRect.left + oSourceTableRect.width / 2;
+        var iTargetCenterX = oTargetTableRect.left + oTargetTableRect.width / 2;
+        if (Math.abs(iSourceCenterX - iTargetCenterX) < 24) {
+            var sSide = iIndex % 2 === 0 ? "right" : "left";
+            return {
+                "source": sSide,
+                "target": sSide
+            };
+        }
+        return {
+            "source": iSourceCenterX < iTargetCenterX ? "right" : "left",
+            "target": iSourceCenterX < iTargetCenterX ? "left" : "right"
+        };
+    }
+
+    function getAnchor(oRowRect, oCanvasRect, sSide, iXOffset, iYOffset) {
+        if (sSide == "top") {
+            return {
+                "x": oRowRect.left + oRowRect.width / 2 - oCanvasRect.left + iXOffset,
+                "y": oRowRect.top - oCanvasRect.top + iYOffset
+            };
+        }
+        if (sSide == "bottom") {
+            return {
+                "x": oRowRect.left + oRowRect.width / 2 - oCanvasRect.left + iXOffset,
+                "y": oRowRect.bottom - oCanvasRect.top + iYOffset
+            };
+        }
+        return {
+            "x": (sSide == "right" ? oRowRect.right : oRowRect.left) - oCanvasRect.left + iXOffset,
+            "y": oRowRect.top + oRowRect.height / 2 - oCanvasRect.top + iYOffset
+        };
+    }
+
+    function getDirection(sSide) {
+        if (sSide == "top") {
+            return {
+                "x": 0,
+                "y": -1
+            };
+        }
+        if (sSide == "bottom") {
+            return {
+                "x": 0,
+                "y": 1
+            };
+        }
+        return {
+            "x": sSide == "right" ? 1 : -1,
+            "y": 0
+        };
+    }
+
+    function getCurveSize(oStart, oEnd, aRoute) {
+        if (aRoute && !isNaN(aRoute.curve) && aRoute.curve > 0) {
+            return aRoute.curve;
+        }
+        return Math.max(72, Math.abs(oEnd.x - oStart.x) * 0.45);
+    }
+
+    function isPointBetween(iFirst, iMiddle, iLast) {
+        return (iFirst <= iMiddle && iMiddle <= iLast) || (iLast <= iMiddle && iMiddle <= iFirst);
+    }
+
+    function isRedundantPolylinePoint(oPrevious, oPoint, oNext) {
+        if (oPrevious.x == oPoint.x && oPoint.x == oNext.x) {
+            return isPointBetween(oPrevious.y, oPoint.y, oNext.y);
+        }
+        if (oPrevious.y == oPoint.y && oPoint.y == oNext.y) {
+            return isPointBetween(oPrevious.x, oPoint.x, oNext.x);
+        }
+        return false;
+    }
+
+    function cleanPolylinePoints(aPoints) {
+        var aCleanPoints = [];
+        for (var iI = 0; iI < aPoints.length; iI += 1) {
+            if (iI > 0 && iI + 1 < aPoints.length && isRedundantPolylinePoint(aPoints[iI - 1], aPoints[iI], aPoints[iI + 1])) {
+                continue;
+            }
+            aCleanPoints.push(aPoints[iI]);
+        }
+        return aCleanPoints;
+    }
+
+    function getRoundedPolylinePath(aPoints, iRadius) {
+        aPoints = cleanPolylinePoints(aPoints);
+        var sPath = "M " + aPoints[0].x + " " + aPoints[0].y;
+        for (var iI = 1; iI < aPoints.length - 1; iI += 1) {
+            var oPrevious = aPoints[iI - 1];
+            var oPoint = aPoints[iI];
+            var oNext = aPoints[iI + 1];
+            var iPreviousDistance = Math.sqrt(Math.pow(oPoint.x - oPrevious.x, 2) + Math.pow(oPoint.y - oPrevious.y, 2));
+            var iNextDistance = Math.sqrt(Math.pow(oNext.x - oPoint.x, 2) + Math.pow(oNext.y - oPoint.y, 2));
+            var iPreviousRadiusLimit = iI == 1 ? iPreviousDistance : iPreviousDistance / 2;
+            var iNextRadiusLimit = iI + 1 == aPoints.length - 1 ? iNextDistance : iNextDistance / 2;
+            var iCornerRadius = Math.min(iRadius, iPreviousRadiusLimit, iNextRadiusLimit);
+            if (iCornerRadius <= 0) {
+                sPath += " L " + oPoint.x + " " + oPoint.y;
+                continue;
+            }
+            var oBefore = {
+                "x": oPoint.x + (oPrevious.x - oPoint.x) * iCornerRadius / iPreviousDistance,
+                "y": oPoint.y + (oPrevious.y - oPoint.y) * iCornerRadius / iPreviousDistance
+            };
+            var oAfter = {
+                "x": oPoint.x + (oNext.x - oPoint.x) * iCornerRadius / iNextDistance,
+                "y": oPoint.y + (oNext.y - oPoint.y) * iCornerRadius / iNextDistance
+            };
+            sPath += " L " + oBefore.x + " " + oBefore.y + " Q " + oPoint.x + " " + oPoint.y + " " + oAfter.x + " " + oAfter.y;
+        }
+        sPath += " L " + aPoints[aPoints.length - 1].x + " " + aPoints[aPoints.length - 1].y;
+        return sPath;
+    }
+
+    function removeSchemaRelationElements() {
+        var aElements = oSvg.querySelectorAll(".schema-relation, .schema-relation-source, .schema-relation-target");
+        for (var iI = 0; iI < aElements.length; iI += 1) {
+            aElements[iI].parentNode.removeChild(aElements[iI]);
+        }
+    }
+
+    function drawRelations() {
+        var oCanvasRect = oCanvas.getBoundingClientRect();
+        var aSchemaTables = oCanvas.querySelectorAll(".schema-table");
+        var iTablesBottom = 0;
+        var iI;
+        removeSchemaRelationElements();
+        oSvg.setAttribute("width", oCanvas.scrollWidth);
+        oSvg.setAttribute("height", oCanvas.scrollHeight);
+        oSvg.setAttribute("viewBox", "0 0 " + oCanvas.scrollWidth + " " + oCanvas.scrollHeight);
+        for (iI = 0; iI < aSchemaTables.length; iI += 1) {
+            iTablesBottom = Math.max(iTablesBottom, aSchemaTables[iI].getBoundingClientRect().bottom - oCanvasRect.top);
+        }
+        for (iI = 0; iI < aRelations.length; iI += 1) {
+            var oRelation = aRelations[iI];
+            var oSource = document.getElementById(getColumnId(oRelation.getAttribute("data-source-table"), oRelation.getAttribute("data-source-column")));
+            var oTarget = document.getElementById(getColumnId(oRelation.getAttribute("data-target-table"), oRelation.getAttribute("data-target-column")));
+            if (!oSource || !oTarget) {
+                continue;
+            }
+            var oSourceRect = oSource.getBoundingClientRect();
+            var oTargetRect = oTarget.getBoundingClientRect();
+            var oSourceTableRect = getTableElement(oSource).getBoundingClientRect();
+            var oTargetTableRect = getTableElement(oTarget).getBoundingClientRect();
+            var aRoute = getRoute(oRelation);
+            var aSides;
+            if (aRoute) {
+                aSides = {
+                    "source": aRoute.source,
+                    "target": aRoute.target
+                };
+            } else {
+                aSides = getSides(oSourceTableRect, oTargetTableRect, iI);
+            }
+            var oStart = getAnchor(oSourceRect, oCanvasRect, aSides.source, aRoute && !isNaN(aRoute.sourceXOffset) ? aRoute.sourceXOffset : 0, aRoute && !isNaN(aRoute.sourceYOffset) ? aRoute.sourceYOffset : 0);
+            var oEnd = getAnchor(oTargetRect, oCanvasRect, aSides.target, aRoute && !isNaN(aRoute.targetXOffset) ? aRoute.targetXOffset : 0, aRoute && !isNaN(aRoute.targetYOffset) ? aRoute.targetYOffset : 0);
+            var iCurve = getCurveSize(oStart, oEnd, aRoute);
+            var oSourceDirection = getDirection(aSides.source);
+            var oTargetDirection = getDirection(aSides.target);
+            var oControl1 = {
+                "x": oStart.x + oSourceDirection.x * iCurve,
+                "y": oStart.y + oSourceDirection.y * iCurve
+            };
+            var oControl2 = {
+                "x": oEnd.x + oTargetDirection.x * iCurve,
+                "y": oEnd.y + oTargetDirection.y * iCurve
+            };
+            var sPath;
+            var iRouteViaX = aRoute && !isNaN(aRoute.viaX) ? aRoute.viaX : NaN;
+            var iRouteViaY = aRoute && !isNaN(aRoute.viaY) ? aRoute.viaY : NaN;
+            if (aRoute && isNaN(iRouteViaX) && !isNaN(aRoute.viaXOffset)) {
+                iRouteViaX = oEnd.x + aRoute.viaXOffset;
+            }
+            if (aRoute && isNaN(iRouteViaY) && !isNaN(aRoute.viaTableBottomOffset)) {
+                iRouteViaY = iTablesBottom + aRoute.viaTableBottomOffset;
+            }
+            if (aRoute && isNaN(iRouteViaY) && !isNaN(aRoute.viaYOffset)) {
+                iRouteViaY = Math.max(oStart.y, oEnd.y, oControl1.y, oControl2.y) + aRoute.viaYOffset;
+            }
+            if (aRoute && (!isNaN(iRouteViaX) || !isNaN(iRouteViaY))) {
+                var aPoints = [];
+                aPoints.push(oStart);
+                aPoints.push(oControl1);
+                if (!isNaN(iRouteViaX) && !isNaN(iRouteViaY)) {
+                    aPoints.push({
+                        "x": iRouteViaX,
+                        "y": oControl1.y
+                    });
+                    aPoints.push({
+                        "x": iRouteViaX,
+                        "y": iRouteViaY
+                    });
+                    aPoints.push({
+                        "x": oControl2.x,
+                        "y": iRouteViaY
+                    });
+                } else if (!isNaN(iRouteViaX)) {
+                    aPoints.push({
+                        "x": iRouteViaX,
+                        "y": oControl1.y
+                    });
+                    aPoints.push({
+                        "x": iRouteViaX,
+                        "y": oControl2.y
+                    });
+                } else {
+                    aPoints.push({
+                        "x": oControl1.x,
+                        "y": iRouteViaY
+                    });
+                    aPoints.push({
+                        "x": oControl2.x,
+                        "y": iRouteViaY
+                    });
+                }
+                aPoints.push(oControl2);
+                aPoints.push(oEnd);
+                sPath = getRoundedPolylinePath(aPoints, 18);
+            } else {
+                sPath = "M " + oStart.x + " " + oStart.y + " C " + oControl1.x + " " + oControl1.y + ", " + oControl2.x + " " + oControl2.y + ", " + oEnd.x + " " + oEnd.y;
+            }
+            var oPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            var oCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            var oTargetCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            var oTitle = document.createElementNS("http://www.w3.org/2000/svg", "title");
+            oPath.setAttribute("class", "schema-relation");
+            oPath.setAttribute("marker-end", "url(#schema-arrow)");
+            oPath.setAttribute("d", sPath);
+            oTitle.appendChild(document.createTextNode(oRelation.getAttribute("data-source-table") + "." + oRelation.getAttribute("data-source-column") + " -> " + oRelation.getAttribute("data-target-table") + "." + oRelation.getAttribute("data-target-column")));
+            oPath.appendChild(oTitle);
+            oCircle.setAttribute("class", "schema-relation-source");
+            oCircle.setAttribute("cx", oStart.x);
+            oCircle.setAttribute("cy", oStart.y);
+            oCircle.setAttribute("r", "4");
+            oTargetCircle.setAttribute("class", "schema-relation-target");
+            oTargetCircle.setAttribute("cx", oEnd.x);
+            oTargetCircle.setAttribute("cy", oEnd.y);
+            oTargetCircle.setAttribute("r", "3");
+            oSvg.appendChild(oPath);
+            oSvg.appendChild(oCircle);
+            oSvg.appendChild(oTargetCircle);
+        }
+    }
+
+    window.setTimeout(drawRelations, 0);
+    window.addEventListener("load", drawRelations);
+    window.addEventListener("resize", function () {
+        window.setTimeout(drawRelations, 0);
+    });
+});

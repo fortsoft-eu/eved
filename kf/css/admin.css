@@ -955,18 +955,20 @@ td.numeric, th.numeric {
 }
 
 .schema-grid {
-    column-gap: 86px;
-    grid-template-columns: repeat(3, minmax(360px, 1fr));
-    padding-bottom: 42px;
-    row-gap: 72px;
+    column-gap: 126px;
+    grid-template-columns: repeat(3, minmax(340px, 1fr));
+    padding-bottom: 55px;
+    row-gap: 92px;
 }
 
 .schema-table td:nth-child(2), .schema-table th:nth-child(2) {
-    width: 150px;
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
 }
 
 .schema-table td:nth-child(3), .schema-table th:nth-child(3) {
-    width: 205px;
+    width: calc(26% - 8px);
 }
 
 .schema-table[data-table="kf_fin_groups"] {

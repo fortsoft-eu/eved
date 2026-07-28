@@ -635,7 +635,7 @@ function dashboardServiceStatusData($aRow) {
 }
 
 function dashboardServiceRenderRow($aRow) {
-    global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji, $sEmptyValueEmoji;
+    global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
 
     $sRowClass = (int)$aRow["is_active"] == 1 ? "" : " class=\"dashboard-service-inactive\"";
     $aStatus = dashboardServiceStatusData($aRow);
@@ -657,9 +657,9 @@ function dashboardServiceRenderRow($aRow) {
         . "<td><strong>" . html($aRow["name"]) . "</strong></td>"
         . "<td class=\"dashboard-service-url\"><a href=\"" . html($aRow["url"]) . "\" target=\"_blank\" rel=\"noopener\">" . html($aRow["url"]) . "</a></td>"
         . "<td class=\"dashboard-service-expected\">" . dashboardServiceRenderExpected($aRow) . "</td>"
-        . "<td class=\"dashboard-service-http js-dashboard-service-http\">" . ($aRow["code"] != "" ? html($aRow["code"]) : $sEmptyValueEmoji) . "</td>"
-        . "<td class=\"dashboard-service-checked js-dashboard-service-checked\">" . ($aRow["checked_at"] != "" ? html($aRow["checked_at"]) : $sEmptyValueEmoji) . "</td>"
-        . "<td class=\"dashboard-service-detail js-dashboard-service-detail\">" . ($aRow["message"] != "" ? html($aRow["message"]) : $sEmptyValueEmoji) . "</td>"
+        . "<td class=\"dashboard-service-http js-dashboard-service-http\">" . ($aRow["code"] != "" ? html($aRow["code"]) : "") . "</td>"
+        . "<td class=\"dashboard-service-checked js-dashboard-service-checked\">" . ($aRow["checked_at"] != "" ? html($aRow["checked_at"]) : "") . "</td>"
+        . "<td class=\"dashboard-service-detail js-dashboard-service-detail\">" . ($aRow["message"] != "" ? html($aRow["message"]) : "") . "</td>"
         . "<td>" . ((int)$aRow["is_active"] == 1 ? "Yes" : "No") . "</td>"
         . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-dashboard-service-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-dashboard-service-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
         . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-check-dashboard-service\" title=\"Check\" aria-label=\"Check\">&#128260;</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-dashboard-service\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-dashboard-service\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"

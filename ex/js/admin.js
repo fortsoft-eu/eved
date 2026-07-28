@@ -2521,7 +2521,33 @@ document.addEventListener("DOMContentLoaded", function () {
         return Math.max(72, Math.abs(oEnd.x - oStart.x) * 0.45);
     }
 
+    function isPointBetween(iFirst, iMiddle, iLast) {
+        return (iFirst <= iMiddle && iMiddle <= iLast) || (iLast <= iMiddle && iMiddle <= iFirst);
+    }
+
+    function isRedundantPolylinePoint(oPrevious, oPoint, oNext) {
+        if (oPrevious.x == oPoint.x && oPoint.x == oNext.x) {
+            return isPointBetween(oPrevious.y, oPoint.y, oNext.y);
+        }
+        if (oPrevious.y == oPoint.y && oPoint.y == oNext.y) {
+            return isPointBetween(oPrevious.x, oPoint.x, oNext.x);
+        }
+        return false;
+    }
+
+    function cleanPolylinePoints(aPoints) {
+        var aCleanPoints = [];
+        for (var iI = 0; iI < aPoints.length; iI += 1) {
+            if (iI > 0 && iI + 1 < aPoints.length && isRedundantPolylinePoint(aPoints[iI - 1], aPoints[iI], aPoints[iI + 1])) {
+                continue;
+            }
+            aCleanPoints.push(aPoints[iI]);
+        }
+        return aCleanPoints;
+    }
+
     function getRoundedPolylinePath(aPoints, iRadius) {
+        aPoints = cleanPolylinePoints(aPoints);
         var sPath = "M " + aPoints[0].x + " " + aPoints[0].y;
         for (var iI = 1; iI < aPoints.length - 1; iI += 1) {
             var oPrevious = aPoints[iI - 1];
@@ -2529,7 +2555,9 @@ document.addEventListener("DOMContentLoaded", function () {
             var oNext = aPoints[iI + 1];
             var iPreviousDistance = Math.sqrt(Math.pow(oPoint.x - oPrevious.x, 2) + Math.pow(oPoint.y - oPrevious.y, 2));
             var iNextDistance = Math.sqrt(Math.pow(oNext.x - oPoint.x, 2) + Math.pow(oNext.y - oPoint.y, 2));
-            var iCornerRadius = Math.min(iRadius, iPreviousDistance / 2, iNextDistance / 2);
+            var iPreviousRadiusLimit = iI == 1 ? iPreviousDistance : iPreviousDistance / 2;
+            var iNextRadiusLimit = iI + 1 == aPoints.length - 1 ? iNextDistance : iNextDistance / 2;
+            var iCornerRadius = Math.min(iRadius, iPreviousRadiusLimit, iNextRadiusLimit);
             if (iCornerRadius <= 0) {
                 sPath += " L " + oPoint.x + " " + oPoint.y;
                 continue;
