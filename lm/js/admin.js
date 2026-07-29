@@ -3261,6 +3261,7 @@ function resizeSnippetBoardEditors() {
                     if (typeof oEditor.dispatch == "function") {
                         oEditor.dispatch("ResizeEditor");
                     }
+                    scheduleSnippetBoardToolbarLines(oEditor);
                 }
             }
         }, 0);
@@ -3772,6 +3773,80 @@ function copySnippetBoardRichText(oEditor) {
     copySnippetBoardPlainText(oEditor);
 }
 
+function updateSnippetBoardToolbarLines(oEditor) {
+    var oContainer = oEditor && typeof oEditor.getContainer == "function" ? oEditor.getContainer() : null;
+    var oHeader = oContainer ? oContainer.querySelector(".tox-editor-header") : null;
+    var aGroups = oHeader ? oHeader.querySelectorAll(".tox-toolbar__group") : [];
+    var oOldLayer = oHeader ? oHeader.querySelector(".snippet-board-toolbar-lines") : null;
+    var oHeaderRect;
+    var oGroupRect;
+    var oLayer;
+    var oUsedLines = {};
+    var oDrawnLines = {};
+    var iTop;
+    var iBottom;
+    var blHasToolbarRow = false;
+    var sKey;
+    var oLine;
+    var iLineTop;
+    var i;
+    if (oOldLayer && oOldLayer.parentNode) {
+        oOldLayer.parentNode.removeChild(oOldLayer);
+    }
+    if (!oHeader) {
+        return;
+    }
+    removeAdminClass(oHeader, "snippet-board-toolbar-lines-ready");
+    oHeaderRect = oHeader.getBoundingClientRect();
+    if (!aGroups.length || !oHeaderRect.width || !oHeaderRect.height) {
+        return;
+    }
+    for (i = 0; i < aGroups.length; i++) {
+        oGroupRect = aGroups[i].getBoundingClientRect();
+        if (!oGroupRect.width || !oGroupRect.height) {
+            continue;
+        }
+        iTop = Math.round(oGroupRect.top - oHeaderRect.top);
+        iBottom = Math.max(iTop, Math.round(oGroupRect.bottom - oHeaderRect.top) - 1);
+        sKey = "row-" + iTop;
+        blHasToolbarRow = true;
+        oUsedLines[sKey] = iBottom;
+    }
+    if (!blHasToolbarRow) {
+        return;
+    }
+    addAdminClass(oHeader, "snippet-board-toolbar-lines-ready");
+    oLayer = document.createElement("div");
+    oLayer.className = "snippet-board-toolbar-lines";
+    oHeader.appendChild(oLayer);
+    for (sKey in oUsedLines) {
+        iLineTop = oUsedLines[sKey];
+        if (typeof iLineTop != "number") {
+            continue;
+        }
+        if (oDrawnLines["line-" + iLineTop]) {
+            continue;
+        }
+        oDrawnLines["line-" + iLineTop] = true;
+        oLine = document.createElement("div");
+        oLine.className = "snippet-board-toolbar-line";
+        oLine.style.top = iLineTop + "px";
+        oLayer.appendChild(oLine);
+    }
+}
+
+function scheduleSnippetBoardToolbarLines(oEditor) {
+    if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(function() {
+            updateSnippetBoardToolbarLines(oEditor);
+        });
+    } else {
+        window.setTimeout(function() {
+            updateSnippetBoardToolbarLines(oEditor);
+        }, 0);
+    }
+}
+
 function bindSnippetBoardTinyMce() {
     if (!window.tinymce || typeof window.tinymce.init != "function") {
         return;
@@ -3874,6 +3949,13 @@ function bindSnippetBoardTinyMce() {
                 oEditor.on("paste cut ExecCommand", syncSnippetBoardEditorChangeAfterEvent);
                 oEditor.on("init", function() {
                     layoutSnippetBoard();
+                    scheduleSnippetBoardToolbarLines(oEditor);
+                });
+                oEditor.on("ResizeEditor", function() {
+                    scheduleSnippetBoardToolbarLines(oEditor);
+                });
+                window.addEventListener("resize", function() {
+                    scheduleSnippetBoardToolbarLines(oEditor);
                 });
             }
         });

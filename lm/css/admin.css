@@ -1933,8 +1933,17 @@ body.snippet-board-page {
     border-bottom: 1px solid #C0C0C0;
 }
 
+.snippet-board-form .tox .tox-editor-header.snippet-board-toolbar-lines-ready {
+    border-bottom: 0;
+    position: relative;
+}
+
 .snippet-board-form .tox .tox-toolbar, .snippet-board-form .tox .tox-toolbar__overflow, .snippet-board-form .tox .tox-toolbar__primary {
     background: #F0F0F0 !important;
+}
+
+.snippet-board-form .tox .tox-editor-header.snippet-board-toolbar-lines-ready .tox-toolbar__primary {
+    border-bottom: 0;
 }
 
 .snippet-board-form .tox .tox-toolbar__primary {
@@ -1942,9 +1951,32 @@ body.snippet-board-page {
     padding: 0;
 }
 
+.snippet-board-form .tox .tox-editor-header.snippet-board-toolbar-lines-ready .tox-toolbar__overflow {
+    border-top: 0;
+    border-bottom: 0;
+}
+
 .snippet-board-form .tox .tox-toolbar__overflow {
     border-top: 1px solid #C0C0C0;
     border-bottom: 1px solid #C0C0C0;
+}
+
+.snippet-board-form .tox .snippet-board-toolbar-lines {
+    height: 100%;
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 2;
+}
+
+.snippet-board-form .tox .snippet-board-toolbar-line {
+    background: #C0C0C0;
+    height: 1px;
+    left: 0;
+    position: absolute;
+    right: 0;
 }
 
 .snippet-board-form .tox .tox-edit-area {
