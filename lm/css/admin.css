@@ -1441,6 +1441,7 @@ body.business-hours-page {
 }
 
 .business-hours-card-inactive {
+    background: #EEE;
     color: #000;
 }
 
@@ -1451,7 +1452,7 @@ body.business-hours-page {
     gap: 6px;
     justify-content: space-between;
     line-height: 1.35;
-    min-height: 34px;
+    min-height: 48px;
     padding-bottom: 10px;
 }
 
@@ -1470,6 +1471,7 @@ body.business-hours-page {
 
 .business-hours-card-title strong {
     margin-bottom: 10px;
+    min-height: 2.7em;
 }
 
 .business-hours-card-title span {

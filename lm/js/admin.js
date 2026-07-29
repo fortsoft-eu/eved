@@ -145,6 +145,62 @@ function finishAdminSubjectRowEdit(oRow, blSaved) {
     }
 }
 
+function enableAdminDialogDrag(oDialog, oBox, oHeader) {
+    var blDragging = false;
+    var iOffsetX = 0;
+    var iOffsetY = 0;
+
+    function moveDialog(iClientX, iClientY) {
+        var iMaxLeft = Math.max(0, window.innerWidth - oBox.offsetWidth);
+        var iMaxTop = Math.max(0, window.innerHeight - oBox.offsetHeight);
+        var iLeft = Math.max(0, Math.min(iClientX - iOffsetX, iMaxLeft));
+        var iTop = Math.max(0, Math.min(iClientY - iOffsetY, iMaxTop));
+        oBox.style.left = iLeft + "px";
+        oBox.style.top = iTop + "px";
+    }
+
+    function stopDrag() {
+        if (blDragging) {
+            blDragging = false;
+            document.body.style.userSelect = "";
+            document.removeEventListener("mousemove", moveOnMouse);
+            document.removeEventListener("mouseup", stopDrag);
+        }
+    }
+
+    function moveOnMouse(oEvent) {
+        if (blDragging) {
+            moveDialog(oEvent.clientX, oEvent.clientY);
+            oEvent.preventDefault();
+        }
+    }
+
+    if (!oDialog || !oBox || !oHeader || oHeader.getAttribute("data-admin-dialog-drag-bound") == "1") {
+        return;
+    }
+    oHeader.setAttribute("data-admin-dialog-drag-bound", "1");
+    oHeader.addEventListener("mousedown", function (oEvent) {
+        var oTarget = oEvent.target;
+        var oRect;
+        if (oEvent.button !== 0 || (oTarget && oTarget.closest && oTarget.closest(".confirm-dialog-close"))) {
+            return;
+        }
+        oRect = oBox.getBoundingClientRect();
+        iOffsetX = oEvent.clientX - oRect.left;
+        iOffsetY = oEvent.clientY - oRect.top;
+        oBox.style.position = "absolute";
+        oBox.style.left = oRect.left + "px";
+        oBox.style.top = oRect.top + "px";
+        oBox.style.margin = "0";
+        blDragging = true;
+
+        document.body.style.userSelect = "none";
+        document.addEventListener("mousemove", moveOnMouse);
+        document.addEventListener("mouseup", stopDrag);
+        oEvent.preventDefault();
+    });
+}
+
 function setupTableRows() {
     var sHoverColor = "#fff3cd";
     var sSelectedColor = "#cfe2ff";
@@ -992,6 +1048,7 @@ function openMenuItemDialog(aRow, oSourceRow) {
 
     oDialog.innerHTML = "";
     oDialog.appendChild(oForm);
+    enableAdminDialogDrag(oDialog, oForm, oHeader);
     if (oDialog.hidden) {
         lockAdminModalScroll();
     }
@@ -1067,6 +1124,7 @@ function openAdminConfirmDialog(sTitle, sMessage, sConfirmText, fConfirm, fCance
     });
     oDialog.innerHTML = "";
     oDialog.appendChild(oBox);
+    enableAdminDialogDrag(oDialog, oBox, oHeader);
     if (oDialog.hidden) {
         lockAdminModalScroll();
     }
@@ -1657,6 +1715,7 @@ function openIssueDialog(aRow, oSourceRow) {
 
     oDialog.innerHTML = "";
     oDialog.appendChild(oForm);
+    enableAdminDialogDrag(oDialog, oForm, oHeader);
     if (oDialog.hidden) {
         lockAdminModalScroll();
     }
@@ -2149,6 +2208,7 @@ function openDashboardServiceDialog(aRow, oSourceRow) {
 
     oDialog.innerHTML = "";
     oDialog.appendChild(oForm);
+    enableAdminDialogDrag(oDialog, oForm, oHeader);
     if (oDialog.hidden) {
         lockAdminModalScroll();
     }
@@ -2945,6 +3005,7 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
 
     oDialog.innerHTML = "";
     oDialog.appendChild(oForm);
+    enableAdminDialogDrag(oDialog, oForm, oHeader);
     if (oDialog.hidden) {
         lockAdminModalScroll();
     }
