@@ -3794,12 +3794,12 @@ function updateSnippetBoardToolbarLines(oEditor) {
         oOldLayer.parentNode.removeChild(oOldLayer);
     }
     if (!oHeader) {
-        return;
+        return false;
     }
     removeAdminClass(oHeader, "snippet-board-toolbar-lines-ready");
     oHeaderRect = oHeader.getBoundingClientRect();
     if (!aGroups.length || !oHeaderRect.width || !oHeaderRect.height) {
-        return;
+        return false;
     }
     for (i = 0; i < aGroups.length; i++) {
         oGroupRect = aGroups[i].getBoundingClientRect();
@@ -3813,7 +3813,7 @@ function updateSnippetBoardToolbarLines(oEditor) {
         oUsedLines[sKey] = iBottom;
     }
     if (!blHasToolbarRow) {
-        return;
+        return false;
     }
     addAdminClass(oHeader, "snippet-board-toolbar-lines-ready");
     oLayer = document.createElement("div");
@@ -3833,17 +3833,35 @@ function updateSnippetBoardToolbarLines(oEditor) {
         oLine.style.top = iLineTop + "px";
         oLayer.appendChild(oLine);
     }
+    return true;
 }
 
-function scheduleSnippetBoardToolbarLines(oEditor) {
+function scheduleSnippetBoardToolbarLines(oEditor, iAttempt) {
+    var iCurrentAttempt = typeof iAttempt == "number" ? iAttempt : 0;
+    var iToken;
+    function runToolbarLinesUpdate() {
+        var blReady;
+        if (oEditor._snippetBoardToolbarLineSchedule != iToken) {
+            return;
+        }
+        blReady = updateSnippetBoardToolbarLines(oEditor);
+        if (iCurrentAttempt < 6 || (!blReady && iCurrentAttempt < 20)) {
+            window.setTimeout(function() {
+                scheduleSnippetBoardToolbarLines(oEditor, iCurrentAttempt + 1);
+            }, iCurrentAttempt < 6 ? 50 : 100);
+        }
+    }
+    if (!oEditor) {
+        return;
+    }
+    if (!iCurrentAttempt) {
+        oEditor._snippetBoardToolbarLineSchedule = (oEditor._snippetBoardToolbarLineSchedule || 0) + 1;
+    }
+    iToken = oEditor._snippetBoardToolbarLineSchedule;
     if (window.requestAnimationFrame) {
-        window.requestAnimationFrame(function() {
-            updateSnippetBoardToolbarLines(oEditor);
-        });
+        window.requestAnimationFrame(runToolbarLinesUpdate);
     } else {
-        window.setTimeout(function() {
-            updateSnippetBoardToolbarLines(oEditor);
-        }, 0);
+        window.setTimeout(runToolbarLinesUpdate, 0);
     }
 }
 
@@ -3951,7 +3969,7 @@ function bindSnippetBoardTinyMce() {
                     layoutSnippetBoard();
                     scheduleSnippetBoardToolbarLines(oEditor);
                 });
-                oEditor.on("ResizeEditor", function() {
+                oEditor.on("PostRender SkinLoaded ResizeEditor", function() {
                     scheduleSnippetBoardToolbarLines(oEditor);
                 });
                 window.addEventListener("resize", function() {

@@ -2011,6 +2011,10 @@ body.snippet-board-page {
     padding: 0;
 }
 
+.snippet-board-form .tox:not([dir=rtl]) .tox-toolbar__group:not(:last-of-type) {
+    border-right: 1px solid #C0C0C0;
+}
+
 .snippet-board-form .tox:not([dir=rtl]) .tox-toolbar__group:last-of-type {
     border-right: 1px solid #C0C0C0;
 }
@@ -2092,10 +2096,16 @@ body.snippet-board-page {
     width: 14px;
 }
 
-.snippet-board-form .tox .tox-tbtn[data-mce-name="forecolor-chevron"], .snippet-board-form .tox .tox-tbtn[data-mce-name="backcolor-chevron"], .snippet-board-form .tox .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
+.snippet-board-form .tox .tox-tbtn[data-mce-name="forecolor-chevron"], .snippet-board-form .tox .tox-tbtn[data-mce-name="backcolor-chevron"] {
     flex: 0 0 23px;
     min-width: 23px;
     width: 23px;
+}
+
+.snippet-board-form .tox .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
+    flex: 0 0 24px;
+    min-width: 24px;
+    width: 24px;
 }
 
 .snippet-board-form .tox .tox-tbtn--select, .snippet-board-form .tox .tox-tbtn--bespoke {
@@ -2195,10 +2205,16 @@ body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-split-b
     width: 14px;
 }
 
-body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="forecolor-chevron"], body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="backcolor-chevron"], body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
+body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="forecolor-chevron"], body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="backcolor-chevron"] {
     flex: 0 0 23px;
     min-width: 23px;
     width: 23px;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
+    flex: 0 0 24px;
+    min-width: 24px;
+    width: 24px;
 }
 
 body[data-pmd-like="1"] .snippet-board-grid {
