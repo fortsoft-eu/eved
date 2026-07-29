@@ -1417,7 +1417,7 @@ body.business-hours-page {
 .business-hours-grid {
     align-content: start;
     display: grid;
-    gap: 8px;
+    gap: 5px;
     grid-auto-rows: auto;
     grid-template-columns: repeat(auto-fill, 320px);
     justify-content: start;
@@ -1467,6 +1467,11 @@ body.business-hours-page {
 
 .business-hours-card-title strong, .business-hours-card-title span {
     display: block;
+}
+
+.business-hours-linear-break, .business-hours-linear-gap {
+    font-size: 0;
+    line-height: 0;
 }
 
 .business-hours-card-title strong {
@@ -1578,10 +1583,6 @@ body.business-hours-page {
     animation: adminRowSavedBlink 0.22s linear 6;
 }
 
-.business-hours-edit-dialog {
-    max-width: 720px;
-}
-
 .business-hours-days {
     display: grid;
     gap: 5px;
@@ -1592,7 +1593,7 @@ body.business-hours-page {
     align-items: center;
     display: grid;
     gap: 5px;
-    grid-template-columns: 38px 76px repeat(4, minmax(88px, 1fr));
+    grid-template-columns: 38px 76px repeat(4, minmax(80px, 1fr));
 }
 
 .business-hours-day-name {
@@ -1616,7 +1617,7 @@ body.business-hours-page {
 .subject-edit-dialog .business-hours-day-row input[type="text"] {
     box-sizing: border-box;
     margin: 0;
-    min-width: 88px;
+    min-width: 80px;
     width: 100%;
 }
 
@@ -1640,23 +1641,29 @@ body.business-hours-page {
 
 @media (max-width: 600px) {
     .business-hours-day-row {
-        grid-template-columns: 38px 76px repeat(2, minmax(88px, 1fr));
+        font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+        font-stretch: condensed;
+        gap: 4px;
+        grid-template-columns: 30px 62px repeat(4, minmax(0, 1fr));
     }
-    .business-hours-day-row > input[type="text"]:nth-of-type(3) {
-        grid-column: 3;
+    .subject-edit-dialog label.business-hours-closed-label, .subject-edit-dialog .business-hours-day-row input[type="text"] {
+        font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+        font-stretch: condensed;
     }
-    .business-hours-day-row > input[type="text"]:nth-of-type(4) {
-        grid-column: 4;
+    .subject-edit-dialog .business-hours-day-row input[type="text"] {
+        min-width: 0;
+        padding-left: 3px;
+        padding-right: 3px;
     }
 }
 
 @media (max-width: 420px) {
     .business-hours-day-row {
-        grid-template-columns: 38px 76px minmax(0, 1fr);
+        gap: 3px;
+        grid-template-columns: 26px 54px repeat(4, minmax(0, 1fr));
     }
-    .subject-edit-dialog .business-hours-day-row input[type="text"] {
-        grid-column: 1 / 4;
-        min-width: 0;
+    .subject-edit-dialog .business-hours-closed-label input[type="checkbox"] {
+        margin-right: 3px;
     }
 }
 

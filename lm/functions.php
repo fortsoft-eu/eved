@@ -910,9 +910,9 @@ function businessHoursRenderCard($aRow) {
     $sOrganizationName = trim((string)$aRow["organization_name"]);
     $sAddressText = isset($aRow["address_display_text"]) ? (string)$aRow["address_display_text"] : (string)$aRow["address_text"];
     if ($sOrganizationName != "") {
-        $sTitleHtml = "<span class=\"business-hours-card-title\"><strong>" . businessHoursHtmlNoShortWordBreaks($sOrganizationName) . "</strong><span>" . businessHoursHtmlNoShortWordBreaks($aRow["subject_name"]) . "</span></span>";
+        $sTitleHtml = "<span class=\"business-hours-card-title\"><strong>" . businessHoursHtmlNoShortWordBreaks($sOrganizationName) . "</strong><br class=\"business-hours-linear-break\"><span>" . businessHoursHtmlNoShortWordBreaks($aRow["subject_name"]) . "</span></span>";
     } else {
-        $sTitleHtml = "<span class=\"business-hours-card-title\"><strong>" . businessHoursHtmlNoShortWordBreaks($aRow["subject_name"]) . "</strong></span>";
+        $sTitleHtml = "<span class=\"business-hours-card-title\"><strong>" . businessHoursHtmlNoShortWordBreaks($aRow["subject_name"]) . "</strong><br class=\"business-hours-linear-break\"><span>&nbsp;</span></span>";
     }
     return "    <section class=\"" . $sCardClass . "\" data-business-hours-id=\"" . (int)$aRow["id"] . "\""
         . " data-business-hours-subject-id=\"" . (int)$aRow["subject_id"] . "\""
@@ -923,7 +923,7 @@ function businessHoursRenderCard($aRow) {
         . " data-business-hours-active=\"" . ((int)$aRow["is_active"] == 1 ? "1" : "0") . "\">\n"
         . "      <header class=\"business-hours-card-header\">" . $sTitleHtml . "<span class=\"business-hours-card-actions\"><a href=\"#\" class=\"item-action js-move-business-hours-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-business-hours-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-business-hours\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-business-hours\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></span></header>\n"
         . "      <div class=\"business-hours-address\">" . html($sAddressText) . "</div>\n"
-        . "      " . businessHoursRenderHours($aRow["hours_data"]) . "\n"
+        . "      " . businessHoursRenderHours($aRow["hours_data"]) . "<br class=\"business-hours-linear-gap\"><br class=\"business-hours-linear-gap\">\n"
         . "    </section>\n";
 }
 

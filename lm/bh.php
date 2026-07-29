@@ -30,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "suggest_business_hours_
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "suggest_business_hours_addresses") {
     try {
-        sendJsonAndExit(array("success" => true, "addresses" => businessHoursFetchAddressRows($oPdo, (int)getPostedTrimmedValue("subject_id", "0"), 0, getPostedTrimmedValue("term"), 30)));
+        sendJsonAndExit(array("success" => true, "addresses" => businessHoursFetchAddressRows($oPdo, (int)getPostedTrimmedValue("subject_id", "0"), 0, getPostedTrimmedValue("term"), 200)));
     } catch (Exception $oException) {
         error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Addresses could not be loaded."), 500);

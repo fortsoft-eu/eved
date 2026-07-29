@@ -2296,7 +2296,7 @@ function isBusinessHoursPmdLike() {
 }
 
 function getBusinessHoursColumnCount(iViewportWidth) {
-    var iGap = 8;
+    var iGap = 5;
     var iMinCardWidth = 320;
     var iColumns;
     if (isBusinessHoursPmdLike()) {
@@ -2778,7 +2778,7 @@ function bindBusinessHoursSuggestInput(oInput, aSettings) {
             requestSuggestions(sTerm, false);
         }, 200);
     });
-    oInput.addEventListener("focus", function() {
+    oInput.addEventListener("click", function() {
         var sTerm = oInput.value.replace(/^\s+|\s+$/g, "");
         if (openAdminInputDatalist(oInput)) {
             return;
@@ -2824,7 +2824,6 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
     var oSubjectList;
     var oAddressId;
     var oAddress;
-    var oAddressList;
     var oDays;
     var aDayInputs = [];
     var oActive;
@@ -2835,6 +2834,7 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
     var iId = aRow ? aRow.id : 0;
     var aHours = aRow ? aRow.hours : getBusinessHoursDefaultHours();
     var blSaved = false;
+    var iAddressRequestIndex = 0;
     var i;
 
     if (!oDialog) {
@@ -2868,12 +2868,10 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
     oBox.appendChild(oSubjectList);
 
     oAddressId = appendBusinessHoursHiddenField(oBox, "address_id", aRow ? String(aRow.addressId) : "");
-    oAddress = createAdminInput("business-hours-dialog-address", aRow ? aRow.addressText : "", true);
-    oAddress.setAttribute("list", "business-hours-address-list");
-    oAddressList = document.createElement("datalist");
-    oAddressList.id = "business-hours-address-list";
+    oAddress = document.createElement("select");
+    oAddress.id = "business-hours-dialog-address";
+    oAddress.required = true;
     appendMenuDialogField(oBox, "Address", oAddress);
-    oBox.appendChild(oAddressList);
 
     oDays = document.createElement("div");
     oDays.className = "business-hours-days";
@@ -2906,21 +2904,111 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
     oActions.appendChild(oCancel);
     oBox.appendChild(oActions);
 
-    function refreshAddressField() {
-        var blDisabled = parseInt(oSubjectId.value || "0", 10) < 1;
-        oAddress.disabled = blDisabled;
-        if (blDisabled) {
-            oAddress.value = "";
-            oAddressId.value = "";
-            oAddressList.innerHTML = "";
-        }
+    function setAddressSelectMessage(sMessage) {
+        var oOption = document.createElement("option");
+        oAddress.innerHTML = "";
+        oOption.value = "";
+        oOption.textContent = sMessage;
+        oAddress.appendChild(oOption);
     }
 
     function clearAddressField() {
-        oAddress.value = "";
         oAddressId.value = "";
-        oAddressList.innerHTML = "";
-        refreshAddressField();
+        oAddress.disabled = true;
+        setAddressSelectMessage("Select subject first.");
+    }
+
+    function getSelectedAddressText() {
+        var iSelectedIndex = oAddress.selectedIndex;
+        if (iSelectedIndex < 0 || !oAddress.options[iSelectedIndex] || oAddress.options[iSelectedIndex].value == "") {
+            return "";
+        }
+        return oAddress.options[iSelectedIndex].text;
+    }
+
+    function loadAddressOptions(sSelectedAddressId) {
+        var oData;
+        var iCurrentRequest;
+        var sSubjectId = oSubjectId.value || "";
+        iAddressRequestIndex += 1;
+        iCurrentRequest = iAddressRequestIndex;
+        oAddressId.value = "";
+        if (parseInt(sSubjectId || "0", 10) < 1) {
+            clearAddressField();
+            return;
+        }
+        if (!window.fetch || !window.FormData) {
+            oAddress.disabled = true;
+            setAddressSelectMessage("Addresses could not be loaded.");
+            return;
+        }
+        oAddress.disabled = true;
+        setAddressSelectMessage("Loading addresses...");
+        oData = new FormData();
+        oData.append("action", "suggest_business_hours_addresses");
+        oData.append("term", "");
+        oData.append("subject_id", sSubjectId);
+        appendAdminCsrfToken(oData);
+        window.fetch(window.location.href, {
+            method: "POST",
+            headers: getAdminAjaxHeaders(),
+            body: oData,
+            credentials: "same-origin"
+        }).then(function(oResponse) {
+            return oResponse.text().then(function(sText) {
+                var aData = null;
+                try {
+                    aData = JSON.parse(sText);
+                } catch (oException) {
+                    aData = null;
+                }
+                if (!oResponse.ok || !aData || !aData.success) {
+                    throw aData || {};
+                }
+                return aData;
+            });
+        }).then(function(aData) {
+            var aAddresses = aData.addresses || [];
+            var oOption;
+            var sAddressId;
+            var i;
+            if (iCurrentRequest != iAddressRequestIndex) {
+                return;
+            }
+            oAddress.innerHTML = "";
+            if (!aAddresses.length) {
+                setAddressSelectMessage("No addresses found.");
+                oAddress.disabled = true;
+                return;
+            }
+            oOption = document.createElement("option");
+            oOption.value = "";
+            oOption.textContent = "Select address";
+            oAddress.appendChild(oOption);
+            for (i = 0; i < aAddresses.length; i++) {
+                sAddressId = String(aAddresses[i].address_id || "");
+                if (sAddressId == "") {
+                    continue;
+                }
+                oOption = document.createElement("option");
+                oOption.value = sAddressId;
+                oOption.textContent = aAddresses[i].address_text || ("Address #" + sAddressId);
+                if (sSelectedAddressId && sAddressId == String(sSelectedAddressId)) {
+                    oOption.selected = true;
+                    oAddressId.value = sAddressId;
+                }
+                oAddress.appendChild(oOption);
+            }
+            oAddress.disabled = false;
+        }).catch(function(oException) {
+            logAdminException(oException);
+            if (iCurrentRequest != iAddressRequestIndex) {
+                return;
+            }
+            oAddressId.value = "";
+            oAddress.disabled = true;
+            setAddressSelectMessage("Addresses could not be loaded.");
+        });
     }
 
     function closeBusinessHoursDialog() {
@@ -2937,23 +3025,17 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
         minLength: 3,
         onSelect: function() {
             clearAddressField();
-            refreshAddressField();
+            loadAddressOptions("");
         },
         onClear: clearAddressField
-    });
-    bindBusinessHoursSuggestInput(oAddress, {
-        action: "suggest_business_hours_addresses",
-        resultKey: "addresses",
-        idKey: "address_id",
-        textKey: "address_text",
-        idField: oAddressId,
-        subjectIdField: oSubjectId,
-        minLength: 0
     });
 
     beginAdminSubjectRowEdit(oSourceCard);
     oClose.addEventListener("click", closeBusinessHoursDialog);
     oCancel.addEventListener("click", closeBusinessHoursDialog);
+    oAddress.addEventListener("change", function() {
+        oAddressId.value = oAddress.value;
+    });
     oForm.addEventListener("submit", function(oEvent) {
         var oData;
         var iSavedId;
@@ -2967,9 +3049,10 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
             oData.append("business_hours_id", String(iId));
         }
         oData.append("subject_id", oSubjectId.value);
-        oData.append("address_id", oAddressId.value);
+        oAddressId.value = oAddress.value;
+        oData.append("address_id", oAddress.value);
         appendAdminEncodedValue(oData, "subject_name", oSubject.value);
-        appendAdminEncodedValue(oData, "address_text", oAddress.value);
+        appendAdminEncodedValue(oData, "address_text", getSelectedAddressText());
         for (i = 0; i < aDayInputs.length; i++) {
             normalizeBusinessHoursTimeInput(aDayInputs[i].open);
             normalizeBusinessHoursTimeInput(aDayInputs[i].breakStart);
@@ -3010,7 +3093,11 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
         lockAdminModalScroll();
     }
     oDialog.hidden = false;
-    refreshAddressField();
+    if (parseInt(oSubjectId.value || "0", 10) > 0) {
+        loadAddressOptions(aRow ? String(aRow.addressId) : "");
+    } else {
+        clearAddressField();
+    }
     window.setTimeout(function() {
         focusAdminElement(oSubject, true);
     }, 0);
