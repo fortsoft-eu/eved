@@ -2011,6 +2011,10 @@ body.snippet-board-page {
     padding: 0;
 }
 
+.snippet-board-form .tox:not([dir=rtl]) .tox-toolbar__group:last-of-type {
+    border-right: 1px solid #C0C0C0;
+}
+
 .snippet-board-form .tox .tox-icon {
     align-items: center;
     display: flex;
