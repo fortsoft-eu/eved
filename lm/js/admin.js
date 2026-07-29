@@ -2306,9 +2306,6 @@ function getBusinessHoursColumnCount(iViewportWidth) {
     if (iColumns < 1) {
         return 1;
     }
-    if (iColumns > 6) {
-        return 6;
-    }
     return iColumns;
 }
 
@@ -2408,6 +2405,7 @@ function getBusinessHoursCardData(oCard) {
         subjectName: oCard.getAttribute("data-business-hours-subject-name") || "",
         addressText: oCard.getAttribute("data-business-hours-address-text") || "",
         hours: parseBusinessHoursData(oCard.getAttribute("data-business-hours-hours") || ""),
+        icon: oCard.getAttribute("data-business-hours-icon") || "",
         active: oCard.getAttribute("data-business-hours-active") == "1"
     };
 }
@@ -2433,8 +2431,22 @@ function activateBusinessHoursCard(iId) {
     var aTabs = document.querySelectorAll("[data-business-hours-tab-id]");
     var sId = String(iId || "");
     var blFound = false;
+    var blTabFound = false;
     var i;
-    if (sId == "" && aCards.length) {
+    if (sId == "" && aTabs.length) {
+        sId = aTabs[0].getAttribute("data-business-hours-tab-id") || "";
+    }
+    if (sId != "" && aTabs.length) {
+        for (i = 0; i < aTabs.length; i++) {
+            if (aTabs[i].getAttribute("data-business-hours-tab-id") == sId) {
+                blTabFound = true;
+                break;
+            }
+        }
+        if (!blTabFound) {
+            sId = aTabs[0].getAttribute("data-business-hours-tab-id") || "";
+        }
+    } else if (sId == "" && aCards.length && !isBusinessHoursPmdLike()) {
         sId = aCards[0].getAttribute("data-business-hours-id") || "";
     }
     for (i = 0; i < aCards.length; i++) {
@@ -2445,7 +2457,7 @@ function activateBusinessHoursCard(iId) {
             removeAdminClass(aCards[i], "business-hours-card-active");
         }
     }
-    if (!blFound && aCards.length) {
+    if (!blFound && aCards.length && !isBusinessHoursPmdLike()) {
         sId = aCards[0].getAttribute("data-business-hours-id") || "";
         addAdminClass(aCards[0], "business-hours-card-active");
     }
@@ -2827,6 +2839,7 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
     var oDays;
     var aDayInputs = [];
     var oActive;
+    var oIcon;
     var oError;
     var oActions;
     var oSave;
@@ -2879,6 +2892,9 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
         aDayInputs.push(appendBusinessHoursDayRow(oDays, aBusinessHoursDays[i], aHours[aBusinessHoursDays[i].key]));
     }
     oBox.appendChild(oDays);
+
+    oIcon = createAdminInput("business-hours-dialog-icon", aRow ? aRow.icon : "", false);
+    appendMenuDialogField(oBox, "Icon", oIcon);
 
     oActive = document.createElement("input");
     oActive.type = "checkbox";
@@ -3053,6 +3069,7 @@ function openBusinessHoursDialog(aRow, oSourceCard) {
         oData.append("address_id", oAddress.value);
         appendAdminEncodedValue(oData, "subject_name", oSubject.value);
         appendAdminEncodedValue(oData, "address_text", getSelectedAddressText());
+        appendAdminEncodedValue(oData, "icon", oIcon.value);
         for (i = 0; i < aDayInputs.length; i++) {
             normalizeBusinessHoursTimeInput(aDayInputs[i].open);
             normalizeBusinessHoursTimeInput(aDayInputs[i].breakStart);
@@ -3268,7 +3285,7 @@ function getSnippetBoardColumnCount(iViewportWidth) {
 }
 
 function getSnippetBoardEditorHeight(iAvailableHeight, iRows, blPmdLike) {
-    var iGap = 8;
+    var iGap = 5;
     var iHeight;
     if (blPmdLike) {
         return Math.max(220, iAvailableHeight);
@@ -3689,6 +3706,72 @@ function bindSnippetBoardForm() {
     scheduleSnippetBoardRevisionCheck(iRevisionPollMs);
 }
 
+function getSnippetBoardPlainTextContent(oEditor) {
+    var sText = "";
+    if (oEditor && oEditor.selection && typeof oEditor.selection.getContent == "function") {
+        sText = oEditor.selection.getContent({format: "text"});
+    }
+    if (sText == "" && oEditor && typeof oEditor.getContent == "function") {
+        sText = oEditor.getContent({format: "text"});
+    }
+    return sText;
+}
+
+function getSnippetBoardHtmlContent(oEditor) {
+    var sHtml = "";
+    if (oEditor && oEditor.selection && typeof oEditor.selection.getContent == "function") {
+        sHtml = oEditor.selection.getContent({format: "html"});
+    }
+    if (sHtml == "" && oEditor && typeof oEditor.getContent == "function") {
+        sHtml = oEditor.getContent({format: "html"});
+    }
+    return sHtml;
+}
+
+function copySnippetBoardPlainText(oEditor) {
+    var sText = getSnippetBoardPlainTextContent(oEditor);
+    var oTextarea;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sText).catch(function(oException) {
+            logAdminException(oException);
+            alert("Plain text could not be copied.");
+        });
+        return;
+    }
+    oTextarea = document.createElement("textarea");
+    oTextarea.value = sText;
+    oTextarea.setAttribute("readonly", "readonly");
+    oTextarea.style.position = "fixed";
+    oTextarea.style.left = "-9999px";
+    document.body.appendChild(oTextarea);
+    oTextarea.select();
+    try {
+        document.execCommand("copy");
+    } catch (oException) {
+        logAdminException(oException);
+        alert("Plain text could not be copied.");
+    }
+    document.body.removeChild(oTextarea);
+}
+
+function copySnippetBoardRichText(oEditor) {
+    var sHtml = getSnippetBoardHtmlContent(oEditor);
+    var sText = getSnippetBoardPlainTextContent(oEditor);
+    var oItem;
+    if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+        oItem = new ClipboardItem({
+            "text/html": new Blob([sHtml], {type: "text/html"}),
+            "text/plain": new Blob([sText], {type: "text/plain"})
+        });
+        navigator.clipboard.write([oItem]).catch(function(oException) {
+            logAdminException(oException);
+            copySnippetBoardPlainText(oEditor);
+        });
+        return;
+    }
+    copySnippetBoardPlainText(oEditor);
+}
+
 function bindSnippetBoardTinyMce() {
     if (!window.tinymce || typeof window.tinymce.init != "function") {
         return;
@@ -3701,23 +3784,94 @@ function bindSnippetBoardTinyMce() {
             promotion: false,
             browser_spellcheck: true,
             convert_urls: false,
+            content_css: "tinymce-5",
             entity_encoding: "raw",
             height: 320,
             license_key: "gpl",
+            mobile: {
+                toolbar_mode: "wrap"
+            },
             resize: false,
-            skin: "oxide",
+            skin: "tinymce-5",
             statusbar: false,
-            toolbar: "undo redo | blocks | bold italic underline | bullist numlist | link unlink | removeformat code",
-            toolbar_mode: "sliding",
-            plugins: "lists link code autolink",
-            content_style: "body{background:#fff;color:#111;font-family:Arial,sans-serif;font-size:14px;line-height:1.35;margin:8px;}p{margin:0 0 8px;}ul,ol{margin-top:0;}a{color:#075e9e;}",
+            toolbar: "undo redo | blocks fontfamily fontsize lineheight | cut copy paste snippetpastetext snippetcopyplain | bold italic underline strikethrough subscript superscript | forecolor backcolor | alignleft aligncenter alignright alignjustify alignnone ltr rtl | snippetbullist snippetnumlist outdent indent blockquote hr | link unlink anchor table | charmap emoticons insertdatetime nonbreaking pagebreak | searchreplace visualblocks help codesample",
+            toolbar_mode: "wrap",
+            plugins: "advlist anchor autolink charmap codesample directionality emoticons help insertdatetime link lists nonbreaking pagebreak searchreplace table visualblocks",
+                content_style: "body{background:#fff;color:#111;font-family:Arial,sans-serif;font-size:14px;line-height:1.35;margin:0;padding:1px;}p,h1,h2,h3,h4,h5,h6{margin:0;}ul,ol{margin:0 0 0 20px;padding-left:18px;}blockquote{margin:0 0 0 24px;}a{color:#075e9e;}",
             setup: function(oEditor) {
-                oEditor.on("change keyup undo redo input paste", function() {
-                    oEditor.save();
-                    if (!blSnippetBoardApplyingRemote) {
-                        dispatchAdminInputEvent(oEditor.getElement());
+                oEditor.ui.registry.addIcon("snippet-copy-plain", "<svg width=\"24\" height=\"24\"><path d=\"M8 3h8l4 4v11c0 1.1-.9 2-2 2H8a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2Zm7 2H8v13h10V8h-3V5Z\"/><path d=\"M4 7H2v13c0 1.1.9 2 2 2h10v-2H4V7Zm6 2h4v1.5h-4V9Zm0 3h6v1.5h-6V12Zm0 3h6v1.5h-6V15Z\"/></svg>");
+                oEditor.ui.registry.addMenuButton("snippetbullist", {
+                    icon: "unordered-list",
+                    tooltip: "Bullet list",
+                    fetch: function(oCallback) {
+                        oCallback([
+                            {type: "menuitem", text: "Default", icon: "list-bull-default", onAction: function() { oEditor.execCommand("InsertUnorderedList", false, {"list-style-type": ""}); }},
+                            {type: "menuitem", text: "Disc", icon: "list-bull-disc", onAction: function() { oEditor.execCommand("InsertUnorderedList", false, {"list-style-type": "disc"}); }},
+                            {type: "menuitem", text: "Circle", icon: "list-bull-circle", onAction: function() { oEditor.execCommand("InsertUnorderedList", false, {"list-style-type": "circle"}); }},
+                            {type: "menuitem", text: "Square", icon: "list-bull-square", onAction: function() { oEditor.execCommand("InsertUnorderedList", false, {"list-style-type": "square"}); }}
+                        ]);
                     }
                 });
+                oEditor.ui.registry.addMenuButton("snippetnumlist", {
+                    icon: "ordered-list",
+                    tooltip: "Numbered list",
+                    fetch: function(oCallback) {
+                        oCallback([
+                            {type: "menuitem", text: "Default", icon: "list-num-default", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": ""}); }},
+                            {type: "menuitem", text: "Lower Alpha", icon: "list-num-lower-alpha", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": "lower-alpha"}); }},
+                            {type: "menuitem", text: "Lower Greek", icon: "list-num-lower-greek", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": "lower-greek"}); }},
+                            {type: "menuitem", text: "Lower Roman", icon: "list-num-lower-roman", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": "lower-roman"}); }},
+                            {type: "menuitem", text: "Upper Alpha", icon: "list-num-upper-alpha", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": "upper-alpha"}); }},
+                            {type: "menuitem", text: "Upper Roman", icon: "list-num-upper-roman", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": "upper-roman"}); }}
+                        ]);
+                    }
+                });
+                oEditor.ui.registry.addToggleButton("snippetpastetext", {
+                    icon: "paste-text",
+                    tooltip: "Paste as plain text",
+                    onAction: function() {
+                        oEditor.execCommand("mceTogglePlainTextPaste");
+                    },
+                    onSetup: function(oApi) {
+                        function updatePasteTextState() {
+                            oApi.setActive(oEditor.queryCommandState("mceTogglePlainTextPaste"));
+                        }
+                        oEditor.on("PastePlainTextToggle", updatePasteTextState);
+                        oEditor.on("init", updatePasteTextState);
+                        updatePasteTextState();
+                        return function() {
+                            oEditor.off("PastePlainTextToggle", updatePasteTextState);
+                            oEditor.off("init", updatePasteTextState);
+                        };
+                    }
+                });
+                oEditor.ui.registry.addButton("snippetcopyplain", {
+                    icon: "snippet-copy-plain",
+                    tooltip: "Copy plain text",
+                    onAction: function() {
+                        copySnippetBoardPlainText(oEditor);
+                    }
+                });
+                oEditor.on("focus click mousedown", function() {
+                    closeAdminMenus(null);
+                });
+                function syncSnippetBoardEditorChange() {
+                    var oElement = oEditor.getElement();
+                    var sValue;
+                    if (!oElement) {
+                        return;
+                    }
+                    sValue = oElement.value;
+                    oEditor.save();
+                    if (!blSnippetBoardApplyingRemote && oElement.value != sValue) {
+                        dispatchAdminInputEvent(oElement);
+                    }
+                }
+                function syncSnippetBoardEditorChangeAfterEvent() {
+                    window.setTimeout(syncSnippetBoardEditorChange, 0);
+                }
+                oEditor.on("change keyup undo redo input", syncSnippetBoardEditorChange);
+                oEditor.on("paste cut ExecCommand", syncSnippetBoardEditorChangeAfterEvent);
                 oEditor.on("init", function() {
                     layoutSnippetBoard();
                 });

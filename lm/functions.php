@@ -792,7 +792,7 @@ function businessHoursFetchSingleAddressInputRow($oPdo, $iSubjectId, $sTerm) {
 
 function businessHoursFetchRows($oPdo, $iId = 0) {
     $aRows = array();
-    $sSql = "SELECT bh.id, bh.subject_id, bh.address_id, bh.hours, bh.is_active, bh.`order` AS bh_order, DATE_FORMAT(bh.created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(bh.updated_at, '%Y-%m-%d %H:%i') AS updated_at_text, subject_rows.subject_name, subject_rows.subject_sort_name, a.address_type, a.organization_name, a.department_name, a.care_of, a.street_name, a.house_number, a.evidence_number, a.orientation_number, a.orientation_suffix, a.address_line2, a.city, a.city_part, a.postal_code, a.region, a.country, a.is_primary AS address_primary, a.is_active AS address_active, a.note AS address_note FROM fs_business_hours AS bh LEFT JOIN (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows ON subject_rows.subject_id = bh.subject_id LEFT JOIN ex_subject_addresses AS a ON a.id = bh.address_id";
+    $sSql = "SELECT bh.id, bh.subject_id, bh.address_id, bh.hours, bh.icon, bh.is_active, bh.`order` AS bh_order, DATE_FORMAT(bh.created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(bh.updated_at, '%Y-%m-%d %H:%i') AS updated_at_text, subject_rows.subject_name, subject_rows.subject_sort_name, a.address_type, a.organization_name, a.department_name, a.care_of, a.street_name, a.house_number, a.evidence_number, a.orientation_number, a.orientation_suffix, a.address_line2, a.city, a.city_part, a.postal_code, a.region, a.country, a.is_primary AS address_primary, a.is_active AS address_active, a.note AS address_note FROM fs_business_hours AS bh LEFT JOIN (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows ON subject_rows.subject_id = bh.subject_id LEFT JOIN ex_subject_addresses AS a ON a.id = bh.address_id";
     if ((int)$iId > 0) {
         $oStatement = $oPdo->prepare($sSql . " WHERE bh.id = :id");
         $oStatement->execute(array("id" => (int)$iId));
@@ -833,6 +833,7 @@ function businessHoursFetchRows($oPdo, $iId = 0) {
             "address_display_text" => businessHoursAddressText($aAddress, false),
             "hours" => businessHoursEncodeHours($aHours),
             "hours_data" => $aHours,
+            "icon" => (string)$aRow["icon"],
             "is_active" => (int)$aRow["is_active"],
             "order" => (int)$aRow["bh_order"],
             "created_at" => (string)$aRow["created_at_text"],
@@ -903,10 +904,13 @@ function businessHoursHtmlNoShortWordBreaks($sText) {
     return $sHtml;
 }
 
-function businessHoursRenderCard($aRow) {
+function businessHoursRenderCard($aRow, $blActiveCard = false) {
     global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
 
     $sCardClass = (int)$aRow["is_active"] == 1 ? "business-hours-card" : "business-hours-card business-hours-card-inactive";
+    if ($blActiveCard) {
+        $sCardClass .= " business-hours-card-active";
+    }
     $sOrganizationName = trim((string)$aRow["organization_name"]);
     $sAddressText = isset($aRow["address_display_text"]) ? (string)$aRow["address_display_text"] : (string)$aRow["address_text"];
     if ($sOrganizationName != "") {
@@ -920,20 +924,27 @@ function businessHoursRenderCard($aRow) {
         . " data-business-hours-subject-name=\"" . html($aRow["subject_name"]) . "\""
         . " data-business-hours-address-text=\"" . html($aRow["address_text"]) . "\""
         . " data-business-hours-hours=\"" . html($aRow["hours"]) . "\""
+        . " data-business-hours-icon=\"" . html($aRow["icon"]) . "\""
         . " data-business-hours-active=\"" . ((int)$aRow["is_active"] == 1 ? "1" : "0") . "\">\n"
-        . "      <header class=\"business-hours-card-header\">" . $sTitleHtml . "<span class=\"business-hours-card-actions\"><a href=\"#\" class=\"item-action js-move-business-hours-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-business-hours-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-business-hours\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-business-hours\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></span></header>\n"
+        . "      <div class=\"business-hours-card-top\">" . $sTitleHtml . "<span class=\"business-hours-card-actions\"><a href=\"#\" class=\"item-action js-move-business-hours-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-business-hours-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-business-hours\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-business-hours\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></span></div>\n"
         . "      <div class=\"business-hours-address\">" . html($sAddressText) . "</div>\n"
         . "      " . businessHoursRenderHours($aRow["hours_data"]) . "<br class=\"business-hours-linear-gap\"><br class=\"business-hours-linear-gap\">\n"
         . "    </section>\n";
 }
 
 function businessHoursRenderCards($aRows) {
+    $blActiveCardSet = false;
+    $blActiveCard;
     if (!$aRows) {
         return "    <p class=\"business-hours-empty\">No records found.</p>\n";
     }
     $sHtml = "";
     foreach ($aRows as $aRow) {
-        $sHtml .= businessHoursRenderCard($aRow);
+        $blActiveCard = !$blActiveCardSet && (int)$aRow["is_active"] == 1;
+        $sHtml .= businessHoursRenderCard($aRow, $blActiveCard);
+        if ($blActiveCard) {
+            $blActiveCardSet = true;
+        }
     }
     return $sHtml;
 }
@@ -942,7 +953,11 @@ function businessHoursRenderTabs($aRows) {
     $sHtml = "";
     $iIndex = 1;
     foreach ($aRows as $aRow) {
-        $sHtml .= "      <button type=\"button\" class=\"button-link business-hours-tab" . ($iIndex == 1 ? " business-hours-tab-active" : "") . "\" data-business-hours-tab-id=\"" . (int)$aRow["id"] . "\" role=\"tab\" aria-selected=\"" . ($iIndex == 1 ? "true" : "false") . "\" aria-label=\"Business Hours " . $iIndex . "\">" . $iIndex . "</button>\n";
+        if ((int)$aRow["is_active"] != 1) {
+            continue;
+        }
+        $sLabel = (string)$aRow["icon"] != "" ? htmlValue($aRow["icon"]) : (string)$iIndex;
+        $sHtml .= "      <button type=\"button\" class=\"button-link business-hours-tab" . ($iIndex == 1 ? " business-hours-tab-active" : "") . "\" data-business-hours-tab-id=\"" . (int)$aRow["id"] . "\" role=\"tab\" aria-selected=\"" . ($iIndex == 1 ? "true" : "false") . "\" aria-label=\"Business Hours " . $iIndex . "\">" . $sLabel . "</button>\n";
         $iIndex++;
     }
     return $sHtml;
@@ -1032,6 +1047,7 @@ function businessHoursCreateOrUpdate($oPdo, $iId) {
     $sSubjectName = getPostedTrimmedValue("subject_name");
     $sAddressText = getPostedTrimmedValue("address_text");
     $sHours = businessHoursReadPostedHoursJson();
+    $sIcon = getPostedTrimmedValue("icon");
     $iIsActive = isset($_POST["is_active"]) && (string)$_POST["is_active"] == "1" ? 1 : 0;
 
     if ($iSubjectId < 1 && $sSubjectName != "") {
@@ -1061,22 +1077,24 @@ function businessHoursCreateOrUpdate($oPdo, $iId) {
                 $oPdo->rollBack();
                 sendJsonAndExit(array("success" => false, "message" => "Business hours were not found."), 404);
             }
-            $oStatement = $oPdo->prepare("UPDATE fs_business_hours SET subject_id = :subject_id, address_id = :address_id, hours = :hours, is_active = :is_active WHERE id = :id");
+            $oStatement = $oPdo->prepare("UPDATE fs_business_hours SET subject_id = :subject_id, address_id = :address_id, hours = :hours, is_active = :is_active, icon = :icon WHERE id = :id");
             $oStatement->execute(array(
                 "subject_id" => $iSubjectId,
                 "address_id" => $iAddressId,
                 "hours" => $sHours,
                 "is_active" => $iIsActive,
+                "icon" => $sIcon,
                 "id" => $iId
             ));
         } else {
             $iOrder = businessHoursNextOrder($oPdo);
-            $oStatement = $oPdo->prepare("INSERT INTO fs_business_hours (subject_id, address_id, hours, is_active, `order`) VALUES (:subject_id, :address_id, :hours, :is_active, :order)");
+            $oStatement = $oPdo->prepare("INSERT INTO fs_business_hours (subject_id, address_id, hours, is_active, icon, `order`) VALUES (:subject_id, :address_id, :hours, :is_active, :icon, :order)");
             $oStatement->execute(array(
                 "subject_id" => $iSubjectId,
                 "address_id" => $iAddressId,
                 "hours" => $sHours,
                 "is_active" => $iIsActive,
+                "icon" => $sIcon,
                 "order" => $iOrder
             ));
             $iId = (int)$oPdo->lastInsertId();

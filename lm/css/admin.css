@@ -1445,7 +1445,7 @@ body.business-hours-page {
     color: #000;
 }
 
-.business-hours-card-header {
+.business-hours-card-top {
     align-items: flex-start;
     border-bottom: 1px solid #D8D8D8;
     display: flex;
@@ -1904,7 +1904,7 @@ body.snippet-board-page {
 
 .snippet-board-grid {
     display: grid;
-    gap: 8px;
+    gap: 5px;
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -1923,27 +1923,204 @@ body.snippet-board-page {
 }
 
 .snippet-board-form .tox-tinymce {
-    border: 1px solid #B6BCC2;
+    border: 1px solid #C0C0C0;
     border-radius: 0;
     box-shadow: none;
 }
 
+.snippet-board-form .tox .tox-editor-header {
+    background: #F0F0F0;
+    border-bottom: 1px solid #C0C0C0;
+}
+
 .snippet-board-form .tox .tox-toolbar, .snippet-board-form .tox .tox-toolbar__overflow, .snippet-board-form .tox .tox-toolbar__primary {
-    background: #F4F4F4;
+    background: #F0F0F0 !important;
 }
 
 .snippet-board-form .tox .tox-toolbar__primary {
     border-bottom: 1px solid #C0C0C0;
+    padding: 0;
+}
+
+.snippet-board-form .tox .tox-toolbar__overflow {
+    border-top: 1px solid #C0C0C0;
+    border-bottom: 1px solid #C0C0C0;
+}
+
+.snippet-board-form .tox .tox-edit-area {
+    margin: 0;
+}
+
+.snippet-board-form .tox .tox-edit-area__iframe {
+    display: block;
 }
 
 .snippet-board-form .tox .tox-tbtn {
+    align-items: center;
+    background: #F0F0F0 !important;
+    border: 0;
     border-radius: 0;
-    height: 26px;
-    margin: 1px;
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: 0 0 28px;
+    font-size: 12px;
+    height: 28px;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    min-width: 28px;
+    overflow: visible;
+    padding: 0;
+    vertical-align: top;
+    width: 28px;
+}
+
+.snippet-board-form .tox .tox-toolbar__group {
+    padding: 0;
+}
+
+.snippet-board-form .tox .tox-icon {
+    align-items: center;
+    display: flex;
+    flex: 0 0 24px;
+    height: 24px;
+    justify-content: center;
+    line-height: 0;
+    overflow: visible;
+    width: 24px;
+}
+
+.snippet-board-form .tox .tox-tbtn__icon-wrap {
+    align-items: center;
+    display: flex;
+    height: 24px;
+    justify-content: center;
+    line-height: 0;
+    width: 24px;
+}
+
+.snippet-board-form .tox .tox-icon.tox-tbtn__icon-wrap {
+    align-items: center;
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: 0 0 28px;
+    height: 28px;
+    justify-content: center;
+    line-height: 0;
+    margin: 0;
+    padding: 2px;
+    width: 28px;
+}
+
+.snippet-board-form .tox .tox-tbtn svg {
+    display: block;
+    flex: 0 0 auto;
+    height: 24px;
+    margin: auto;
+    max-height: none;
+    max-width: none;
+    overflow: visible;
+    transform: scale(0.75);
+    transform-origin: center center;
+    width: 24px;
+}
+
+.snippet-board-form .tox .tox-split-button {
+    background: #F0F0F0 !important;
+    border: 0;
+    border-radius: 0;
+    box-sizing: border-box;
+    margin: 0;
+    overflow: visible;
+}
+
+.snippet-board-form .tox .tox-split-button__main, .snippet-board-form .tox .tox-split-button__chevron {
+    align-items: center;
+    background: #F0F0F0 !important;
+    border: 0;
+    border-radius: 0;
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+    vertical-align: top;
+}
+
+.snippet-board-form .tox .tox-split-button__main {
+    width: 28px;
+}
+
+.snippet-board-form .tox .tox-split-button__chevron {
+    width: 14px;
+}
+
+.snippet-board-form .tox .tox-tbtn[data-mce-name="forecolor-chevron"], .snippet-board-form .tox .tox-tbtn[data-mce-name="backcolor-chevron"], .snippet-board-form .tox .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
+    flex: 0 0 23px;
+    min-width: 23px;
+    width: 23px;
+}
+
+.snippet-board-form .tox .tox-tbtn--select, .snippet-board-form .tox .tox-tbtn--bespoke {
+    background: #F0F0F0 !important;
+    flex: 0 0 auto;
+    height: 28px;
+    line-height: normal;
+    margin: 0;
+    padding: 0 3px;
+    width: auto;
+}
+
+.snippet-board-form .tox .tox-tbtn.tox-tbtn--select[data-mce-name="snippetbullist"] {
+    padding: 0 3px 0 4px;
+}
+
+.snippet-board-form .tox .tox-tbtn.tox-tbtn--select[data-mce-name="snippetnumlist"] {
+    padding: 0 4px;
+}
+
+.snippet-board-form .tox .tox-tbtn__select-label {
+    display: inline-block;
+    font-size: 12px;
+    height: 18px;
+    line-height: 18px;
+    overflow: visible;
+}
+
+.snippet-board-form .tox .tox-tbtn[data-mce-name="fontsize"] .tox-tbtn__select-label {
+    width: 30px;
+}
+
+.snippet-board-form .tox .tox-tbtn[data-mce-name="blocks"] .tox-tbtn__select-label {
+    width: 78px;
+}
+
+.snippet-board-form .tox .tox-tbtn[data-mce-name="fontfamily"] .tox-tbtn__select-label {
+    width: 107px;
+}
+
+body.snippet-board-page .tox.tox-tinymce-aux .tox-menu.tox-collection.tox-collection--list {
+    min-width: 75px;
+}
+
+body.snippet-board-page .tox.tox-tinymce-aux .tox-collection--list .tox-collection__item {
+    min-height: 28px;
+    padding-bottom: 6px;
+    padding-top: 6px;
+}
+
+body.snippet-board-page .tox.tox-tinymce-aux .tox-menu .tox-collection__item-label {
+    min-width: 48px;
+    white-space: nowrap;
 }
 
 .snippet-board-form .tox .tox-tbtn:hover {
-    background: #DCDCE4;
+    background: #D6D6D6 !important;
+}
+
+.snippet-board-form .tox .tox-tbtn--enabled, .snippet-board-form .tox .tox-tbtn--enabled:hover {
+    background: #C8D2E0 !important;
 }
 
 .snippet-board-form .tox .tox-statusbar__resize-handle {
@@ -1962,7 +2139,30 @@ body[data-pmd-like="1"] .admin-controls {
 }
 
 body[data-pmd-like="1"] .snippet-board-form {
-    overflow: hidden;
+    overflow: visible;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-toolbar--scrolling {
+    flex-wrap: wrap;
+    overflow-x: visible;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-toolbar--scrolling .tox-toolbar__group {
+    flex-wrap: wrap;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-split-button__main {
+    width: 28px;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-split-button__chevron {
+    width: 14px;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="forecolor-chevron"], body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="backcolor-chevron"], body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
+    flex: 0 0 23px;
+    min-width: 23px;
+    width: 23px;
 }
 
 body[data-pmd-like="1"] .snippet-board-grid {
