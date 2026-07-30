@@ -2362,9 +2362,6 @@ document.addEventListener("DOMContentLoaded", function () {
         if (oSourceRow.getAttribute("data-selected") == "1") {
             oTargetRow.setAttribute("data-selected", "1");
         }
-        if (oSourceRow.getAttribute("data-hover") == "1") {
-            oTargetRow.setAttribute("data-hover", "1");
-        }
     }
 
     function getEventTableRow(oEvent) {
@@ -2394,8 +2391,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.addEventListener("mouseover", function (oEvent) {
         var oRow = getEventTableRow(oEvent);
+        var aRows;
+        var iI;
         if (!oRow || isInsideTableRow(oRow, oEvent.relatedTarget)) {
             return;
+        }
+        aRows = document.querySelectorAll("table tbody tr[data-hover=\"1\"]");
+        for (iI = 0; iI < aRows.length; iI += 1) {
+            if (aRows[iI] !== oRow) {
+                aRows[iI].setAttribute("data-hover", "0");
+                applyRowColor(aRows[iI]);
+            }
         }
         oRow.setAttribute("data-hover", "1");
         applyRowColor(oRow);
@@ -3372,11 +3378,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function moveGroup(oRow, sDirection) {
         var oData = new FormData();
+        var sGroupId;
         if (!oRow) {
             return;
         }
+        sGroupId = oRow.getAttribute("data-group-id") || "";
         oData.append("action", "move_group");
-        oData.append("group_id", oRow.getAttribute("data-group-id") || "");
+        oData.append("group_id", sGroupId);
         oData.append("direction", sDirection);
         appendAdminCsrfToken(oData);
         fetch(window.location.href, {
@@ -3389,6 +3397,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).then(function (aData) {
             if (aData && aData.success && aData.rows_html) {
                 replaceGroupRows(aData.rows_html);
+                finishAdminSubjectRowEdit(findAdminGroupRowById(sGroupId), true);
             }
         }).catch(function (oException) {
             logAdminException(oException);
@@ -3897,11 +3906,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function moveContactType(oRow, sDirection) {
         var oData = new FormData();
+        var sContactTypeId;
         if (!oRow) {
             return;
         }
+        sContactTypeId = oRow.getAttribute("data-contact-type-id") || "";
         oData.append("action", "move_contact_type");
-        oData.append("contact_type_id", oRow.getAttribute("data-contact-type-id") || "");
+        oData.append("contact_type_id", sContactTypeId);
         oData.append("direction", sDirection);
         appendAdminCsrfToken(oData);
         fetch(window.location.href, {
@@ -3914,6 +3925,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }).then(function (aData) {
             if (aData && aData.success && aData.rows_html) {
                 replaceContactTypeRows(aData.rows_html);
+                finishAdminSubjectRowEdit(findAdminContactTypeRowById(sContactTypeId), true);
             }
         }).catch(function (oException) {
             logAdminException(oException);
@@ -4610,9 +4622,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             if (oCurrentRow.getAttribute("data-selected") == "1") {
                 oNewRow.setAttribute("data-selected", "1");
-            }
-            if (oCurrentRow.getAttribute("data-hover") == "1") {
-                oNewRow.setAttribute("data-hover", "1");
             }
             oCurrentRow.parentNode.replaceChild(oNewRow, oCurrentRow);
             if (window.bindAdminTableRow) {

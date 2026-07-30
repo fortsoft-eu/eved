@@ -661,8 +661,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.addEventListener("mouseover", function (oEvent) {
         var oRow = getEventTableRow(oEvent);
+        var aRows;
+        var iI;
         if (!oRow || isInsideTableRow(oRow, oEvent.relatedTarget)) {
             return;
+        }
+        aRows = document.querySelectorAll("table tbody tr[data-hover=\"1\"]");
+        for (iI = 0; iI < aRows.length; iI += 1) {
+            if (aRows[iI] !== oRow) {
+                aRows[iI].setAttribute("data-hover", "0");
+                applyRowColor(aRows[iI]);
+            }
         }
         setRelatedRowsAttribute(oRow, "data-hover", "1");
         if (!sLockedOrderId && hasGroupBehavior(oRow) && oOrderDetail) {

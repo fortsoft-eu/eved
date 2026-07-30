@@ -132,6 +132,7 @@ function getDefaultContactTypeRows() {
         array("contact_type" => "fax", "name" => "Fax", "is_active" => 1, "order" => 30),
         array("contact_type" => "pager", "name" => "Pager", "is_active" => 1, "order" => 40),
         array("contact_type" => "email", "name" => "E-mail", "is_active" => 1, "order" => 50),
+        array("contact_type" => "idds", "name" => "IDDS", "is_active" => 1, "order" => 55),
         array("contact_type" => "jabber", "name" => "Jabber", "is_active" => 1, "order" => 60),
         array("contact_type" => "icq", "name" => "ICQ", "is_active" => 1, "order" => 70),
         array("contact_type" => "skype", "name" => "Skype", "is_active" => 1, "order" => 80),
@@ -619,6 +620,14 @@ function normalizeEmailContactValue($sValue) {
     return filter_var($sText, FILTER_VALIDATE_EMAIL) !== false ? $sText : false;
 }
 
+function normalizeIddsContactValue($sValue) {
+    $sText = trim((string)$sValue);
+    if ($sText == "") {
+        return "";
+    }
+    return preg_match("/^[a-zA-Z0-9]{7}$/", $sText) ? strtolower($sText) : false;
+}
+
 function normalizeSkypeContactValue($sValue) {
     $sText = trim((string)$sValue);
     if ($sText == "") {
@@ -647,6 +656,9 @@ function normalizeContactInputForStorage($sContactType, $sContactValue) {
     }
     if ((string)$sContactType == "email") {
         return normalizeEmailContactValue($sContactValue);
+    }
+    if ((string)$sContactType == "idds") {
+        return normalizeIddsContactValue($sContactValue);
     }
     if ((string)$sContactType == "icq") {
         return normalizeIcqContactValue($sContactValue);
@@ -680,6 +692,10 @@ function contactCanonicalValue($sContactType, $sContactValue) {
         $mKnownValue = normalizeEmailContactValue($sContactValue);
         return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
     }
+    if ((string)$sContactType == "idds") {
+        $mKnownValue = normalizeIddsContactValue($sContactValue);
+        return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
+    }
     if ((string)$sContactType == "icq") {
         $mKnownValue = normalizeIcqContactValue($sContactValue);
         return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
@@ -708,6 +724,9 @@ function contactInputErrorMessage($sContactType) {
     }
     if ((string)$sContactType == "email") {
         return "E-mail address is invalid.";
+    }
+    if ((string)$sContactType == "idds") {
+        return "IDDS must have exactly 7 letters or digits.";
     }
     if ((string)$sContactType == "icq") {
         return "ICQ must have 5 to 9 digits, either without hyphens or grouped from the right.";
@@ -738,6 +757,9 @@ function contactValueIsInvalid($sType, $sValue) {
     }
     if ((string)$sType == "email") {
         return normalizeEmailContactValue($sValue) === false;
+    }
+    if ((string)$sType == "idds") {
+        return normalizeIddsContactValue($sValue) === false;
     }
     if ((string)$sType == "icq") {
         return normalizeIcqContactValue($sValue) === false;

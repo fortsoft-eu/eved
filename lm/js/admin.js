@@ -243,9 +243,6 @@ function setupTableRows() {
         if (oSourceRow.getAttribute("data-selected") == "1") {
             oTargetRow.setAttribute("data-selected", "1");
         }
-        if (oSourceRow.getAttribute("data-hover") == "1") {
-            oTargetRow.setAttribute("data-hover", "1");
-        }
     }
 
     function getEventTableRow(oEvent) {
@@ -283,8 +280,17 @@ function setupTableRows() {
 
     document.addEventListener("mouseover", function (oEvent) {
         var oRow = getEventTableRow(oEvent);
+        var aRows;
+        var i;
         if (!oRow || isInsideTableRow(oRow, oEvent.relatedTarget)) {
             return;
+        }
+        aRows = document.querySelectorAll("table tbody tr[data-hover=\"1\"]");
+        for (i = 0; i < aRows.length; i++) {
+            if (aRows[i] !== oRow) {
+                aRows[i].setAttribute("data-hover", "0");
+                applyRowColor(aRows[i]);
+            }
         }
         oRow.setAttribute("data-hover", "1");
         applyRowColor(oRow);
