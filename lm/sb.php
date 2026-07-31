@@ -21,7 +21,7 @@ $sAction = $_SERVER["REQUEST_METHOD"] == "POST" ? getPostedValue("action") : "";
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "check_snippet_board_revision") {
     try {
         $oStatement = $oPdo->query("SELECT COALESCE(DATE_FORMAT(MAX(updated_at), '%Y-%m-%d %H:%i:%s.%f'), '') AS board_revision FROM fs_snippet_board WHERE id BETWEEN 1 AND 6");
-        $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+        $aRow = $oStatement->fetch();
         sendJsonAndExit(array("success" => true, "revision" => (string)$aRow["board_revision"]));
     } catch (Exception $oException) {
         error_log((string)$oException);
@@ -37,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "load_snippet_board") {
     }
     try {
         $oStatement = $oPdo->query("SELECT id, note_text, `hash`, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
-        while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        while ($aRow = $oStatement->fetch()) {
             $iSnippetId = (int)$aRow["id"];
             if ($iSnippetId >= 1 && $iSnippetId <= 6) {
                 $sNoteText = (string)$aRow["note_text"];
@@ -64,7 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "save_snippet_board") {
     $aSnippetHashes = array();
     try {
         $oStatement = $oPdo->query("SELECT id, `hash` FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
-        while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        while ($aRow = $oStatement->fetch()) {
             $iSnippetId = (int)$aRow["id"];
             if ($iSnippetId >= 1 && $iSnippetId <= 6 && (string)$aRow["hash"] != "") {
                 $aSnippetHashes[$iSnippetId] = (string)$aRow["hash"];
@@ -86,7 +86,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "save_snippet_board") {
         $oPdo->commit();
         if ($blJsonResponse) {
             $oStatement = $oPdo->query("SELECT COALESCE(DATE_FORMAT(MAX(updated_at), '%Y-%m-%d %H:%i:%s.%f'), '') AS board_revision FROM fs_snippet_board WHERE id BETWEEN 1 AND 6");
-            $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+            $aRow = $oStatement->fetch();
             sendJsonAndExit(array("success" => true, "revision" => (string)$aRow["board_revision"]));
         }
         sendSecurityHeaders();
@@ -112,7 +112,7 @@ for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
 
 try {
     $oStatement = $oPdo->query("SELECT id, note_text, `hash`, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $iSnippetId = (int)$aRow["id"];
         if ($iSnippetId >= 1 && $iSnippetId <= 6) {
             $sNoteText = (string)$aRow["note_text"];

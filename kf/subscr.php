@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $oPdo->beginTransaction();
             $oStatement = $oPdo->prepare("SELECT id, finance_type_id, amount, currency, billing_period, billing_day, next_due_at, counterparty, note FROM kf_subscriptions WHERE id = :id FOR UPDATE");
             $oStatement->execute(array("id" => $iId));
-            $aSubscription = $oStatement->fetch(PDO::FETCH_ASSOC);
+            $aSubscription = $oStatement->fetch();
             if (!$aSubscription) {
                 $oPdo->rollBack();
                 if ($blJsonResponse) {
@@ -107,7 +107,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (!$blNewSubscription) {
             $oStatement = $oPdo->prepare("SELECT id, billing_period, billing_day, next_due_at FROM kf_subscriptions WHERE id = :id");
             $oStatement->execute(array("id" => $iId));
-            $aCurrentSubscription = $oStatement->fetch(PDO::FETCH_ASSOC);
+            $aCurrentSubscription = $oStatement->fetch();
             if (!$aCurrentSubscription) {
                 if ($blJsonResponse) {
                     sendJsonAndExit(array("success" => false, "message" => "Subscription was not found."), 404);

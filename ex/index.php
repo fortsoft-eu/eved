@@ -37,7 +37,7 @@ $aIndexSettings = applyCountrySettings($aIndexSettings);
 $aFullListComplexFilterContactTypes = array();
 try {
     $oStatement = $oPdo->query("SELECT id, contact_type, name FROM ex_contact_types ORDER BY `order` ASC, id ASC");
-    $aFullListComplexFilterContactTypes = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aFullListComplexFilterContactTypes = $oStatement->fetchAll();
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());

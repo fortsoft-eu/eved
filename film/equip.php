@@ -11,7 +11,7 @@ $aEquipment = array();
 try {
     $oStatement = $oPdo->prepare("SELECT equip_type, equip_name, acquired_at, retired_at, disposition_note FROM fs_photo_equip ORDER BY acquired_at ASC");
     $oStatement->execute();
-    $aEquipment = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aEquipment = $oStatement->fetchAll();
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());

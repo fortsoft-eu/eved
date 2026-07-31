@@ -81,7 +81,7 @@ try {
     foreach ($aChecks as $iCheckIndex => $aCheck) {
         $oStatement = $oPdo->prepare($aCheck["sql"]);
         $oStatement->execute();
-        $aRows = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+        $aRows = $oStatement->fetchAll();
         $aChecks[$iCheckIndex]["rows"] = $aRows;
         if (count($aRows) > 0 && $aCheck["type"] == "error") {
             $blHasErrors = true;

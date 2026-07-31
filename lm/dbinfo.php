@@ -14,7 +14,7 @@ requireFullAccess($aAllowedIps, "portal", "lm_csrf_token");
 $aDatabaseInfo = array();
 try {
     $oStatement = $oPdo->query("SELECT VERSION() AS server_version, DATABASE() AS database_name, @@version_comment AS version_comment, @@character_set_server AS character_set_server, @@collation_server AS collation_server, @@sql_mode AS sql_mode, @@time_zone AS time_zone, @@system_time_zone AS system_time_zone");
-    $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aRow = $oStatement->fetch();
     foreach ($aRow as $sName => $mValue) {
         $aDatabaseInfo[] = array($sName, $mValue);
     }

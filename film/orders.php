@@ -13,7 +13,7 @@ try {
     $oStatement = $oPdo->prepare("SELECT o.id, o.lab, o.order_no, o.bag_no, o.price, o.price_vat, o.currency, o.ordered_at, o.returned_at, o.invoice, fs.film_rolls, fs.film_scan_dates, fs.scan_dates FROM fs_photo_lab_orders AS o
         LEFT JOIN (SELECT lab_order_id, GROUP_CONCAT(folder_name ORDER BY archive_no SEPARATOR '<br>') AS film_rolls, GROUP_CONCAT(DATE_FORMAT(scanned_at, '%Y-%m-%d %H:%i') ORDER BY archive_no SEPARATOR '<br>') AS film_scan_dates, GROUP_CONCAT(DISTINCT DATE_FORMAT(scanned_at, '%Y-%m-%d %H:%i') ORDER BY DATE_FORMAT(scanned_at, '%Y-%m-%d %H:%i') SEPARATOR '<br>') AS scan_dates FROM fs_film_scans WHERE lab_order_id IS NOT NULL GROUP BY lab_order_id) AS fs ON fs.lab_order_id = o.id ORDER BY o.ordered_at ASC");
     $oStatement->execute();
-    $aOrders = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aOrders = $oStatement->fetchAll();
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());

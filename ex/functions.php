@@ -206,7 +206,7 @@ function fetchContactTypes($oPdo = null, $blActiveOnly = true) {
         }
         $sSql .= " ORDER BY `order` ASC, id ASC";
         $oStatement = $oPdo->query($sSql);
-        while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        while ($aRow = $oStatement->fetch()) {
             $aRows[] = $aRow;
         }
     }
@@ -322,7 +322,7 @@ function generateContactTypeKey($oPdo, $sName, $iExcludeId = 0) {
         }
         $oStatement = $oPdo->prepare($sSql);
         $oStatement->execute($aParams);
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             return $sContactType;
         }
         $sContactType = $sBaseKey . $iSuffix;
@@ -345,7 +345,7 @@ function fetchContactTypeAdminRows($oPdo, $iContactTypeId = 0) {
     } else {
         $oStatement->execute();
     }
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function renderContactTypeAdminRow($aContactType, $blShowActions = true) {
@@ -377,7 +377,7 @@ function moveContactTypeOrder($oPdo, $iContactTypeId, $sDirection) {
     normalizeContactTypeOrder($oPdo);
     $oStatement = $oPdo->prepare("SELECT id, `order` FROM ex_contact_types WHERE id = :id FOR UPDATE");
     $oStatement->execute(array("id" => $iContactTypeId));
-    $aCurrent = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aCurrent = $oStatement->fetch();
     if (!$aCurrent) {
         throw new Exception("Contact type was not found.");
     }
@@ -387,7 +387,7 @@ function moveContactTypeOrder($oPdo, $iContactTypeId, $sDirection) {
         $oStatement = $oPdo->prepare("SELECT id, `order` FROM ex_contact_types WHERE `order` > :order ORDER BY `order` ASC, id ASC LIMIT 1 FOR UPDATE");
     }
     $oStatement->execute(array("order" => (int)$aCurrent["order"]));
-    $aOther = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aOther = $oStatement->fetch();
     if (!$aOther) {
         return;
     }
@@ -402,21 +402,21 @@ function mergeContactTypeContacts($oPdo, $iTargetContactTypeId, $iSourceContactT
         "target_contact_type_id" => $iTargetContactTypeId,
         "source_contact_type_id" => $iSourceContactTypeId
     ));
-    $aContacts = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aContacts = $oStatement->fetchAll();
     foreach ($aContacts as $aContact) {
         $iSourceContactId = (int)$aContact["id"];
         $iTargetContactId = (int)$aContact["target_contact_id"];
         if ($iTargetContactId > 0) {
             $oSubjectStatement = $oPdo->prepare("SELECT id, subject_id FROM ex_subject_contacts WHERE contact_id = :contact_id FOR UPDATE");
             $oSubjectStatement->execute(array("contact_id" => $iSourceContactId));
-            $aSubjectContacts = $oSubjectStatement->fetchAll(PDO::FETCH_ASSOC);
+            $aSubjectContacts = $oSubjectStatement->fetchAll();
             foreach ($aSubjectContacts as $aSubjectContact) {
                 $oDuplicateStatement = $oPdo->prepare("SELECT id FROM ex_subject_contacts WHERE subject_id = :subject_id AND contact_id = :contact_id");
                 $oDuplicateStatement->execute(array(
                     "subject_id" => (int)$aSubjectContact["subject_id"],
                     "contact_id" => $iTargetContactId
                 ));
-                if ($oDuplicateStatement->fetch(PDO::FETCH_ASSOC)) {
+                if ($oDuplicateStatement->fetch()) {
                     $oDeleteStatement = $oPdo->prepare("DELETE FROM ex_subject_contacts WHERE id = :id");
                     $oDeleteStatement->execute(array("id" => (int)$aSubjectContact["id"]));
                 } else {
@@ -2468,10 +2468,10 @@ function fetchSubjectRows($oPdo, $iSubjectId = 0, $aFilterSql = null) {
     $sPersonSortName = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.last_name, ''), NULLIF(p.first_name, ''))), '')";
     $sContactTypeJoinSql = " LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id";
     $sContactTypeNameSql = "COALESCE(ct.name, '')";
-    $sSql = "SELECT s.id AS subject_id, s.subject_type, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_sort_name, s.is_active, s.created_at, s.updated_at, p.title_before, p.first_name, p.middle_name, p.last_name, p.title_after, p.birth_name, p.birth_number, p.birth_date, p.death_date, p.birthday_served_at, p.inter_served_at, c.contacts, a.addresses, n.nicknames, g.group_names, sn.notes FROM ex_subjects AS s
+    $sSql = "SELECT s.id AS subject_id, s.subject_type, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_sort_name, IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL) AS person_display_name, subn.name AS subject_name_value, n.primary_nickname, c.primary_contact, c.primary_contact_type, s.is_active, s.created_at, s.updated_at, p.title_before, p.first_name, p.middle_name, p.last_name, p.title_after, p.birth_name, p.birth_number, p.birth_date, p.death_date, p.birthday_served_at, p.inter_served_at, c.contacts, a.addresses, n.nicknames, g.group_names, sn.notes FROM ex_subjects AS s
         LEFT JOIN ex_persons AS p ON p.subject_id = s.id
         LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id
-        LEFT JOIN (SELECT sc.subject_id, GROUP_CONCAT(CONCAT(" . $sContactTypeNameSql . ", ': ', c.contact_value, IF(sc.note IS NULL OR sc.note = '', '', CONCAT(' (', sc.note, ')'))) ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n') AS contacts, SUBSTRING_INDEX(GROUP_CONCAT(c.contact_value ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id" . $sContactTypeJoinSql . " GROUP BY sc.subject_id) AS c ON c.subject_id = s.id
+        LEFT JOIN (SELECT sc.subject_id, GROUP_CONCAT(CONCAT(" . $sContactTypeNameSql . ", ': ', c.contact_value, IF(sc.note IS NULL OR sc.note = '', '', CONCAT(' (', sc.note, ')'))) ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n') AS contacts, SUBSTRING_INDEX(GROUP_CONCAT(c.contact_value ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact, SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(ct.contact_type, '') ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact_type FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id" . $sContactTypeJoinSql . " GROUP BY sc.subject_id) AS c ON c.subject_id = s.id
         LEFT JOIN (SELECT subject_id, GROUP_CONCAT(NULLIF(CONCAT_WS(', ', NULLIF(TRIM(CONCAT_WS(' ', NULLIF(street_name, ''), NULLIF(CONCAT_WS('/', NULLIF(house_number, ''), NULLIF(orientation_number, '')), ''))), ''), NULLIF(city, ''), NULLIF(postal_code, ''), NULLIF(country, '')), '') ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n') AS addresses FROM ex_subject_addresses GROUP BY subject_id) AS a ON a.subject_id = s.id
         LEFT JOIN (SELECT subject_id, GROUP_CONCAT(CONCAT(nickname, IF(context IS NULL OR context = '', '', CONCAT(' [', context, ']')), IF(note IS NULL OR note = '', '', CONCAT(' (', note, ')'))) ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n') AS nicknames, SUBSTRING_INDEX(GROUP_CONCAT(nickname ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n'), '\n', 1) AS primary_nickname FROM ex_subject_nicknames GROUP BY subject_id) AS n ON n.subject_id = s.id
         LEFT JOIN (SELECT sg.subject_id, GROUP_CONCAT(g.name ORDER BY g.`order` ASC, g.id ASC SEPARATOR '\n') AS group_names FROM ex_subject_groups AS sg INNER JOIN ex_groups AS g ON g.id = sg.group_id GROUP BY sg.subject_id) AS g ON g.subject_id = s.id
@@ -2491,7 +2491,14 @@ function fetchSubjectRows($oPdo, $iSubjectId = 0, $aFilterSql = null) {
     } else {
         $oStatement->execute($aParams);
     }
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aRows = $oStatement->fetchAll();
+    foreach ($aRows as $iRow => $aRow) {
+        if (trim((string)$aRow["person_display_name"]) == "" && trim((string)$aRow["subject_name_value"]) == "" && trim((string)$aRow["primary_nickname"]) == "" && trim((string)$aRow["primary_contact"]) != "") {
+            $aRows[$iRow]["subject_name"] = contactDisplayValue($aRow["primary_contact_type"], $aRow["primary_contact"]);
+            $aRows[$iRow]["subject_sort_name"] = $aRows[$iRow]["subject_name"];
+        }
+    }
+    return $aRows;
 }
 
 function fetchSubjectContacts($oPdo, $iSubjectId = 0) {
@@ -2509,7 +2516,7 @@ function fetchSubjectContacts($oPdo, $iSubjectId = 0) {
     } else {
         $oStatement->execute();
     }
-    while ($aContact = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aContact = $oStatement->fetch()) {
         $iCurrentSubjectId = (int)$aContact["subject_id"];
         if (!isset($aContacts[$iCurrentSubjectId])) {
             $aContacts[$iCurrentSubjectId] = array();
@@ -2532,7 +2539,7 @@ function fetchSubjectNicknames($oPdo, $iSubjectId = 0) {
     } else {
         $oStatement->execute();
     }
-    while ($aNickname = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aNickname = $oStatement->fetch()) {
         $iCurrentSubjectId = (int)$aNickname["subject_id"];
         if (!isset($aNicknames[$iCurrentSubjectId])) {
             $aNicknames[$iCurrentSubjectId] = array();
@@ -2555,7 +2562,7 @@ function fetchSubjectAddresses($oPdo, $iSubjectId = 0) {
     } else {
         $oStatement->execute();
     }
-    while ($aAddress = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aAddress = $oStatement->fetch()) {
         $iCurrentSubjectId = (int)$aAddress["subject_id"];
         if (!isset($aAddresses[$iCurrentSubjectId])) {
             $aAddresses[$iCurrentSubjectId] = array();
@@ -2578,7 +2585,7 @@ function fetchSubjectGroups($oPdo, $iSubjectId = 0) {
     } else {
         $oStatement->execute();
     }
-    while ($aGroup = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aGroup = $oStatement->fetch()) {
         $iCurrentSubjectId = (int)$aGroup["subject_id"];
         if (!isset($aGroups[$iCurrentSubjectId])) {
             $aGroups[$iCurrentSubjectId] = array();
@@ -2591,7 +2598,7 @@ function fetchSubjectGroups($oPdo, $iSubjectId = 0) {
 function fetchGroupAjaxData($oPdo, $iGroupId, $sName = "") {
     $oStatement = $oPdo->prepare("SELECT id AS group_id, name, created_at, updated_at FROM ex_groups WHERE id = :id");
     $oStatement->execute(array("id" => $iGroupId));
-    $aGroup = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aGroup = $oStatement->fetch();
     if (!$aGroup) {
         return array(
             "group_id" => $iGroupId,
@@ -2607,7 +2614,7 @@ function fetchGroupAjaxData($oPdo, $iGroupId, $sName = "") {
 
 function fetchGroups($oPdo) {
     $oStatement = $oPdo->query("SELECT id, name, legacy_id, `order` FROM ex_groups ORDER BY `order` ASC, id ASC");
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function fetchGroupAdminRows($oPdo, $iGroupId = 0) {
@@ -2625,12 +2632,12 @@ function fetchGroupAdminRows($oPdo, $iGroupId = 0) {
     } else {
         $oStatement->execute();
     }
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function fetchPortalPermissions($oPdo) {
     $oStatement = $oPdo->query("SELECT permission_key, name, note FROM ex_permissions WHERE is_active = 1 ORDER BY permission_key ASC");
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function fetchSubjectPortalUser($oPdo, $iSubjectId) {
@@ -2644,7 +2651,7 @@ function fetchSubjectPortalUser($oPdo, $iSubjectId) {
     );
     $oStatement = $oPdo->prepare("SELECT id, user_name, is_active, session_timeout, created_at, updated_at FROM ex_users WHERE subject_id = :subject_id");
     $oStatement->execute(array("subject_id" => $iSubjectId));
-    $aUser = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aUser = $oStatement->fetch();
     if (!$aUser) {
         return $aPortalUser;
     }
@@ -2696,7 +2703,7 @@ function normalizePortalPermissionKeys($oPdo, $aPermissionKeys) {
     }
     $oStatement = $oPdo->prepare("SELECT id, permission_key FROM ex_permissions WHERE is_active = 1 AND permission_key IN (" . implode(", ", $aPlaceholders) . ")");
     $oStatement->execute($aParams);
-    while ($aPermission = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aPermission = $oStatement->fetch()) {
         $aNormalizedKeys[(string)$aPermission["permission_key"]] = (int)$aPermission["id"];
     }
     return $aNormalizedKeys;
@@ -2743,7 +2750,7 @@ function moveGroupOrder($oPdo, $iGroupId, $sDirection) {
     normalizeGroupOrder($oPdo);
     $oStatement = $oPdo->prepare("SELECT id, `order` FROM ex_groups WHERE id = :id FOR UPDATE");
     $oStatement->execute(array("id" => $iGroupId));
-    $aCurrent = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aCurrent = $oStatement->fetch();
     if (!$aCurrent) {
         throw new Exception("Group was not found.");
     }
@@ -2753,7 +2760,7 @@ function moveGroupOrder($oPdo, $iGroupId, $sDirection) {
         $oStatement = $oPdo->prepare("SELECT id, `order` FROM ex_groups WHERE `order` > :order ORDER BY `order` ASC, id ASC LIMIT 1 FOR UPDATE");
     }
     $oStatement->execute(array("order" => (int)$aCurrent["order"]));
-    $aOther = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aOther = $oStatement->fetch();
     if (!$aOther) {
         return;
     }
@@ -2773,7 +2780,7 @@ function saveSubjectPortalAccess($oPdo, $iSubjectId, $sSubjectType, $aPayload) {
     $iEnabled = payloadFlag($aPayload, "portal_user_enabled");
     $oStatement = $oPdo->prepare("SELECT id, password_hash FROM ex_users WHERE subject_id = :subject_id FOR UPDATE");
     $oStatement->execute(array("subject_id" => $iSubjectId));
-    $aUser = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aUser = $oStatement->fetch();
     if (!$iEnabled) {
         if ($aUser) {
             $oStatement = $oPdo->prepare("DELETE FROM ex_user_permissions WHERE user_id = :user_id");
@@ -2864,7 +2871,7 @@ function fetchSubjectNotes($oPdo, $iSubjectId = 0) {
     } else {
         $oStatement->execute();
     }
-    while ($aNote = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aNote = $oStatement->fetch()) {
         $iCurrentSubjectId = (int)$aNote["subject_id"];
         if (!isset($aNotes[$iCurrentSubjectId])) {
             $aNotes[$iCurrentSubjectId] = array();
@@ -2877,7 +2884,7 @@ function fetchSubjectNotes($oPdo, $iSubjectId = 0) {
 function updateSubjectContactTarget($oPdo, $iSubjectContactId, $iContactTypeId, $sContactValue, $aContactType) {
     $oStatement = $oPdo->prepare("SELECT sc.id, sc.subject_id, sc.contact_id, sc.is_active AS current_is_active, c.contact_type_id AS current_contact_type_id, c.contact_value AS current_contact_value FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id WHERE sc.id = :id FOR UPDATE");
     $oStatement->execute(array("id" => $iSubjectContactId));
-    $aSubjectContact = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aSubjectContact = $oStatement->fetch();
     if (!$aSubjectContact) {
         return null;
     }
@@ -3180,7 +3187,7 @@ function subjectFilterText($aSubjectRow) {
 function fetchSubjectEditorData($oPdo, $iSubjectId) {
     $oStatement = $oPdo->prepare("SELECT s.id AS subject_id, s.subject_type, s.is_active, subn.name AS subject_name_value, p.title_before, p.first_name, p.middle_name, p.last_name, p.title_after, p.birth_name, p.birth_number, p.birth_date, p.death_date FROM ex_subjects AS s LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id WHERE s.id = :subject_id");
     $oStatement->execute(array("subject_id" => $iSubjectId));
-    $aSubject = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aSubject = $oStatement->fetch();
     if (!$aSubject) {
         return null;
     }
@@ -3561,7 +3568,7 @@ function fetchPersonServedRows($oPdo, $sServedColumn) {
     }
     $aServedRows = array();
     $oStatement = $oPdo->query("SELECT subject_id, " . $sServedColumn . " FROM ex_persons");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $aServedRows[(int)$aRow["subject_id"]] = $aRow;
     }
     return $aServedRows;
@@ -4507,7 +4514,7 @@ function contactsFilterText($aContactRow) {
 function addPhoneBookContact($oPdo, $iSubjectContactId, $iPhoneBook = 0) {
     $oStatement = $oPdo->prepare("SELECT sc.id, COALESCE(ct.contact_type, '') AS contact_type FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id WHERE sc.id = :id");
     $oStatement->execute(array("id" => (int)$iSubjectContactId));
-    $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aRow = $oStatement->fetch();
     if (!$aRow) {
         return false;
     }
@@ -4536,6 +4543,9 @@ function phoneBookSubjectDisplayName($aRow) {
     if ($sFirstName != "") {
         return $sFirstName;
     }
+    if (trim((string)$aRow["person_display_name"]) == "" && trim((string)$aRow["subject_name_value"]) == "" && trim((string)$aRow["contact_value"]) != "") {
+        return contactDisplayValue($aRow["contact_type"], $aRow["contact_value"]);
+    }
     return (string)$aRow["subject_name"];
 }
 
@@ -4543,10 +4553,10 @@ function fetchPhoneBookRows($oPdo, $iPhoneBook = 0) {
     $sPersonDisplayBase = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.title_before, ''), NULLIF(p.first_name, ''), NULLIF(p.middle_name, ''), NULLIF(p.last_name, ''))), '')";
     $sPersonDisplayName = "NULLIF(TRIM(CONCAT(COALESCE(" . $sPersonDisplayBase . ", ''), IF(NULLIF(p.title_after, '') IS NULL, '', IF(" . $sPersonDisplayBase . " IS NULL, p.title_after, CONCAT(', ', p.title_after))))), '')";
     $sPersonSortName = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.last_name, ''), NULLIF(p.first_name, ''))), '')";
-    $sSql = "SELECT pbc.id AS phone_book_id, pbc.phone_book, pbc.subject_contact_id, pbc.created_at AS phone_book_created_at, sc.subject_id, sc.contact_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note, c.contact_type_id, c.contact_value, c.created_at, c.updated_at, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, s.subject_type, s.is_active AS subject_is_active, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), c.contact_value, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), c.contact_value, 'Unnamed subject') AS subject_sort_name, p.first_name, p.last_name FROM ex_phone_book AS pbc INNER JOIN ex_subject_contacts AS sc ON sc.id = pbc.subject_contact_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id INNER JOIN ex_subjects AS s ON s.id = sc.subject_id LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id WHERE pbc.phone_book = :phone_book AND COALESCE(ct.contact_type, '') IN ('landline', 'cell', 'fax', 'pager') ORDER BY subject_sort_name COLLATE utf8mb4_czech_ci ASC, sc.subject_id ASC, contact_type_order ASC, c.contact_value ASC, pbc.subject_contact_id ASC";
+    $sSql = "SELECT pbc.id AS phone_book_id, pbc.phone_book, pbc.subject_contact_id, pbc.created_at AS phone_book_created_at, sc.subject_id, sc.contact_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note, c.contact_type_id, c.contact_value, c.created_at, c.updated_at, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, s.subject_type, s.is_active AS subject_is_active, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), c.contact_value, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), c.contact_value, 'Unnamed subject') AS subject_sort_name, IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL) AS person_display_name, subn.name AS subject_name_value, p.first_name, p.last_name FROM ex_phone_book AS pbc INNER JOIN ex_subject_contacts AS sc ON sc.id = pbc.subject_contact_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id INNER JOIN ex_subjects AS s ON s.id = sc.subject_id LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id WHERE pbc.phone_book = :phone_book AND COALESCE(ct.contact_type, '') IN ('landline', 'cell', 'fax', 'pager') ORDER BY subject_sort_name COLLATE utf8mb4_czech_ci ASC, sc.subject_id ASC, contact_type_order ASC, c.contact_value ASC, pbc.subject_contact_id ASC";
     $oStatement = $oPdo->prepare($sSql);
     $oStatement->execute(array("phone_book" => max(0, (int)$iPhoneBook)));
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function contactsRenderPhoneBookAction($aSubject) {
@@ -4591,7 +4601,7 @@ function contactsFetchRows($oPdo, $aContactSettings) {
     $sSql = "SELECT c.id AS contact_id, c.contact_type_id, c.contact_value, c.created_at, c.updated_at, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, sc.id AS subject_contact_id, sc.subject_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note, IF(pbc.subject_contact_id IS NULL, 0, 1) AS phone_book_contact FROM ex_contacts AS c LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id LEFT JOIN ex_subject_contacts AS sc ON sc.contact_id = c.id LEFT JOIN ex_phone_book AS pbc ON pbc.subject_contact_id = sc.id AND pbc.phone_book = 0 ORDER BY c.contact_value ASC, COALESCE(ct.`order`, 999999) ASC, COALESCE(ct.name, '') ASC, c.id ASC, sc.is_active DESC, sc.is_primary DESC, sc.id ASC";
     $oStatement = $oPdo->prepare($sSql);
     $oStatement->execute();
-    while ($aContact = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aContact = $oStatement->fetch()) {
         $iSubjectId = (int)$aContact["subject_id"];
         $iContactId = (int)$aContact["contact_id"];
         $sContactType = (string)$aContact["contact_type"];
@@ -6184,7 +6194,7 @@ function diffFetchDatabaseTables($oPdo) {
         $aDependencies[$aTable[0]] = array();
     }
     $oStatement = $oPdo->query("SELECT TABLE_NAME, REFERENCED_TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         if (isset($aDependencies[$aRow["TABLE_NAME"]], $aDependencies[$aRow["REFERENCED_TABLE_NAME"]])
             && $aRow["TABLE_NAME"] !== $aRow["REFERENCED_TABLE_NAME"]) {
             $aDependencies[$aRow["TABLE_NAME"]][$aRow["REFERENCED_TABLE_NAME"]] = true;

@@ -194,7 +194,7 @@ function menuAdminFetchRows($oPdo, $iMenuId = 0) {
     } else {
         $oStatement = $oPdo->query("SELECT id, path, icon, name, title, target, is_active, `order` AS menu_order FROM fs_menu");
     }
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $sPath = menuAdminDisplayPath($aRow["path"]);
         $sGroupKey = menuAdminGroupKey($sPath);
         $aRows[] = array(
@@ -218,7 +218,7 @@ function menuAdminFetchRows($oPdo, $iMenuId = 0) {
 function menuAdminFetchLockedRows($oPdo) {
     $aRows = array();
     $oStatement = $oPdo->query("SELECT id, path, `order` AS menu_order FROM fs_menu ORDER BY `order` ASC, id ASC FOR UPDATE");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $sPath = menuAdminDisplayPath($aRow["path"]);
         $aRows[] = array(
             "id" => (int)$aRow["id"],
@@ -409,7 +409,7 @@ function menuAdminCreateOrUpdate($oPdo, $iMenuId) {
         if ($iMenuId > 0) {
             $oStatement = $oPdo->prepare("SELECT path FROM fs_menu WHERE id = :id FOR UPDATE");
             $oStatement->execute(array("id" => $iMenuId));
-            $aCurrent = $oStatement->fetch(PDO::FETCH_ASSOC);
+            $aCurrent = $oStatement->fetch();
             if (!$aCurrent) {
                 $oPdo->rollBack();
                 sendJsonAndExit(array("success" => false, "message" => "Menu item was not found."), 404);
@@ -622,7 +622,7 @@ function businessHoursFetchSubjectNameRow($oPdo, $iSubjectId) {
     }
     $oStatement = $oPdo->prepare("SELECT subject_id, subject_name, subject_sort_name FROM (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows WHERE subject_id = :subject_id");
     $oStatement->execute(array("subject_id" => (int)$iSubjectId));
-    $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aRow = $oStatement->fetch();
     return $aRow ? $aRow : null;
 }
 
@@ -643,7 +643,7 @@ function businessHoursFetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
         "subject_name_term" => $sTerm,
         "subject_sort_name_term" => $sTerm
     ));
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function businessHoursFetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
@@ -664,7 +664,7 @@ function businessHoursFetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
         "subject_name_term" => $sLike,
         "subject_sort_name_term" => $sLike
     ));
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function businessHoursFetchSingleSubjectInputRow($oPdo, $sTerm) {
@@ -746,7 +746,7 @@ function businessHoursFetchAddressRows($oPdo, $iSubjectId, $iAddressId = 0, $sTe
     if ($iLimit < 1) {
         $iLimit = 30;
     }
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $aRow["address_id"] = (int)$aRow["id"];
         $aRow["address_text"] = businessHoursAddressText($aRow);
         if ($sTerm != "" && stripos($aRow["address_text"], $sTerm) === false) {
@@ -799,7 +799,7 @@ function businessHoursFetchRows($oPdo, $iId = 0) {
     } else {
         $oStatement = $oPdo->query($sSql . " ORDER BY bh.is_active DESC, bh.`order` ASC, subject_rows.subject_sort_name COLLATE utf8mb4_czech_ci ASC, bh.id ASC");
     }
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $aAddress = array(
             "id" => (int)$aRow["address_id"],
             "subject_id" => (int)$aRow["subject_id"],
@@ -966,7 +966,7 @@ function businessHoursRenderTabs($aRows) {
 function businessHoursFetchLockedRows($oPdo) {
     $aRows = array();
     $oStatement = $oPdo->query("SELECT id, `order` AS bh_order FROM fs_business_hours ORDER BY `order` ASC, id ASC FOR UPDATE");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $aRows[] = array(
             "id" => (int)$aRow["id"],
             "order" => (int)$aRow["bh_order"]
@@ -1073,7 +1073,7 @@ function businessHoursCreateOrUpdate($oPdo, $iId) {
         if ($iId > 0) {
             $oStatement = $oPdo->prepare("SELECT id FROM fs_business_hours WHERE id = :id FOR UPDATE");
             $oStatement->execute(array("id" => $iId));
-            if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+            if (!$oStatement->fetch()) {
                 $oPdo->rollBack();
                 sendJsonAndExit(array("success" => false, "message" => "Business hours were not found."), 404);
             }
@@ -1243,7 +1243,7 @@ function dashboardServiceFetchRows($oPdo, $iServiceId = 0) {
     } else {
         $oStatement = $oPdo->query("SELECT id, name, url, check_type, http_code, match_type, match_text, is_active, `order` AS service_order, UNIX_TIMESTAMP(checked_at) AS checked_at_ts, UNIX_TIMESTAMP(updated_at) AS updated_at_ts, `ok` AS check_ok, `code` AS check_code, `message` AS check_message, DATE_FORMAT(checked_at, '%Y-%m-%d %H:%i:%s') AS checked_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text FROM fs_dashboard ORDER BY is_active DESC, `order` ASC, name ASC, id ASC");
     }
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $aRows[] = array(
             "id" => (int)$aRow["id"],
             "name" => (string)$aRow["name"],
@@ -1361,7 +1361,7 @@ function dashboardServiceRenderRows($oPdo) {
 function dashboardServiceFetchLockedRows($oPdo) {
     $aRows = array();
     $oStatement = $oPdo->query("SELECT id, `order` AS service_order FROM fs_dashboard ORDER BY `order` ASC, id ASC FOR UPDATE");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $aRows[] = array(
             "id" => (int)$aRow["id"],
             "order" => (int)$aRow["service_order"]
@@ -1459,7 +1459,7 @@ function dashboardServiceCreateOrUpdate($oPdo, $iServiceId) {
         if ($iServiceId > 0) {
             $oStatement = $oPdo->prepare("SELECT id FROM fs_dashboard WHERE id = :id FOR UPDATE");
             $oStatement->execute(array("id" => $iServiceId));
-            if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+            if (!$oStatement->fetch()) {
                 $oPdo->rollBack();
                 sendJsonAndExit(array("success" => false, "message" => "Service was not found."), 404);
             }
@@ -1791,7 +1791,7 @@ function dashboardServiceFetchRowForUpdate($oPdo, $iServiceId) {
     $oStatement = $oPdo->prepare("SELECT id, name, url, check_type, http_code, match_type, match_text, is_active, `order` AS service_order, UNIX_TIMESTAMP(checked_at) AS checked_at_ts, UNIX_TIMESTAMP(updated_at) AS updated_at_ts, `ok` AS check_ok, `code` AS check_code, `message` AS check_message, DATE_FORMAT(checked_at, '%Y-%m-%d %H:%i:%s') AS checked_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text FROM fs_dashboard WHERE id = :id FOR UPDATE");
     $oStatement->execute(array("id" => $iServiceId));
     $aRows = array();
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $aRows[] = array(
             "id" => (int)$aRow["id"],
             "name" => (string)$aRow["name"],
@@ -1932,7 +1932,7 @@ function issueTrackerRenderBadge($sClass, $sText) {
 function issueTrackerFetchRows($oPdo) {
     $aRows = array();
     $oStatement = $oPdo->query("SELECT id, issue_type, status, priority, title, description, DATE_FORMAT(due_date, '%Y-%m-%d') AS due_date_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text, DATE_FORMAT(closed_at, '%Y-%m-%d %H:%i') AS closed_at_text FROM fs_issues ORDER BY status = 'done' ASC, FIELD(status, 'open', 'in_progress', 'waiting', 'done'), due_date IS NULL ASC, due_date ASC, FIELD(priority, 'urgent', 'high', 'normal', 'low'), created_at DESC, id DESC");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $aRows[] = array(
             "id" => (int)$aRow["id"],
             "issue_type" => (string)$aRow["issue_type"],
@@ -2014,7 +2014,7 @@ function issueTrackerCreateOrUpdate($oPdo, $iIssueId) {
         if ($iIssueId > 0) {
             $oStatement = $oPdo->prepare("SELECT id FROM fs_issues WHERE id = :id FOR UPDATE");
             $oStatement->execute(array("id" => $iIssueId));
-            if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+            if (!$oStatement->fetch()) {
                 $oPdo->rollBack();
                 sendJsonAndExit(array("success" => false, "message" => "Issue was not found."), 404);
             }
@@ -2077,7 +2077,7 @@ function issueTrackerToggleStatus($oPdo, $iIssueId) {
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT status FROM fs_issues WHERE id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iIssueId));
-        $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+        $aRow = $oStatement->fetch();
         if (!$aRow) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Issue was not found."), 404);

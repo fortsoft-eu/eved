@@ -85,7 +85,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id, subject_type FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
-        $aSubjectRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+        $aSubjectRow = $oStatement->fetch();
         if (!$aSubjectRow) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
@@ -126,7 +126,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             );
             $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_persons WHERE subject_id = :subject_id");
             $oStatement->execute(array("subject_id" => $iSubjectId));
-            $blHasPersonRow = (bool)$oStatement->fetch(PDO::FETCH_ASSOC);
+            $blHasPersonRow = (bool)$oStatement->fetch();
             if ($blHasPersonRow) {
                 $oStatement = $oPdo->prepare("UPDATE ex_persons SET title_before = :title_before, first_name = :first_name, middle_name = :middle_name, last_name = :last_name, title_after = :title_after, birth_name = :birth_name, birth_number = :birth_number, birth_date = :birth_date, death_date = :death_date WHERE subject_id = :subject_id");
                 $aPersonValues["subject_id"] = $iSubjectId;
@@ -239,7 +239,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id, subject_id, address_type, organization_name, department_name, care_of, street_name, house_number, evidence_number, orientation_number, orientation_suffix, address_line2, city, city_part, postal_code, region, country, is_primary, is_active, note FROM ex_subject_addresses WHERE id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iAddressId));
-        $aOldAddress = $oStatement->fetch(PDO::FETCH_ASSOC);
+        $aOldAddress = $oStatement->fetch();
         if (!$aOldAddress) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Address was not found."), 404);

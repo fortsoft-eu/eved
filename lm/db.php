@@ -31,7 +31,7 @@ try {
         $aDependencies[$aTable[0]] = array();
     }
     $oStatement = $oPdo->query("SELECT TABLE_NAME, REFERENCED_TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         if (isset($aDependencies[$aRow["TABLE_NAME"]], $aDependencies[$aRow["REFERENCED_TABLE_NAME"]])
             && $aRow["TABLE_NAME"] !== $aRow["REFERENCED_TABLE_NAME"]) {
             $aDependencies[$aRow["TABLE_NAME"]][$aRow["REFERENCED_TABLE_NAME"]] = true;

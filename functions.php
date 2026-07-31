@@ -630,7 +630,7 @@ function getDatabaseBackupSql($oPdo, $aTables) {
         $oStatement = $oPdo->query("SELECT * FROM " . $sQuotedTableName);
         $sColumns = "";
         $blHasRows = false;
-        while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+        while ($aRow = $oStatement->fetch()) {
             if ($sColumns == "") {
                 $aColumns = array();
                 foreach (array_keys($aRow) as $sColumnName) {
@@ -894,7 +894,7 @@ function getMenuItemsFromDatabase($oPdo) {
     $sPathPrefix = getMenuPathPrefix();
     $oStatement = $oPdo->prepare("SELECT id, path, icon, name, title, target, `order` AS menu_order FROM fs_menu WHERE is_active = 1 AND path LIKE :path_prefix ORDER BY `order` ASC, id ASC");
     $oStatement->execute(array("path_prefix" => $sPathPrefix . "%"));
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         $sPath = "/" . normalizeMenuPath($aRow["path"]);
         if (strpos($sPath, $sPathPrefix) !== 0) {
             continue;
@@ -987,14 +987,14 @@ function handleQuickTableFilterRequest() {
 function fetchPortalLoginUser($oPdo, $sUserName) {
     $oStatement = $oPdo->prepare("SELECT u.id, u.subject_id, u.user_name, u.password_hash, u.is_active, u.session_timeout, s.subject_type, s.is_active AS subject_active FROM ex_users AS u INNER JOIN ex_subjects AS s ON s.id = u.subject_id WHERE u.user_name = :user_name LIMIT 1");
     $oStatement->execute(array("user_name" => $sUserName));
-    $aUser = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aUser = $oStatement->fetch();
     return $aUser ? $aUser : null;
 }
 
 function fetchPortalSessionUser($oPdo, $iUserId) {
     $oStatement = $oPdo->prepare("SELECT u.id, u.subject_id, u.user_name, u.is_active, u.session_timeout, s.subject_type, s.is_active AS subject_active FROM ex_users AS u INNER JOIN ex_subjects AS s ON s.id = u.subject_id WHERE u.id = :id LIMIT 1");
     $oStatement->execute(array("id" => $iUserId));
-    $aUser = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aUser = $oStatement->fetch();
     return $aUser ? $aUser : null;
 }
 

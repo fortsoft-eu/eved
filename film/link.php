@@ -45,7 +45,7 @@ try {
             $oStmt->execute(array(
                 ":film_id" => $iFilmId
             ));
-            $aUnassign = $oStmt->fetch(PDO::FETCH_ASSOC);
+            $aUnassign = $oStmt->fetch();
             if ($aUnassign && $aUnassign["lab_order_id"] !== null && (int)$aUnassign["can_unassign"] == 1) {
                 $oStmt = $oPdo->prepare("UPDATE fs_film_scans SET lab_order_id = NULL, updated_at = NOW(6) WHERE id = :film_id AND lab_order_id IS NOT NULL");
                 $oStmt->execute(array(
@@ -80,7 +80,7 @@ try {
         exit;
     }
     $oStmtOrders = $oPdo->query("SELECT id, lab, bag_no, order_no FROM fs_photo_lab_orders WHERE bag_no IS NOT NULL AND bag_no != '' AND ordered_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR) ORDER BY order_no ASC");
-    $aOrders = $oStmtOrders->fetchAll(PDO::FETCH_ASSOC);
+    $aOrders = $oStmtOrders->fetchAll();
     $iLastBagId = null;
     if (isset($_SESSION["film"]["link"]["bag"])) {
         if (is_int($_SESSION["film"]["link"]["bag"])) {
@@ -103,7 +103,7 @@ try {
             $aSelectedOrder = null;
             $oStmt = $oPdo->prepare("SELECT id, archive_no, folder_name, lab_order_id FROM fs_film_scans WHERE id = :film_id");
             $oStmt->execute(array(":film_id" => $iFilmId));
-            $aSelectedFilm = $oStmt->fetch(PDO::FETCH_ASSOC);
+            $aSelectedFilm = $oStmt->fetch();
             foreach ($aOrders as $aOrder) {
                 if ((int)$aOrder["id"] == $iOrderId) {
                     $aSelectedOrder = $aOrder;
@@ -146,9 +146,9 @@ try {
         exit;
     }
     $oStmtFilms = $oPdo->query("SELECT id, archive_no, folder_name, lab_order_id FROM fs_film_scans WHERE lab_order_id IS NULL AND archive_no <= 990 ORDER BY archive_no ASC");
-    $aFilms = $oStmtFilms->fetchAll(PDO::FETCH_ASSOC);
+    $aFilms = $oStmtFilms->fetchAll();
     $oStmtLinks = $oPdo->query("SELECT f.id AS film_id, f.archive_no, f.folder_name, f.scanned_at, f.lab_order_id, o.lab, o.bag_no, o.order_no, o.price_vat, o.currency, o.ordered_at, o.returned_at, o.invoice, o.ordered_at >= DATE_SUB(NOW(), INTERVAL 1 YEAR) AS can_unassign, fd.film_scan_dates, sd.scan_dates FROM fs_film_scans AS f LEFT JOIN fs_photo_lab_orders AS o ON f.lab_order_id = o.id LEFT JOIN (SELECT lab_order_id, GROUP_CONCAT(DISTINCT DATE(scanned_at) ORDER BY scanned_at SEPARATOR '\\n') AS film_scan_dates FROM fs_film_scans WHERE lab_order_id IS NOT NULL GROUP BY lab_order_id) AS fd ON fd.lab_order_id = o.id LEFT JOIN (SELECT lab_order_id, GROUP_CONCAT(DISTINCT DATE(scanned_at) ORDER BY scanned_at SEPARATOR '\\n') AS scan_dates FROM fs_film_scans WHERE lab_order_id IS NOT NULL GROUP BY lab_order_id) AS sd ON sd.lab_order_id = o.id WHERE f.archive_no <= 990 ORDER BY f.archive_no ASC");
-    $aLinks = $oStmtLinks->fetchAll(PDO::FETCH_ASSOC);
+    $aLinks = $oStmtLinks->fetchAll();
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());

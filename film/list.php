@@ -13,7 +13,7 @@ try {
     $oStatement = $oPdo->prepare("SELECT f.archive_no, f.folder_name, f.film_stock, f.cartridge, f.exposure_index, f.push_pull, f.scanned_at, o.order_no FROM fs_film_scans AS f
         LEFT JOIN fs_photo_lab_orders AS o ON f.lab_order_id = o.id WHERE f.archive_no <= 990 ORDER BY f.archive_no ASC");
     $oStatement->execute();
-    $aRows = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aRows = $oStatement->fetchAll();
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());

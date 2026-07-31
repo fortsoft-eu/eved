@@ -14,7 +14,7 @@ $aForeignKeys = array();
 $aDependencies = array();
 try {
     $oStatement = $oPdo->query("SELECT TABLE_NAME, COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, EXTRA FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() ORDER BY TABLE_NAME, ORDINAL_POSITION");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         if (!preg_match("/^ex_[a-zA-Z0-9_]+$/", $aRow["TABLE_NAME"])) {
             continue;
         }
@@ -26,7 +26,7 @@ try {
     }
 
     $oStatement = $oPdo->query("SELECT CONSTRAINT_NAME, TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION");
-    while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aRow = $oStatement->fetch()) {
         if (!preg_match("/^ex_[a-zA-Z0-9_]+$/", $aRow["TABLE_NAME"])
             || !preg_match("/^ex_[a-zA-Z0-9_]+$/", $aRow["REFERENCED_TABLE_NAME"])) {
             continue;

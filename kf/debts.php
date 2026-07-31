@@ -152,7 +152,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         try {
             $oStatement = $oPdo->prepare("SELECT id FROM kf_debts WHERE id = :id");
             $oStatement->execute(array("id" => $iDebtId));
-            if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+            if (!$oStatement->fetch()) {
                 if ($blJsonResponse) {
                     sendJsonAndExit(array("success" => false, "message" => "Debt was not found."), 404);
                 }
@@ -164,7 +164,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     "id" => $iId,
                     "debt_id" => $iDebtId
                 ));
-                if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+                if (!$oStatement->fetch()) {
                     if ($blJsonResponse) {
                         sendJsonAndExit(array("success" => false, "message" => "Debt movement was not found."), 404);
                     }

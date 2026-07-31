@@ -190,7 +190,7 @@ function getCurrencyOptions($oPdo, $sSelectedCurrency = "") {
     if ($oPdo) {
         try {
             $oStatement = $oPdo->query("SELECT currency_code, MIN(currency) AS currency_name FROM kf_exchange_rates GROUP BY currency_code ORDER BY currency_code ASC");
-            while ($aRow = $oStatement->fetch(PDO::FETCH_ASSOC)) {
+            while ($aRow = $oStatement->fetch()) {
                 $sCurrency = normalizeCurrency($aRow["currency_code"]);
                 if ($sCurrency == "") {
                     continue;
@@ -255,21 +255,21 @@ function getCurrencyRateToCzk($oPdo, $sCurrency, $sDate) {
         $oStatement->execute(array(
             "currency_code" => $sCurrency
         ));
-        $aRate = $oStatement->fetch(PDO::FETCH_ASSOC);
+        $aRate = $oStatement->fetch();
     } else {
         $oStatement = $oPdo->prepare("SELECT amount, rate FROM kf_exchange_rates WHERE currency_code = :currency_code AND valid_for <= :valid_for ORDER BY valid_for DESC, id DESC LIMIT 1");
         $oStatement->execute(array(
             "currency_code" => $sCurrency,
             "valid_for" => $sDate
         ));
-        $aRate = $oStatement->fetch(PDO::FETCH_ASSOC);
+        $aRate = $oStatement->fetch();
         if (!$aRate) {
             $oStatement = $oPdo->prepare("SELECT amount, rate FROM kf_exchange_rates WHERE currency_code = :currency_code AND valid_for > :valid_for ORDER BY valid_for ASC, id ASC LIMIT 1");
             $oStatement->execute(array(
                 "currency_code" => $sCurrency,
                 "valid_for" => $sDate
             ));
-            $aRate = $oStatement->fetch(PDO::FETCH_ASSOC);
+            $aRate = $oStatement->fetch();
         }
     }
     if (!$aRate || (int)$aRate["amount"] < 1) {
@@ -432,7 +432,7 @@ function fetchSubjectNameRow($oPdo, $iSubjectId) {
     }
     $oStatement = $oPdo->prepare("SELECT subject_id, subject_name, subject_sort_name FROM (" . getSubjectNameSelectSql() . ") AS subject_rows WHERE subject_id = :subject_id");
     $oStatement->execute(array("subject_id" => (int)$iSubjectId));
-    $aRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+    $aRow = $oStatement->fetch();
     return $aRow ? $aRow : null;
 }
 
@@ -453,7 +453,7 @@ function fetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
         "subject_name_term" => $sTerm,
         "subject_sort_name_term" => $sTerm
     ));
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function fetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
@@ -474,7 +474,7 @@ function fetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
         "subject_name_term" => $sLike,
         "subject_sort_name_term" => $sLike
     ));
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function fetchSingleSubjectInputRow($oPdo, $sTerm) {
@@ -526,7 +526,7 @@ function fetchDebtMovementRowsByDebtIds($oPdo, $aDebtIds) {
     }
     $oStatement = $oPdo->prepare("SELECT id, debt_id, movement_date, amount, currency, note FROM kf_debt_movements WHERE debt_id IN (" . implode(", ", $aPlaceholders) . ") ORDER BY movement_date ASC, id ASC");
     $oStatement->execute($aParams);
-    foreach ($oStatement->fetchAll(PDO::FETCH_ASSOC) as $aRow) {
+    foreach ($oStatement->fetchAll() as $aRow) {
         $iDebtId = (int)$aRow["debt_id"];
         if (!isset($aRowsByDebtId[$iDebtId])) {
             $aRowsByDebtId[$iDebtId] = array();
@@ -548,7 +548,7 @@ function fetchDebtAdminRows($oPdo, $iDebtId = 0) {
     } else {
         $oStatement = $oPdo->query($sSql);
     }
-    $aRows = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aRows = $oStatement->fetchAll();
     $aDebtIds = array();
     foreach ($aRows as $aRow) {
         $aDebtIds[] = (int)$aRow["id"];
@@ -656,7 +656,7 @@ function fetchTransactionAdminRows($oPdo, $iTransactionId = 0) {
     } else {
         $oStatement = $oPdo->query($sSql);
     }
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function renderTransactionAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false, $sDisplayCurrency = "") {
@@ -923,7 +923,7 @@ function fetchSubscriptionAdminRows($oPdo, $iSubscriptionId = 0) {
     } else {
         $oStatement = $oPdo->query($sSql);
     }
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function renderSubscriptionAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFormat = false, $sDisplayCurrency = "") {
@@ -970,7 +970,7 @@ function fetchLatestExchangeRateRows($oPdo) {
     }
     $oStatement = $oPdo->prepare("SELECT id, valid_for, `order` AS rate_order, country, currency, currency_code, amount, rate, fetched_at FROM kf_exchange_rates WHERE valid_for = :valid_for ORDER BY `order` ASC, country ASC, currency_code ASC, id ASC");
     $oStatement->execute(array("valid_for" => $sValidFor));
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function formatExchangeRateValue($mRate) {
@@ -1039,7 +1039,7 @@ function reserveExchangeRateFetchAttempt($oPdo, $sRequestedFor) {
         $oStatement->execute(array("requested_for" => $sRequestedFor));
         $oStatement = $oPdo->prepare("SELECT status, last_attempt_at, succeeded_at FROM kf_exrates_fetches WHERE requested_for = :requested_for FOR UPDATE");
         $oStatement->execute(array("requested_for" => $sRequestedFor));
-        $aFetch = $oStatement->fetch(PDO::FETCH_ASSOC);
+        $aFetch = $oStatement->fetch();
         if ($aFetch && trim((string)$aFetch["succeeded_at"]) != "") {
             $oPdo->commit();
             return false;
@@ -1248,7 +1248,7 @@ function fetchFinanceTypeAdminRows($oPdo, $iTypeId = 0) {
     } else {
         $oStatement = $oPdo->query($sSql);
     }
-    return $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    return $oStatement->fetchAll();
 }
 
 function renderFinanceTypeAdminRow($aRow, $blShowActions = true) {

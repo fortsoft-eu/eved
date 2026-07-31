@@ -133,7 +133,7 @@ if (isset($_POST["id"])) {
 if ($iId > 0) {
     $oPdoStatement = $oPdo->prepare("SELECT * FROM fs_film_scans WHERE id = :id");
     $oPdoStatement->execute(array("id" => $iId));
-    $aCurrent = $oPdoStatement->fetch(PDO::FETCH_ASSOC);
+    $aCurrent = $oPdoStatement->fetch();
     if ($aCurrent) {
         if ($blPost) {
             sendFilmMetadataTxt($oPdo, $aCurrent);
@@ -161,7 +161,7 @@ if ($iId > 0) {
 
     $oPdoStatement = $oPdo->prepare("SELECT * FROM fs_film_scans WHERE archive_no < (SELECT archive_no FROM fs_film_scans WHERE id = :id) ORDER BY archive_no DESC");
     $oPdoStatement->execute(array("id" => $iId));
-    while ($aPrevious = $oPdoStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aPrevious = $oPdoStatement->fetch()) {
         $aParts = preg_split("/\s+/", trim($aPrevious["folder_name"]));
         if (isset($aParts[1])) {
             $sSubdir = $aParts[1];
@@ -183,7 +183,7 @@ if ($iId > 0) {
 
     $oPdoStatement = $oPdo->prepare("SELECT * FROM fs_film_scans WHERE archive_no > (SELECT archive_no FROM fs_film_scans WHERE id = :id) ORDER BY archive_no ASC");
     $oPdoStatement->execute(array("id" => $iId));
-    while ($aNext = $oPdoStatement->fetch(PDO::FETCH_ASSOC)) {
+    while ($aNext = $oPdoStatement->fetch()) {
         $aParts = preg_split("/\s+/", trim($aNext["folder_name"]));
         if (isset($aParts[1])) {
             $sSubdir = $aParts[1];
@@ -310,7 +310,7 @@ $iTime = sendPageHeaders();
 
 if ($oPdo) {
     $oPdoStatement = $oPdo->query("SELECT id, archive_no, folder_name FROM fs_film_scans ORDER BY archive_no ASC");
-    $aRows = $oPdoStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aRows = $oPdoStatement->fetchAll();
     echo "         <ul>\n";
     foreach ($aRows as $sRow) {
         $aParts = preg_split("/\s+/", trim($sRow["folder_name"]));

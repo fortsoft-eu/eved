@@ -67,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_contact_types WHERE id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iContactTypeId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Contact type was not found."), 404);
         }
@@ -102,7 +102,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_contact_types WHERE id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iContactTypeId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Contact type was not found."), 404);
         }

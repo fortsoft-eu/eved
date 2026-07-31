@@ -15,7 +15,7 @@ $aRows = array();
 try {
     $oStatement = $oPdo->prepare("SELECT u.id, u.ip_address, u.x_geo_continent_code, u.x_geo_country_code, u.user_agent, u.browser_name, u.browser_version, u.os_name, u.os_version, u.platform_type, u.device_vendor, u.device_model, u.architecture, u.bitness, u.is_mobile, u.ua_brands, u.requested_film_scan_id, f.folder_name, u.requested_img, u.gpu_info, u.fonts, u.screen_resolution, u.screen_physical, u.color_depth, u.timezone, u.language, u.platform, u.plugins, u.mime_types, u.`timestamp` FROM fs_film_ua AS u LEFT JOIN fs_film_scans AS f ON f.id = u.requested_film_scan_id ORDER BY u.`timestamp` DESC, u.id DESC LIMIT 100");
     $oStatement->execute();
-    $aRows = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aRows = $oStatement->fetchAll();
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());

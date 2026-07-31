@@ -35,7 +35,7 @@ $aFullListSettings = applyCountrySettings($aFullListSettings);
 $aFullListComplexFilterContactTypes = array();
 try {
     $oStatement = $oPdo->query("SELECT id, contact_type, name FROM ex_contact_types ORDER BY `order` ASC, id ASC");
-    $aFullListComplexFilterContactTypes = $oStatement->fetchAll(PDO::FETCH_ASSOC);
+    $aFullListComplexFilterContactTypes = $oStatement->fetchAll();
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
@@ -139,7 +139,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id, subject_type FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
-        $aSubjectRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+        $aSubjectRow = $oStatement->fetch();
         if (!$aSubjectRow) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
@@ -196,7 +196,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id, subject_type FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
-        $aSubjectRow = $oStatement->fetch(PDO::FETCH_ASSOC);
+        $aSubjectRow = $oStatement->fetch();
         if (!$aSubjectRow) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
@@ -237,7 +237,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             );
             $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_persons WHERE subject_id = :subject_id");
             $oStatement->execute(array("subject_id" => $iSubjectId));
-            $blHasPersonRow = (bool)$oStatement->fetch(PDO::FETCH_ASSOC);
+            $blHasPersonRow = (bool)$oStatement->fetch();
             if ($blHasPersonRow) {
                 $oStatement = $oPdo->prepare("UPDATE ex_persons SET title_before = :title_before, first_name = :first_name, middle_name = :middle_name, last_name = :last_name, title_after = :title_after, birth_name = :birth_name, birth_number = :birth_number, birth_date = :birth_date, death_date = :death_date WHERE subject_id = :subject_id");
                 $aPersonValues["subject_id"] = $iSubjectId;
@@ -378,7 +378,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
@@ -536,7 +536,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
@@ -586,19 +586,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
         }
         $oStatement = $oPdo->prepare("SELECT id FROM ex_groups WHERE id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iGroupId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Group was not found."), 404);
         }
         $oStatement = $oPdo->prepare("SELECT id FROM ex_groups WHERE name = :name AND id <> :id");
         $oStatement->execute(array("name" => $sGroupName, "id" => $iGroupId));
-        if ($oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if ($oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "The selected group name already exists."), 409);
         }
@@ -629,7 +629,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
@@ -643,7 +643,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
-        if ($oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if ($oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject is already assigned to this group."), 409);
         }
@@ -711,7 +711,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
@@ -736,7 +736,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
@@ -840,7 +840,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(getUpdatedSubjectResponse($oPdo, $iSubjectId, $aFullListSettings, $aFullListComplexFilterSql));
         }
@@ -907,7 +907,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subjects WHERE id = :subject_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId));
-        if (!$oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject was not found."), 404);
         }
@@ -922,7 +922,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         }
         $oStatement = $oPdo->prepare("SELECT id FROM ex_subject_contacts WHERE subject_id = :subject_id AND contact_id = :contact_id");
         $oStatement->execute(array("subject_id" => $iSubjectId, "contact_id" => $iContactId));
-        if ($oStatement->fetch(PDO::FETCH_ASSOC)) {
+        if ($oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "This contact is already assigned to the subject."), 409);
         }
