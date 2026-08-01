@@ -2724,6 +2724,50 @@ document.addEventListener("DOMContentLoaded", function () {
 document.addEventListener("DOMContentLoaded", function () {
     var aFilters = document.querySelectorAll(".js-table-filter");
 
+    function escapeFilterRegex(sValue) {
+        return sValue.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function buildPhoneFilterPattern(sDigits) {
+        var aParts = [];
+        for (var iI = 0; iI < sDigits.length; iI += 1) {
+            aParts.push(sDigits.charAt(iI));
+        }
+        return aParts.join("[\\s\\u00a0().+\\-\\/]*");
+    }
+
+    function appendPhoneFilterPattern(aPatterns, sDigits) {
+        for (var iI = 0; iI < aPatterns.length; iI += 1) {
+            if (aPatterns[iI]["digits"] == sDigits) {
+                return;
+            }
+        }
+        if (sDigits.length >= 5) {
+            aPatterns.push({
+                "digits": sDigits,
+                "pattern": buildPhoneFilterPattern(sDigits)
+            });
+        }
+    }
+
+    function buildPhoneFilterRegex(sTerm) {
+        var sPhoneText = sTerm.replace(/^\s+|\s+$/g, "");
+        var sDigits = sPhoneText.replace(/\D/g, "");
+        var aPatterns = [];
+        var aRegexPatterns = [];
+        if (sDigits.length < 5 || sPhoneText.replace(/[0-9\s\u00a0().+\-\/]/g, "") != "") {
+            return null;
+        }
+        appendPhoneFilterPattern(aPatterns, sDigits);
+        if (sDigits.substring(0, 2) == "00") {
+            appendPhoneFilterPattern(aPatterns, sDigits.substring(2));
+        }
+        for (var iI = 0; iI < aPatterns.length; iI += 1) {
+            aRegexPatterns.push(aPatterns[iI]["pattern"]);
+        }
+        return aRegexPatterns.length > 0 ? new RegExp(aRegexPatterns.join("|"), "i") : null;
+    }
+
     function buildFilterExpression(sFilter) {
         var aOrParts = sFilter.trim().split(/\s+OR\s+/i);
         var aExpression = [];
@@ -2739,7 +2783,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 if (sTerm !== "") {
                     aTerms.push({
-                        "regex": new RegExp(sTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+"), "i"),
+                        "regex": new RegExp(escapeFilterRegex(sTerm).replace(/\s+/g, "\\s+"), "i"),
+                        "phone_regex": buildPhoneFilterRegex(sTerm),
                         "negated": blNegated
                     });
                 }
@@ -2759,6 +2804,9 @@ document.addEventListener("DOMContentLoaded", function () {
             var blMatches = true;
             for (var iJ = 0; iJ < aExpression[iI].length; iJ += 1) {
                 var blFound = aExpression[iI][iJ]["regex"].test(sRowText);
+                if (!blFound && aExpression[iI][iJ]["phone_regex"]) {
+                    blFound = aExpression[iI][iJ]["phone_regex"].test(sRowText);
+                }
                 if (aExpression[iI][iJ]["negated"] ? blFound : !blFound) {
                     blMatches = false;
                     break;

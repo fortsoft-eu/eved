@@ -3364,6 +3364,61 @@ function bindSnippetBoardTabs() {
     }
 }
 
+function getSnippetBoardEditorSlot(oEditor) {
+    var oElement = oEditor && typeof oEditor.getElement == "function" ? oEditor.getElement() : null;
+    var sName = oElement ? (oElement.name || "") : "";
+    if (sName.indexOf("snippet_") === 0) {
+        return sName.replace(/^snippet_/, "");
+    }
+    return oElement && oElement.id ? oElement.id.replace(/^snippet-/, "") : "";
+}
+
+function getSnippetBoardRichTextCopyModeInput(sSlot) {
+    return document.querySelector("[data-snippet-rich-text-copy-mode=\"" + sSlot + "\"]");
+}
+
+function setSnippetBoardRichTextCopyModeInputValue(sSlot, blEnabled, blDispatch) {
+    var oInput = getSnippetBoardRichTextCopyModeInput(sSlot);
+    var sValue = blEnabled ? "1" : "0";
+    if (!oInput || oInput.value == sValue) {
+        return;
+    }
+    oInput.value = sValue;
+    if (blDispatch) {
+        dispatchAdminInputEvent(oInput);
+    }
+}
+
+function setSnippetBoardEditorPlainTextPasteMode(oEditor, blEnabled) {
+    var blCurrent;
+    if (!oEditor || typeof oEditor.execCommand != "function" || typeof oEditor.queryCommandState != "function") {
+        return;
+    }
+    blCurrent = oEditor.queryCommandState("mceTogglePlainTextPaste");
+    if ((blCurrent ? 1 : 0) != (blEnabled ? 1 : 0)) {
+        oEditor.execCommand("mceTogglePlainTextPaste");
+    }
+}
+
+function applySnippetBoardStoredRichTextCopyMode(oEditor) {
+    var sSlot = getSnippetBoardEditorSlot(oEditor);
+    var oInput = getSnippetBoardRichTextCopyModeInput(sSlot);
+    setSnippetBoardEditorPlainTextPasteMode(oEditor, oInput && oInput.value != "1");
+}
+
+function saveSnippetBoardEditorRichTextCopyMode(oEditor) {
+    var sSlot = getSnippetBoardEditorSlot(oEditor);
+    if (!sSlot || !oEditor || typeof oEditor.queryCommandState != "function") {
+        return;
+    }
+    setSnippetBoardRichTextCopyModeInputValue(sSlot, !oEditor.queryCommandState("mceTogglePlainTextPaste"), true);
+}
+
+function setSnippetBoardEditorStoredPlainTextPasteMode(oEditor, blEnabled) {
+    setSnippetBoardEditorPlainTextPasteMode(oEditor, blEnabled);
+    saveSnippetBoardEditorRichTextCopyMode(oEditor);
+}
+
 function bindSnippetBoardForm() {
     var oForm = document.getElementById("snippet-board-form");
     var oStatus = document.querySelector(".js-snippet-board-status");
@@ -3428,9 +3483,24 @@ function bindSnippetBoardForm() {
         return aValues;
     }
 
+    function getSnippetBoardRichTextCopyModes() {
+        var aInputs = oForm.querySelectorAll(".js-snippet-board-rich-text-copy-mode");
+        var aValues = {};
+        var sSlot;
+        var i;
+        for (i = 0; i < aInputs.length; i++) {
+            sSlot = aInputs[i].getAttribute("data-snippet-rich-text-copy-mode") || "";
+            if (sSlot != "") {
+                aValues[sSlot] = aInputs[i].value == "1" ? "1" : "0";
+            }
+        }
+        return aValues;
+    }
+
     function collectSnippetBoardData() {
         var oData = new FormData();
         var aValues = getSnippetBoardValues();
+        var aRichTextCopyModes = getSnippetBoardRichTextCopyModes();
         var sSlot;
         oData.append("action", "save_snippet_board");
         for (sSlot in aValues) {
@@ -3438,11 +3508,17 @@ function bindSnippetBoardForm() {
                 appendAdminEncodedValue(oData, "snippet_" + sSlot, aValues[sSlot]);
             }
         }
+        for (sSlot in aRichTextCopyModes) {
+            if (Object.prototype.hasOwnProperty.call(aRichTextCopyModes, sSlot)) {
+                appendAdminEncodedValue(oData, "rich_text_copy_mode_" + sSlot, aRichTextCopyModes[sSlot]);
+            }
+        }
         return oData;
     }
 
-    function applySnippetBoardValues(aValues) {
+    function applySnippetBoardValues(aValues, aRichTextCopyModes) {
         var aTextareas = oForm.querySelectorAll(".js-snippet-board-textarea");
+        var aInputs = oForm.querySelectorAll(".js-snippet-board-rich-text-copy-mode");
         var oEditor;
         var sSlot;
         var sValue;
@@ -3463,6 +3539,16 @@ function bindSnippetBoardForm() {
                 } else if (aTextareas[i].value != sValue) {
                     aTextareas[i].value = sValue;
                 }
+            }
+            for (i = 0; i < aInputs.length; i++) {
+                sSlot = aInputs[i].getAttribute("data-snippet-rich-text-copy-mode") || "";
+                if (sSlot == "") {
+                    continue;
+                }
+                sValue = aRichTextCopyModes && Object.prototype.hasOwnProperty.call(aRichTextCopyModes, sSlot) && String(aRichTextCopyModes[sSlot]) == "1" ? "1" : "0";
+                aInputs[i].value = sValue;
+                oEditor = window.tinymce && typeof window.tinymce.get == "function" ? window.tinymce.get("snippet-" + sSlot) : null;
+                setSnippetBoardEditorPlainTextPasteMode(oEditor, sValue != "1");
             }
         } finally {
             blSnippetBoardApplyingRemote = false;
@@ -3488,7 +3574,8 @@ function bindSnippetBoardForm() {
                 source: sBoardInstanceId,
                 type: "saved",
                 revision: sBoardRevision,
-                snippets: getSnippetBoardValues()
+                snippets: getSnippetBoardValues(),
+                richTextCopyModes: getSnippetBoardRichTextCopyModes()
             });
         } catch (oException) {
             logAdminException(oException);
@@ -3506,7 +3593,7 @@ function bindSnippetBoardForm() {
             } else if (aData.revision) {
                 setSnippetBoardRevision(aData.revision);
             }
-            applySnippetBoardValues(aData.snippets || {});
+            applySnippetBoardValues(aData.snippets || {}, aData.richTextCopyModes || {});
             setSnippetBoardStatus("Updated.", "saved");
         }, function(sMessage) {
             logAdminException(sMessage);
@@ -3526,7 +3613,7 @@ function bindSnippetBoardForm() {
             return;
         }
         setSnippetBoardRevision(aMessage.revision || "");
-        applySnippetBoardValues(aMessage.snippets || {});
+        applySnippetBoardValues(aMessage.snippets || {}, aMessage.richTextCopyModes || {});
         setSnippetBoardStatus("Updated.", "saved");
     }
 
@@ -3674,10 +3761,15 @@ function bindSnippetBoardForm() {
 
     function bindTextareaChanges() {
         var aTextareas = oForm.querySelectorAll(".js-snippet-board-textarea");
+        var aInputs = oForm.querySelectorAll(".js-snippet-board-rich-text-copy-mode");
         var i;
         for (i = 0; i < aTextareas.length; i++) {
             aTextareas[i].addEventListener("input", scheduleSnippetBoardSave);
             aTextareas[i].addEventListener("change", scheduleSnippetBoardSave);
+        }
+        for (i = 0; i < aInputs.length; i++) {
+            aInputs[i].addEventListener("input", scheduleSnippetBoardSave);
+            aInputs[i].addEventListener("change", scheduleSnippetBoardSave);
         }
     }
 
@@ -3738,10 +3830,11 @@ function getSnippetBoardHtmlContent(oEditor) {
 function copySnippetBoardPlainText(oEditor) {
     var sText = getSnippetBoardPlainTextContent(oEditor);
     var oTextarea;
+    var blCopied = false;
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(sText).catch(function(oException) {
             logAdminException(oException);
-            alert("Plain text could not be copied.");
+            showSnippetBoardClipboardError(oEditor, "Plain text could not be copied.");
         });
         return;
     }
@@ -3753,12 +3846,24 @@ function copySnippetBoardPlainText(oEditor) {
     document.body.appendChild(oTextarea);
     oTextarea.select();
     try {
-        document.execCommand("copy");
+        blCopied = document.execCommand("copy");
     } catch (oException) {
         logAdminException(oException);
-        alert("Plain text could not be copied.");
     }
     document.body.removeChild(oTextarea);
+    if (!blCopied) {
+        showSnippetBoardClipboardError(oEditor, "Plain text could not be copied.");
+    }
+}
+
+function showSnippetBoardClipboardError(oEditor, sMessage) {
+    if (typeof openAdminConfirmDialog == "function" && document.getElementById("admin-reusable-dialog")) {
+        openAdminConfirmDialog("Clipboard Error", sMessage, "OK", null, null, "Close");
+        return;
+    }
+    if (oEditor && oEditor.notificationManager && typeof oEditor.notificationManager.open == "function") {
+        oEditor.notificationManager.open({text: sMessage, type: "error"});
+    }
 }
 
 function copySnippetBoardRichText(oEditor) {
@@ -3893,12 +3998,19 @@ function bindSnippetBoardTinyMce() {
             resize: false,
             skin: "tinymce-5",
             statusbar: false,
-            toolbar: "undo redo | blocks fontfamily fontsize lineheight | cut copy paste snippetpastetext snippetcopyplain | bold italic underline strikethrough subscript superscript | forecolor backcolor | alignleft aligncenter alignright alignjustify alignnone ltr rtl | snippetbullist snippetnumlist outdent indent blockquote hr | link unlink anchor table | charmap emoticons insertdatetime nonbreaking pagebreak | searchreplace visualblocks help codesample",
+            toolbar: "undo redo | blocks fontfamily fontsize lineheight | cut snippetcopy snippetcopyplain snippetpasteformatted snippetpastetext | bold italic underline strikethrough subscript superscript | forecolor backcolor | alignleft aligncenter alignright alignjustify alignnone ltr rtl | snippetbullist snippetnumlist outdent indent blockquote hr | link unlink anchor table | charmap emoticons insertdatetime nonbreaking pagebreak | searchreplace visualblocks help codesample",
             toolbar_mode: "wrap",
             plugins: "advlist anchor autolink charmap codesample directionality emoticons help insertdatetime link lists nonbreaking pagebreak searchreplace table visualblocks",
                 content_style: "body{background:#fff;color:#111;font-family:Arial,sans-serif;font-size:14px;line-height:1.35;margin:0;padding:1px;}p,h1,h2,h3,h4,h5,h6{margin:0;}ul,ol{margin:0 0 0 20px;padding-left:18px;}blockquote{margin:0 0 0 24px;}a{color:#075e9e;}",
             setup: function(oEditor) {
                 oEditor.ui.registry.addIcon("snippet-copy-plain", "<svg width=\"24\" height=\"24\"><path d=\"M8 3h8l4 4v11c0 1.1-.9 2-2 2H8a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2Zm7 2H8v13h10V8h-3V5Z\"/><path d=\"M4 7H2v13c0 1.1.9 2 2 2h10v-2H4V7Zm6 2h4v1.5h-4V9Zm0 3h6v1.5h-6V12Zm0 3h6v1.5h-6V15Z\"/></svg>");
+                oEditor.ui.registry.addButton("snippetcopy", {
+                    icon: "copy",
+                    tooltip: "Copy formatted text",
+                    onAction: function() {
+                        copySnippetBoardRichText(oEditor);
+                    }
+                });
                 oEditor.ui.registry.addMenuButton("snippetbullist", {
                     icon: "unordered-list",
                     tooltip: "Bullet list",
@@ -3925,11 +4037,30 @@ function bindSnippetBoardTinyMce() {
                         ]);
                     }
                 });
+                oEditor.ui.registry.addToggleButton("snippetpasteformatted", {
+                    icon: "paste",
+                    tooltip: "Formatted text paste mode",
+                    onAction: function() {
+                        setSnippetBoardEditorStoredPlainTextPasteMode(oEditor, false);
+                    },
+                    onSetup: function(oApi) {
+                        function updateFormattedPasteState() {
+                            oApi.setActive(!oEditor.queryCommandState("mceTogglePlainTextPaste"));
+                        }
+                        oEditor.on("PastePlainTextToggle", updateFormattedPasteState);
+                        oEditor.on("init", updateFormattedPasteState);
+                        updateFormattedPasteState();
+                        return function() {
+                            oEditor.off("PastePlainTextToggle", updateFormattedPasteState);
+                            oEditor.off("init", updateFormattedPasteState);
+                        };
+                    }
+                });
                 oEditor.ui.registry.addToggleButton("snippetpastetext", {
                     icon: "paste-text",
-                    tooltip: "Paste as plain text",
+                    tooltip: "Plain text paste mode",
                     onAction: function() {
-                        oEditor.execCommand("mceTogglePlainTextPaste");
+                        setSnippetBoardEditorStoredPlainTextPasteMode(oEditor, true);
                     },
                     onSetup: function(oApi) {
                         function updatePasteTextState() {
@@ -3970,8 +4101,9 @@ function bindSnippetBoardTinyMce() {
                     window.setTimeout(syncSnippetBoardEditorChange, 0);
                 }
                 oEditor.on("change keyup undo redo input", syncSnippetBoardEditorChange);
-                oEditor.on("paste cut ExecCommand", syncSnippetBoardEditorChangeAfterEvent);
+                oEditor.on("paste cut ExecCommand PastePostProcess SetContent", syncSnippetBoardEditorChangeAfterEvent);
                 oEditor.on("init", function() {
+                    applySnippetBoardStoredRichTextCopyMode(oEditor);
                     layoutSnippetBoard();
                     scheduleSnippetBoardToolbarLines(oEditor);
                 });

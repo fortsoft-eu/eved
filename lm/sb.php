@@ -31,12 +31,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "check_snippet_board_rev
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "load_snippet_board") {
     $aSnippets = array();
+    $aRichTextCopyModes = array();
     $sBoardRevision = "";
     for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
         $aSnippets[$iSnippetId] = "";
+        $aRichTextCopyModes[$iSnippetId] = 0;
     }
     try {
-        $oStatement = $oPdo->query("SELECT id, note_text, `hash`, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
+        $oStatement = $oPdo->query("SELECT id, note_text, `hash`, rich_text_copy_mode, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
         while ($aRow = $oStatement->fetch()) {
             $iSnippetId = (int)$aRow["id"];
             if ($iSnippetId >= 1 && $iSnippetId <= 6) {
@@ -48,12 +50,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "load_snippet_board") {
                     $sNoteText = decryptTextMessage($sNoteText, (string)$aRow["hash"]);
                 }
                 $aSnippets[$iSnippetId] = $sNoteText;
+                $aRichTextCopyModes[$iSnippetId] = (int)$aRow["rich_text_copy_mode"] ? 1 : 0;
                 if ((string)$aRow["updated_at_text"] > $sBoardRevision) {
                     $sBoardRevision = (string)$aRow["updated_at_text"];
                 }
             }
         }
-        sendJsonAndExit(array("success" => true, "revision" => $sBoardRevision, "snippets" => $aSnippets));
+        sendJsonAndExit(array("success" => true, "revision" => $sBoardRevision, "snippets" => $aSnippets, "richTextCopyModes" => $aRichTextCopyModes));
     } catch (Exception $oException) {
         error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -76,11 +79,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "save_snippet_board") {
             }
         }
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("UPDATE fs_snippet_board SET note_text = :note_text WHERE id = :id");
+        $oStatement = $oPdo->prepare("UPDATE fs_snippet_board SET note_text = :note_text, rich_text_copy_mode = :rich_text_copy_mode WHERE id = :id");
         for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
             $oStatement->execute(array(
                 "id" => $iSnippetId,
-                "note_text" => encryptTextMessage(getPostedValue("snippet_" . $iSnippetId), $aSnippetHashes[$iSnippetId])
+                "note_text" => encryptTextMessage(getPostedValue("snippet_" . $iSnippetId), $aSnippetHashes[$iSnippetId]),
+                "rich_text_copy_mode" => getPostedValue("rich_text_copy_mode_" . $iSnippetId) == "1" ? 1 : 0
             ));
         }
         $oPdo->commit();
@@ -105,13 +109,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "save_snippet_board") {
 }
 
 $aSnippets = array();
+$aRichTextCopyModes = array();
 $sBoardRevision = "";
 for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
     $aSnippets[$iSnippetId] = "";
+    $aRichTextCopyModes[$iSnippetId] = 0;
 }
 
 try {
-    $oStatement = $oPdo->query("SELECT id, note_text, `hash`, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
+    $oStatement = $oPdo->query("SELECT id, note_text, `hash`, rich_text_copy_mode, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
     while ($aRow = $oStatement->fetch()) {
         $iSnippetId = (int)$aRow["id"];
         if ($iSnippetId >= 1 && $iSnippetId <= 6) {
@@ -123,6 +129,7 @@ try {
                 $sNoteText = decryptTextMessage($sNoteText, (string)$aRow["hash"]);
             }
             $aSnippets[$iSnippetId] = $sNoteText;
+            $aRichTextCopyModes[$iSnippetId] = (int)$aRow["rich_text_copy_mode"] ? 1 : 0;
             if ((string)$aRow["updated_at_text"] > $sBoardRevision) {
                 $sBoardRevision = (string)$aRow["updated_at_text"];
             }
@@ -180,6 +187,7 @@ for ($iSlot = 1; $iSlot <= 6; $iSlot++) {
 
 ?>
       <section id="snippet-panel-<?php echo $iSlot; ?>" class="snippet-board-panel<?php echo $iSlot == 1 ? " snippet-board-panel-active" : ""; ?>" data-snippet-panel="<?php echo $iSlot; ?>" role="tabpanel">
+        <input type="hidden" name="rich_text_copy_mode_<?php echo $iSlot; ?>" class="js-snippet-board-rich-text-copy-mode" data-snippet-rich-text-copy-mode="<?php echo $iSlot; ?>" value="<?php echo (int)$aRichTextCopyModes[$iSlot]; ?>">
         <textarea id="snippet-<?php echo $iSlot; ?>" name="snippet_<?php echo $iSlot; ?>" class="snippet-board-textarea js-snippet-board-textarea" rows="18" autocomplete="off" spellcheck="true" aria-label="Snippet <?php echo $iSlot; ?>"><?php echo html($aSnippets[$iSlot]); ?></textarea>
       </section>
 <?php
@@ -189,6 +197,7 @@ for ($iSlot = 1; $iSlot <= 6; $iSlot++) {
 ?>
     </div>
   </form>
+  <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/tinymce-8.8.1/tinymce.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
