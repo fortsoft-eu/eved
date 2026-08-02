@@ -68,6 +68,11 @@ $aChecks = array(
         "sql" => "SELECT sg.subject_id, sg.group_id FROM ex_subject_groups AS sg LEFT JOIN ex_groups AS g ON g.id = sg.group_id WHERE g.id IS NULL ORDER BY sg.subject_id ASC, sg.group_id ASC"
     ),
     array(
+        "title" => "Subjects with no or very little data",
+        "type" => "warning",
+        "sql" => "SELECT s.id AS subject_id, s.subject_type, COALESCE(IF(s.subject_type = 'person', NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.title_before, ''), NULLIF(p.first_name, ''), NULLIF(p.middle_name, ''), NULLIF(p.last_name, ''), NULLIF(p.title_after, ''))), ''), NULL), NULLIF(sn.name, ''), 'Unnamed subject') AS subject_name, s.is_active, s.legacy_id, p.first_name, p.middle_name, p.last_name, sn.name AS subject_name_value, (IF(s.subject_type = 'person', IF(NULLIF(TRIM(COALESCE(p.title_before, '')), '') IS NULL, 0, 1) + IF(NULLIF(TRIM(COALESCE(p.middle_name, '')), '') IS NULL, 0, 1) + IF(NULLIF(TRIM(COALESCE(p.title_after, '')), '') IS NULL, 0, 1) + IF(NULLIF(TRIM(COALESCE(p.birth_name, '')), '') IS NULL, 0, 1) + IF(NULLIF(TRIM(COALESCE(p.birth_number, '')), '') IS NULL, 0, 1) + IF(p.birth_date IS NULL, 0, 1) + IF(p.death_date IS NULL, 0, 1) + IF(p.birthday_served_at IS NULL, 0, 1) + IF(p.inter_served_at IS NULL, 0, 1), 0) + COALESCE(sc.contact_count, 0) + COALESCE(a.address_count, 0) + COALESCE(n.nickname_count, 0) + COALESCE(nt.note_count, 0) + COALESCE(g.group_count, 0) + COALESCE(u.user_count, 0)) AS additional_data_count, COALESCE(sc.contact_count, 0) AS contact_count, COALESCE(a.address_count, 0) AS address_count, COALESCE(n.nickname_count, 0) AS nickname_count, COALESCE(nt.note_count, 0) AS note_count, COALESCE(g.group_count, 0) AS group_count, COALESCE(u.user_count, 0) AS portal_user_count, s.created_at, s.updated_at FROM ex_subjects AS s LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS sn ON sn.subject_id = s.id LEFT JOIN (SELECT subject_id, COUNT(*) AS contact_count FROM ex_subject_contacts GROUP BY subject_id) AS sc ON sc.subject_id = s.id LEFT JOIN (SELECT subject_id, COUNT(*) AS address_count FROM ex_subject_addresses GROUP BY subject_id) AS a ON a.subject_id = s.id LEFT JOIN (SELECT subject_id, COUNT(*) AS nickname_count FROM ex_subject_nicknames GROUP BY subject_id) AS n ON n.subject_id = s.id LEFT JOIN (SELECT subject_id, COUNT(*) AS note_count FROM ex_subject_notes GROUP BY subject_id) AS nt ON nt.subject_id = s.id LEFT JOIN (SELECT subject_id, COUNT(*) AS group_count FROM ex_subject_groups GROUP BY subject_id) AS g ON g.subject_id = s.id LEFT JOIN (SELECT subject_id, COUNT(*) AS user_count FROM ex_users GROUP BY subject_id) AS u ON u.subject_id = s.id HAVING additional_data_count <= 1 ORDER BY additional_data_count ASC, s.subject_type ASC, subject_name COLLATE utf8mb4_czech_ci ASC, s.id ASC"
+    ),
+    array(
         "title" => "Unassigned contacts kept for review",
         "type" => "warning",
         "sql" => "SELECT c.id AS contact_id, ct.name AS contact_type, c.contact_value FROM ex_contacts AS c LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id LEFT JOIN ex_subject_contacts AS sc ON sc.contact_id = c.id WHERE sc.contact_id IS NULL ORDER BY ct.name ASC, c.contact_value ASC, c.id ASC"
@@ -123,7 +128,7 @@ echo "  </p>\n",
 if ($blHasErrors) {
     echo "  <p class=\"consistency-status consistency-status-error\">Database inconsistencies were found.</p>\n";
 } elseif ($blHasWarnings) {
-    echo "  <p class=\"consistency-status consistency-status-warning\">No broken required links were found. Some contacts are unassigned and kept for review.</p>\n";
+    echo "  <p class=\"consistency-status consistency-status-warning\">No broken required links were found. Some records are listed for review.</p>\n";
 } else {
     echo "  <p class=\"consistency-status consistency-status-ok\">No database inconsistencies were found.</p>\n";
 }

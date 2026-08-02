@@ -145,7 +145,7 @@ $iTime = sendPageHeaders();
 
 ?>
 <!DOCTYPE html>
-<html lang="en-US" dir="ltr">
+<html lang="en-US" dir="ltr" class="snippet-board-html" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">

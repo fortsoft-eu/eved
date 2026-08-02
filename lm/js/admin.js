@@ -3278,6 +3278,199 @@ function isSnippetBoardPmdLike() {
     return document.body && document.body.getAttribute("data-pmd-like") == "1";
 }
 
+function isSnippetBoardPageScrollAllowedTarget(oTarget) {
+    var oElement = oTarget;
+    var sClass;
+    while (oElement && oElement != document.body) {
+        if (oElement.nodeType == 1 && typeof oElement.getAttribute == "function") {
+            sClass = " " + (oElement.getAttribute("class") || "") + " ";
+            if (sClass.indexOf(" tox-edit-area__iframe ") !== -1
+                || sClass.indexOf(" js-snippet-board-textarea ") !== -1
+                || sClass.indexOf(" confirm-dialog ") !== -1
+                || sClass.indexOf(" tox-tinymce-aux ") !== -1) {
+                return true;
+            }
+        }
+        oElement = oElement.parentNode;
+    }
+    return false;
+}
+
+function lockSnippetBoardPageScroll() {
+    if (!isSnippetBoardPmdLike()) {
+        return;
+    }
+    if ((window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft || 0) != 0
+        || (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) != 0) {
+        window.scrollTo(0, 0);
+    }
+    document.documentElement.scrollLeft = 0;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollLeft = 0;
+    document.body.scrollTop = 0;
+}
+
+function preventSnippetBoardPageScroll(oEvent) {
+    if (!isSnippetBoardPmdLike() || isSnippetBoardPageScrollAllowedTarget(oEvent.target)) {
+        return;
+    }
+    if (oEvent.cancelable) {
+        oEvent.preventDefault();
+    }
+    lockSnippetBoardPageScroll();
+}
+
+function bindSnippetBoardPageScrollLock() {
+    if (!document.body || (" " + document.body.className + " ").indexOf(" snippet-board-page ") === -1) {
+        return;
+    }
+    document.addEventListener("touchmove", preventSnippetBoardPageScroll, {passive: false});
+    document.addEventListener("wheel", preventSnippetBoardPageScroll, {passive: false});
+    window.addEventListener("scroll", lockSnippetBoardPageScroll);
+    lockSnippetBoardPageScroll();
+}
+
+function getSnippetBoardPmdToolbarHoverButton(oTarget) {
+    var oButton;
+    var oParent;
+    var sClass;
+    var sParentClass;
+    if (!oTarget || !oTarget.closest) {
+        return null;
+    }
+    oButton = oTarget.closest(".tox-tbtn, .tox-split-button, .tox-split-button__main, .tox-split-button__chevron");
+    if (!oButton || !oButton.closest || !oButton.closest(".snippet-board-form .tox")) {
+        return null;
+    }
+    sClass = " " + (oButton.getAttribute("class") || "") + " ";
+    if (sClass.indexOf(" tox-split-button__main ") !== -1 || sClass.indexOf(" tox-split-button__chevron ") !== -1) {
+        oParent = oButton.parentNode;
+        sParentClass = oParent && typeof oParent.getAttribute == "function" ? " " + (oParent.getAttribute("class") || "") + " " : "";
+        if (sParentClass.indexOf(" tox-split-button ") !== -1) {
+            return oParent;
+        }
+    }
+    return oButton;
+}
+
+function clearSnippetBoardPmdToolbarHoverButtons(oCurrentButton) {
+    var aButtons = document.querySelectorAll(".snippet-board-form .tox .snippet-board-pmd-hover-active, .snippet-board-form .tox .snippet-board-pmd-hover-expired");
+    var i;
+    for (i = 0; i < aButtons.length; i++) {
+        if (aButtons[i] == oCurrentButton) {
+            continue;
+        }
+        if (aButtons[i]._snippetBoardPmdHoverTimer) {
+            window.clearTimeout(aButtons[i]._snippetBoardPmdHoverTimer);
+            aButtons[i]._snippetBoardPmdHoverTimer = null;
+        }
+        removeAdminClass(aButtons[i], "snippet-board-pmd-hover-active");
+        addAdminClass(aButtons[i], "snippet-board-pmd-hover-expired");
+    }
+}
+
+function startSnippetBoardPmdToolbarHoverTimeout(oButton) {
+    if (!oButton || !window.setTimeout || !window.clearTimeout) {
+        return;
+    }
+    clearSnippetBoardPmdToolbarHoverButtons(oButton);
+    removeAdminClass(oButton, "snippet-board-pmd-hover-expired");
+    addAdminClass(oButton, "snippet-board-pmd-hover-active");
+    if (oButton._snippetBoardPmdHoverTimer) {
+        window.clearTimeout(oButton._snippetBoardPmdHoverTimer);
+    }
+    oButton._snippetBoardPmdHoverTimer = window.setTimeout(function() {
+        oButton._snippetBoardPmdHoverTimer = null;
+        removeAdminClass(oButton, "snippet-board-pmd-hover-active");
+        addAdminClass(oButton, "snippet-board-pmd-hover-expired");
+    }, 1000);
+}
+
+function handleSnippetBoardPmdToolbarHoverStart(oEvent) {
+    var oButton;
+    if (!isSnippetBoardPmdLike() || (oEvent.pointerType && oEvent.pointerType == "mouse")) {
+        return;
+    }
+    oButton = getSnippetBoardPmdToolbarHoverButton(oEvent.target);
+    if (oButton) {
+        startSnippetBoardPmdToolbarHoverTimeout(oButton);
+    }
+}
+
+function bindSnippetBoardPmdToolbarHoverTimeout() {
+    if (!document.body || (" " + document.body.className + " ").indexOf(" snippet-board-page ") === -1) {
+        return;
+    }
+    if (window.PointerEvent) {
+        document.addEventListener("pointerdown", handleSnippetBoardPmdToolbarHoverStart, {passive: true});
+    } else {
+        document.addEventListener("touchstart", handleSnippetBoardPmdToolbarHoverStart, {passive: true});
+    }
+}
+
+function getSnippetBoardEditorScrollState(oEditor) {
+    var oDoc = oEditor && typeof oEditor.getDoc == "function" ? oEditor.getDoc() : null;
+    var oRoot = oDoc ? oDoc.documentElement : null;
+    var oBody = oDoc ? oDoc.body : null;
+    var oScroll = oDoc ? (oDoc.scrollingElement || oRoot || oBody) : null;
+    var iScrollTop = Math.max(oScroll ? oScroll.scrollTop : 0, oRoot ? oRoot.scrollTop : 0, oBody ? oBody.scrollTop : 0);
+    var iClientHeight = oScroll ? oScroll.clientHeight : 0;
+    var iScrollHeight = Math.max(oScroll ? oScroll.scrollHeight : 0, oRoot ? oRoot.scrollHeight : 0, oBody ? oBody.scrollHeight : 0);
+    return {
+        scrollTop: iScrollTop,
+        clientHeight: iClientHeight,
+        scrollHeight: iScrollHeight
+    };
+}
+
+function shouldPreventSnippetBoardEditorOverscroll(oEditor, iDeltaY) {
+    var aState = getSnippetBoardEditorScrollState(oEditor);
+    if (aState.scrollHeight <= aState.clientHeight + 1) {
+        return true;
+    }
+    if (iDeltaY < 0 && aState.scrollTop <= 0) {
+        return true;
+    }
+    if (iDeltaY > 0 && aState.scrollTop + aState.clientHeight >= aState.scrollHeight - 1) {
+        return true;
+    }
+    return false;
+}
+
+function bindSnippetBoardEditorScrollLock(oEditor) {
+    var oDoc = oEditor && typeof oEditor.getDoc == "function" ? oEditor.getDoc() : null;
+    var oRoot = oDoc ? oDoc.documentElement : null;
+    var oBody = oDoc ? oDoc.body : null;
+    if (!oDoc || !isSnippetBoardPmdLike() || oEditor._snippetBoardScrollLockBound) {
+        return;
+    }
+    oEditor._snippetBoardScrollLockBound = true;
+    if (oRoot && oRoot.style) {
+        oRoot.style.overscrollBehavior = "contain";
+    }
+    if (oBody && oBody.style) {
+        oBody.style.overscrollBehavior = "contain";
+    }
+    oDoc.addEventListener("touchstart", function(oEvent) {
+        oEditor._snippetBoardTouchY = oEvent.touches && oEvent.touches.length ? oEvent.touches[0].clientY : 0;
+    }, {passive: true});
+    oDoc.addEventListener("touchmove", function(oEvent) {
+        var iClientY = oEvent.touches && oEvent.touches.length ? oEvent.touches[0].clientY : 0;
+        var iDeltaY = (oEditor._snippetBoardTouchY || iClientY) - iClientY;
+        oEditor._snippetBoardTouchY = iClientY;
+        if (shouldPreventSnippetBoardEditorOverscroll(oEditor, iDeltaY) && oEvent.cancelable) {
+            oEvent.preventDefault();
+            lockSnippetBoardPageScroll();
+        }
+    }, {passive: false});
+    oDoc.addEventListener("wheel", function(oEvent) {
+        if (shouldPreventSnippetBoardEditorOverscroll(oEditor, oEvent.deltaY || 0) && oEvent.cancelable) {
+            oEvent.preventDefault();
+            lockSnippetBoardPageScroll();
+        }
+    }, {passive: false});
+}
+
 function getSnippetBoardColumnCount(iViewportWidth) {
     if (isSnippetBoardPmdLike()) {
         return 1;
@@ -3319,7 +3512,7 @@ function layoutSnippetBoard() {
     if (!oForm || !oGrid) {
         return;
     }
-    oForm.style.height = iAvailableHeight + "px";
+    oForm.style.height = blPmdLike ? iAvailableHeight + "px" : "";
     oGrid.style.gridTemplateColumns = "repeat(" + iColumns + ", minmax(0, 1fr))";
     oGrid.setAttribute("data-editor-height", String(iEditorHeight));
     oGrid.setAttribute("data-columns", String(iColumns));
@@ -3398,6 +3591,70 @@ function setSnippetBoardEditorPlainTextPasteMode(oEditor, blEnabled) {
     if ((blCurrent ? 1 : 0) != (blEnabled ? 1 : 0)) {
         oEditor.execCommand("mceTogglePlainTextPaste");
     }
+    scheduleSnippetBoardPasteModeButtonSync(oEditor);
+}
+
+function updateSnippetBoardPasteModeButtons(oEditor) {
+    var blPlainTextPaste;
+    var oContainer;
+    var aFormattedButtons;
+    var aPlainTextButtons;
+    var i;
+    if (!oEditor || typeof oEditor.queryCommandState != "function") {
+        return;
+    }
+    blPlainTextPaste = oEditor.queryCommandState("mceTogglePlainTextPaste");
+    oContainer = typeof oEditor.getContainer == "function" ? oEditor.getContainer() : null;
+    if (!oContainer) {
+        return;
+    }
+    aFormattedButtons = oContainer.querySelectorAll(".tox-tbtn[data-mce-name=\"snippetpasteformatted\"]");
+    aPlainTextButtons = oContainer.querySelectorAll(".tox-tbtn[data-mce-name=\"snippetpastetext\"]");
+    for (i = 0; i < aFormattedButtons.length; i++) {
+        setSnippetBoardPasteModeButtonState(aFormattedButtons[i], !blPlainTextPaste);
+    }
+    for (i = 0; i < aPlainTextButtons.length; i++) {
+        setSnippetBoardPasteModeButtonState(aPlainTextButtons[i], blPlainTextPaste);
+    }
+}
+
+function setSnippetBoardPasteModeButtonState(oButton, blActive) {
+    if (!oButton) {
+        return;
+    }
+    if (blActive) {
+        addAdminClass(oButton, "tox-tbtn--enabled");
+        addAdminClass(oButton, "tox-tbtn--active");
+    } else {
+        removeAdminClass(oButton, "tox-tbtn--enabled");
+        removeAdminClass(oButton, "tox-tbtn--active");
+    }
+    oButton.setAttribute("aria-pressed", blActive ? "true" : "false");
+}
+
+function scheduleSnippetBoardPasteModeButtonSync(oEditor) {
+    var iToken;
+    if (!oEditor) {
+        return;
+    }
+    oEditor._snippetBoardPasteModeSyncToken = (oEditor._snippetBoardPasteModeSyncToken || 0) + 1;
+    iToken = oEditor._snippetBoardPasteModeSyncToken;
+    updateSnippetBoardPasteModeButtons(oEditor);
+    window.setTimeout(function() {
+        if (oEditor._snippetBoardPasteModeSyncToken == iToken) {
+            updateSnippetBoardPasteModeButtons(oEditor);
+        }
+    }, 0);
+    window.setTimeout(function() {
+        if (oEditor._snippetBoardPasteModeSyncToken == iToken) {
+            updateSnippetBoardPasteModeButtons(oEditor);
+        }
+    }, 80);
+    window.setTimeout(function() {
+        if (oEditor._snippetBoardPasteModeSyncToken == iToken) {
+            updateSnippetBoardPasteModeButtons(oEditor);
+        }
+    }, 250);
 }
 
 function applySnippetBoardStoredRichTextCopyMode(oEditor) {
@@ -3417,6 +3674,7 @@ function saveSnippetBoardEditorRichTextCopyMode(oEditor) {
 function setSnippetBoardEditorStoredPlainTextPasteMode(oEditor, blEnabled) {
     setSnippetBoardEditorPlainTextPasteMode(oEditor, blEnabled);
     saveSnippetBoardEditorRichTextCopyMode(oEditor);
+    scheduleSnippetBoardPasteModeButtonSync(oEditor);
 }
 
 function bindSnippetBoardForm() {
@@ -4001,7 +4259,7 @@ function bindSnippetBoardTinyMce() {
             toolbar: "undo redo | blocks fontfamily fontsize lineheight | cut snippetcopy snippetcopyplain snippetpasteformatted snippetpastetext | bold italic underline strikethrough subscript superscript | forecolor backcolor | alignleft aligncenter alignright alignjustify alignnone ltr rtl | snippetbullist snippetnumlist outdent indent blockquote hr | link unlink anchor table | charmap emoticons insertdatetime nonbreaking pagebreak | searchreplace visualblocks help codesample",
             toolbar_mode: "wrap",
             plugins: "advlist anchor autolink charmap codesample directionality emoticons help insertdatetime link lists nonbreaking pagebreak searchreplace table visualblocks",
-                content_style: "body{background:#fff;color:#111;font-family:Arial,sans-serif;font-size:14px;line-height:1.35;margin:0;padding:1px;}p,h1,h2,h3,h4,h5,h6{margin:0;}ul,ol{margin:0 0 0 20px;padding-left:18px;}blockquote{margin:0 0 0 24px;}a{color:#075e9e;}",
+                content_style: "html{overscroll-behavior-y:contain;}body{background:#fff;color:#111;font-family:Arial,sans-serif;font-size:14px;line-height:1.35;margin:0;overscroll-behavior-y:contain;padding:1px;}p,h1,h2,h3,h4,h5,h6{margin:0;}ul,ol{margin:0 0 0 20px;padding-left:18px;}blockquote{margin:0 0 0 24px;}a{color:#075e9e;}",
             setup: function(oEditor) {
                 oEditor.ui.registry.addIcon("snippet-copy-plain", "<svg width=\"24\" height=\"24\"><path d=\"M8 3h8l4 4v11c0 1.1-.9 2-2 2H8a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2Zm7 2H8v13h10V8h-3V5Z\"/><path d=\"M4 7H2v13c0 1.1.9 2 2 2h10v-2H4V7Zm6 2h4v1.5h-4V9Zm0 3h6v1.5h-6V12Zm0 3h6v1.5h-6V15Z\"/></svg>");
                 oEditor.ui.registry.addButton("snippetcopy", {
@@ -4037,7 +4295,7 @@ function bindSnippetBoardTinyMce() {
                         ]);
                     }
                 });
-                oEditor.ui.registry.addToggleButton("snippetpasteformatted", {
+                oEditor.ui.registry.addButton("snippetpasteformatted", {
                     icon: "paste",
                     tooltip: "Formatted text paste mode",
                     onAction: function() {
@@ -4045,7 +4303,7 @@ function bindSnippetBoardTinyMce() {
                     },
                     onSetup: function(oApi) {
                         function updateFormattedPasteState() {
-                            oApi.setActive(!oEditor.queryCommandState("mceTogglePlainTextPaste"));
+                            scheduleSnippetBoardPasteModeButtonSync(oEditor);
                         }
                         oEditor.on("PastePlainTextToggle", updateFormattedPasteState);
                         oEditor.on("init", updateFormattedPasteState);
@@ -4056,7 +4314,7 @@ function bindSnippetBoardTinyMce() {
                         };
                     }
                 });
-                oEditor.ui.registry.addToggleButton("snippetpastetext", {
+                oEditor.ui.registry.addButton("snippetpastetext", {
                     icon: "paste-text",
                     tooltip: "Plain text paste mode",
                     onAction: function() {
@@ -4064,7 +4322,7 @@ function bindSnippetBoardTinyMce() {
                     },
                     onSetup: function(oApi) {
                         function updatePasteTextState() {
-                            oApi.setActive(oEditor.queryCommandState("mceTogglePlainTextPaste"));
+                            scheduleSnippetBoardPasteModeButtonSync(oEditor);
                         }
                         oEditor.on("PastePlainTextToggle", updatePasteTextState);
                         oEditor.on("init", updatePasteTextState);
@@ -4103,6 +4361,7 @@ function bindSnippetBoardTinyMce() {
                 oEditor.on("change keyup undo redo input", syncSnippetBoardEditorChange);
                 oEditor.on("paste cut ExecCommand PastePostProcess SetContent", syncSnippetBoardEditorChangeAfterEvent);
                 oEditor.on("init", function() {
+                    bindSnippetBoardEditorScrollLock(oEditor);
                     applySnippetBoardStoredRichTextCopyMode(oEditor);
                     layoutSnippetBoard();
                     scheduleSnippetBoardToolbarLines(oEditor);
@@ -4240,6 +4499,8 @@ document.addEventListener("DOMContentLoaded", function() {
     layoutBusinessHours();
     bindIssueTracker();
     bindAdminSubmitOnChange();
+    bindSnippetBoardPageScrollLock();
+    bindSnippetBoardPmdToolbarHoverTimeout();
     bindSnippetBoardTabs();
     bindSnippetBoardForm();
     bindSnippetBoardTinyMce();

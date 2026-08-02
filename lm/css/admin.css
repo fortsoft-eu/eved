@@ -1856,15 +1856,22 @@ body.php-generated-output hr {
 
 body.snippet-board-page {
     box-sizing: border-box;
-    height: calc(100vh - 12px);
-    height: calc(100dvh - 12px);
+}
+
+html.snippet-board-html {
+    min-height: 100%;
+}
+
+html[data-pmd-like="1"].snippet-board-html {
+    height: 100%;
     overflow: hidden;
+    overscroll-behavior: none;
 }
 
 .snippet-board-form {
     background: transparent;
     box-sizing: border-box;
-    overflow: auto;
+    overflow: visible;
     padding: 0;
     width: 100%;
 }
@@ -2184,8 +2191,21 @@ body[data-pmd-like="1"] .admin-controls {
     flex-wrap: nowrap;
 }
 
+body[data-pmd-like="1"].snippet-board-page {
+    bottom: 6px;
+    height: auto;
+    left: 6px;
+    margin: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+    position: fixed;
+    right: 6px;
+    top: 6px;
+    width: auto;
+}
+
 body[data-pmd-like="1"] .snippet-board-form {
-    overflow: visible;
+    overflow: hidden;
 }
 
 body[data-pmd-like="1"] .snippet-board-form .tox .tox-toolbar--scrolling {
@@ -2215,6 +2235,22 @@ body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[da
     flex: 0 0 24px;
     min-width: 24px;
     width: 24px;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn.snippet-board-pmd-hover-active, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active .tox-split-button__main, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active .tox-split-button__chevron {
+    background: #D6D6D6 !important;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn--enabled.snippet-board-pmd-hover-active {
+    background: #C8D2E0 !important;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn.snippet-board-pmd-hover-expired:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired .tox-split-button__main:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired .tox-split-button__chevron:hover {
+    background: #F0F0F0 !important;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn--enabled.snippet-board-pmd-hover-expired:hover {
+    background: #C8D2E0 !important;
 }
 
 body[data-pmd-like="1"] .snippet-board-grid {
