@@ -23,6 +23,22 @@ if ($blDebug && isAllowedIp($aAllowedIps)) {
 
 
 ignore_user_abort(true);
+ini_set("session.use_strict_mode", 1);
+ini_set("session.use_only_cookies", 1);
+ini_set("session.use_trans_sid", 0);
+ini_set("session.gc_maxlifetime", 31536000);
+$sSessionName = session_name();
+session_set_cookie_params(array(
+    "lifetime" => 31536000,
+    "path" => "/",
+    "domain" => "",
+    "secure" => true,
+    "httponly" => true,
+    "samesite" => "Lax"
+));
+if (isset($_COOKIE[$sSessionName]) && (string)$_COOKIE[$sSessionName] != "") {
+    session_start();
+}
 
 
 $sHost = $_SERVER["HTTP_HOST"];

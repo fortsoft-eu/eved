@@ -11,13 +11,22 @@ runKfExchangeRateProcess($oPdo, $sError);
 
 $sStyleNonce = base64_encode(random_bytes(16));
 
-if (in_array($_SERVER["REMOTE_ADDR"], $aAllowedIps, true)) {
+$blPortalIndexAllowed = isAllowedIp($aAllowedIps) || isProjectViewAllowed("portal");
+if ($blPortalIndexAllowed) {
     $iTime = sendPageHeaders($sStyleNonce);
     $aProjects = array(
         array("href" => "lm/", "icon" => "&#128736;&#65039;", "name" => "Dashboard", "title" => "Monitoring and management"),
         array("href" => "ex/", "icon" => "&#128214;", "name" => "Portal", "title" => "Subjects and contacts directory"),
         array("href" => "kf/", "icon" => "&#128182;", "name" => "Kesef", "title" => "Income and expenses"),
         array("href" => "film/", "icon" => "&#127902;&#65039;", "name" => "Film", "title" => "Film scans gallery")
+    );
+    $aSecurityLinks = array(
+        array("href" => "https://securityheaders.com/", "icon" => "&#128737;&#65039;", "name" => "Security Headers", "title" => "HTTP security header scanner"),
+        array("href" => "https://developer.mozilla.org/en-US/observatory", "icon" => "&#128301;", "name" => "MDN Observatory", "title" => "Mozilla site security scanner"),
+        array("href" => "https://unicode.org/emoji/charts/full-emoji-list.html", "icon" => "&#128512;", "name" => "Emoji List", "title" => "Unicode full emoji list"),
+        array("href" => "https://admin.aerohosting.cz/", "icon" => "&#128421;&#65039;", "name" => "AeroHosting", "title" => "Hosting administration"),
+        array("href" => "https://www.profisms.cz/", "icon" => "&#128241;", "name" => "ProfiSMS", "title" => "SMS administration"),
+        array("href" => "https://app.apilayer.com/", "icon" => "&#128268;", "name" => "APILayer", "title" => "API dashboard")
     );
 
 ?>
@@ -109,6 +118,11 @@ if (in_array($_SERVER["REMOTE_ADDR"], $aAllowedIps, true)) {
         max-height: 40px;
         overflow: hidden;
     }
+    hr {
+        margin: 18px 0;
+        border: 0;
+        border-top: 1px solid #c8d0d8;
+    }
     @media (max-width: 960px) {
         .project-list {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -135,6 +149,16 @@ if (in_array($_SERVER["REMOTE_ADDR"], $aAllowedIps, true)) {
 
     foreach ($aProjects as $aProject) {
         echo "      <li><a class=\"project-link\" href=\"" . html($aProject["href"]) . "\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"project-icon\" aria-hidden=\"true\">" . $aProject["icon"] . "</span><span><span class=\"project-name\">" . html($aProject["name"]) . "</span><span class=\"project-title\">" . html($aProject["title"]) . "</span></span></a></li>\n";
+    }
+
+?>
+    </ul>
+    <hr>
+    <ul class="project-list">
+<?php
+
+    foreach ($aSecurityLinks as $aSecurityLink) {
+        echo "      <li><a class=\"project-link\" href=\"" . html($aSecurityLink["href"]) . "\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"project-icon\" aria-hidden=\"true\">" . $aSecurityLink["icon"] . "</span><span><span class=\"project-name\">" . html($aSecurityLink["name"]) . "</span><span class=\"project-title\">" . html($aSecurityLink["title"]) . "</span></span></a></li>\n";
     }
 
 ?>

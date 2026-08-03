@@ -5,6 +5,17 @@ function menuAdminDisplayPath($sPath) {
     return $sPath == "" ? "/" : "/" . $sPath;
 }
 
+function renderDateTimeWithNbspIndent($mValue) {
+    $sValue = trim((string)$mValue);
+    if ($sValue == "") {
+        return "";
+    }
+    if (preg_match("/^([0-9]{4}-[0-9]{2}-[0-9]{2})[T ]([0-9]{2}:[0-9]{2}(?::[0-9]{2})?)(?:\\.[0-9]+)?(?:Z|[+-][0-9]{2}:?[0-9]{2})?$/", $sValue, $aMatches)) {
+        return html($aMatches[1]) . str_repeat("&nbsp;", 9) . html($aMatches[2]);
+    }
+    return html($sValue);
+}
+
 function menuAdminPathIsValid($sPath) {
     $sPath = normalizeMenuPath($sPath);
     if ($sPath == "") {
@@ -1338,7 +1349,7 @@ function dashboardServiceRenderRow($aRow) {
         . "<td class=\"dashboard-service-url\"><a href=\"" . html($aRow["url"]) . "\" target=\"_blank\" rel=\"noopener\">" . html($aRow["url"]) . "</a></td>"
         . "<td class=\"dashboard-service-expected\">" . dashboardServiceRenderExpected($aRow) . "</td>"
         . "<td class=\"dashboard-service-http js-dashboard-service-http\">" . ($aRow["code"] != "" ? html($aRow["code"]) : "") . "</td>"
-        . "<td class=\"dashboard-service-checked js-dashboard-service-checked\">" . ($aRow["checked_at"] != "" ? html($aRow["checked_at"]) : "") . "</td>"
+        . "<td class=\"dashboard-service-checked js-dashboard-service-checked\">" . ($aRow["checked_at"] != "" ? renderDateTimeWithNbspIndent($aRow["checked_at"]) : "") . "</td>"
         . "<td class=\"dashboard-service-detail js-dashboard-service-detail\">" . ($aRow["message"] != "" ? html($aRow["message"]) : "") . "</td>"
         . "<td>" . ((int)$aRow["is_active"] == 1 ? "Yes" : "No") . "</td>"
         . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-dashboard-service-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-dashboard-service-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
@@ -1554,9 +1565,6 @@ function dashboardServiceFetchUrl($sUrl) {
         $sBody = curl_exec($oCurl);
         $iStatusCode = (int)curl_getinfo($oCurl, CURLINFO_RESPONSE_CODE);
         $sError = curl_errno($oCurl) ? curl_error($oCurl) : "";
-        if (PHP_VERSION_ID < 80000) {
-            curl_close($oCurl);
-        }
         return array(
             "status_code" => $iStatusCode,
             "body" => $sBody !== false ? (string)$sBody : "",
@@ -1574,7 +1582,10 @@ function dashboardServiceFetchUrl($sUrl) {
         )
     );
     $sBody = @file_get_contents($sUrl, false, stream_context_create($aContext));
-    $aHeaders = isset($http_response_header) && is_array($http_response_header) ? $http_response_header : array();
+    $aHeaders = http_get_last_response_headers();
+    if (!is_array($aHeaders)) {
+        $aHeaders = array();
+    }
     $iStatusCode = dashboardServiceGetHttpStatusCode($aHeaders);
     $aError = error_get_last();
     return array(
@@ -1912,17 +1923,28 @@ function issueTrackerLabel($sValue, $aLabels) {
 
 function issueTrackerGetPostedDueDate() {
     $sDueDate = getPostedTrimmedValue("due_date");
+    $iHour = 0;
+    $iMinute = 0;
+    $iSecond = 0;
     if ($sDueDate == "") {
         return null;
     }
-    if (!preg_match("/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/", $sDueDate)) {
+    if (!preg_match("/^([0-9]{4})-([0-9]{2})-([0-9]{2})(?:[ T]([0-9]{2}):([0-9]{2})(?::([0-9]{2}))?)?$/", $sDueDate, $aMatches)) {
         sendJsonAndExit(array("success" => false, "message" => "Due date is invalid."), 400);
     }
-    $aParts = explode("-", $sDueDate);
-    if (!checkdate((int)$aParts[1], (int)$aParts[2], (int)$aParts[0])) {
+    if (!checkdate((int)$aMatches[2], (int)$aMatches[3], (int)$aMatches[1])) {
         sendJsonAndExit(array("success" => false, "message" => "Due date is invalid."), 400);
     }
-    return $sDueDate;
+    if (isset($aMatches[4]) && $aMatches[4] != "") {
+        $iHour = (int)$aMatches[4];
+        $iMinute = (int)$aMatches[5];
+        $iSecond = isset($aMatches[6]) && $aMatches[6] != "" ? (int)$aMatches[6] : 0;
+        if ($iHour > 23 || $iMinute > 59 || $iSecond > 59) {
+            sendJsonAndExit(array("success" => false, "message" => "Due date is invalid."), 400);
+        }
+        return sprintf("%04d-%02d-%02d %02d:%02d:%02d", (int)$aMatches[1], (int)$aMatches[2], (int)$aMatches[3], $iHour, $iMinute, $iSecond);
+    }
+    return sprintf("%04d-%02d-%02d", (int)$aMatches[1], (int)$aMatches[2], (int)$aMatches[3]);
 }
 
 function issueTrackerRenderBadge($sClass, $sText) {
@@ -1931,7 +1953,7 @@ function issueTrackerRenderBadge($sClass, $sText) {
 
 function issueTrackerFetchRows($oPdo) {
     $aRows = array();
-    $oStatement = $oPdo->query("SELECT id, issue_type, status, priority, title, description, DATE_FORMAT(due_date, '%Y-%m-%d') AS due_date_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text, DATE_FORMAT(closed_at, '%Y-%m-%d %H:%i') AS closed_at_text FROM fs_issues ORDER BY status = 'done' ASC, FIELD(status, 'open', 'in_progress', 'waiting', 'done'), due_date IS NULL ASC, due_date ASC, FIELD(priority, 'urgent', 'high', 'normal', 'low'), created_at DESC, id DESC");
+    $oStatement = $oPdo->query("SELECT id, issue_type, status, priority, title, description, CASE WHEN due_date IS NULL THEN NULL WHEN TIME(due_date) = '00:00:00' THEN DATE_FORMAT(due_date, '%Y-%m-%d') ELSE DATE_FORMAT(due_date, '%Y-%m-%d %H:%i') END AS due_date_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text, DATE_FORMAT(closed_at, '%Y-%m-%d %H:%i') AS closed_at_text FROM fs_issues ORDER BY status = 'done' ASC, FIELD(status, 'open', 'in_progress', 'waiting', 'done'), due_date IS NULL ASC, due_date ASC, FIELD(priority, 'urgent', 'high', 'normal', 'low'), created_at DESC, id DESC");
     while ($aRow = $oStatement->fetch()) {
         $aRows[] = array(
             "id" => (int)$aRow["id"],
@@ -1949,6 +1971,20 @@ function issueTrackerFetchRows($oPdo) {
     return $aRows;
 }
 
+function issueTrackerDueDateIsOverdue($sDueDate) {
+    $sDueDate = trim((string)$sDueDate);
+    if ($sDueDate == "") {
+        return false;
+    }
+    if (strlen($sDueDate) > 16) {
+        return $sDueDate < date("Y-m-d H:i:s");
+    }
+    if (strlen($sDueDate) > 10) {
+        return $sDueDate < date("Y-m-d H:i");
+    }
+    return $sDueDate < date("Y-m-d");
+}
+
 function issueTrackerRenderRow($aRow) {
     global $sEditEmoji, $sDeleteEmoji;
 
@@ -1961,7 +1997,7 @@ function issueTrackerRenderRow($aRow) {
     $sToggleTitle = $aRow["status"] == "done" ? "Reopen" : "Mark done";
     $sToggleEmoji = $aRow["status"] == "done" ? "&#128260;" : "&#9989;";
     $sRowClass = $aRow["status"] == "done" ? " class=\"issue-row-done\"" : "";
-    if ($aRow["status"] != "done" && $sDueDate != "" && $sDueDate < date("Y-m-d")) {
+    if ($aRow["status"] != "done" && issueTrackerDueDateIsOverdue($sDueDate)) {
         $sDueClass = " issue-due-overdue";
     }
     return "      <tr" . $sRowClass . " data-issue-id=\"" . (int)$aRow["id"] . "\""
@@ -1976,7 +2012,7 @@ function issueTrackerRenderRow($aRow) {
         . "<td>" . issueTrackerRenderBadge("issue-status-" . $aRow["status"], issueTrackerLabel($aRow["status"], $aStatuses)) . "</td>"
         . "<td>" . issueTrackerRenderBadge("issue-priority-" . $aRow["priority"], issueTrackerLabel($aRow["priority"], $aPriorities)) . "</td>"
         . "<td class=\"issue-title-cell\"><strong>" . html($aRow["title"]) . "</strong>" . ($sDescription != "" ? "<div class=\"issue-description\">" . nl2br(html($sDescription), false) . "</div>" : "") . "</td>"
-        . "<td class=\"issue-date" . $sDueClass . "\">" . ($sDueDate != "" ? html($sDueDate) : "&mdash;") . "</td>"
+        . "<td class=\"issue-date" . $sDueClass . "\">" . ($sDueDate != "" ? renderDateTimeWithNbspIndent($sDueDate) : "&mdash;") . "</td>"
         . "<td class=\"issue-date\">" . html($aRow["updated_at"]) . "</td>"
         . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-toggle-issue\" title=\"" . html($sToggleTitle) . "\" aria-label=\"" . html($sToggleTitle) . "\">" . $sToggleEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-issue\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-issue issue-delete-action\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
         . "</tr>\n";
@@ -2097,5 +2133,533 @@ function issueTrackerToggleStatus($oPdo, $iIssueId) {
             $oPdo->rollBack();
         }
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
+function domainLookupNormalizeDomain($sValue) {
+    $sValue = trim((string)$sValue);
+    if ($sValue == "") {
+        return "";
+    }
+    if (strpos($sValue, "://") !== false) {
+        $sHost = parse_url($sValue, PHP_URL_HOST);
+        if (is_string($sHost) && $sHost != "") {
+            $sValue = $sHost;
+        }
+    } elseif (substr($sValue, 0, 2) == "//") {
+        $sHost = parse_url("https:" . $sValue, PHP_URL_HOST);
+        if (is_string($sHost) && $sHost != "") {
+            $sValue = $sHost;
+        }
+    } else {
+        $sValue = preg_replace("~[/?#].*$~", "", $sValue);
+    }
+    $sValue = trim($sValue);
+    if (preg_match("/^(.+):[0-9]+$/", $sValue, $aMatches)) {
+        $sValue = $aMatches[1];
+    }
+    $sValue = trim($sValue, ". \t\r\n");
+    $sValue = strtolower($sValue);
+    if ($sValue == "" || strlen($sValue) > 253 || preg_match("/\\s/", $sValue)) {
+        return "";
+    }
+    return $sValue;
+}
+
+function domainLookupSupportedTlds() {
+    return array(
+        "com" => true,
+        "me" => true,
+        "net" => true,
+        "org" => true,
+        "sh" => true,
+        "io" => true,
+        "co" => true,
+        "club" => true,
+        "biz" => true,
+        "mobi" => true,
+        "info" => true,
+        "us" => true,
+        "domains" => true,
+        "cloud" => true,
+        "fr" => true,
+        "au" => true,
+        "ru" => true,
+        "uk" => true,
+        "nl" => true,
+        "fi" => true,
+        "br" => true,
+        "hr" => true,
+        "ee" => true,
+        "ca" => true,
+        "sk" => true,
+        "se" => true,
+        "no" => true,
+        "cz" => true,
+        "it" => true,
+        "in" => true,
+        "icu" => true,
+        "top" => true,
+        "xyz" => true,
+        "cn" => true,
+        "cf" => true,
+        "hk" => true,
+        "sg" => true,
+        "pt" => true,
+        "site" => true,
+        "kz" => true,
+        "si" => true,
+        "ae" => true,
+        "do" => true,
+        "yoga" => true,
+        "xxx" => true,
+        "ws" => true,
+        "work" => true,
+        "wiki" => true,
+        "watch" => true,
+        "wtf" => true,
+        "world" => true,
+        "website" => true,
+        "vip" => true,
+        "ly" => true,
+        "network" => true,
+        "company" => true,
+        "rs" => true,
+        "run" => true,
+        "science" => true,
+        "sex" => true,
+        "shop" => true,
+        "solutions" => true,
+        "so" => true,
+        "studio" => true,
+        "style" => true,
+        "tech" => true,
+        "travel" => true,
+        "vc" => true,
+        "pub" => true,
+        "pro" => true,
+        "press" => true,
+        "ooo" => true,
+        "de" => true
+    );
+}
+
+function domainLookupDomainShapeIsValid($sDomain) {
+    $sDomain = trim((string)$sDomain);
+    if ($sDomain == "" || strlen($sDomain) > 253 || strpos($sDomain, ".") === false) {
+        return false;
+    }
+    if (!preg_match("/^[a-z0-9.-]+$/", $sDomain)) {
+        return false;
+    }
+    $aLabels = explode(".", $sDomain);
+    foreach ($aLabels as $sLabel) {
+        if ($sLabel == "" || strlen($sLabel) > 63 || substr($sLabel, 0, 1) == "-" || substr($sLabel, -1) == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+function domainLookupDomainTldIsSupported($sDomain) {
+    $iPosition = strrpos((string)$sDomain, ".");
+    if ($iPosition === false) {
+        return false;
+    }
+    $sTld = substr((string)$sDomain, $iPosition + 1);
+    $aSupportedTlds = domainLookupSupportedTlds();
+    return isset($aSupportedTlds[$sTld]);
+}
+
+function domainLookupDnsRecordTypes() {
+    $aConstants = array(
+        "A" => "DNS_A",
+        "AAAA" => "DNS_AAAA",
+        "CNAME" => "DNS_CNAME",
+        "MX" => "DNS_MX",
+        "NS" => "DNS_NS",
+        "TXT" => "DNS_TXT",
+        "SOA" => "DNS_SOA",
+        "SRV" => "DNS_SRV",
+        "CAA" => "DNS_CAA"
+    );
+    $aTypes = array();
+    foreach ($aConstants as $sType => $sConstant) {
+        if (defined($sConstant)) {
+            $aTypes[$sType] = constant($sConstant);
+        }
+    }
+    return $aTypes;
+}
+
+function domainLookupDnsRecordValue($aRecord) {
+    $sType = isset($aRecord["type"]) ? strtoupper((string)$aRecord["type"]) : "";
+    $aParts = array();
+    $aFallbackParts = array();
+    if ($sType == "A" && isset($aRecord["ip"])) {
+        return (string)$aRecord["ip"];
+    }
+    if ($sType == "AAAA" && isset($aRecord["ipv6"])) {
+        return (string)$aRecord["ipv6"];
+    }
+    if (($sType == "CNAME" || $sType == "NS" || $sType == "PTR") && isset($aRecord["target"])) {
+        return (string)$aRecord["target"];
+    }
+    if ($sType == "MX") {
+        if (isset($aRecord["pri"])) {
+            $aParts[] = "priority " . (int)$aRecord["pri"];
+        }
+        if (isset($aRecord["target"])) {
+            $aParts[] = (string)$aRecord["target"];
+        }
+        return implode(" ", $aParts);
+    }
+    if ($sType == "TXT") {
+        if (isset($aRecord["entries"]) && is_array($aRecord["entries"])) {
+            return implode("\n", $aRecord["entries"]);
+        }
+        if (isset($aRecord["txt"])) {
+            return (string)$aRecord["txt"];
+        }
+    }
+    if ($sType == "SOA") {
+        foreach (array("mname", "rname", "serial", "refresh", "retry", "expire", "minimum-ttl") as $sKey) {
+            if (isset($aRecord[$sKey])) {
+                $aParts[] = $sKey . ": " . (string)$aRecord[$sKey];
+            }
+        }
+        return implode("\n", $aParts);
+    }
+    if ($sType == "SRV") {
+        foreach (array("pri", "weight", "port", "target") as $sKey) {
+            if (isset($aRecord[$sKey])) {
+                $aParts[] = $sKey . ": " . (string)$aRecord[$sKey];
+            }
+        }
+        return implode("\n", $aParts);
+    }
+    if ($sType == "CAA") {
+        foreach (array("flags", "tag", "value") as $sKey) {
+            if (isset($aRecord[$sKey])) {
+                $aParts[] = $sKey . ": " . (string)$aRecord[$sKey];
+            }
+        }
+        return implode("\n", $aParts);
+    }
+    foreach ($aRecord as $sKey => $mValue) {
+        if ($sKey == "host" || $sKey == "class" || $sKey == "type" || $sKey == "ttl") {
+            continue;
+        }
+        if (is_array($mValue)) {
+            $aFallbackParts[] = $sKey . ": " . implode(", ", $mValue);
+        } elseif ($mValue !== null) {
+            $aFallbackParts[] = $sKey . ": " . (string)$mValue;
+        }
+    }
+    return implode("\n", $aFallbackParts);
+}
+
+function domainLookupFetchDnsRecords($sDomain) {
+    $aRows = array();
+    if (!function_exists("dns_get_record")) {
+        return array(
+            "message" => "PHP DNS lookup is not available.",
+            "records" => $aRows
+        );
+    }
+    foreach (domainLookupDnsRecordTypes() as $sType => $iType) {
+        $aRecords = @dns_get_record($sDomain, $iType);
+        if (!is_array($aRecords)) {
+            continue;
+        }
+        foreach ($aRecords as $aRecord) {
+            $aRows[] = array(
+                "type" => isset($aRecord["type"]) ? (string)$aRecord["type"] : $sType,
+                "host" => isset($aRecord["host"]) ? (string)$aRecord["host"] : $sDomain,
+                "ttl" => isset($aRecord["ttl"]) ? (string)$aRecord["ttl"] : "",
+                "value" => domainLookupDnsRecordValue($aRecord)
+            );
+        }
+    }
+    return array(
+        "message" => "",
+        "records" => $aRows
+    );
+}
+
+function domainLookupRenderDnsValue($mValue) {
+    $sValue = trim((string)$mValue);
+    return $sValue == "" ? "<em>&mdash;</em>" : nl2br(html($sValue), false);
+}
+
+function domainLookupRenderDnsRows($aDnsResult) {
+    $aRecords = isset($aDnsResult["records"]) && is_array($aDnsResult["records"]) ? $aDnsResult["records"] : array();
+    $sMessage = isset($aDnsResult["message"]) ? trim((string)$aDnsResult["message"]) : "";
+    if ($sMessage != "") {
+        echo "      <tr><td colspan=\"4\">" . html($sMessage) . "</td></tr>\n";
+        return;
+    }
+    if (!$aRecords) {
+        echo "      <tr><td colspan=\"4\"><em>&mdash;</em></td></tr>\n";
+        return;
+    }
+    foreach ($aRecords as $aRecord) {
+        echo "      <tr>\n",
+            "        <td>" . domainLookupRenderDnsValue($aRecord["type"]) . "</td>\n",
+            "        <td>" . domainLookupRenderDnsValue($aRecord["host"]) . "</td>\n",
+            "        <td>" . domainLookupRenderDnsValue($aRecord["ttl"]) . "</td>\n",
+            "        <td>" . domainLookupRenderDnsValue($aRecord["value"]) . "</td>\n",
+            "      </tr>\n";
+    }
+}
+
+function domainLookupDateForDatabase($mValue) {
+    if (!is_string($mValue) || trim($mValue) == "") {
+        return null;
+    }
+    $iTimestamp = strtotime($mValue);
+    if ($iTimestamp === false) {
+        return null;
+    }
+    return date("Y-m-d H:i:s", $iTimestamp);
+}
+
+function domainLookupJsonValue($mValue) {
+    if ($mValue === null) {
+        return null;
+    }
+    $sJson = json_encode($mValue, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    return $sJson === false ? null : $sJson;
+}
+
+function domainLookupTextValue($mValue) {
+    if ($mValue === null) {
+        return null;
+    }
+    if (is_scalar($mValue)) {
+        return (string)$mValue;
+    }
+    return domainLookupJsonValue($mValue);
+}
+
+function domainLookupEmptyResult($sDomain) {
+    return array(
+        "domain" => $sDomain,
+        "result_status" => "error",
+        "message" => "",
+        "domain_name" => null,
+        "creation_date" => null,
+        "expiration_date" => null,
+        "name_servers" => null,
+        "registrant_name" => null,
+        "registrar" => null,
+        "status_text" => null,
+        "updated_dates" => null,
+        "raw_response" => "",
+        "http_code" => null,
+        "curl_errno" => null,
+        "curl_error" => null
+    );
+}
+
+function domainLookupExtractApiErrorMessage($aData, $iHttpCode) {
+    if (isset($aData["message"]) && is_scalar($aData["message"]) && (string)$aData["message"] != "") {
+        return (string)$aData["message"];
+    }
+    if (isset($aData["error"])) {
+        if (is_scalar($aData["error"]) && (string)$aData["error"] != "") {
+            return (string)$aData["error"];
+        }
+        if (is_array($aData["error"])) {
+            if (isset($aData["error"]["message"]) && is_scalar($aData["error"]["message"]) && (string)$aData["error"]["message"] != "") {
+                return (string)$aData["error"]["message"];
+            }
+            if (isset($aData["error"]["code"]) && is_scalar($aData["error"]["code"]) && (string)$aData["error"]["code"] != "") {
+                return "API error: " . (string)$aData["error"]["code"];
+            }
+        }
+    }
+    if (isset($aData["result"]) && is_scalar($aData["result"]) && (string)$aData["result"] != "") {
+        return "API result: " . (string)$aData["result"];
+    }
+    if ($iHttpCode >= 400) {
+        return "HTTP error " . $iHttpCode . ".";
+    }
+    return "API returned an error.";
+}
+
+function domainLookupBuildErrorResult($sDomain, $sMessage, $sRawResponse = "", $iHttpCode = null, $iCurlErrno = null, $sCurlError = null) {
+    $aResult = domainLookupEmptyResult($sDomain);
+    $aResult["message"] = $sMessage;
+    $aResult["raw_response"] = (string)$sRawResponse;
+    $aResult["http_code"] = $iHttpCode === null ? null : (int)$iHttpCode;
+    $aResult["curl_errno"] = $iCurlErrno === null ? null : (int)$iCurlErrno;
+    $aResult["curl_error"] = $sCurlError === null ? null : (string)$sCurlError;
+    return $aResult;
+}
+
+function domainLookupCallApi($sDomain, $sApiKey) {
+    if (!function_exists("curl_init")) {
+        return domainLookupBuildErrorResult($sDomain, "PHP cURL extension is not available.");
+    }
+    $oCurl = curl_init();
+    curl_setopt_array($oCurl, array(
+        CURLOPT_URL => "https://api.apilayer.com/whois/query?domain=" . rawurlencode($sDomain),
+        CURLOPT_HTTPHEADER => array(
+            "Content-Type: text/plain",
+            "apikey: " . $sApiKey
+        ),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "GET"
+    ));
+    $sResponse = curl_exec($oCurl);
+    $iCurlErrno = curl_errno($oCurl);
+    $sCurlError = curl_error($oCurl);
+    $iHttpCode = (int)curl_getinfo($oCurl, CURLINFO_HTTP_CODE);
+    if ($sResponse === false) {
+        return domainLookupBuildErrorResult($sDomain, "cURL error: " . $sCurlError, "", $iHttpCode, $iCurlErrno, $sCurlError);
+    }
+    $aData = json_decode($sResponse, true);
+    if (!is_array($aData)) {
+        return domainLookupBuildErrorResult($sDomain, "Invalid API response.", $sResponse, $iHttpCode, $iCurlErrno, $sCurlError);
+    }
+    if (!isset($aData["result"]) || !is_array($aData["result"])) {
+        return domainLookupBuildErrorResult($sDomain, domainLookupExtractApiErrorMessage($aData, $iHttpCode), $sResponse, $iHttpCode, $iCurlErrno, $sCurlError);
+    }
+    $aWhois = $aData["result"];
+    $aResult = domainLookupEmptyResult($sDomain);
+    $aResult["result_status"] = "success";
+    $aResult["message"] = null;
+    $aResult["domain_name"] = isset($aWhois["domain_name"]) && is_scalar($aWhois["domain_name"]) ? strtolower((string)$aWhois["domain_name"]) : null;
+    $aResult["creation_date"] = isset($aWhois["creation_date"]) ? domainLookupDateForDatabase($aWhois["creation_date"]) : null;
+    $aResult["expiration_date"] = isset($aWhois["expiration_date"]) ? domainLookupDateForDatabase($aWhois["expiration_date"]) : null;
+    $aResult["name_servers"] = isset($aWhois["name_servers"]) ? domainLookupJsonValue($aWhois["name_servers"]) : null;
+    $aResult["registrant_name"] = isset($aWhois["registrant_name"]) ? domainLookupTextValue($aWhois["registrant_name"]) : null;
+    $aResult["registrar"] = isset($aWhois["registrar"]) ? domainLookupTextValue($aWhois["registrar"]) : null;
+    $aResult["status_text"] = array_key_exists("status", $aWhois) ? domainLookupTextValue($aWhois["status"]) : null;
+    $aResult["updated_dates"] = isset($aWhois["updated_date"]) ? domainLookupJsonValue($aWhois["updated_date"]) : null;
+    $aResult["raw_response"] = $sResponse;
+    $aResult["http_code"] = $iHttpCode;
+    $aResult["curl_errno"] = $iCurlErrno;
+    $aResult["curl_error"] = $sCurlError == "" ? null : $sCurlError;
+    return $aResult;
+}
+
+function domainLookupFetchRow($oPdo, $sDomain) {
+    $oStatement = $oPdo->prepare("SELECT id, domain, result_status, message, domain_name, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date_text, DATE_FORMAT(expiration_date, '%Y-%m-%d %H:%i:%s') AS expiration_date_text, name_servers, registrant_name, registrar, status_text, updated_dates, raw_response, http_code, curl_errno, curl_error, UNIX_TIMESTAMP(last_checked_at) AS last_checked_at_ts, DATE_FORMAT(last_checked_at, '%Y-%m-%d %H:%i:%s') AS last_checked_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at_text FROM fs_domains WHERE domain = :domain LIMIT 1");
+    $oStatement->execute(array("domain" => $sDomain));
+    $aRow = $oStatement->fetch();
+    return $aRow ? $aRow : null;
+}
+
+function domainLookupNeedsApiCall($aRow) {
+    if (!$aRow) {
+        return true;
+    }
+    $iLastCheckedAt = isset($aRow["last_checked_at_ts"]) ? (int)$aRow["last_checked_at_ts"] : 0;
+    return $iLastCheckedAt < time() - 14400;
+}
+
+function domainLookupSaveResult($oPdo, $aResult) {
+    $oStatement = $oPdo->prepare("INSERT INTO fs_domains (domain, result_status, message, domain_name, creation_date, expiration_date, name_servers, registrant_name, registrar, status_text, updated_dates, raw_response, http_code, curl_errno, curl_error, last_checked_at) VALUES (:domain, :result_status, :message, :domain_name, :creation_date, :expiration_date, :name_servers, :registrant_name, :registrar, :status_text, :updated_dates, :raw_response, :http_code, :curl_errno, :curl_error, CURRENT_TIMESTAMP(6)) ON DUPLICATE KEY UPDATE result_status = VALUES(result_status), message = VALUES(message), domain_name = VALUES(domain_name), creation_date = VALUES(creation_date), expiration_date = VALUES(expiration_date), name_servers = VALUES(name_servers), registrant_name = VALUES(registrant_name), registrar = VALUES(registrar), status_text = VALUES(status_text), updated_dates = VALUES(updated_dates), raw_response = VALUES(raw_response), http_code = VALUES(http_code), curl_errno = VALUES(curl_errno), curl_error = VALUES(curl_error), last_checked_at = VALUES(last_checked_at)");
+    $oStatement->execute(array(
+        "domain" => $aResult["domain"],
+        "result_status" => $aResult["result_status"],
+        "message" => $aResult["message"],
+        "domain_name" => $aResult["domain_name"],
+        "creation_date" => $aResult["creation_date"],
+        "expiration_date" => $aResult["expiration_date"],
+        "name_servers" => $aResult["name_servers"],
+        "registrant_name" => $aResult["registrant_name"],
+        "registrar" => $aResult["registrar"],
+        "status_text" => $aResult["status_text"],
+        "updated_dates" => $aResult["updated_dates"],
+        "raw_response" => $aResult["raw_response"],
+        "http_code" => $aResult["http_code"],
+        "curl_errno" => $aResult["curl_errno"],
+        "curl_error" => $aResult["curl_error"]
+    ));
+    return domainLookupFetchRow($oPdo, $aResult["domain"]);
+}
+
+function domainLookupRenderStoredList($sJson) {
+    $sJson = (string)$sJson;
+    if ($sJson == "") {
+        return "";
+    }
+    $aValues = json_decode($sJson, true);
+    if (json_last_error() == JSON_ERROR_NONE && (is_scalar($aValues) || $aValues === null)) {
+        return $aValues === null ? "" : (string)$aValues;
+    }
+    if (!is_array($aValues)) {
+        return $sJson;
+    }
+    if (!$aValues) {
+        return "";
+    }
+    $aLines = array();
+    foreach ($aValues as $mValue) {
+        if (is_scalar($mValue) || $mValue === null) {
+            $aLines[] = $mValue === null ? "" : (string)$mValue;
+        } else {
+            $sEncoded = json_encode($mValue, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $aLines[] = $sEncoded === false ? "" : $sEncoded;
+        }
+    }
+    return implode("\n", $aLines);
+}
+
+function domainLookupRenderValue($mValue) {
+    $sValue = trim((string)$mValue);
+    return $sValue == "" ? "<em>&mdash;</em>" : html($sValue);
+}
+
+function domainLookupRenderResultRows($aRow, $sSource) {
+    $aRows = array(
+        "Source" => array("value" => $sSource, "multiline" => false, "date_time" => false),
+        "Result" => array("value" => $aRow["result_status"], "multiline" => false, "date_time" => false),
+        "Message" => array("value" => $aRow["message"], "multiline" => false, "date_time" => false),
+        "Domain" => array("value" => $aRow["domain"], "multiline" => false, "date_time" => false),
+        "API Domain" => array("value" => $aRow["domain_name"], "multiline" => false, "date_time" => false),
+        "Registrar" => array("value" => $aRow["registrar"], "multiline" => false, "date_time" => false),
+        "Registrant" => array("value" => $aRow["registrant_name"], "multiline" => false, "date_time" => false),
+        "Creation Date" => array("value" => $aRow["creation_date_text"], "multiline" => false, "date_time" => true),
+        "Updated Date" => array("value" => domainLookupRenderStoredList($aRow["updated_dates"]), "multiline" => true, "date_time" => true),
+        "Expiration Date" => array("value" => $aRow["expiration_date_text"], "multiline" => false, "date_time" => true),
+        "Name Servers" => array("value" => domainLookupRenderStoredList($aRow["name_servers"]), "multiline" => true, "date_time" => false),
+        "Status" => array("value" => $aRow["status_text"], "multiline" => false, "date_time" => false),
+        "HTTP Code" => array("value" => $aRow["http_code"], "multiline" => false, "date_time" => false),
+        "cURL Error" => array("value" => $aRow["curl_error"], "multiline" => false, "date_time" => false),
+        "Last Checked" => array("value" => $aRow["last_checked_at_text"], "multiline" => false, "date_time" => true),
+        "Stored" => array("value" => $aRow["created_at_text"], "multiline" => false, "date_time" => true),
+        "Updated" => array("value" => $aRow["updated_at_text"], "multiline" => false, "date_time" => true)
+    );
+    foreach ($aRows as $sName => $aValue) {
+        $sValue = trim((string)$aValue["value"]);
+        if ($sValue == "") {
+            $sHtmlValue = domainLookupRenderValue($sValue);
+        } elseif ($aValue["date_time"] && $aValue["multiline"]) {
+            $aDateTimeHtmlLines = array();
+            foreach (explode("\n", $sValue) as $sDateTimeLine) {
+                $aDateTimeHtmlLines[] = renderDateTimeWithNbspIndent($sDateTimeLine);
+            }
+            $sHtmlValue = implode("<br>", $aDateTimeHtmlLines);
+        } elseif ($aValue["date_time"]) {
+            $sHtmlValue = renderDateTimeWithNbspIndent($sValue);
+        } else {
+            $sHtmlValue = html($sValue);
+        }
+        if ($sValue != "" && $aValue["multiline"] && !$aValue["date_time"]) {
+            $sHtmlValue = nl2br($sHtmlValue, false);
+        }
+        echo "      <tr>\n",
+            "        <th>" . html($sName) . "</th>\n",
+            "        <td>" . $sHtmlValue . "</td>\n",
+            "      </tr>\n";
     }
 }

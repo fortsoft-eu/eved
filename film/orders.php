@@ -72,7 +72,10 @@ renderMenu();
 foreach ($aOrders as $aRow) {
     $sOrderedAt = substr((string)$aRow["ordered_at"], 0, 16);
     $blReturnedAtError = false;
-    if ($aRow["returned_at"] === null) {
+    $blBagNoEmpty = $aRow["bag_no"] === null || trim((string)$aRow["bag_no"]) == "";
+    if ($blBagNoEmpty) {
+        $sReturnedAt = "N/A";
+    } elseif ($aRow["returned_at"] === null) {
         $sReturnedAt = "Not yet";
         $blReturnedAtError = true;
     } else {

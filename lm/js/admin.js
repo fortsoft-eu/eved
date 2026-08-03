@@ -1312,40 +1312,77 @@ function formatIssueLocalDate(oDate) {
     return oDate.getFullYear() + "-" + padIssueDateNumber(oDate.getMonth() + 1) + "-" + padIssueDateNumber(oDate.getDate());
 }
 
+function formatIssueLocalDateTime(oDate) {
+    return formatIssueLocalDate(oDate) + " " + padIssueDateNumber(oDate.getHours()) + ":" + padIssueDateNumber(oDate.getMinutes());
+}
+
 function parseIssueDateValue(sValue) {
-    var sText = String(sValue || "").replace(/^\s+|\s+$/g, "");
+    var sText = String(sValue || "").replace(/\u00a0/g, " ").replace(/([0-9])[Tt]([0-9])/g, "$1 $2").replace(/^\s+|\s+$/g, "");
     var aParts;
     var iYear;
     var iMonth;
     var iDay;
+    var iHour = 0;
+    var iMinute = 0;
+    var iSecond = 0;
+    var blHasTime = false;
+    var blHasSeconds = false;
     var oDate;
     if (sText == "") {
         return null;
     }
-    aParts = sText.match(/^([0-9]{4})[-.\/ ]([0-9]{1,2})[-.\/ ]([0-9]{1,2})$/);
+    aParts = sText.match(/^([0-9]{4})[-.\/ ]([0-9]{1,2})[-.\/ ]([0-9]{1,2})(?:[ ]+([0-9]{1,2}):([0-9]{1,2})(?::([0-9]{1,2}))?)?$/);
     if (aParts) {
         iYear = parseInt(aParts[1], 10);
         iMonth = parseInt(aParts[2], 10);
         iDay = parseInt(aParts[3], 10);
+        blHasTime = typeof aParts[4] != "undefined";
+        if (blHasTime) {
+            iHour = parseInt(aParts[4], 10);
+            iMinute = parseInt(aParts[5], 10);
+            iSecond = typeof aParts[6] != "undefined" ? parseInt(aParts[6], 10) : 0;
+            blHasSeconds = typeof aParts[6] != "undefined";
+        }
     } else {
-        aParts = sText.match(/^([0-9]{1,2})[-.\/ ]([0-9]{1,2})[-.\/ ]([0-9]{4})$/);
+        aParts = sText.match(/^([0-9]{1,2})[-.\/ ]([0-9]{1,2})[-.\/ ]([0-9]{4})(?:[ ]+([0-9]{1,2}):([0-9]{1,2})(?::([0-9]{1,2}))?)?$/);
         if (!aParts) {
             return null;
         }
         iYear = parseInt(aParts[3], 10);
         iMonth = parseInt(aParts[2], 10);
         iDay = parseInt(aParts[1], 10);
+        blHasTime = typeof aParts[4] != "undefined";
+        if (blHasTime) {
+            iHour = parseInt(aParts[4], 10);
+            iMinute = parseInt(aParts[5], 10);
+            iSecond = typeof aParts[6] != "undefined" ? parseInt(aParts[6], 10) : 0;
+            blHasSeconds = typeof aParts[6] != "undefined";
+        }
     }
-    if (!isFinite(iYear) || !isFinite(iMonth) || !isFinite(iDay) || iYear < 1 || iYear > 9999 || iMonth < 1 || iMonth > 12 || iDay < 1 || iDay > 31) {
+    if (!isFinite(iYear) || !isFinite(iMonth) || !isFinite(iDay) || !isFinite(iHour) || !isFinite(iMinute) || !isFinite(iSecond) || iYear < 1 || iYear > 9999 || iMonth < 1 || iMonth > 12 || iDay < 1 || iDay > 31 || iHour < 0 || iHour > 23 || iMinute < 0 || iMinute > 59 || iSecond < 0 || iSecond > 59) {
         return null;
     }
     oDate = new Date(0);
     oDate.setFullYear(iYear, iMonth - 1, iDay);
-    oDate.setHours(0, 0, 0, 0);
-    if (oDate.getFullYear() !== iYear || oDate.getMonth() !== iMonth - 1 || oDate.getDate() !== iDay) {
+    oDate.setHours(iHour, iMinute, iSecond, 0);
+    if (oDate.getFullYear() !== iYear || oDate.getMonth() !== iMonth - 1 || oDate.getDate() !== iDay || oDate.getHours() !== iHour || oDate.getMinutes() !== iMinute || oDate.getSeconds() !== iSecond) {
         return null;
     }
+    oDate._issueHasTime = blHasTime;
+    oDate._issueHasSeconds = blHasSeconds;
     return oDate;
+}
+
+function formatIssueParsedDateValue(oDate, blDateTime) {
+    var sValue = formatIssueLocalDate(oDate);
+    if (!blDateTime || !oDate._issueHasTime) {
+        return sValue;
+    }
+    sValue += " " + padIssueDateNumber(oDate.getHours()) + ":" + padIssueDateNumber(oDate.getMinutes());
+    if (oDate._issueHasSeconds || oDate.getSeconds() != 0) {
+        sValue += ":" + padIssueDateNumber(oDate.getSeconds());
+    }
+    return sValue;
 }
 
 function normalizeIssueDateInput(oInput) {
@@ -1355,7 +1392,7 @@ function normalizeIssueDateInput(oInput) {
     }
     oDate = parseIssueDateValue(oInput.value);
     if (oDate) {
-        oInput.value = formatIssueLocalDate(oDate);
+        oInput.value = formatIssueParsedDateValue(oDate, oInput.getAttribute("data-date-input-kind") == "datetime");
     }
 }
 
@@ -1422,7 +1459,7 @@ function renderIssueDateCalendar(oInput, oCalendar, oMonthDate) {
         oDateButton.setAttribute("data-date", sDate);
         oDateButton.textContent = "" + i;
         oDateButton.addEventListener("click", function() {
-            oInput.value = this.getAttribute("data-date") || "";
+            setIssueDateInputDateValue(oInput, this.getAttribute("data-date") || "");
             oCalendar.style.display = "none";
         });
         oGrid.appendChild(oDateButton);
@@ -1447,6 +1484,18 @@ function positionIssueDateCalendar(oInput, oCalendar) {
     oCalendar.style.top = iTop + "px";
 }
 
+function setIssueDateInputDateValue(oInput, sDate) {
+    var oDate = parseIssueDateValue(oInput.value);
+    var sValue = sDate;
+    if (oInput.getAttribute("data-date-input-kind") == "datetime" && oDate && oDate._issueHasTime) {
+        sValue += " " + padIssueDateNumber(oDate.getHours()) + ":" + padIssueDateNumber(oDate.getMinutes());
+        if (oDate._issueHasSeconds || oDate.getSeconds() != 0) {
+            sValue += ":" + padIssueDateNumber(oDate.getSeconds());
+        }
+    }
+    oInput.value = sValue;
+}
+
 function showIssueDateCalendar(oInput, oCalendar) {
     var oDate = parseIssueDateValue(oInput.value) || oCalendar._currentDate || new Date();
     renderIssueDateCalendar(oInput, oCalendar, new Date(oDate.getFullYear(), oDate.getMonth(), 1));
@@ -1467,7 +1516,7 @@ function removeIssueDateCalendars() {
     }
 }
 
-function appendIssueDateField(oParent, sLabel, sName, sValue) {
+function appendIssueDateField(oParent, sLabel, sName, sValue, blDateTime) {
     var oLabel = document.createElement("label");
     var oWrapper = document.createElement("div");
     var oInput = document.createElement("input");
@@ -1479,11 +1528,11 @@ function appendIssueDateField(oParent, sLabel, sName, sValue) {
     oInput.id = sName;
     oInput.name = sName;
     oInput.value = sValue || "";
-    oInput.placeholder = "YYYY-MM-DD";
-    oInput.maxLength = 10;
+    oInput.placeholder = blDateTime ? "YYYY-MM-DD HH:mm" : "YYYY-MM-DD";
+    oInput.maxLength = 19;
     oInput.autocomplete = "off";
-    oInput.setAttribute("data-date-input-kind", "date");
-    oInput.title = "Use YYYY-MM-DD.";
+    oInput.setAttribute("data-date-input-kind", blDateTime ? "datetime" : "date");
+    oInput.title = blDateTime ? "Use YYYY-MM-DD HH:mm." : "Use YYYY-MM-DD.";
     oButton.type = "button";
     oButton.className = "subject-date-button";
     oButton.setAttribute("aria-label", "Open calendar");
@@ -1657,7 +1706,7 @@ function openIssueDialog(aRow, oSourceRow) {
     appendIssueDialogField(oBox, "Title", oIssueTitle);
     appendIssueDialogField(oBox, "Status", oStatus);
     appendIssueDialogField(oBox, "Priority", oPriority);
-    oDueDate = appendIssueDateField(oBox, "Due", "issue-dialog-due-date", aRow ? aRow.dueDate : formatIssueLocalDate(new Date()));
+    oDueDate = appendIssueDateField(oBox, "Due", "issue-dialog-due-date", aRow ? aRow.dueDate : formatIssueLocalDateTime(new Date()), true);
     appendIssueDialogField(oBox, "Description", oDescription);
 
     oError = document.createElement("div");
@@ -1816,6 +1865,19 @@ function findDashboardServiceRowById(iServiceId) {
     return document.querySelector("tr[data-dashboard-service-id=\"" + String(iServiceId) + "\"]");
 }
 
+function formatDateTimeWithNbspIndent(sText) {
+    var sValue = String(sText || "").replace(/^\s+|\s+$/g, "");
+    var aMatches;
+    if (!sValue) {
+        return "";
+    }
+    aMatches = sValue.match(/^([0-9]{4}-[0-9]{2}-[0-9]{2})[T ]([0-9]{2}:[0-9]{2}(?::[0-9]{2})?)(?:\.[0-9]+)?(?:Z|[+-][0-9]{2}:?[0-9]{2})?$/);
+    if (aMatches) {
+        return aMatches[1] + new Array(10).join("\u00a0") + aMatches[2];
+    }
+    return sValue;
+}
+
 function setDashboardServiceText(oElement, sText) {
     if (oElement) {
         oElement.textContent = sText || "";
@@ -1847,7 +1909,7 @@ function updateDashboardServiceCheckCells(oRow, sState, aData) {
         oStatus.textContent = sStatusText;
     }
     setDashboardServiceText(oHttp, aData && aData.http_status ? aData.http_status : "");
-    setDashboardServiceText(oChecked, aData && aData.checked_at ? aData.checked_at : "");
+    setDashboardServiceText(oChecked, aData && aData.checked_at ? formatDateTimeWithNbspIndent(aData.checked_at) : "");
     setDashboardServiceText(oDetail, aData && aData.message ? aData.message : "");
     if (aData && typeof aData.checked_at_ts != "undefined") {
         oRow.setAttribute("data-dashboard-service-checked-at-ts", String(aData.checked_at_ts || "0"));
