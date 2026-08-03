@@ -2365,10 +2365,7 @@ function analyzeBirthNumber($mValue) {
         $iMonth -= 20;
     }
     if ($iLength === 9) {
-        $iFullYear = 1900 + $iYear;
-        if ($iYear > 53) {
-            $blValid = false;
-        }
+        $iFullYear = $iYear < 54 ? 1900 + $iYear : 1800 + $iYear;
     } else {
         $iFullYear = $iYear > 53 ? 1900 + $iYear : 2000 + $iYear;
     }
