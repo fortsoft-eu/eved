@@ -21,12 +21,12 @@ if ($blPortalIndexAllowed) {
         array("href" => "film/", "icon" => "&#127902;&#65039;", "name" => "Film", "title" => "Film scans gallery")
     );
     $aSecurityLinks = array(
+        array("href" => "https://admin.aerohosting.cz/", "icon" => "&#128452;&#65039;", "name" => "AeroHosting", "title" => "Hosting administration"),
         array("href" => "https://securityheaders.com/", "icon" => "&#128737;&#65039;", "name" => "Security Headers", "title" => "HTTP security header scanner"),
         array("href" => "https://developer.mozilla.org/en-US/observatory", "icon" => "&#128301;", "name" => "MDN Observatory", "title" => "Mozilla site security scanner"),
-        array("href" => "https://unicode.org/emoji/charts/full-emoji-list.html", "icon" => "&#128512;", "name" => "Emoji List", "title" => "Unicode full emoji list"),
-        array("href" => "https://admin.aerohosting.cz/", "icon" => "&#128421;&#65039;", "name" => "AeroHosting", "title" => "Hosting administration"),
+        array("href" => "https://unicode.org/emoji/charts/full-emoji-list.html", "icon" => "&#9786;&#65039;", "name" => "Emoji List", "title" => "Unicode full emoji list"),
         array("href" => "https://www.profisms.cz/", "icon" => "&#128241;", "name" => "ProfiSMS", "title" => "SMS administration"),
-        array("href" => "https://app.apilayer.com/", "icon" => "&#128268;", "name" => "APILayer", "title" => "API dashboard")
+        array("href" => "https://marketplace.apilayer.com/whois-api", "icon" => "&#128268;", "name" => "APILayer", "title" => "API dashboard")
     );
 
 ?>
@@ -148,7 +148,11 @@ if ($blPortalIndexAllowed) {
 <?php
 
     foreach ($aProjects as $aProject) {
-        echo "      <li><a class=\"project-link\" href=\"" . html($aProject["href"]) . "\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"project-icon\" aria-hidden=\"true\">" . $aProject["icon"] . "</span><span><span class=\"project-name\">" . html($aProject["name"]) . "</span><span class=\"project-title\">" . html($aProject["title"]) . "</span></span></a></li>\n";
+        $sHref = (string)$aProject["href"];
+        if (!preg_match("/^[a-z][a-z0-9+.-]*:/i", $sHref) && substr($sHref, 0, 1) != "/") {
+            $sHref = $sBaseUrl . $sHref;
+        }
+        echo "      <li><a class=\"project-link\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"project-icon\" aria-hidden=\"true\">" . $aProject["icon"] . "</span><span><span class=\"project-name\">" . html($aProject["name"]) . "</span><span class=\"project-title\">" . html($aProject["title"]) . "</span></span></a></li>\n";
     }
 
 ?>
@@ -158,7 +162,11 @@ if ($blPortalIndexAllowed) {
 <?php
 
     foreach ($aSecurityLinks as $aSecurityLink) {
-        echo "      <li><a class=\"project-link\" href=\"" . html($aSecurityLink["href"]) . "\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"project-icon\" aria-hidden=\"true\">" . $aSecurityLink["icon"] . "</span><span><span class=\"project-name\">" . html($aSecurityLink["name"]) . "</span><span class=\"project-title\">" . html($aSecurityLink["title"]) . "</span></span></a></li>\n";
+        $sHref = (string)$aSecurityLink["href"];
+        if (!preg_match("/^[a-z][a-z0-9+.-]*:/i", $sHref) && substr($sHref, 0, 1) != "/") {
+            $sHref = $sBaseUrl . $sHref;
+        }
+        echo "      <li><a class=\"project-link\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"project-icon\" aria-hidden=\"true\">" . $aSecurityLink["icon"] . "</span><span><span class=\"project-name\">" . html($aSecurityLink["name"]) . "</span><span class=\"project-title\">" . html($aSecurityLink["title"]) . "</span></span></a></li>\n";
     }
 
 ?>

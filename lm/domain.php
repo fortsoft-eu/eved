@@ -10,6 +10,10 @@ if (!$oPdo) {
 
 requireFullAccess($aAllowedIps, "portal", "lm_csrf_token");
 
+if (session_status() == PHP_SESSION_ACTIVE) {
+    session_write_close();
+}
+
 
 $sDomainValue = "";
 $sLookupMessage = "";
@@ -17,6 +21,7 @@ $sLookupMessageClass = "";
 $sLookupSource = "";
 $aDomainRow = null;
 $aDomainDnsResult = null;
+$aDomainDnsRecords = array();
 
 if (isset($_GET["domain"])) {
     $sDomainValue = (string)$_GET["domain"];
@@ -56,7 +61,16 @@ if (isset($_GET["domain"])) {
             error_log((string)$oException);
             send500AndExit("Database error: " . $oException->getMessage());
         }
-        $aDomainDnsResult = domainLookupFetchDnsRecords($sDomain);
+        if ($aDomainRow && (string)$aDomainRow["result_status"] == "success") {
+            if ((int)$aDomainRow["dns_lookup_disabled"] == 1) {
+                $aDomainDnsResult = domainLookupSkippedDnsResult();
+            } else {
+                $aDomainDnsResult = domainLookupFetchDnsRecords($sDomain);
+                if (isset($aDomainDnsResult["disable_dns_lookup"]) && $aDomainDnsResult["disable_dns_lookup"]) {
+                    domainLookupDisableDnsLookup($oPdo, $sDomain);
+                }
+            }
+        }
     }
 }
 
@@ -112,6 +126,15 @@ if ($aDomainRow) {
 
 }
 if ($aDomainDnsResult) {
+    $aDomainDnsRecords = domainLookupDnsResultRecords($aDomainDnsResult);
+    $sDomainDnsMessage = domainLookupDnsResultMessage($aDomainDnsResult);
+    if ($sDomainDnsMessage != "") {
+        echo "  <p class=\"domain-lookup-message message-warning\">" . html($sDomainDnsMessage) . "</p>\n";
+    } elseif (!$aDomainDnsRecords) {
+        echo "  <p class=\"domain-lookup-message message-warning\">No DNS records were found.</p>\n";
+    }
+}
+if ($aDomainDnsResult && $aDomainDnsRecords) {
 
 ?>
   <table class="domain-dns-table<?php echo getCondensedTableClass(); ?>">

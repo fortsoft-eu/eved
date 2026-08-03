@@ -2359,6 +2359,59 @@ function domainLookupDnsRecordValue($aRecord) {
     return implode("\n", $aFallbackParts);
 }
 
+function domainLookupAddDnsQuery(&$aQueries, $sHost, $aTypes) {
+    if (!isset($aQueries[$sHost])) {
+        $aQueries[$sHost] = array();
+    }
+    foreach ($aTypes as $sType) {
+        $aQueries[$sHost][$sType] = true;
+    }
+}
+
+function domainLookupDnsGuessedQueries($sDomain) {
+    $aQueries = array();
+    foreach (array("www", "mail", "smtp", "imap", "pop", "pop3", "webmail", "autodiscover", "autoconfig", "mta-sts") as $sPrefix) {
+        domainLookupAddDnsQuery($aQueries, $sPrefix . "." . $sDomain, array("A", "AAAA", "CNAME"));
+    }
+    foreach (array("_dmarc", "_domainkey", "_mta-sts", "_smtp._tls", "default._bimi", "_acme-challenge") as $sPrefix) {
+        domainLookupAddDnsQuery($aQueries, $sPrefix . "." . $sDomain, array("TXT"));
+    }
+    foreach (array("default", "dkim", "dkim1", "dkim2", "google", "k1", "mail", "selector1", "selector2", "s1", "s2", "smtp") as $sSelector) {
+        domainLookupAddDnsQuery($aQueries, $sSelector . "._domainkey." . $sDomain, array("TXT", "CNAME"));
+    }
+    foreach (array("_autodiscover._tcp", "_caldav._tcp", "_caldavs._tcp", "_carddav._tcp", "_carddavs._tcp", "_imaps._tcp", "_pop3s._tcp", "_sip._tcp", "_sip._tls", "_sips._tcp", "_submission._tcp", "_xmpp-client._tcp", "_xmpp-server._tcp") as $sPrefix) {
+        domainLookupAddDnsQuery($aQueries, $sPrefix . "." . $sDomain, array("SRV"));
+    }
+    return $aQueries;
+}
+
+function domainLookupAddDnsRecordRows(&$aRows, &$aSeenRecords, $sHost, $sType, $iType) {
+    $fStart = microtime(true);
+    $aRecords = @dns_get_record($sHost, $iType);
+    $fElapsed = microtime(true) - $fStart;
+    if (!is_array($aRecords)) {
+        return $fElapsed;
+    }
+    foreach ($aRecords as $aRecord) {
+        $sRecordType = isset($aRecord["type"]) ? (string)$aRecord["type"] : $sType;
+        $sRecordHost = isset($aRecord["host"]) ? (string)$aRecord["host"] : $sHost;
+        $sTtl = isset($aRecord["ttl"]) ? (string)$aRecord["ttl"] : "";
+        $sValue = domainLookupDnsRecordValue($aRecord);
+        $sSeenKey = strtolower($sRecordType) . "\n" . strtolower($sRecordHost) . "\n" . $sValue;
+        if (isset($aSeenRecords[$sSeenKey])) {
+            continue;
+        }
+        $aSeenRecords[$sSeenKey] = true;
+        $aRows[] = array(
+            "type" => $sRecordType,
+            "host" => $sRecordHost,
+            "ttl" => $sTtl,
+            "value" => $sValue
+        );
+    }
+    return $fElapsed;
+}
+
 function domainLookupFetchDnsRecords($sDomain) {
     $aRows = array();
     if (!function_exists("dns_get_record")) {
@@ -2367,23 +2420,45 @@ function domainLookupFetchDnsRecords($sDomain) {
             "records" => $aRows
         );
     }
-    foreach (domainLookupDnsRecordTypes() as $sType => $iType) {
-        $aRecords = @dns_get_record($sDomain, $iType);
-        if (!is_array($aRecords)) {
-            continue;
+    $aTypes = domainLookupDnsRecordTypes();
+    $aSeenRecords = array();
+    $sMessage = "";
+    $blDisableDnsLookup = false;
+    foreach ($aTypes as $sType => $iType) {
+        $fElapsed = domainLookupAddDnsRecordRows($aRows, $aSeenRecords, $sDomain, $sType, $iType);
+        if ($fElapsed > 10) {
+            $sMessage = "DNS lookup was stopped because " . $sType . " query for " . $sDomain . " took " . number_format($fElapsed, 1, ".", "") . " seconds.";
+            $blDisableDnsLookup = true;
+            break;
         }
-        foreach ($aRecords as $aRecord) {
-            $aRows[] = array(
-                "type" => isset($aRecord["type"]) ? (string)$aRecord["type"] : $sType,
-                "host" => isset($aRecord["host"]) ? (string)$aRecord["host"] : $sDomain,
-                "ttl" => isset($aRecord["ttl"]) ? (string)$aRecord["ttl"] : "",
-                "value" => domainLookupDnsRecordValue($aRecord)
-            );
+    }
+    if (!$blDisableDnsLookup) {
+        foreach (domainLookupDnsGuessedQueries($sDomain) as $sHost => $aQueryTypes) {
+            foreach ($aQueryTypes as $sType => $blEnabled) {
+                if (!isset($aTypes[$sType])) {
+                    continue;
+                }
+                $fElapsed = domainLookupAddDnsRecordRows($aRows, $aSeenRecords, $sHost, $sType, $aTypes[$sType]);
+                if ($fElapsed > 10) {
+                    $sMessage = "DNS lookup was stopped because " . $sType . " query for " . $sHost . " took " . number_format($fElapsed, 1, ".", "") . " seconds.";
+                    $blDisableDnsLookup = true;
+                    break 2;
+                }
+            }
         }
     }
     return array(
-        "message" => "",
-        "records" => $aRows
+        "message" => $sMessage,
+        "records" => $aRows,
+        "disable_dns_lookup" => $blDisableDnsLookup
+    );
+}
+
+function domainLookupSkippedDnsResult() {
+    return array(
+        "message" => "DNS lookup was skipped because a previous DNS query for this domain took more than 10 seconds.",
+        "records" => array(),
+        "disable_dns_lookup" => true
     );
 }
 
@@ -2392,17 +2467,16 @@ function domainLookupRenderDnsValue($mValue) {
     return $sValue == "" ? "<em>&mdash;</em>" : nl2br(html($sValue), false);
 }
 
+function domainLookupDnsResultRecords($aDnsResult) {
+    return isset($aDnsResult["records"]) && is_array($aDnsResult["records"]) ? $aDnsResult["records"] : array();
+}
+
+function domainLookupDnsResultMessage($aDnsResult) {
+    return isset($aDnsResult["message"]) ? trim((string)$aDnsResult["message"]) : "";
+}
+
 function domainLookupRenderDnsRows($aDnsResult) {
-    $aRecords = isset($aDnsResult["records"]) && is_array($aDnsResult["records"]) ? $aDnsResult["records"] : array();
-    $sMessage = isset($aDnsResult["message"]) ? trim((string)$aDnsResult["message"]) : "";
-    if ($sMessage != "") {
-        echo "      <tr><td colspan=\"4\">" . html($sMessage) . "</td></tr>\n";
-        return;
-    }
-    if (!$aRecords) {
-        echo "      <tr><td colspan=\"4\"><em>&mdash;</em></td></tr>\n";
-        return;
-    }
+    $aRecords = domainLookupDnsResultRecords($aDnsResult);
     foreach ($aRecords as $aRecord) {
         echo "      <tr>\n",
             "        <td>" . domainLookupRenderDnsValue($aRecord["type"]) . "</td>\n",
@@ -2539,7 +2613,7 @@ function domainLookupCallApi($sDomain, $sApiKey) {
     $aResult["creation_date"] = isset($aWhois["creation_date"]) ? domainLookupDateForDatabase($aWhois["creation_date"]) : null;
     $aResult["expiration_date"] = isset($aWhois["expiration_date"]) ? domainLookupDateForDatabase($aWhois["expiration_date"]) : null;
     $aResult["name_servers"] = isset($aWhois["name_servers"]) ? domainLookupJsonValue($aWhois["name_servers"]) : null;
-    $aResult["registrant_name"] = isset($aWhois["registrant_name"]) ? domainLookupTextValue($aWhois["registrant_name"]) : null;
+    $aResult["registrant_name"] = isset($aWhois["registrant_name"]) ? domainLookupTextValue($aWhois["registrant_name"]) : (array_key_exists("name", $aWhois) ? domainLookupTextValue($aWhois["name"]) : null);
     $aResult["registrar"] = isset($aWhois["registrar"]) ? domainLookupTextValue($aWhois["registrar"]) : null;
     $aResult["status_text"] = array_key_exists("status", $aWhois) ? domainLookupTextValue($aWhois["status"]) : null;
     $aResult["updated_dates"] = isset($aWhois["updated_date"]) ? domainLookupJsonValue($aWhois["updated_date"]) : null;
@@ -2551,7 +2625,7 @@ function domainLookupCallApi($sDomain, $sApiKey) {
 }
 
 function domainLookupFetchRow($oPdo, $sDomain) {
-    $oStatement = $oPdo->prepare("SELECT id, domain, result_status, message, domain_name, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date_text, DATE_FORMAT(expiration_date, '%Y-%m-%d %H:%i:%s') AS expiration_date_text, name_servers, registrant_name, registrar, status_text, updated_dates, raw_response, http_code, curl_errno, curl_error, UNIX_TIMESTAMP(last_checked_at) AS last_checked_at_ts, DATE_FORMAT(last_checked_at, '%Y-%m-%d %H:%i:%s') AS last_checked_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at_text FROM fs_domains WHERE domain = :domain LIMIT 1");
+    $oStatement = $oPdo->prepare("SELECT id, domain, result_status, message, domain_name, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date_text, DATE_FORMAT(expiration_date, '%Y-%m-%d %H:%i:%s') AS expiration_date_text, name_servers, registrant_name, registrar, status_text, updated_dates, raw_response, http_code, curl_errno, curl_error, dns_lookup_disabled, UNIX_TIMESTAMP(last_checked_at) AS last_checked_at_ts, DATE_FORMAT(last_checked_at, '%Y-%m-%d %H:%i:%s') AS last_checked_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at_text FROM fs_domains WHERE domain = :domain LIMIT 1");
     $oStatement->execute(array("domain" => $sDomain));
     $aRow = $oStatement->fetch();
     return $aRow ? $aRow : null;
@@ -2587,6 +2661,11 @@ function domainLookupSaveResult($oPdo, $aResult) {
     return domainLookupFetchRow($oPdo, $aResult["domain"]);
 }
 
+function domainLookupDisableDnsLookup($oPdo, $sDomain) {
+    $oStatement = $oPdo->prepare("UPDATE fs_domains SET dns_lookup_disabled = 1 WHERE domain = :domain LIMIT 1");
+    $oStatement->execute(array("domain" => $sDomain));
+}
+
 function domainLookupRenderStoredList($sJson) {
     $sJson = (string)$sJson;
     if ($sJson == "") {
@@ -2619,47 +2698,153 @@ function domainLookupRenderValue($mValue) {
     return $sValue == "" ? "<em>&mdash;</em>" : html($sValue);
 }
 
-function domainLookupRenderResultRows($aRow, $sSource) {
-    $aRows = array(
-        "Source" => array("value" => $sSource, "multiline" => false, "date_time" => false),
-        "Result" => array("value" => $aRow["result_status"], "multiline" => false, "date_time" => false),
-        "Message" => array("value" => $aRow["message"], "multiline" => false, "date_time" => false),
-        "Domain" => array("value" => $aRow["domain"], "multiline" => false, "date_time" => false),
-        "API Domain" => array("value" => $aRow["domain_name"], "multiline" => false, "date_time" => false),
-        "Registrar" => array("value" => $aRow["registrar"], "multiline" => false, "date_time" => false),
-        "Registrant" => array("value" => $aRow["registrant_name"], "multiline" => false, "date_time" => false),
-        "Creation Date" => array("value" => $aRow["creation_date_text"], "multiline" => false, "date_time" => true),
-        "Updated Date" => array("value" => domainLookupRenderStoredList($aRow["updated_dates"]), "multiline" => true, "date_time" => true),
-        "Expiration Date" => array("value" => $aRow["expiration_date_text"], "multiline" => false, "date_time" => true),
-        "Name Servers" => array("value" => domainLookupRenderStoredList($aRow["name_servers"]), "multiline" => true, "date_time" => false),
-        "Status" => array("value" => $aRow["status_text"], "multiline" => false, "date_time" => false),
-        "HTTP Code" => array("value" => $aRow["http_code"], "multiline" => false, "date_time" => false),
-        "cURL Error" => array("value" => $aRow["curl_error"], "multiline" => false, "date_time" => false),
-        "Last Checked" => array("value" => $aRow["last_checked_at_text"], "multiline" => false, "date_time" => true),
-        "Stored" => array("value" => $aRow["created_at_text"], "multiline" => false, "date_time" => true),
-        "Updated" => array("value" => $aRow["updated_at_text"], "multiline" => false, "date_time" => true)
-    );
-    foreach ($aRows as $sName => $aValue) {
-        $sValue = trim((string)$aValue["value"]);
-        if ($sValue == "") {
-            $sHtmlValue = domainLookupRenderValue($sValue);
-        } elseif ($aValue["date_time"] && $aValue["multiline"]) {
-            $aDateTimeHtmlLines = array();
-            foreach (explode("\n", $sValue) as $sDateTimeLine) {
-                $aDateTimeHtmlLines[] = renderDateTimeWithNbspIndent($sDateTimeLine);
+function domainLookupRawWhoisResult($aRow) {
+    if (!isset($aRow["raw_response"]) || trim((string)$aRow["raw_response"]) == "") {
+        return array();
+    }
+    $aData = json_decode((string)$aRow["raw_response"], true);
+    if (!is_array($aData)) {
+        return array();
+    }
+    if (isset($aData["result"]) && is_array($aData["result"])) {
+        return $aData["result"];
+    }
+    return $aData;
+}
+
+function domainLookupRawWhoisTextValue($mValue) {
+    if ($mValue === null) {
+        return "";
+    }
+    if (is_bool($mValue)) {
+        return $mValue ? "true" : "false";
+    }
+    if (is_scalar($mValue)) {
+        return (string)$mValue;
+    }
+    if (!is_array($mValue) || !$mValue) {
+        return "";
+    }
+    if (array_keys($mValue) === range(0, count($mValue) - 1)) {
+        $aLines = array();
+        foreach ($mValue as $mLineValue) {
+            if ($mLineValue === null) {
+                $aLines[] = "";
+            } elseif (is_bool($mLineValue)) {
+                $aLines[] = $mLineValue ? "true" : "false";
+            } elseif (is_scalar($mLineValue)) {
+                $aLines[] = (string)$mLineValue;
+            } else {
+                $sJson = json_encode($mLineValue, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $aLines[] = $sJson === false ? "" : $sJson;
             }
-            $sHtmlValue = implode("<br>", $aDateTimeHtmlLines);
-        } elseif ($aValue["date_time"]) {
-            $sHtmlValue = renderDateTimeWithNbspIndent($sValue);
-        } else {
-            $sHtmlValue = html($sValue);
         }
-        if ($sValue != "" && $aValue["multiline"] && !$aValue["date_time"]) {
-            $sHtmlValue = nl2br($sHtmlValue, false);
+        return implode("\n", $aLines);
+    }
+    $sJson = json_encode($mValue, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+    return $sJson === false ? "" : $sJson;
+}
+
+function domainLookupRawWhoisValue($aWhois, $sName) {
+    if (!array_key_exists($sName, $aWhois)) {
+        return "";
+    }
+    return domainLookupRawWhoisTextValue($aWhois[$sName]);
+}
+
+function domainLookupKnownWhoisFields() {
+    return array(
+        "result" => array("name" => "Result", "multiline" => false, "date_time" => false),
+        "message" => array("name" => "Message", "multiline" => false, "date_time" => false),
+        "domain_name" => array("name" => "API Domain", "multiline" => false, "date_time" => false),
+        "registrar" => array("name" => "Registrar", "multiline" => false, "date_time" => false),
+        "whois_server" => array("name" => "WHOIS Server", "multiline" => false, "date_time" => false),
+        "registrant_name" => array("name" => "Registrant", "multiline" => false, "date_time" => false),
+        "name" => array("name" => "Name", "multiline" => false, "date_time" => false),
+        "org" => array("name" => "Organization", "multiline" => false, "date_time" => false),
+        "address" => array("name" => "Address", "multiline" => true, "date_time" => false),
+        "city" => array("name" => "City", "multiline" => false, "date_time" => false),
+        "state" => array("name" => "State", "multiline" => false, "date_time" => false),
+        "registrant_postal_code" => array("name" => "Postal Code", "multiline" => false, "date_time" => false),
+        "country" => array("name" => "Country", "multiline" => false, "date_time" => false),
+        "dnssec" => array("name" => "DNSSEC", "multiline" => false, "date_time" => false),
+        "emails" => array("name" => "Emails", "multiline" => true, "date_time" => false),
+        "referral_url" => array("name" => "Referral URL", "multiline" => false, "date_time" => false),
+        "creation_date" => array("name" => "Creation Date", "multiline" => false, "date_time" => true),
+        "updated_date" => array("name" => "Updated Date", "multiline" => true, "date_time" => true),
+        "expiration_date" => array("name" => "Expiration Date", "multiline" => false, "date_time" => true),
+        "name_servers" => array("name" => "Name Servers", "multiline" => true, "date_time" => false),
+        "status" => array("name" => "Status", "multiline" => true, "date_time" => false),
+        "error" => array("name" => "Error", "multiline" => true, "date_time" => false),
+        "code" => array("name" => "Code", "multiline" => false, "date_time" => false)
+    );
+}
+
+function domainLookupWhoisFieldLabel($sName) {
+    $sLabel = ucwords(str_replace("_", " ", (string)$sName));
+    return strtr($sLabel, array(
+        "DNSSEC" => "DNSSEC",
+        "Dnssec" => "DNSSEC",
+        "Dns" => "DNS",
+        "Url" => "URL",
+        "Api" => "API",
+        "Idn" => "IDN",
+        "Id" => "ID",
+        "Ip" => "IP",
+        "Tld" => "TLD",
+        "Whois" => "WHOIS"
+    ));
+}
+
+function domainLookupRenderResultRow($sName, $mValue, $blMultiline, $blDateTime) {
+    $sValue = trim(domainLookupRawWhoisTextValue($mValue));
+    if ($sValue == "") {
+        $sHtmlValue = domainLookupRenderValue($sValue);
+    } elseif ($blDateTime && $blMultiline) {
+        $aDateTimeHtmlLines = array();
+        foreach (explode("\n", $sValue) as $sDateTimeLine) {
+            $aDateTimeHtmlLines[] = renderDateTimeWithNbspIndent($sDateTimeLine);
         }
-        echo "      <tr>\n",
-            "        <th>" . html($sName) . "</th>\n",
-            "        <td>" . $sHtmlValue . "</td>\n",
-            "      </tr>\n";
+        $sHtmlValue = implode("<br>", $aDateTimeHtmlLines);
+    } elseif ($blDateTime) {
+        $sHtmlValue = renderDateTimeWithNbspIndent($sValue);
+    } else {
+        $sHtmlValue = html($sValue);
+    }
+    if ($sValue != "" && $blMultiline && !$blDateTime) {
+        $sHtmlValue = nl2br($sHtmlValue, false);
+    }
+    echo "      <tr>\n",
+        "        <th>" . html($sName) . "</th>\n",
+        "        <td>" . $sHtmlValue . "</td>\n",
+        "      </tr>\n";
+}
+
+function domainLookupRenderResultRows($aRow, $sSource) {
+    $aRawWhois = domainLookupRawWhoisResult($aRow);
+    $aKnownFields = domainLookupKnownWhoisFields();
+    $aRenderedFields = array();
+    foreach ($aKnownFields as $sName => $aField) {
+        if (!array_key_exists($sName, $aRawWhois)) {
+            continue;
+        }
+        domainLookupRenderResultRow($aField["name"], $aRawWhois[$sName], $aField["multiline"], $aField["date_time"]);
+        $aRenderedFields[$sName] = true;
+    }
+    foreach ($aRawWhois as $sName => $mValue) {
+        if (isset($aRenderedFields[$sName])) {
+            continue;
+        }
+        domainLookupRenderResultRow(domainLookupWhoisFieldLabel($sName), $mValue, true, false);
+        $aRenderedFields[$sName] = true;
+    }
+    if (!$aRenderedFields) {
+        $aRows = array(
+            "Result" => array("value" => $aRow["result_status"], "multiline" => false, "date_time" => false),
+            "Message" => array("value" => $aRow["message"], "multiline" => false, "date_time" => false)
+        );
+        foreach ($aRows as $sName => $aValue) {
+            domainLookupRenderResultRow($sName, $aValue["value"], $aValue["multiline"], $aValue["date_time"]);
+        }
     }
 }
