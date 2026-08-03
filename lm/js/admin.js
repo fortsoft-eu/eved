@@ -2,6 +2,8 @@ var iAdminModalCount = 0;
 var sAdminBodyOverflow = "";
 var iAdminScrollLeft = 0;
 var iAdminScrollTop = 0;
+var oSbPmdDropdown = null;
+var iSbPmdDropdownToken = 0;
 
 function logAdminException(oException) {
     if (window.console && window.console.error) {
@@ -3330,7 +3332,7 @@ function bindSnippetBoardPageScrollLock() {
     lockSnippetBoardPageScroll();
 }
 
-function getSnippetBoardPmdToolbarHoverButton(oTarget) {
+function getSbPmdHoverButton(oTarget) {
     var oButton;
     var oParent;
     var sClass;
@@ -3353,59 +3355,170 @@ function getSnippetBoardPmdToolbarHoverButton(oTarget) {
     return oButton;
 }
 
-function clearSnippetBoardPmdToolbarHoverButtons(oCurrentButton) {
+function isSbPmdDropdownButton(oButton) {
+    var sClass;
+    var sHasPopup;
+    var sName;
+    var oParent;
+    var sParentClass;
+    if (!oButton || typeof oButton.getAttribute != "function") {
+        return false;
+    }
+    sClass = " " + (oButton.getAttribute("class") || "") + " ";
+    sHasPopup = oButton.getAttribute("aria-haspopup") || "";
+    sName = oButton.getAttribute("data-mce-name") || "";
+    if (sClass.indexOf(" tox-split-button ") !== -1
+        || sClass.indexOf(" tox-tbtn--select ") !== -1
+        || sClass.indexOf(" tox-tbtn--bespoke ") !== -1
+        || (sHasPopup != "" && sHasPopup != "false")
+        || sName.substring(sName.length - 8) == "-chevron") {
+        return true;
+    }
+    oParent = oButton.parentNode;
+    sParentClass = oParent && typeof oParent.getAttribute == "function" ? " " + (oParent.getAttribute("class") || "") + " " : "";
+    return sParentClass.indexOf(" tox-split-button ") !== -1;
+}
+
+function clearSbPmdHoverButton(oButton, blExpire) {
+    if (!oButton) {
+        return;
+    }
+    if (oButton._sbPmdHoverTimer && window.clearTimeout) {
+        window.clearTimeout(oButton._sbPmdHoverTimer);
+    }
+    oButton._sbPmdHoverTimer = null;
+    removeAdminClass(oButton, "snippet-board-pmd-hover-active");
+    if (blExpire) {
+        addAdminClass(oButton, "snippet-board-pmd-hover-expired");
+    } else {
+        removeAdminClass(oButton, "snippet-board-pmd-hover-expired");
+    }
+}
+
+function getSbPmdDropdownMenu() {
+    var aMenus = document.querySelectorAll("body.snippet-board-page .tox.tox-tinymce-aux .tox-menu, body.snippet-board-page .tox.tox-tinymce-aux .tox-dropdown-content, body.snippet-board-page .tox.tox-tinymce-aux .tox-collection, body.snippet-board-page .tox.tox-tinymce-aux [role=\"menu\"], body.snippet-board-page .tox.tox-tinymce-aux [role=\"listbox\"]");
+    var i;
+    for (i = 0; i < aMenus.length; i++) {
+        if (aMenus[i].getClientRects && aMenus[i].getClientRects().length > 0) {
+            return aMenus[i];
+        }
+    }
+    return null;
+}
+
+function clearSbPmdDropdown() {
+    var oButton = oSbPmdDropdown;
+    if (!oSbPmdDropdown) {
+        return;
+    }
+    oSbPmdDropdown = null;
+    iSbPmdDropdownToken += 1;
+    clearSbPmdHoverButton(oButton, true);
+}
+
+function syncSbPmdDropdown(iToken, blCloseWhenMissing) {
+    if (!oSbPmdDropdown || iToken != iSbPmdDropdownToken) {
+        return;
+    }
+    if (getSbPmdDropdownMenu()) {
+        removeAdminClass(oSbPmdDropdown, "snippet-board-pmd-hover-expired");
+        addAdminClass(oSbPmdDropdown, "snippet-board-pmd-hover-active");
+    } else if (blCloseWhenMissing) {
+        clearSbPmdDropdown();
+    }
+}
+
+function scheduleSbPmdDropdownSync(iToken, iDelay, blCloseWhenMissing) {
+    if (!window.setTimeout) {
+        return;
+    }
+    window.setTimeout(function() {
+        syncSbPmdDropdown(iToken, blCloseWhenMissing);
+    }, iDelay);
+}
+
+function watchSbPmdDropdown(oButton) {
+    var iToken;
+    if (!oButton || !window.setTimeout) {
+        return;
+    }
+    oSbPmdDropdown = oButton;
+    iSbPmdDropdownToken += 1;
+    iToken = iSbPmdDropdownToken;
+    removeAdminClass(oButton, "snippet-board-pmd-hover-expired");
+    syncSbPmdDropdown(iToken, false);
+    scheduleSbPmdDropdownSync(iToken, 0, false);
+    scheduleSbPmdDropdownSync(iToken, 80, false);
+    scheduleSbPmdDropdownSync(iToken, 250, false);
+    scheduleSbPmdDropdownSync(iToken, 1200, true);
+}
+
+function clearSbPmdHoverButtons(oCurrentButton) {
     var aButtons = document.querySelectorAll(".snippet-board-form .tox .snippet-board-pmd-hover-active, .snippet-board-form .tox .snippet-board-pmd-hover-expired");
     var i;
     for (i = 0; i < aButtons.length; i++) {
         if (aButtons[i] == oCurrentButton) {
             continue;
         }
-        if (aButtons[i]._snippetBoardPmdHoverTimer) {
-            window.clearTimeout(aButtons[i]._snippetBoardPmdHoverTimer);
-            aButtons[i]._snippetBoardPmdHoverTimer = null;
-        }
-        removeAdminClass(aButtons[i], "snippet-board-pmd-hover-active");
-        addAdminClass(aButtons[i], "snippet-board-pmd-hover-expired");
+        clearSbPmdHoverButton(aButtons[i], true);
     }
 }
 
-function startSnippetBoardPmdToolbarHoverTimeout(oButton) {
+function startSbPmdHoverTimeout(oButton) {
     if (!oButton || !window.setTimeout || !window.clearTimeout) {
         return;
     }
-    clearSnippetBoardPmdToolbarHoverButtons(oButton);
+    clearSbPmdHoverButtons(oButton);
     removeAdminClass(oButton, "snippet-board-pmd-hover-expired");
     addAdminClass(oButton, "snippet-board-pmd-hover-active");
-    if (oButton._snippetBoardPmdHoverTimer) {
-        window.clearTimeout(oButton._snippetBoardPmdHoverTimer);
+    if (oButton._sbPmdHoverTimer) {
+        window.clearTimeout(oButton._sbPmdHoverTimer);
     }
-    oButton._snippetBoardPmdHoverTimer = window.setTimeout(function() {
-        oButton._snippetBoardPmdHoverTimer = null;
-        removeAdminClass(oButton, "snippet-board-pmd-hover-active");
-        addAdminClass(oButton, "snippet-board-pmd-hover-expired");
+    oButton._sbPmdHoverTimer = window.setTimeout(function() {
+        clearSbPmdHoverButton(oButton, true);
     }, 1000);
 }
 
-function handleSnippetBoardPmdToolbarHoverStart(oEvent) {
+function handleSbPmdHoverStart(oEvent) {
     var oButton;
     if (!isSnippetBoardPmdLike() || (oEvent.pointerType && oEvent.pointerType == "mouse")) {
         return;
     }
-    oButton = getSnippetBoardPmdToolbarHoverButton(oEvent.target);
+    oButton = getSbPmdHoverButton(oEvent.target);
     if (oButton) {
-        startSnippetBoardPmdToolbarHoverTimeout(oButton);
+        if (isSbPmdDropdownButton(oButton)) {
+            if (oSbPmdDropdown && oSbPmdDropdown != oButton) {
+                clearSbPmdDropdown();
+            }
+            clearSbPmdHoverButtons(oButton);
+            clearSbPmdHoverButton(oButton, false);
+            watchSbPmdDropdown(oButton);
+        } else {
+            clearSbPmdDropdown();
+            startSbPmdHoverTimeout(oButton);
+        }
+    } else if (!oEvent.target.closest || !oEvent.target.closest(".tox.tox-tinymce-aux")) {
+        clearSbPmdDropdown();
     }
 }
 
-function bindSnippetBoardPmdToolbarHoverTimeout() {
+function handleSbPmdDropdownMenuClick(oEvent) {
+    if (!isSnippetBoardPmdLike() || !oSbPmdDropdown || !oEvent.target.closest || !oEvent.target.closest(".tox.tox-tinymce-aux")) {
+        return;
+    }
+    window.setTimeout(clearSbPmdDropdown, 0);
+}
+
+function bindSbPmdHoverTimeout() {
     if (!document.body || (" " + document.body.className + " ").indexOf(" snippet-board-page ") === -1) {
         return;
     }
     if (window.PointerEvent) {
-        document.addEventListener("pointerdown", handleSnippetBoardPmdToolbarHoverStart, {passive: true});
+        document.addEventListener("pointerdown", handleSbPmdHoverStart, {passive: true});
     } else {
-        document.addEventListener("touchstart", handleSnippetBoardPmdToolbarHoverStart, {passive: true});
+        document.addEventListener("touchstart", handleSbPmdHoverStart, {passive: true});
     }
+    document.addEventListener("click", handleSbPmdDropdownMenuClick);
 }
 
 function getSnippetBoardEditorScrollState(oEditor) {
@@ -4500,7 +4613,7 @@ document.addEventListener("DOMContentLoaded", function() {
     bindIssueTracker();
     bindAdminSubmitOnChange();
     bindSnippetBoardPageScrollLock();
-    bindSnippetBoardPmdToolbarHoverTimeout();
+    bindSbPmdHoverTimeout();
     bindSnippetBoardTabs();
     bindSnippetBoardForm();
     bindSnippetBoardTinyMce();
