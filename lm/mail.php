@@ -303,7 +303,11 @@ function mailFormEncodeHeader($sValue) {
 }
 
 function mailFormHtmlBodyIsEmpty($sValue) {
-    $sText = html_entity_decode(strip_tags((string)$sValue), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sHtml = preg_replace("/<\s*(script|style)[^>]*>.*?<\s*\/\s*\\1\s*>/is", "", (string)$sValue);
+    if (preg_match("/<\s*img\b/i", $sHtml)) {
+        return false;
+    }
+    $sText = html_entity_decode(strip_tags($sHtml), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     return trim($sText) == "";
 }
 
@@ -512,7 +516,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($aMailValues["reply_to"] != "" && $aReplyTo === false) {
             mailFormAddError($aErrors, "Invalid Reply-To.");
         }
-        if (mailFormHtmlBodyIsEmpty($aMailValues["message"])) {
+        $blMailBodyIsEmpty = $sMailBodyFormat == "plain" ? mailFormBuildPlainTextMessage($aMailValues["message"]) == "" : mailFormHtmlBodyIsEmpty($aMailValues["message"]);
+        if ($blMailBodyIsEmpty) {
             mailFormAddError($aErrors, "Message required.");
         }
         if (!$aErrors && !function_exists("mail")) {
@@ -575,38 +580,38 @@ renderMenu();
     <button type="submit" form="mail-form" name="mail_body_format" value="plain" class="button-link mail-send-button">Send plain text</button>
     <span class="mail-form-status <?php echo html($sMailStatusClass); ?>" aria-live="polite"><?php echo html($sMailStatus); ?></span>
   </p>
-  <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="mail-form" class="snippet-board-form mail-form" data-mail-allowed-sender-domains="<?php echo html(json_encode($aMailAllowedSenderDomains)); ?>" data-mail-restrict-from-to-single-address="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
+  <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="mail-form" class="snippet-board-form mail-form" autocomplete="on" data-mail-allowed-sender-domains="<?php echo html(json_encode($aMailAllowedSenderDomains)); ?>" data-mail-restrict-from-to-single-address="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
     <input type="hidden" name="action" value="send_mail">
     <input type="hidden" name="lm_csrf_token" value="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
     <input type="hidden" name="mail_rich_text_paste" class="js-mail-rich-text-paste" value="<?php echo (int)$iMailRichTextPaste; ?>">
     <div class="mail-form-fields">
       <label for="mail-to">To:</label>
-      <input type="text" id="mail-to" name="mail_to" value="<?php echo html($aMailValues["to"]); ?>" autocomplete="email" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-to" name="mail_to" value="<?php echo html($aMailValues["to"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
       <label for="mail-cc">Carbon Copy:</label>
-      <input type="text" id="mail-cc" name="mail_cc" value="<?php echo html($aMailValues["cc"]); ?>" autocomplete="email" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-cc" name="mail_cc" value="<?php echo html($aMailValues["cc"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
       <label for="mail-bcc">Blind Carbon Copy:</label>
-      <input type="text" id="mail-bcc" name="mail_bcc" value="<?php echo html($aMailValues["bcc"]); ?>" autocomplete="email" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-bcc" name="mail_bcc" value="<?php echo html($aMailValues["bcc"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
       <label for="mail-from">From:</label>
-      <input type="text" id="mail-from" name="mail_from" value="<?php echo html($aMailValues["from"]); ?>" autocomplete="email" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-from" name="mail_from" value="<?php echo html($aMailValues["from"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
 <?php
 
 if (!$blMailRestrictFromToSingleAddress) {
 
 ?>
       <label for="mail-sender">Sender:</label>
-      <input type="text" id="mail-sender" name="mail_sender" value="<?php echo html($aMailValues["sender"]); ?>" autocomplete="email" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-sender" name="mail_sender" value="<?php echo html($aMailValues["sender"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
 <?php
 
 }
 
 ?>
       <label for="mail-reply-to">Reply-To:</label>
-      <input type="text" id="mail-reply-to" name="mail_reply_to" value="<?php echo html($aMailValues["reply_to"]); ?>" autocomplete="email" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-reply-to" name="mail_reply_to" value="<?php echo html($aMailValues["reply_to"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
       <label for="mail-subject">Subject:</label>
-      <input type="text" id="mail-subject" name="mail_subject" value="<?php echo html($aMailValues["subject"]); ?>" autocomplete="off">
+      <input type="text" id="mail-subject" name="mail_subject" value="<?php echo html($aMailValues["subject"]); ?>" autocomplete="on">
     </div>
     <label for="mail-message" class="mail-message-label">Message:</label>
-    <textarea id="mail-message" name="mail_message" class="snippet-board-textarea js-snippet-board-textarea mail-message-textarea" rows="18" autocomplete="off" spellcheck="true"><?php echo html($aMailValues["message"]); ?></textarea>
+    <textarea id="mail-message" name="mail_message" class="snippet-board-textarea js-snippet-board-textarea mail-message-textarea" rows="18" spellcheck="true"><?php echo html($aMailValues["message"]); ?></textarea>
   </form>
   <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/tinymce-8.8.1/tinymce.min.js"></script>

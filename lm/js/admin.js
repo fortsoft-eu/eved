@@ -3564,10 +3564,13 @@ function mailFormEmailListUsesAllowedSenderDomains(aEmailList, aAllowedDomains) 
     return true;
 }
 
-function isMailFormHtmlBodyEmpty(sValue) {
+function isMailFormBodyEmpty(sValue, sBodyFormat) {
     var oNode = document.createElement("div");
     var sText = String(sValue || "");
     sText = sText.replace(/<\s*(script|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/ig, "");
+    if (sBodyFormat != "plain" && /<\s*img\b/i.test(sText)) {
+        return false;
+    }
     sText = sText.replace(/<\s*br\s*\/?\s*>/ig, "\n");
     sText = sText.replace(/<\s*\/\s*(p|div|h[1-6]|li|tr|blockquote|pre|table|ul|ol)\s*>/ig, "\n");
     sText = sText.replace(/<\s*\/\s*(td|th)\s*>/ig, "\t");
@@ -3576,7 +3579,7 @@ function isMailFormHtmlBodyEmpty(sValue) {
     return sText == "";
 }
 
-function validateMailForm(oForm) {
+function validateMailForm(oForm, sBodyFormat) {
     var aErrors = [];
     var sTo = getMailFormFieldValue(oForm, "mail_to");
     var sCc = getMailFormFieldValue(oForm, "mail_cc");
@@ -3627,7 +3630,7 @@ function validateMailForm(oForm) {
     if (sReplyTo != "" && aReplyTo === false) {
         aErrors.push({message: "Invalid Reply-To.", field: "mail_reply_to"});
     }
-    if (isMailFormHtmlBodyEmpty(sMessage)) {
+    if (isMailFormBodyEmpty(sMessage, sBodyFormat == "plain" ? "plain" : "html")) {
         aErrors.push({message: "Message required.", field: "mail_message"});
     }
     return {errors: aErrors};
@@ -3672,10 +3675,12 @@ function bindMailForm() {
     oForm.addEventListener("submit", function(oEvent) {
         var aValidation;
         var oField;
+        var oSubmitter = oEvent && oEvent.submitter ? oEvent.submitter : document.activeElement;
+        var sBodyFormat = oSubmitter && oSubmitter.name == "mail_body_format" && oSubmitter.value == "plain" ? "plain" : "html";
         if (window.tinymce && typeof window.tinymce.triggerSave == "function") {
             window.tinymce.triggerSave();
         }
-        aValidation = validateMailForm(oForm);
+        aValidation = validateMailForm(oForm, sBodyFormat);
         if (aValidation.errors && aValidation.errors.length > 0) {
             if (oEvent && typeof oEvent.preventDefault == "function") {
                 oEvent.preventDefault();
