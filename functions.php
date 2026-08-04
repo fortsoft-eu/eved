@@ -1236,7 +1236,6 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
     $iTime = sendPageHeaders();
     $sScriptDirectory = dirname((string)$_SERVER["SCRIPT_FILENAME"]);
     $sLoginScriptUrl = htmlspecialchars($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime($sScriptDirectory . "/js/admin.js")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-    $sFaviconUrl = htmlspecialchars($sBaseUrl . "favicon.ico", ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     $sAdminCssUrl = htmlspecialchars($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     $sAction = htmlspecialchars(getCurrentUrlWithoutAuthActionForToken($sTokenName), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     $sToken = htmlspecialchars(getLoginToken(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
@@ -1247,8 +1246,8 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n",
         "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n",
         "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n",
-        "  <link rel=\"icon\" href=\"" . $sFaviconUrl . "\" type=\"image/x-icon\">\n",
-        "  <link rel=\"shortcut icon\" href=\"" . $sFaviconUrl . "\" type=\"image/x-icon\">\n",
+        "  <link rel=\"icon\" href=\"" . $sBaseUrl . "favicon.ico\" type=\"image/x-icon\">\n",
+        "  <link rel=\"shortcut icon\" href=\"" . $sBaseUrl . "favicon.ico\" type=\"image/x-icon\">\n",
         "  <title>Sign In</title>\n",
         "  <meta name=\"date\" content=\"" . gmdate("D, d M Y H:i:s", $iTime) . " GMT\">\n",
         "  <link href=\"" . $sAdminCssUrl . "\" rel=\"stylesheet\" type=\"text/css\">\n",
