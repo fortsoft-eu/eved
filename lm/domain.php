@@ -19,38 +19,59 @@ $sDomainValue = "";
 $sLookupMessage = "";
 $sLookupMessageClass = "";
 $sLookupSource = "";
+$sLookupCaption = "";
+$blLookupIsIp = false;
 $aDomainRow = null;
 $aDomainDnsResult = null;
 $aDomainDnsRecords = array();
 
 if (isset($_GET["domain"])) {
     $sDomainValue = (string)$_GET["domain"];
-    $sDomain = domainLookupNormalizeDomain($sDomainValue);
-    if ($sDomain == "") {
-        $sLookupMessage = "Enter a domain name.";
+    $sLookupValue = domainLookupNormalizeValue($sDomainValue);
+    if ($sLookupValue == "") {
+        $sLookupMessage = "Enter a domain name or IP address.";
         $sLookupMessageClass = "message-error";
-    } elseif (!domainLookupDomainShapeIsValid($sDomain)) {
-        $sDomainValue = $sDomain;
-        $sLookupMessage = "Enter a valid domain name.";
-        $sLookupMessageClass = "message-error";
-    } elseif (!domainLookupDomainTldIsSupported($sDomain)) {
-        $sDomainValue = $sDomain;
-        $sLookupMessage = "This domain suffix is not supported.";
-        $sLookupMessageClass = "message-error";
+    } elseif (domainLookupIpAddressIsValid($sLookupValue)) {
+        $blLookupIsIp = true;
+        $sDomainValue = $sLookupValue;
+        $sLookupCaption = "IP Data";
     } else {
-        $sDomainValue = $sDomain;
+        $sDomain = $sLookupValue;
+        if (!domainLookupDomainShapeIsValid($sDomain)) {
+            $sDomainValue = $sDomain;
+            $sLookupMessage = "Enter a valid domain name or IP address.";
+            $sLookupMessageClass = "message-error";
+        } elseif (!domainLookupDomainTldIsSupported($sDomain)) {
+            $sDomainValue = $sDomain;
+            $sLookupMessage = "This domain suffix is not supported.";
+            $sLookupMessageClass = "message-error";
+        } else {
+            $sDomainValue = $sDomain;
+            $sLookupCaption = "WHOIS Data";
+        }
+    }
+    if ($sLookupMessage == "") {
         try {
-            $aCachedRow = domainLookupFetchRow($oPdo, $sDomain);
-            if ($aCachedRow && !domainLookupNeedsApiCall($aCachedRow)) {
+            $aCachedRow = domainLookupFetchRow($oPdo, $sLookupValue);
+            if ($aCachedRow && (!$blLookupIsIp || $aCachedRow["reverse_dns"] !== null) && !domainLookupNeedsApiCall($aCachedRow, $blLookupIsIp ? 2592000 : 14400)) {
                 $aDomainRow = $aCachedRow;
                 $sLookupSource = "Database cache";
-                $sLookupMessage = "Cached result was loaded from the database.";
+                $sLookupMessage = $blLookupIsIp ? "Cached IP data was loaded from the database." : "Cached result was loaded from the database.";
                 $sLookupMessageClass = (string)$aDomainRow["result_status"] == "success" ? "message-success" : "message-warning";
             } else {
-                $aDomainRow = domainLookupSaveResult($oPdo, domainLookupCallApi($sDomain, trim((string)$sApiLayerWhoisApiKey)));
+                $aLookupResult = $blLookupIsIp ? domainLookupCallIpApi($sLookupValue, trim((string)$sAbstractIpIntelligenceApiKey)) : domainLookupCallApi($sLookupValue, trim((string)$sApiLayerWhoisApiKey));
+                if ($blLookupIsIp) {
+                    $sReverseDns = "";
+                    $sHostName = @gethostbyaddr($sLookupValue);
+                    if (is_string($sHostName) && $sHostName != "" && strtolower($sHostName) != strtolower($sLookupValue)) {
+                        $sReverseDns = rtrim($sHostName, ".");
+                    }
+                    $aLookupResult["reverse_dns"] = $sReverseDns;
+                }
+                $aDomainRow = domainLookupSaveResult($oPdo, $aLookupResult);
                 $sLookupSource = "API";
                 if ((string)$aDomainRow["result_status"] == "success") {
-                    $sLookupMessage = "Domain data was loaded from the API and saved to the database.";
+                    $sLookupMessage = $blLookupIsIp ? "IP data was loaded from the API and saved to the database." : "Domain data was loaded from the API and saved to the database.";
                     $sLookupMessageClass = "message-success";
                 } else {
                     $sLookupMessage = "API returned an error. The error was saved to the database.";
@@ -61,13 +82,13 @@ if (isset($_GET["domain"])) {
             error_log((string)$oException);
             send500AndExit("Database error: " . $oException->getMessage());
         }
-        if ($aDomainRow && (string)$aDomainRow["result_status"] == "success") {
+        if (!$blLookupIsIp && $aDomainRow && (string)$aDomainRow["result_status"] == "success") {
             if ((int)$aDomainRow["dns_lookup_disabled"] == 1) {
                 $aDomainDnsResult = domainLookupSkippedDnsResult();
             } else {
-                $aDomainDnsResult = domainLookupFetchDnsRecords($sDomain);
+                $aDomainDnsResult = domainLookupFetchDnsRecords($sLookupValue);
                 if (isset($aDomainDnsResult["disable_dns_lookup"]) && $aDomainDnsResult["disable_dns_lookup"]) {
-                    domainLookupDisableDnsLookup($oPdo, $sDomain);
+                    domainLookupDisableDnsLookup($oPdo, $sLookupValue);
                 }
             }
         }
@@ -100,7 +121,7 @@ $iTime = sendPageHeaders();
 renderMenu();
 
 ?>
-    <label for="domain">Domain:</label>
+    <label for="domain">Domain/IP:</label>
     <input type="text" id="domain" name="domain" class="domain-lookup-input" form="domain-lookup-form" value="<?php echo html($sDomainValue); ?>" spellcheck="false" required>
     <button type="submit" form="domain-lookup-form" class="button-link domain-lookup-button">Lookup</button>
   </p>
@@ -109,11 +130,27 @@ renderMenu();
 if ($sLookupMessage != "") {
     echo "  <p class=\"domain-lookup-message " . html($sLookupMessageClass) . "\">" . html($sLookupMessage) . "</p>\n";
 }
+if ($blLookupIsIp && $aDomainRow) {
+
+?>
+  <table class="domain-result-table<?php echo getCondensedTableClass(); ?>">
+    <caption>Reverse DNS</caption>
+    <tbody>
+<?php
+
+    domainLookupRenderResultRow("Host Name", $aDomainRow["reverse_dns"], false, false);
+
+?>
+    </tbody>
+  </table>
+<?php
+
+}
 if ($aDomainRow) {
 
 ?>
   <table class="domain-result-table<?php echo getCondensedTableClass(); ?>">
-    <caption>WHOIS Data</caption>
+    <caption><?php echo html($sLookupCaption); ?></caption>
     <tbody>
 <?php
 

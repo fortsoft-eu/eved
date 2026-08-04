@@ -2262,6 +2262,39 @@ function domainLookupNormalizeDomain($sValue) {
     return $sValue;
 }
 
+function domainLookupNormalizeValue($sValue) {
+    $sValue = trim((string)$sValue);
+    if ($sValue == "") {
+        return "";
+    }
+    if (strpos($sValue, "://") !== false) {
+        $sHost = parse_url($sValue, PHP_URL_HOST);
+        if (is_string($sHost) && $sHost != "") {
+            $sValue = $sHost;
+        }
+    } elseif (substr($sValue, 0, 2) == "//") {
+        $sHost = parse_url("https:" . $sValue, PHP_URL_HOST);
+        if (is_string($sHost) && $sHost != "") {
+            $sValue = $sHost;
+        }
+    } else {
+        $sValue = preg_replace("~[/?#].*$~", "", $sValue);
+    }
+    $sValue = trim($sValue);
+    $sIpValue = trim($sValue, "[] \t\r\n");
+    if (domainLookupIpAddressIsValid($sIpValue)) {
+        return strtolower($sIpValue);
+    }
+    if (preg_match("/^(.+):[0-9]+$/", $sIpValue, $aMatches) && domainLookupIpAddressIsValid($aMatches[1])) {
+        return strtolower($aMatches[1]);
+    }
+    return domainLookupNormalizeDomain($sValue);
+}
+
+function domainLookupIpAddressIsValid($sValue) {
+    return filter_var(trim((string)$sValue), FILTER_VALIDATE_IP) !== false;
+}
+
 function domainLookupSupportedTlds() {
     return array(
         "com" => true,
@@ -2618,6 +2651,7 @@ function domainLookupEmptyResult($sDomain) {
         "result_status" => "error",
         "message" => "",
         "domain_name" => null,
+        "reverse_dns" => null,
         "creation_date" => null,
         "expiration_date" => null,
         "name_servers" => null,
@@ -2633,6 +2667,19 @@ function domainLookupEmptyResult($sDomain) {
 }
 
 function domainLookupExtractApiErrorMessage($aData, $iHttpCode) {
+    if (isset($aData["details"]) && is_array($aData["details"])) {
+        foreach ($aData["details"] as $sDetailName => $mDetailValue) {
+            if (is_array($mDetailValue)) {
+                foreach ($mDetailValue as $mDetailLine) {
+                    if (is_scalar($mDetailLine) && (string)$mDetailLine != "") {
+                        return (string)$sDetailName . ": " . (string)$mDetailLine;
+                    }
+                }
+            } elseif (is_scalar($mDetailValue) && (string)$mDetailValue != "") {
+                return (string)$sDetailName . ": " . (string)$mDetailValue;
+            }
+        }
+    }
     if (isset($aData["message"]) && is_scalar($aData["message"]) && (string)$aData["message"] != "") {
         return (string)$aData["message"];
     }
@@ -2720,28 +2767,84 @@ function domainLookupCallApi($sDomain, $sApiKey) {
     return $aResult;
 }
 
+function domainLookupCallIpApi($sIpAddress, $sApiKey) {
+    if (!function_exists("curl_init")) {
+        return domainLookupBuildErrorResult($sIpAddress, "PHP cURL extension is not available.");
+    }
+    if (trim((string)$sApiKey) == "") {
+        return domainLookupBuildErrorResult($sIpAddress, "API key is missing.");
+    }
+    $oCurl = curl_init();
+    curl_setopt_array($oCurl, array(
+        CURLOPT_URL => "https://ip-intelligence.abstractapi.com/v1/?api_key=" . rawurlencode($sApiKey) . "&ip_address=" . rawurlencode($sIpAddress),
+        CURLOPT_HTTPHEADER => array(
+            "Accept: application/json"
+        ),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => "GET"
+    ));
+    $sResponse = curl_exec($oCurl);
+    $iCurlErrno = curl_errno($oCurl);
+    $sCurlError = curl_error($oCurl);
+    $iHttpCode = (int)curl_getinfo($oCurl, CURLINFO_HTTP_CODE);
+    if ($sResponse === false) {
+        return domainLookupBuildErrorResult($sIpAddress, "cURL error: " . $sCurlError, "", $iHttpCode, $iCurlErrno, $sCurlError);
+    }
+    $aData = json_decode($sResponse, true);
+    if (!is_array($aData)) {
+        return domainLookupBuildErrorResult($sIpAddress, "Invalid API response.", $sResponse, $iHttpCode, $iCurlErrno, $sCurlError);
+    }
+    if ($iHttpCode >= 400 || isset($aData["error"]) || (isset($aData["code"]) && !isset($aData["ip_address"]))) {
+        return domainLookupBuildErrorResult($sIpAddress, domainLookupExtractApiErrorMessage($aData, $iHttpCode), $sResponse, $iHttpCode, $iCurlErrno, $sCurlError);
+    }
+    if (!isset($aData["ip_address"])) {
+        return domainLookupBuildErrorResult($sIpAddress, "Invalid API response.", $sResponse, $iHttpCode, $iCurlErrno, $sCurlError);
+    }
+    $aResult = domainLookupEmptyResult($sIpAddress);
+    $aResult["result_status"] = "success";
+    $aResult["message"] = null;
+    $aResult["domain_name"] = $sIpAddress;
+    $aResult["raw_response"] = $sResponse;
+    $aResult["http_code"] = $iHttpCode;
+    $aResult["curl_errno"] = $iCurlErrno;
+    $aResult["curl_error"] = $sCurlError == "" ? null : $sCurlError;
+    return $aResult;
+}
+
 function domainLookupFetchRow($oPdo, $sDomain) {
-    $oStatement = $oPdo->prepare("SELECT id, domain, result_status, message, domain_name, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date_text, DATE_FORMAT(expiration_date, '%Y-%m-%d %H:%i:%s') AS expiration_date_text, name_servers, registrant_name, registrar, status_text, updated_dates, raw_response, http_code, curl_errno, curl_error, dns_lookup_disabled, UNIX_TIMESTAMP(last_checked_at) AS last_checked_at_ts, DATE_FORMAT(last_checked_at, '%Y-%m-%d %H:%i:%s') AS last_checked_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at_text FROM fs_domains WHERE domain = :domain LIMIT 1");
+    $oStatement = $oPdo->prepare("SELECT id, domain, result_status, message, domain_name, reverse_dns, DATE_FORMAT(creation_date, '%Y-%m-%d %H:%i:%s') AS creation_date_text, DATE_FORMAT(expiration_date, '%Y-%m-%d %H:%i:%s') AS expiration_date_text, name_servers, registrant_name, registrar, status_text, updated_dates, raw_response, http_code, curl_errno, curl_error, dns_lookup_disabled, UNIX_TIMESTAMP(last_checked_at) AS last_checked_at_ts, DATE_FORMAT(last_checked_at, '%Y-%m-%d %H:%i:%s') AS last_checked_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at_text FROM fs_domains WHERE domain = :domain LIMIT 1");
     $oStatement->execute(array("domain" => $sDomain));
     $aRow = $oStatement->fetch();
     return $aRow ? $aRow : null;
 }
 
-function domainLookupNeedsApiCall($aRow) {
+function domainLookupNeedsApiCall($aRow, $iCacheSeconds = 14400) {
     if (!$aRow) {
         return true;
     }
+    if (isset($aRow["result_status"]) && (string)$aRow["result_status"] == "success" && isset($aRow["raw_response"])) {
+        $aData = json_decode((string)$aRow["raw_response"], true);
+        if (is_array($aData) && !isset($aData["result"]) && !isset($aData["ip_address"]) && (isset($aData["code"]) || isset($aData["message"]) || isset($aData["error"]))) {
+            return true;
+        }
+    }
     $iLastCheckedAt = isset($aRow["last_checked_at_ts"]) ? (int)$aRow["last_checked_at_ts"] : 0;
-    return $iLastCheckedAt < time() - 14400;
+    return $iLastCheckedAt < time() - (int)$iCacheSeconds;
 }
 
 function domainLookupSaveResult($oPdo, $aResult) {
-    $oStatement = $oPdo->prepare("INSERT INTO fs_domains (domain, result_status, message, domain_name, creation_date, expiration_date, name_servers, registrant_name, registrar, status_text, updated_dates, raw_response, http_code, curl_errno, curl_error, last_checked_at) VALUES (:domain, :result_status, :message, :domain_name, :creation_date, :expiration_date, :name_servers, :registrant_name, :registrar, :status_text, :updated_dates, :raw_response, :http_code, :curl_errno, :curl_error, CURRENT_TIMESTAMP(6)) ON DUPLICATE KEY UPDATE result_status = VALUES(result_status), message = VALUES(message), domain_name = VALUES(domain_name), creation_date = VALUES(creation_date), expiration_date = VALUES(expiration_date), name_servers = VALUES(name_servers), registrant_name = VALUES(registrant_name), registrar = VALUES(registrar), status_text = VALUES(status_text), updated_dates = VALUES(updated_dates), raw_response = VALUES(raw_response), http_code = VALUES(http_code), curl_errno = VALUES(curl_errno), curl_error = VALUES(curl_error), last_checked_at = VALUES(last_checked_at)");
+    $oStatement = $oPdo->prepare("INSERT INTO fs_domains (domain, result_status, message, domain_name, reverse_dns, creation_date, expiration_date, name_servers, registrant_name, registrar, status_text, updated_dates, raw_response, http_code, curl_errno, curl_error, last_checked_at) VALUES (:domain, :result_status, :message, :domain_name, :reverse_dns, :creation_date, :expiration_date, :name_servers, :registrant_name, :registrar, :status_text, :updated_dates, :raw_response, :http_code, :curl_errno, :curl_error, CURRENT_TIMESTAMP(6)) ON DUPLICATE KEY UPDATE result_status = VALUES(result_status), message = VALUES(message), domain_name = VALUES(domain_name), reverse_dns = VALUES(reverse_dns), creation_date = VALUES(creation_date), expiration_date = VALUES(expiration_date), name_servers = VALUES(name_servers), registrant_name = VALUES(registrant_name), registrar = VALUES(registrar), status_text = VALUES(status_text), updated_dates = VALUES(updated_dates), raw_response = VALUES(raw_response), http_code = VALUES(http_code), curl_errno = VALUES(curl_errno), curl_error = VALUES(curl_error), last_checked_at = VALUES(last_checked_at)");
     $oStatement->execute(array(
         "domain" => $aResult["domain"],
         "result_status" => $aResult["result_status"],
         "message" => $aResult["message"],
         "domain_name" => $aResult["domain_name"],
+        "reverse_dns" => $aResult["reverse_dns"],
         "creation_date" => $aResult["creation_date"],
         "expiration_date" => $aResult["expiration_date"],
         "name_servers" => $aResult["name_servers"],
@@ -2795,6 +2898,9 @@ function domainLookupRenderValue($mValue) {
 }
 
 function domainLookupRawWhoisResult($aRow) {
+    if (isset($aRow["result_status"]) && (string)$aRow["result_status"] != "success") {
+        return array();
+    }
     if (!isset($aRow["raw_response"]) || trim((string)$aRow["raw_response"]) == "") {
         return array();
     }
@@ -2837,8 +2943,15 @@ function domainLookupRawWhoisTextValue($mValue) {
         }
         return implode("\n", $aLines);
     }
-    $sJson = json_encode($mValue, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
-    return $sJson === false ? "" : $sJson;
+    $aLines = array();
+    foreach ($mValue as $sName => $mLineValue) {
+        $sLineValue = domainLookupRawWhoisTextValue($mLineValue);
+        if ($sLineValue == "") {
+            continue;
+        }
+        $aLines[] = domainLookupWhoisFieldLabel($sName) . ": " . str_replace("\n", "\n" . domainLookupWhoisFieldLabel($sName) . ": ", $sLineValue);
+    }
+    return implode("\n", $aLines);
 }
 
 function domainLookupRawWhoisValue($aWhois, $sName) {
@@ -2852,6 +2965,15 @@ function domainLookupKnownWhoisFields() {
     return array(
         "result" => array("name" => "Result", "multiline" => false, "date_time" => false),
         "message" => array("name" => "Message", "multiline" => false, "date_time" => false),
+        "ip_address" => array("name" => "IP Address", "multiline" => false, "date_time" => false),
+        "security" => array("name" => "Security", "multiline" => true, "date_time" => false),
+        "asn" => array("name" => "ASN", "multiline" => true, "date_time" => false),
+        "company" => array("name" => "Company", "multiline" => true, "date_time" => false),
+        "domains" => array("name" => "Domains", "multiline" => true, "date_time" => false),
+        "location" => array("name" => "Location", "multiline" => true, "date_time" => false),
+        "timezone" => array("name" => "Timezone", "multiline" => true, "date_time" => false),
+        "flag" => array("name" => "Flag", "multiline" => true, "date_time" => false),
+        "currency" => array("name" => "Currency", "multiline" => true, "date_time" => false),
         "domain_name" => array("name" => "API Domain", "multiline" => false, "date_time" => false),
         "registrar" => array("name" => "Registrar", "multiline" => false, "date_time" => false),
         "whois_server" => array("name" => "WHOIS Server", "multiline" => false, "date_time" => false),
@@ -2860,9 +2982,18 @@ function domainLookupKnownWhoisFields() {
         "org" => array("name" => "Organization", "multiline" => false, "date_time" => false),
         "address" => array("name" => "Address", "multiline" => true, "date_time" => false),
         "city" => array("name" => "City", "multiline" => false, "date_time" => false),
+        "region" => array("name" => "Region", "multiline" => false, "date_time" => false),
+        "region_iso_code" => array("name" => "Region ISO Code", "multiline" => false, "date_time" => false),
         "state" => array("name" => "State", "multiline" => false, "date_time" => false),
         "registrant_postal_code" => array("name" => "Postal Code", "multiline" => false, "date_time" => false),
+        "postal_code" => array("name" => "Postal Code", "multiline" => false, "date_time" => false),
         "country" => array("name" => "Country", "multiline" => false, "date_time" => false),
+        "country_code" => array("name" => "Country Code", "multiline" => false, "date_time" => false),
+        "continent" => array("name" => "Continent", "multiline" => false, "date_time" => false),
+        "continent_code" => array("name" => "Continent Code", "multiline" => false, "date_time" => false),
+        "latitude" => array("name" => "Latitude", "multiline" => false, "date_time" => false),
+        "longitude" => array("name" => "Longitude", "multiline" => false, "date_time" => false),
+        "connection" => array("name" => "Connection", "multiline" => true, "date_time" => false),
         "dnssec" => array("name" => "DNSSEC", "multiline" => false, "date_time" => false),
         "emails" => array("name" => "Emails", "multiline" => true, "date_time" => false),
         "referral_url" => array("name" => "Referral URL", "multiline" => false, "date_time" => false),

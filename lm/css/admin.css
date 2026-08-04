@@ -363,7 +363,7 @@ body.mail-page .admin-controls .mail-send-button {
     width: 38px;
 }
 
-.admin-controls .js-table-filter {
+.admin-controls .js-table-filter, .admin-controls .domain-lookup-input {
     box-sizing: border-box;
     min-width: 0;
     width: 154px;
@@ -375,17 +375,6 @@ body.mail-page .admin-controls .mail-send-button {
 
 .admin-controls .database-action-button {
     flex: 0 0 130px;
-}
-
-.admin-controls label[for="domain"] {
-    flex: 0 0 52px;
-    width: 52px;
-}
-
-.admin-controls .domain-lookup-input {
-    box-sizing: border-box;
-    min-width: 0;
-    width: 220px;
 }
 
 .admin-controls .domain-lookup-button {
@@ -764,7 +753,7 @@ body.phpinfo-page .admin-controls {
     width: auto;
 }
 
-#phpinfo-select-form button, .list-item-actions, .dashboard-service-http, .dashboard-service-checked, .dashboard-services-table .admin-action-column {
+#phpinfo-select-form button, .list-item-actions, .dashboard-service-http, .dashboard-service-checked, .dashboard-services-table .admin-action-column, .admin-controls label {
     white-space: nowrap;
 }
 
@@ -965,7 +954,7 @@ body.phpinfo-page .admin-controls {
     margin-right: 6px;
 }
 
-.index-settings-options select, .authors-table, .domain-result-table {
+.index-settings-options select, .authors-table {
     width: 100%;
 }
 
@@ -1281,7 +1270,7 @@ td.numeric, th.numeric, .business-hours-time-close, .business-hours-time-range-s
     width: 1px;
 }
 
-.domain-dns-table {
+.domain-result-table, .domain-dns-table {
     margin-top: 18px;
     width: 100%;
 }
