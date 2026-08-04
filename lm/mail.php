@@ -302,6 +302,17 @@ function mailFormEncodeHeader($sValue) {
     return $sValue;
 }
 
+function mailFormEncodeMimeParameter($sValue) {
+    $sValue = mailFormStripHeaderBreaks($sValue);
+    if ($sValue == "") {
+        $sValue = "attachment";
+    }
+    if (preg_match("/[^\x20-\x7E]/", $sValue)) {
+        return "=?UTF-8?B?" . base64_encode($sValue) . "?=";
+    }
+    return str_replace(array("\\", "\""), array("\\\\", "\\\""), $sValue);
+}
+
 function mailFormHtmlBodyIsEmpty($sValue) {
     $sHtml = preg_replace("/<\s*(script|style)[^>]*>.*?<\s*\/\s*\\1\s*>/is", "", (string)$sValue);
     if (preg_match("/<\s*img\b/i", $sHtml)) {
@@ -309,6 +320,60 @@ function mailFormHtmlBodyIsEmpty($sValue) {
     }
     $sText = html_entity_decode(strip_tags($sHtml), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
     return trim($sText) == "";
+}
+
+function mailFormAttachmentContentType($sType) {
+    $sType = strtolower(trim(mailFormStripHeaderBreaks($sType)));
+    return preg_match("~^[a-z0-9][a-z0-9!#$&^_.+\\-]*/[a-z0-9][a-z0-9!#$&^_.+\\-]*$~", $sType) ? $sType : "application/octet-stream";
+}
+
+function mailFormAttachmentFileName($sName) {
+    $sName = str_replace("\\", "/", mailFormStripHeaderBreaks($sName));
+    $sName = trim(basename($sName));
+    return $sName != "" ? $sName : "attachment";
+}
+
+function mailFormAttachmentUploadErrorMessage($iError) {
+    if ($iError == UPLOAD_ERR_INI_SIZE || $iError == UPLOAD_ERR_FORM_SIZE) {
+        return "Attachment too large.";
+    }
+    return "Attachment upload failed.";
+}
+
+function mailFormUploadedAttachments($sFieldName, &$aErrors) {
+    $aAttachments = array();
+    $aUpload = isset($_FILES[$sFieldName]) && is_array($_FILES[$sFieldName]) ? $_FILES[$sFieldName] : null;
+    if (!$aUpload || !isset($aUpload["name"], $aUpload["type"], $aUpload["tmp_name"], $aUpload["error"], $aUpload["size"])) {
+        return $aAttachments;
+    }
+    $aNames = is_array($aUpload["name"]) ? $aUpload["name"] : array($aUpload["name"]);
+    $aTypes = is_array($aUpload["type"]) ? $aUpload["type"] : array($aUpload["type"]);
+    $aTmpNames = is_array($aUpload["tmp_name"]) ? $aUpload["tmp_name"] : array($aUpload["tmp_name"]);
+    $aUploadErrors = is_array($aUpload["error"]) ? $aUpload["error"] : array($aUpload["error"]);
+    $aSizes = is_array($aUpload["size"]) ? $aUpload["size"] : array($aUpload["size"]);
+    foreach ($aNames as $iIndex => $sName) {
+        $iError = isset($aUploadErrors[$iIndex]) ? (int)$aUploadErrors[$iIndex] : UPLOAD_ERR_NO_FILE;
+        $sTmpName = isset($aTmpNames[$iIndex]) ? (string)$aTmpNames[$iIndex] : "";
+        if ($iError == UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+        if ($iError != UPLOAD_ERR_OK || $sTmpName == "" || !is_uploaded_file($sTmpName)) {
+            mailFormAddError($aErrors, mailFormAttachmentUploadErrorMessage($iError));
+            continue;
+        }
+        $sContent = file_get_contents($sTmpName);
+        if ($sContent === false) {
+            mailFormAddError($aErrors, "Attachment upload failed.");
+            continue;
+        }
+        $aAttachments[] = array(
+            "name" => mailFormAttachmentFileName($sName),
+            "type" => mailFormAttachmentContentType(isset($aTypes[$iIndex]) ? $aTypes[$iIndex] : ""),
+            "size" => isset($aSizes[$iIndex]) ? (int)$aSizes[$iIndex] : strlen($sContent),
+            "content" => $sContent
+        );
+    }
+    return $aAttachments;
 }
 
 function mailFormNormalizeBodyLineEndings($sValue) {
@@ -363,7 +428,49 @@ function mailFormBuildMultipartAlternativeMessage($sSubject, $sBody, $sBoundary)
         . "--" . $sBoundary . "--\r\n";
 }
 
-function mailFormSendMessage($sTo, $sCc, $sBcc, $sFrom, $sSender, $sReplyTo, $sSubject, $sBody, $sBodyFormat) {
+function mailFormBuildTextMessagePart($sBody, $sBoundary) {
+    return "--" . $sBoundary . "\r\n"
+        . "Content-Type: text/plain; charset=UTF-8\r\n"
+        . "Content-Transfer-Encoding: 8bit\r\n"
+        . "\r\n"
+        . mailFormBuildPlainTextMessage($sBody) . "\r\n"
+        . "\r\n";
+}
+
+function mailFormBuildAlternativeMessagePart($sSubject, $sBody, $sBoundary, $sAlternativeBoundary) {
+    return "--" . $sBoundary . "\r\n"
+        . "Content-Type: multipart/alternative; boundary=\"" . $sAlternativeBoundary . "\"\r\n"
+        . "\r\n"
+        . mailFormBuildMultipartAlternativeMessage($sSubject, $sBody, $sAlternativeBoundary)
+        . "\r\n";
+}
+
+function mailFormBuildAttachmentPart($aAttachment, $sBoundary) {
+    $sFileName = mailFormEncodeMimeParameter($aAttachment["name"]);
+    return "--" . $sBoundary . "\r\n"
+        . "Content-Type: " . $aAttachment["type"] . "; name=\"" . $sFileName . "\"\r\n"
+        . "Content-Transfer-Encoding: base64\r\n"
+        . "Content-Disposition: attachment; filename=\"" . $sFileName . "\"\r\n"
+        . "\r\n"
+        . chunk_split(base64_encode($aAttachment["content"]), 76, "\r\n")
+        . "\r\n";
+}
+
+function mailFormBuildMixedMessage($sSubject, $sBody, $sBodyFormat, $aAttachments, $sBoundary) {
+    $sMessage = "";
+    if ($sBodyFormat == "plain") {
+        $sMessage .= mailFormBuildTextMessagePart($sBody, $sBoundary);
+    } else {
+        $sAlternativeBoundary = "=_lm_mail_alt_" . md5(uniqid("", true));
+        $sMessage .= mailFormBuildAlternativeMessagePart($sSubject, $sBody, $sBoundary, $sAlternativeBoundary);
+    }
+    foreach ($aAttachments as $aAttachment) {
+        $sMessage .= mailFormBuildAttachmentPart($aAttachment, $sBoundary);
+    }
+    return $sMessage . "--" . $sBoundary . "--\r\n";
+}
+
+function mailFormSendMessage($sTo, $sCc, $sBcc, $sFrom, $sSender, $sReplyTo, $sSubject, $sBody, $sBodyFormat, $aAttachments) {
     $aHeaders = array();
     $sMessage = "";
     $sBoundary = "";
@@ -383,7 +490,11 @@ function mailFormSendMessage($sTo, $sCc, $sBcc, $sFrom, $sSender, $sReplyTo, $sS
         $aHeaders[] = "Bcc: " . $sBcc;
     }
     $aHeaders[] = "MIME-Version: 1.0";
-    if ($sBodyFormat == "plain") {
+    if ($aAttachments) {
+        $sBoundary = "=_lm_mail_mixed_" . md5(uniqid("", true));
+        $aHeaders[] = "Content-Type: multipart/mixed; boundary=\"" . $sBoundary . "\"";
+        $sMessage = mailFormBuildMixedMessage($sSubject, $sBody, $sBodyFormat, $aAttachments, $sBoundary);
+    } elseif ($sBodyFormat == "plain") {
         $aHeaders[] = "Content-Type: text/plain; charset=UTF-8";
         $aHeaders[] = "Content-Transfer-Encoding: 8bit";
         $sMessage = mailFormBuildPlainTextMessage($sBody);
@@ -466,6 +577,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $aMailValues["message"] = getPostedValue("mail_message");
 
         $aErrors = array();
+        $aAttachments = mailFormUploadedAttachments("mail_attachments", $aErrors);
         $aTo = mailFormNormalizeEmailList($aMailValues["to"]);
         $aCc = mailFormNormalizeEmailList($aMailValues["cc"]);
         $aBcc = mailFormNormalizeEmailList($aMailValues["bcc"]);
@@ -516,7 +628,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($aMailValues["reply_to"] != "" && $aReplyTo === false) {
             mailFormAddError($aErrors, "Invalid Reply-To.");
         }
-        $blMailBodyIsEmpty = $sMailBodyFormat == "plain" ? mailFormBuildPlainTextMessage($aMailValues["message"]) == "" : mailFormHtmlBodyIsEmpty($aMailValues["message"]);
+        $blMailBodyIsEmpty = $sMailBodyFormat == "plain" ? mailFormBuildPlainTextMessage($aMailValues["message"]) == "" : mailFormHtmlBodyIsEmpty($aMailValues["message"]) && !$aAttachments;
         if ($blMailBodyIsEmpty) {
             mailFormAddError($aErrors, "Message required.");
         }
@@ -526,7 +638,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($aErrors) {
             $sMailStatus = isDesktop() ? implode(" ", $aErrors) : (string)$aErrors[0];
             $sMailStatusClass = "message-error";
-        } elseif (mailFormSendMessage($sTo, $sCc, $sBcc, $sFrom, $sSender, $sReplyTo, $sSubject, $aMailValues["message"], $sMailBodyFormat)) {
+        } elseif (mailFormSendMessage($sTo, $sCc, $sBcc, $sFrom, $sSender, $sReplyTo, $sSubject, $aMailValues["message"], $sMailBodyFormat, $aAttachments)) {
             $sMailStatus = "E-mail sent.";
             $sMailStatusClass = "message-success";
             $aMailValues["to"] = "";
@@ -580,7 +692,7 @@ renderMenu();
     <button type="submit" form="mail-form" name="mail_body_format" value="plain" class="button-link mail-send-button">Send plain text</button>
     <span class="mail-form-status <?php echo html($sMailStatusClass); ?>" aria-live="polite"><?php echo html($sMailStatus); ?></span>
   </p>
-  <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="mail-form" class="snippet-board-form mail-form" autocomplete="on" data-mail-allowed-sender-domains="<?php echo html(json_encode($aMailAllowedSenderDomains)); ?>" data-mail-restrict-from-to-single-address="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
+  <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="mail-form" class="snippet-board-form mail-form" enctype="multipart/form-data" autocomplete="on" data-mail-allowed-sender-domains="<?php echo html(json_encode($aMailAllowedSenderDomains)); ?>" data-mail-restrict-from-to-single-address="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
     <input type="hidden" name="action" value="send_mail">
     <input type="hidden" name="lm_csrf_token" value="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
     <input type="hidden" name="mail_rich_text_paste" class="js-mail-rich-text-paste" value="<?php echo (int)$iMailRichTextPaste; ?>">
@@ -609,6 +721,8 @@ if (!$blMailRestrictFromToSingleAddress) {
       <input type="text" id="mail-reply-to" name="mail_reply_to" value="<?php echo html($aMailValues["reply_to"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
       <label for="mail-subject">Subject:</label>
       <input type="text" id="mail-subject" name="mail_subject" value="<?php echo html($aMailValues["subject"]); ?>" autocomplete="on">
+      <label for="mail-attachments">Attachments:</label>
+      <input type="file" id="mail-attachments" name="mail_attachments[]" multiple>
     </div>
     <label for="mail-message" class="mail-message-label">Message:</label>
     <textarea id="mail-message" name="mail_message" class="snippet-board-textarea js-snippet-board-textarea mail-message-textarea" rows="18" spellcheck="true"><?php echo html($aMailValues["message"]); ?></textarea>

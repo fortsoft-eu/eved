@@ -3588,6 +3588,9 @@ function validateMailForm(oForm, sBodyFormat) {
     var sSender = getMailFormFieldValue(oForm, "mail_sender");
     var sReplyTo = getMailFormFieldValue(oForm, "mail_reply_to");
     var sMessage = oForm && oForm.elements.mail_message ? String(oForm.elements.mail_message.value || "") : "";
+    var oAttachmentInput = oForm ? oForm.querySelector("[name=\"mail_attachments[]\"]") : null;
+    var blHasAttachments = oAttachmentInput && oAttachmentInput.files && oAttachmentInput.files.length > 0;
+    var blMailBodyIsEmpty = sBodyFormat == "plain" ? isMailFormBodyEmpty(sMessage, "plain") : isMailFormBodyEmpty(sMessage, "html") && !blHasAttachments;
     var aAllowedSenderDomains = getMailFormAllowedSenderDomains(oForm);
     var blRestrictFromToSingleAddress = oForm && oForm.getAttribute("data-mail-restrict-from-to-single-address") == "1";
     var aTo = mailFormNormalizeEmailList(sTo);
@@ -3630,7 +3633,7 @@ function validateMailForm(oForm, sBodyFormat) {
     if (sReplyTo != "" && aReplyTo === false) {
         aErrors.push({message: "Invalid Reply-To.", field: "mail_reply_to"});
     }
-    if (isMailFormBodyEmpty(sMessage, sBodyFormat == "plain" ? "plain" : "html")) {
+    if (blMailBodyIsEmpty) {
         aErrors.push({message: "Message required.", field: "mail_message"});
     }
     return {errors: aErrors};

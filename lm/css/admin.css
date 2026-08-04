@@ -145,7 +145,7 @@ form {
     white-space: nowrap;
 }
 
-.mail-form-fields input[type="email"], .mail-form-fields input[type="text"] {
+.mail-form-fields input[type="email"], .mail-form-fields input[type="file"], .mail-form-fields input[type="text"] {
     align-self: center;
     box-sizing: border-box;
     min-width: 0;
@@ -2313,7 +2313,7 @@ body[data-pmd-like="1"].mail-page .mail-form-fields {
     margin-bottom: 4px;
 }
 
-body[data-pmd-like="1"].mail-page .mail-form-fields label, body[data-pmd-like="1"].mail-page .mail-form-fields input[type="text"], body[data-pmd-like="1"].mail-page .mail-message-label {
+body[data-pmd-like="1"].mail-page .mail-form-fields label, body[data-pmd-like="1"].mail-page .mail-form-fields input[type="file"], body[data-pmd-like="1"].mail-page .mail-form-fields input[type="text"], body[data-pmd-like="1"].mail-page .mail-message-label {
     font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
     font-stretch: condensed;
 }
