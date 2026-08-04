@@ -3075,3 +3075,223 @@ function domainLookupRenderResultRows($aRow, $sSource) {
         }
     }
 }
+
+function aresLookupExtractErrorMessage($aData, $iHttpCode) {
+    if (isset($aData["popis"]) && is_scalar($aData["popis"]) && trim((string)$aData["popis"]) != "") {
+        return (string)$aData["popis"];
+    }
+    if (isset($aData["message"]) && is_scalar($aData["message"]) && trim((string)$aData["message"]) != "") {
+        return (string)$aData["message"];
+    }
+    if (isset($aData["error"]) && is_scalar($aData["error"]) && trim((string)$aData["error"]) != "") {
+        return (string)$aData["error"];
+    }
+    if (isset($aData["kod"]) && is_scalar($aData["kod"]) && trim((string)$aData["kod"]) != "") {
+        return "ARES error: " . (string)$aData["kod"];
+    }
+    if ($iHttpCode == 404) {
+        return "ARES record was not found.";
+    }
+    if ($iHttpCode >= 400) {
+        return "HTTP error " . $iHttpCode . ".";
+    }
+    return "ARES returned an error.";
+}
+
+function aresLookupBuildErrorResult($sMessage, $sRawResponse = "", $iHttpCode = null, $iCurlErrno = null, $sCurlError = null) {
+    return array(
+        "success" => false,
+        "message" => $sMessage,
+        "data" => null,
+        "raw_response" => (string)$sRawResponse,
+        "http_code" => $iHttpCode === null ? null : (int)$iHttpCode,
+        "curl_errno" => $iCurlErrno === null ? null : (int)$iCurlErrno,
+        "curl_error" => $sCurlError === null ? null : (string)$sCurlError
+    );
+}
+
+function aresLookupCallApi($sPath, $aPayload = null) {
+    if (!function_exists("curl_init")) {
+        return aresLookupBuildErrorResult("PHP cURL extension is not available.");
+    }
+    $sUrl = "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest" . $sPath;
+    $aHeaders = array("Accept: application/json");
+    $aCurlOptions = array(
+        CURLOPT_URL => $sUrl,
+        CURLOPT_HTTPHEADER => $aHeaders,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_ENCODING => "",
+        CURLOPT_MAXREDIRS => 5,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+        CURLOPT_CUSTOMREQUEST => $aPayload === null ? "GET" : "POST"
+    );
+    if ($aPayload !== null) {
+        $sPayload = json_encode($aPayload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($sPayload === false) {
+            return aresLookupBuildErrorResult("Request body could not be encoded.");
+        }
+        $aHeaders[] = "Content-Type: application/json";
+        $aCurlOptions[CURLOPT_HTTPHEADER] = $aHeaders;
+        $aCurlOptions[CURLOPT_POSTFIELDS] = $sPayload;
+    }
+    $oCurl = curl_init();
+    curl_setopt_array($oCurl, $aCurlOptions);
+    $sResponse = curl_exec($oCurl);
+    $iCurlErrno = curl_errno($oCurl);
+    $sCurlError = curl_error($oCurl);
+    $iHttpCode = (int)curl_getinfo($oCurl, CURLINFO_HTTP_CODE);
+    if ($sResponse === false) {
+        return aresLookupBuildErrorResult("cURL error: " . $sCurlError, "", $iHttpCode, $iCurlErrno, $sCurlError);
+    }
+    $aData = json_decode($sResponse, true);
+    if (!is_array($aData)) {
+        return aresLookupBuildErrorResult("Invalid ARES response.", $sResponse, $iHttpCode, $iCurlErrno, $sCurlError);
+    }
+    if ($iHttpCode >= 400 || isset($aData["kod"]) || (isset($aData["popis"]) && !isset($aData["ico"]) && !isset($aData["ekonomickeSubjekty"]))) {
+        return aresLookupBuildErrorResult(aresLookupExtractErrorMessage($aData, $iHttpCode), $sResponse, $iHttpCode, $iCurlErrno, $sCurlError);
+    }
+    return array(
+        "success" => true,
+        "message" => "",
+        "data" => $aData,
+        "raw_response" => $sResponse,
+        "http_code" => $iHttpCode,
+        "curl_errno" => $iCurlErrno,
+        "curl_error" => $sCurlError == "" ? null : $sCurlError
+    );
+}
+
+function aresLookupTextValue($mValue) {
+    if ($mValue === null) {
+        return "";
+    }
+    if (is_bool($mValue)) {
+        return $mValue ? "true" : "false";
+    }
+    if (is_scalar($mValue)) {
+        return (string)$mValue;
+    }
+    if (!is_array($mValue) || !$mValue) {
+        return "";
+    }
+    if (isset($mValue["textovaAdresa"]) && is_scalar($mValue["textovaAdresa"]) && trim((string)$mValue["textovaAdresa"]) != "") {
+        return (string)$mValue["textovaAdresa"];
+    }
+    if (array_keys($mValue) === range(0, count($mValue) - 1)) {
+        $aLines = array();
+        foreach ($mValue as $mItem) {
+            $sValue = aresLookupTextValue($mItem);
+            if ($sValue != "") {
+                $aLines[] = $sValue;
+            }
+        }
+        return implode("\n", $aLines);
+    }
+    $aLines = array();
+    foreach ($mValue as $sName => $mItem) {
+        $sValue = aresLookupTextValue($mItem);
+        if ($sValue != "") {
+            $aLines[] = aresLookupFieldLabel($sName) . ": " . str_replace("\n", "\n" . aresLookupFieldLabel($sName) . ": ", $sValue);
+        }
+    }
+    return implode("\n", $aLines);
+}
+
+function aresLookupFieldLabel($sName) {
+    $sLabel = preg_replace("/([a-z])([A-Z])/", "$1 $2", (string)$sName);
+    $sLabel = ucwords(str_replace("_", " ", $sLabel));
+    return strtr($sLabel, array(
+        "Ico" => "Company ID",
+        "Ico ID" => "Company ID",
+        "Dic" => "Tax ID",
+        "Dic Sk Dph" => "SK VAT ID",
+        "Obchodni Jmeno" => "Business Name",
+        "Sidlo" => "Registered Office",
+        "Adresa Dorucovaci" => "Mailing Address",
+        "Pravni Forma" => "Legal Form",
+        "Pravni Forma Ros" => "Legal Form ROS",
+        "Financni Urad" => "Tax Office",
+        "Datum Vzniku" => "Date Established",
+        "Datum Zaniku" => "Date Terminated",
+        "Datum Aktualizace" => "Updated",
+        "Primarni Zdroj" => "Primary Source",
+        "Cz Nace" => "CZ-NACE 2025",
+        "Cz Nace2008" => "CZ-NACE 2008",
+        "Seznam Registraci" => "Registrations",
+        "Dalsi Udaje" => "Other Data",
+        "Kod" => "Code",
+        "Popis" => "Description",
+        "Pocet Celkem" => "Total Count"
+    ));
+}
+
+function aresLookupRenderValue($mValue) {
+    $sValue = trim(aresLookupTextValue($mValue));
+    return $sValue == "" ? "<em>&mdash;</em>" : nl2br(html($sValue), false);
+}
+
+function aresLookupRenderResultRow($sName, $mValue) {
+    echo "      <tr>\n",
+        "        <th>" . html($sName) . "</th>\n",
+        "        <td>" . aresLookupRenderValue($mValue) . "</td>\n",
+        "      </tr>\n";
+}
+
+function aresLookupRenderDetailRows($aSubject) {
+    $aFields = array(
+        "ico" => "Company ID",
+        "icoId" => "Company ID",
+        "obchodniJmeno" => "Business Name",
+        "dic" => "Tax ID",
+        "sidlo" => "Registered Office",
+        "adresaDorucovaci" => "Mailing Address",
+        "pravniForma" => "Legal Form",
+        "pravniFormaRos" => "Legal Form ROS",
+        "financniUrad" => "Tax Office",
+        "datumVzniku" => "Date Established",
+        "datumZaniku" => "Date Terminated",
+        "datumAktualizace" => "Updated",
+        "primarniZdroj" => "Primary Source",
+        "czNace" => "CZ-NACE 2025",
+        "czNace2008" => "CZ-NACE 2008",
+        "seznamRegistraci" => "Registrations",
+        "dalsiUdaje" => "Other Data"
+    );
+    $aRenderedFields = array();
+    foreach ($aFields as $sName => $sLabel) {
+        if (array_key_exists($sName, $aSubject)) {
+            aresLookupRenderResultRow($sLabel, $aSubject[$sName]);
+            $aRenderedFields[$sName] = true;
+        }
+    }
+    foreach ($aSubject as $sName => $mValue) {
+        if (!isset($aRenderedFields[$sName])) {
+            aresLookupRenderResultRow(aresLookupFieldLabel($sName), $mValue);
+        }
+    }
+}
+
+function aresLookupSearchResultItems($aData) {
+    return isset($aData["ekonomickeSubjekty"]) && is_array($aData["ekonomickeSubjekty"]) ? $aData["ekonomickeSubjekty"] : array();
+}
+
+function aresLookupRenderSearchRows($aData, $sBaseUrl) {
+    $aItems = aresLookupSearchResultItems($aData);
+    foreach ($aItems as $aSubject) {
+        if (!is_array($aSubject)) {
+            continue;
+        }
+        $sCompanyId = isset($aSubject["ico"]) && is_scalar($aSubject["ico"]) ? (string)$aSubject["ico"] : "";
+        $sCompanyLink = $sCompanyId != "" ? "<a href=\"" . html($sBaseUrl . "ares.php?ico=" . rawurlencode($sCompanyId)) . "\">" . html($sCompanyId) . "</a>" : "<em>&mdash;</em>";
+        echo "      <tr>\n",
+            "        <td>" . $sCompanyLink . "</td>\n",
+            "        <td>" . aresLookupRenderValue(isset($aSubject["obchodniJmeno"]) ? $aSubject["obchodniJmeno"] : "") . "</td>\n",
+            "        <td>" . aresLookupRenderValue(isset($aSubject["sidlo"]) ? $aSubject["sidlo"] : "") . "</td>\n",
+            "        <td>" . aresLookupRenderValue(isset($aSubject["datumVzniku"]) ? $aSubject["datumVzniku"] : "") . "</td>\n",
+            "        <td>" . aresLookupRenderValue(isset($aSubject["datumZaniku"]) ? $aSubject["datumZaniku"] : "") . "</td>\n",
+            "        <td>" . aresLookupRenderValue(isset($aSubject["primarniZdroj"]) ? $aSubject["primarniZdroj"] : "") . "</td>\n",
+            "      </tr>\n";
+    }
+}

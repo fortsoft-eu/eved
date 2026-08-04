@@ -73,7 +73,7 @@ form {
     width: calc(100% - 32px);
 }
 
-.domain-lookup-message {
+.domain-lookup-message, .ares-lookup-message {
     box-sizing: border-box;
     line-height: 1.35;
     margin: 12px 0;
@@ -377,7 +377,7 @@ body.mail-page .admin-controls .mail-send-button {
     flex: 0 0 130px;
 }
 
-.admin-controls .domain-lookup-button {
+.admin-controls .domain-lookup-button, .admin-controls .ares-lookup-button {
     flex: 0 0 75px;
 }
 
@@ -387,6 +387,49 @@ body.mail-page .admin-controls .mail-send-button {
 
 .admin-controls input[type="checkbox"] {
     margin-left: 8px;
+}
+
+.ares-lookup-top {
+    background: #F8F8F8;
+    padding-bottom: 8px;
+}
+
+.ares-lookup-top > form {
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: 10px;
+    width: max-content;
+}
+
+.ares-lookup-fields {
+    column-gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(4, 220px);
+}
+
+.ares-lookup-field {
+    display: block;
+    min-width: 0;
+}
+
+.ares-lookup-top form label {
+    display: block;
+    margin: 10px 0 4px;
+    white-space: nowrap;
+}
+
+.ares-lookup-field:nth-child(-n+4) label {
+    margin-top: 0;
+}
+
+.ares-lookup-input {
+    box-sizing: border-box;
+    margin-top: 0;
+    width: 100%;
+}
+
+.ares-lookup-top form .admin-controls {
+    margin: 8px 0 5px;
 }
 
 .menu {
@@ -757,9 +800,27 @@ body.phpinfo-page .admin-controls {
     white-space: nowrap;
 }
 
+@media (max-width: 960px) {
+    .ares-lookup-fields {
+        grid-template-columns: repeat(2, minmax(154px, 220px));
+    }
+    .ares-lookup-field:nth-child(n+3) label {
+        margin-top: 10px;
+    }
+    .ares-lookup-top > form {
+        width: auto;
+    }
+}
+
 @media (max-width: 600px) {
     .menu-panel {
         max-width: calc(100vw - 16px);
+    }
+    .ares-lookup-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .ares-lookup-field:nth-child(n+2) label {
+        margin-top: 10px;
     }
     .schema-diagram, .schema-relations {
         display: none;
@@ -1255,7 +1316,7 @@ td.numeric, th.numeric, .business-hours-time-close, .business-hours-time-range-s
     width: 1px;
 }
 
-.domain-result-table caption, .domain-dns-table caption {
+.domain-result-table caption, .domain-dns-table caption, .ares-result-table caption {
     background: #DDD;
     border: 1px solid #C0C0C0;
     border-bottom: 0;
@@ -1265,12 +1326,12 @@ td.numeric, th.numeric, .business-hours-time-close, .business-hours-time-range-s
     text-align: left;
 }
 
-.domain-result-table td:first-child, .domain-result-table th:first-child, .domain-dns-table td:first-child, .domain-dns-table th:first-child, .domain-dns-table td:nth-child(3), .domain-dns-table th:nth-child(3) {
+.domain-result-table td:first-child, .domain-result-table th:first-child, .domain-dns-table td:first-child, .domain-dns-table th:first-child, .domain-dns-table td:nth-child(3), .domain-dns-table th:nth-child(3), .ares-result-table td:first-child, .ares-result-table th:first-child {
     white-space: nowrap;
     width: 1px;
 }
 
-.domain-result-table, .domain-dns-table {
+.domain-result-table, .domain-dns-table, .ares-result-table {
     margin-top: 18px;
     width: 100%;
 }
