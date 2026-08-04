@@ -3942,7 +3942,7 @@ function clearSbPmdHoverButton(oButton, blExpire) {
 }
 
 function getSbPmdDropdownMenu() {
-    var aMenus = document.querySelectorAll("body.snippet-board-page .tox.tox-tinymce-aux .tox-menu, body.snippet-board-page .tox.tox-tinymce-aux .tox-dropdown-content, body.snippet-board-page .tox.tox-tinymce-aux .tox-collection, body.snippet-board-page .tox.tox-tinymce-aux [role=\"menu\"], body.snippet-board-page .tox.tox-tinymce-aux [role=\"listbox\"]");
+    var aMenus = document.querySelectorAll(".tox.tox-tinymce-aux .tox-menu, .tox.tox-tinymce-aux .tox-dropdown-content, .tox.tox-tinymce-aux .tox-collection, .tox.tox-tinymce-aux [role=\"menu\"], .tox.tox-tinymce-aux [role=\"listbox\"]");
     var i;
     for (i = 0; i < aMenus.length; i++) {
         if (aMenus[i].getClientRects && aMenus[i].getClientRects().length > 0) {
@@ -4056,7 +4056,7 @@ function handleSbPmdDropdownMenuClick(oEvent) {
 }
 
 function bindSbPmdHoverTimeout() {
-    if (!document.body || (" " + document.body.className + " ").indexOf(" snippet-board-page ") === -1) {
+    if (!isSnippetBoardScrollLockPage()) {
         return;
     }
     if (window.PointerEvent) {
