@@ -467,10 +467,11 @@ function fetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
         $iLimit = 30;
     }
     $sLike = "%" . strtr($sTerm, array("!" => "!!", "%" => "!%", "_" => "!_")) . "%";
-    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name FROM (" . getSubjectNameSelectSql() . ") AS subject_rows WHERE LOWER(subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' ORDER BY subject_sort_name ASC, subject_id ASC LIMIT " . $iLimit);
+    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name FROM (" . getSubjectNameSelectSql() . ") AS subject_rows WHERE LOWER(subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' OR EXISTS (SELECT 1 FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id INNER JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id WHERE sc.subject_id = subject_rows.subject_id AND sc.is_active = 1 AND ct.contact_type = 'email' AND LOWER(c.contact_value) LIKE LOWER(:email_term) ESCAPE '!') ORDER BY subject_sort_name ASC, subject_id ASC LIMIT " . $iLimit);
     $oStatement->execute(array(
         "subject_name_term" => $sLike,
-        "subject_sort_name_term" => $sLike
+        "subject_sort_name_term" => $sLike,
+        "email_term" => $sLike
     ));
     return $oStatement->fetchAll();
 }

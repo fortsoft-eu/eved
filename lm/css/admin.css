@@ -157,6 +157,41 @@ form {
     margin: 0 0 4px;
 }
 
+.mail-recipient-suggest-box {
+    background: #FFF;
+    border: 1px solid #C0C0C0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    max-height: 180px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: fixed;
+    z-index: 9;
+}
+
+.mail-recipient-suggest-box[hidden] {
+    display: none;
+}
+
+.mail-recipient-suggest-option {
+    background: #FFF;
+    border: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: block;
+    margin: 0;
+    overflow: hidden;
+    padding: 4px 6px;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.mail-recipient-suggest-option:hover, .mail-recipient-suggest-active {
+    background: #DCDCE4;
+}
+
 button, select {
     border: 1px solid #C0C0C0;
     margin-top: 10px;

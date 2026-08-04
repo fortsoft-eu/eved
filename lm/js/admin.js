@@ -3512,6 +3512,305 @@ function mailFormNormalizeEmailList(sValue) {
     return {count: iCount, mailboxes: aMailboxes};
 }
 
+function getMailFormRecipientSuggestSearchTerm(sValue) {
+    return String(sValue || "").replace(/[<>"]/g, " ").replace(/^[\s,;]+|[\s,;]+$/g, "").replace(/[ \t]+/g, " ");
+}
+
+function mailFormValueStartsWithMailbox(sValue) {
+    var iLength = String(sValue || "").length;
+    var iOffset = 0;
+    var oMailbox;
+    sValue = String(sValue || "");
+    while (iOffset < iLength && isMailFormAddressSeparator(sValue.charAt(iOffset))) {
+        iOffset++;
+    }
+    if (iOffset >= iLength) {
+        return false;
+    }
+    oMailbox = mailFormParseMailbox(sValue, iOffset);
+    return oMailbox !== false && oMailbox.nextOffset > iOffset;
+}
+
+function getMailFormRecipientSuggestRange(oInput, blSingleAddress) {
+    var sValue = String(oInput ? oInput.value || "" : "");
+    var iLength = sValue.length;
+    var iCaret = oInput && typeof oInput.selectionStart == "number" ? oInput.selectionStart : iLength;
+    var iOffset = 0;
+    var iStart = 0;
+    var oMailbox;
+    if (iCaret < 0 || iCaret > iLength) {
+        iCaret = iLength;
+    }
+    if (blSingleAddress) {
+        return {
+            start: 0,
+            end: iLength,
+            query: sValue,
+            term: getMailFormRecipientSuggestSearchTerm(sValue)
+        };
+    }
+    while (iOffset < iCaret) {
+        while (iOffset < iCaret && isMailFormAddressSeparator(sValue.charAt(iOffset))) {
+            iOffset++;
+        }
+        iStart = iOffset;
+        if (iOffset >= iCaret) {
+            break;
+        }
+        oMailbox = mailFormParseMailbox(sValue, iOffset);
+        if (oMailbox === false || oMailbox.nextOffset <= iOffset || oMailbox.nextOffset >= iCaret) {
+            break;
+        }
+        iOffset = oMailbox.nextOffset;
+        if (iOffset < iCaret && !isMailFormAddressSeparator(sValue.charAt(iOffset))) {
+            break;
+        }
+    }
+    return {
+        start: iStart,
+        end: iCaret,
+        query: sValue.substring(iStart, iCaret),
+        term: getMailFormRecipientSuggestSearchTerm(sValue.substring(iStart, iCaret))
+    };
+}
+
+function positionMailRecipientSuggestBox(oInput, oBox) {
+    var oRect;
+    if (!oInput || !oBox) {
+        return;
+    }
+    oRect = oInput.getBoundingClientRect();
+    oBox.style.left = Math.max(0, Math.floor(oRect.left)) + "px";
+    oBox.style.top = Math.floor(oRect.bottom + 1) + "px";
+    oBox.style.width = Math.max(240, Math.floor(oRect.width)) + "px";
+}
+
+function applyMailRecipientSuggestion(oInput, aRange, sSuggestion, blSingleAddress) {
+    var sValue = String(oInput ? oInput.value || "" : "");
+    var sBefore = sValue.substring(0, aRange.start);
+    var sAfter = sValue.substring(aRange.end);
+    var sInsert = String(sSuggestion || "");
+    var iCaret;
+    if (!oInput || sInsert == "") {
+        return;
+    }
+    if (blSingleAddress) {
+        sBefore = "";
+        sAfter = "";
+    } else {
+        if (sBefore != "" && !isMailFormAddressSeparator(sBefore.charAt(sBefore.length - 1))) {
+            sBefore += " ";
+        }
+        if (sAfter == "" || !isMailFormAddressSeparator(sAfter.charAt(0))) {
+            sInsert += " ";
+        }
+    }
+    oInput.value = sBefore + sInsert + sAfter;
+    iCaret = (sBefore + sInsert).length;
+    if (typeof oInput.setSelectionRange == "function") {
+        try {
+            oInput.setSelectionRange(iCaret, iCaret);
+        } catch (oException) {
+            logAdminException(oException);
+        }
+    }
+    focusAdminElement(oInput, false);
+    dispatchAdminInputEvent(oInput);
+}
+
+function bindMailRecipientSuggestInput(oInput) {
+    var oBox;
+    var iTimer = 0;
+    var iRequestIndex = 0;
+    var aSuggestions = [];
+    var iActiveIndex = -1;
+    var aCurrentRange = null;
+    var blSingleAddress = oInput && oInput.getAttribute("data-mail-recipient-suggest-single") == "1";
+    var blAllowedSenderDomains = oInput && oInput.getAttribute("data-mail-recipient-suggest-allowed-domains") == "1";
+    if (!window.fetch || !window.FormData || !oInput || oInput.getAttribute("data-mail-recipient-suggest-bound") == "1") {
+        return;
+    }
+    oInput.setAttribute("data-mail-recipient-suggest-bound", "1");
+    oBox = document.createElement("div");
+    oBox.className = "mail-recipient-suggest-box";
+    oBox.setAttribute("role", "listbox");
+    oBox.hidden = true;
+    document.body.appendChild(oBox);
+
+    function hideList() {
+        oBox.hidden = true;
+        oBox.innerHTML = "";
+        aSuggestions = [];
+        iActiveIndex = -1;
+    }
+
+    function setActiveIndex(iIndex) {
+        var aButtons = oBox.querySelectorAll(".mail-recipient-suggest-option");
+        var i;
+        if (!aButtons.length) {
+            iActiveIndex = -1;
+            return;
+        }
+        if (iIndex < 0) {
+            iIndex = aButtons.length - 1;
+        }
+        if (iIndex >= aButtons.length) {
+            iIndex = 0;
+        }
+        iActiveIndex = iIndex;
+        for (i = 0; i < aButtons.length; i++) {
+            if (i == iActiveIndex) {
+                addAdminClass(aButtons[i], "mail-recipient-suggest-active");
+                aButtons[i].setAttribute("aria-selected", "true");
+            } else {
+                removeAdminClass(aButtons[i], "mail-recipient-suggest-active");
+                aButtons[i].setAttribute("aria-selected", "false");
+            }
+        }
+    }
+
+    function insertSuggestion(iIndex) {
+        if (iIndex < 0 || iIndex >= aSuggestions.length || !aCurrentRange) {
+            return false;
+        }
+        applyMailRecipientSuggestion(oInput, aCurrentRange, aSuggestions[iIndex].value || "", blSingleAddress);
+        hideList();
+        return true;
+    }
+
+    function renderSuggestions(aItems) {
+        var oButton;
+        var i;
+        hideList();
+        if (!aItems || !aItems.length || document.activeElement != oInput) {
+            return;
+        }
+        aSuggestions = aItems;
+        for (i = 0; i < aSuggestions.length; i++) {
+            oButton = document.createElement("button");
+            oButton.type = "button";
+            oButton.className = "mail-recipient-suggest-option";
+            oButton.setAttribute("role", "option");
+            oButton.setAttribute("data-mail-recipient-suggest-index", String(i));
+            oButton.textContent = aSuggestions[i].value || "";
+            oButton.addEventListener("mousedown", function(oEvent) {
+                oEvent.preventDefault();
+            });
+            oButton.addEventListener("click", function() {
+                insertSuggestion(parseInt(this.getAttribute("data-mail-recipient-suggest-index") || "-1", 10));
+            });
+            oBox.appendChild(oButton);
+        }
+        positionMailRecipientSuggestBox(oInput, oBox);
+        oBox.hidden = false;
+        setActiveIndex(0);
+    }
+
+    function requestSuggestions(aRange) {
+        var oData = new FormData();
+        var iCurrentRequest = iRequestIndex;
+        oData.append("action", "suggest_mail_recipients");
+        oData.append("term", aRange.term);
+        if (blAllowedSenderDomains) {
+            oData.append("allowed_sender_domains", "1");
+        }
+        appendAdminCsrfToken(oData);
+        window.fetch(window.location.href, {
+            method: "POST",
+            headers: getAdminAjaxHeaders(),
+            body: oData,
+            credentials: "same-origin"
+        }).then(function(oResponse) {
+            return oResponse.text().then(function(sText) {
+                var aData = null;
+                try {
+                    aData = JSON.parse(sText);
+                } catch (oException) {
+                    aData = null;
+                }
+                if (!oResponse.ok || !aData || !aData.success) {
+                    throw aData || {};
+                }
+                return aData;
+            });
+        }).then(function(aData) {
+            if (iCurrentRequest != iRequestIndex) {
+                return;
+            }
+            aCurrentRange = aRange;
+            renderSuggestions(aData.recipients || []);
+        }).catch(function(oException) {
+            logAdminException(oException);
+            hideList();
+        });
+    }
+
+    function scheduleSuggestions() {
+        var aRange = getMailFormRecipientSuggestRange(oInput, blSingleAddress);
+        iRequestIndex += 1;
+        if (iTimer) {
+            window.clearTimeout(iTimer);
+        }
+        aCurrentRange = aRange;
+        if (blSingleAddress && mailFormValueStartsWithMailbox(oInput.value)) {
+            hideList();
+            return;
+        }
+        if (aRange.term.length < 3) {
+            hideList();
+            return;
+        }
+        iTimer = window.setTimeout(function() {
+            requestSuggestions(aRange);
+        }, 200);
+    }
+
+    oInput.addEventListener("input", scheduleSuggestions);
+    oInput.addEventListener("keyup", function(oEvent) {
+        if (oEvent.key == "ArrowDown" || oEvent.key == "ArrowUp" || oEvent.key == "Enter" || oEvent.key == "Escape") {
+            return;
+        }
+        positionMailRecipientSuggestBox(oInput, oBox);
+    });
+    oInput.addEventListener("keydown", function(oEvent) {
+        if (oBox.hidden) {
+            return;
+        }
+        if (oEvent.key == "ArrowDown") {
+            oEvent.preventDefault();
+            setActiveIndex(iActiveIndex + 1);
+        } else if (oEvent.key == "ArrowUp") {
+            oEvent.preventDefault();
+            setActiveIndex(iActiveIndex - 1);
+        } else if (oEvent.key == "Enter" || oEvent.key == "Tab") {
+            if (insertSuggestion(iActiveIndex)) {
+                oEvent.preventDefault();
+            }
+        } else if (oEvent.key == "Escape") {
+            hideList();
+        }
+    });
+    oInput.addEventListener("click", function() {
+        scheduleSuggestions();
+        positionMailRecipientSuggestBox(oInput, oBox);
+    });
+    oInput.addEventListener("blur", function() {
+        window.setTimeout(hideList, 150);
+    });
+    window.addEventListener("resize", function() {
+        if (!oBox.hidden) {
+            positionMailRecipientSuggestBox(oInput, oBox);
+        }
+    });
+    window.addEventListener("scroll", hideList);
+    document.addEventListener("click", function(oEvent) {
+        if (oEvent.target == oInput || (oBox.contains && oBox.contains(oEvent.target))) {
+            return;
+        }
+        hideList();
+    });
+}
+
 function mailFormNormalizeSingleEmail(sValue) {
     var aList = mailFormNormalizeEmailList(sValue);
     if (aList === false || aList.count > 1) {
@@ -3666,8 +3965,14 @@ function bindMailForm() {
     var oForm = document.getElementById("mail-form");
     var oStatus = document.querySelector(".mail-form-status");
     var sStatusClass = oStatus ? " " + (oStatus.className || "") + " " : "";
+    var aSuggestInputs;
+    var i;
     if (!oForm) {
         return;
+    }
+    aSuggestInputs = oForm.querySelectorAll("[data-mail-recipient-suggest]");
+    for (i = 0; i < aSuggestInputs.length; i++) {
+        bindMailRecipientSuggestInput(aSuggestInputs[i]);
     }
     if (oStatus && sStatusClass.indexOf(" message-success ") !== -1) {
         window.setTimeout(function() {

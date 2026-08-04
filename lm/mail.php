@@ -291,6 +291,75 @@ function mailFormEmailListUsesAllowedSenderDomains($aEmailList, $aAllowedDomains
     return true;
 }
 
+function mailFormEscapeLike($sValue) {
+    return strtr($sValue, array("!" => "!!", "%" => "!%", "_" => "!_"));
+}
+
+function mailFormFormatRecipientSuggestion($sName, $sEmail) {
+    return $sName != "" ? "<" . $sName . "> " . $sEmail : $sEmail;
+}
+
+function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowedDomains = null) {
+    $aSuggestions = array();
+    $aSeen = array();
+    $aParams = array();
+    $aAllowedDomainMap = array();
+    $aDomainPlaceholders = array();
+    $sDomainSql = "";
+    $sParam = "";
+    $iDomain = 0;
+    $sTerm = trim(preg_replace("/[<>]+/", " ", (string)$sTerm));
+    if (strlen($sTerm) < 3) {
+        return $aSuggestions;
+    }
+    $iLimit = (int)$iLimit;
+    if ($iLimit < 1) {
+        $iLimit = 12;
+    }
+    if ($iLimit > 30) {
+        $iLimit = 30;
+    }
+    if (is_array($aAllowedDomains)) {
+        $aAllowedDomainMap = mailFormAllowedSenderDomainMap($aAllowedDomains);
+        if (!$aAllowedDomainMap) {
+            return $aSuggestions;
+        }
+        foreach ($aAllowedDomainMap as $sDomain => $blAllowed) {
+            $sParam = "domain_" . $iDomain;
+            $aDomainPlaceholders[] = ":" . $sParam;
+            $aParams[$sParam] = $sDomain;
+            $iDomain++;
+        }
+        $sDomainSql = " AND LOWER(SUBSTRING_INDEX(c.contact_value, '@', -1)) IN (" . implode(", ", $aDomainPlaceholders) . ")";
+    }
+    $sLike = "%" . mailFormEscapeLike($sTerm) . "%";
+    $sSql = "SELECT subject_rows.subject_id, subject_rows.subject_name, subject_rows.subject_sort_name, c.contact_value AS email FROM (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows INNER JOIN ex_subject_contacts AS sc ON sc.subject_id = subject_rows.subject_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id INNER JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id WHERE ct.contact_type = 'email' AND sc.is_active = 1 AND c.contact_value <> ''" . $sDomainSql . " AND (LOWER(subject_rows.subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_rows.subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' OR LOWER(c.contact_value) LIKE LOWER(:email_term) ESCAPE '!') ORDER BY subject_rows.subject_sort_name COLLATE utf8mb4_czech_ci ASC, sc.is_primary DESC, c.contact_value ASC, sc.id ASC LIMIT " . $iLimit;
+    $oStatement = $oPdo->prepare($sSql);
+    $aParams["subject_name_term"] = $sLike;
+    $aParams["subject_sort_name_term"] = $sLike;
+    $aParams["email_term"] = $sLike;
+    $oStatement->execute($aParams);
+    while ($aRow = $oStatement->fetch()) {
+        $sName = mailFormCleanDisplayName($aRow["subject_name"]);
+        $sEmail = mailFormNormalizeEmailAddress($aRow["email"]);
+        $sKey = strtolower((string)$sEmail) . "\n" . strtolower((string)$sName);
+        if ($sName === false || $sEmail === false || $sEmail == "" || isset($aSeen[$sKey])) {
+            continue;
+        }
+        if (is_array($aAllowedDomains) && !isset($aAllowedDomainMap[mailFormEmailDomain($sEmail)])) {
+            continue;
+        }
+        $aSeen[$sKey] = true;
+        $aSuggestions[] = array(
+            "subject_id" => (int)$aRow["subject_id"],
+            "name" => $sName,
+            "email" => $sEmail,
+            "value" => mailFormFormatRecipientSuggestion($sName, $sEmail)
+        );
+    }
+    return $aSuggestions;
+}
+
 function mailFormEncodeHeader($sValue) {
     $sValue = mailFormStripHeaderBreaks($sValue);
     if ($sValue == "") {
@@ -563,6 +632,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION[$sMailRichTextPasteSessionKey] = (string)$iMailRichTextPaste;
         sendJsonAndExit(array("success" => true, "rich_text_paste" => $iMailRichTextPaste));
     }
+    if (getPostedValue("action") == "suggest_mail_recipients") {
+        try {
+            sendJsonAndExit(array("success" => true, "recipients" => mailFormFetchRecipientSuggestions($oPdo, getPostedTrimmedValue("term"), 12, getPostedValue("allowed_sender_domains") == "1" ? $aMailAllowedSenderDomains : null)));
+        } catch (Exception $oException) {
+            error_log((string)$oException);
+            sendJsonAndExit(array("success" => false, "message" => "Recipients could not be loaded."), 500);
+        }
+    }
     if (getPostedValue("action") == "send_mail") {
         $iMailRichTextPaste = getPostedValue("mail_rich_text_paste") == "1" ? 1 : 0;
         $sMailBodyFormat = getPostedValue("mail_body_format") == "plain" ? "plain" : "html";
@@ -698,27 +775,27 @@ renderMenu();
     <input type="hidden" name="mail_rich_text_paste" class="js-mail-rich-text-paste" value="<?php echo (int)$iMailRichTextPaste; ?>">
     <div class="mail-form-fields">
       <label for="mail-to">To:</label>
-      <input type="text" id="mail-to" name="mail_to" value="<?php echo html($aMailValues["to"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-to" name="mail_to" value="<?php echo html($aMailValues["to"]); ?>" autocomplete="on" inputmode="email" spellcheck="false" data-mail-recipient-suggest="1">
       <label for="mail-cc">Carbon Copy:</label>
-      <input type="text" id="mail-cc" name="mail_cc" value="<?php echo html($aMailValues["cc"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-cc" name="mail_cc" value="<?php echo html($aMailValues["cc"]); ?>" autocomplete="on" inputmode="email" spellcheck="false" data-mail-recipient-suggest="1">
       <label for="mail-bcc">Blind Carbon Copy:</label>
-      <input type="text" id="mail-bcc" name="mail_bcc" value="<?php echo html($aMailValues["bcc"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-bcc" name="mail_bcc" value="<?php echo html($aMailValues["bcc"]); ?>" autocomplete="on" inputmode="email" spellcheck="false" data-mail-recipient-suggest="1">
       <label for="mail-from">From:</label>
-      <input type="text" id="mail-from" name="mail_from" value="<?php echo html($aMailValues["from"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-from" name="mail_from" value="<?php echo html($aMailValues["from"]); ?>" autocomplete="on" inputmode="email" spellcheck="false" data-mail-recipient-suggest="1" data-mail-recipient-suggest-allowed-domains="1" data-mail-recipient-suggest-single="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
 <?php
 
 if (!$blMailRestrictFromToSingleAddress) {
 
 ?>
       <label for="mail-sender">Sender:</label>
-      <input type="text" id="mail-sender" name="mail_sender" value="<?php echo html($aMailValues["sender"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-sender" name="mail_sender" value="<?php echo html($aMailValues["sender"]); ?>" autocomplete="on" inputmode="email" spellcheck="false" data-mail-recipient-suggest="1" data-mail-recipient-suggest-allowed-domains="1" data-mail-recipient-suggest-single="1">
 <?php
 
 }
 
 ?>
       <label for="mail-reply-to">Reply-To:</label>
-      <input type="text" id="mail-reply-to" name="mail_reply_to" value="<?php echo html($aMailValues["reply_to"]); ?>" autocomplete="on" inputmode="email" spellcheck="false">
+      <input type="text" id="mail-reply-to" name="mail_reply_to" value="<?php echo html($aMailValues["reply_to"]); ?>" autocomplete="on" inputmode="email" spellcheck="false" data-mail-recipient-suggest="1">
       <label for="mail-subject">Subject:</label>
       <input type="text" id="mail-subject" name="mail_subject" value="<?php echo html($aMailValues["subject"]); ?>" autocomplete="on">
       <label for="mail-attachments">Attachments:</label>

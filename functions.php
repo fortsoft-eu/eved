@@ -1125,11 +1125,11 @@ function getPageTitleText($sTitle, $aAllowedIps) {
     global $oPdo;
 
     try {
-        $oStatement = $oPdo->prepare("SELECT title FROM fs_menu WHERE path = :path AND icon IS NOT NULL AND name IS NOT NULL AND title IS NOT NULL AND is_active = 1 ORDER BY `order` ASC, id ASC LIMIT 1");
+        $oStatement = $oPdo->prepare("SELECT name FROM fs_menu WHERE path = :path AND icon IS NOT NULL AND name IS NOT NULL AND is_active = 1 ORDER BY `order` ASC, id ASC LIMIT 1");
         $oStatement->execute(array("path" => getCurrentMenuPath()));
-        $sMenuTitle = $oStatement->fetchColumn();
-        if ($sMenuTitle !== false && trim((string)$sMenuTitle) != "") {
-            $sTitle = trim((string)$sMenuTitle);
+        $sMenuName = $oStatement->fetchColumn();
+        if ($sMenuName !== false && trim((string)$sMenuName) != "") {
+            $sTitle = trim((string)$sMenuName);
         }
     } catch (Exception $oException) {
         error_log((string)$oException);
