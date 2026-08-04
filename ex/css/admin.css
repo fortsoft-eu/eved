@@ -107,6 +107,436 @@ form {
     color: #8A6D3B;
 }
 
+.mail-form-status {
+    box-sizing: border-box;
+    display: inline-block;
+    line-height: 18px;
+    min-height: 27px;
+    padding: 4px 8px 3px 8px;
+    white-space: nowrap;
+}
+
+.mail-form-status:empty {
+    display: none;
+}
+
+.mail-form-fields {
+    display: grid;
+    gap: 8px 10px;
+    grid-template-columns: max-content minmax(0, 1fr);
+    margin-bottom: 10px;
+}
+
+.mail-form-fields label {
+    align-self: center;
+    margin-top: 0;
+    white-space: nowrap;
+}
+
+.mail-form-fields input[type="file"], .mail-form-fields input[type="text"] {
+    align-self: center;
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+}
+
+.mail-message-label {
+    display: block;
+    margin: 0 0 4px;
+}
+
+.mail-recipient-suggest-box {
+    background: #FFF;
+    border: 1px solid #C0C0C0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    max-height: 180px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: fixed;
+    z-index: 9;
+}
+
+.mail-recipient-suggest-box[hidden] {
+    display: none;
+}
+
+.mail-recipient-suggest-option {
+    background: #FFF;
+    border: 0;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: block;
+    margin: 0;
+    overflow: hidden;
+    padding: 4px 6px;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.mail-recipient-suggest-option:hover, .mail-recipient-suggest-active {
+    background: #DCDCE4;
+}
+
+html.mail-html {
+    min-height: 100%;
+}
+
+html[data-pmd-like="1"].mail-html {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
+.snippet-board-form {
+    background: transparent;
+    box-sizing: border-box;
+    overflow: visible;
+    padding: 0;
+    width: 100%;
+}
+
+.snippet-board-textarea {
+    box-sizing: border-box;
+    height: 320px;
+    margin: 0;
+    resize: none;
+    width: 100%;
+}
+
+.snippet-board-form .tox-tinymce {
+    border: 1px solid #C0C0C0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.snippet-board-form .tox .tox-editor-header {
+    background: #F0F0F0;
+    border-bottom: 1px solid #C0C0C0;
+}
+
+.snippet-board-form .tox .tox-editor-header.snippet-board-toolbar-lines-ready {
+    border-bottom: 0;
+    position: relative;
+}
+
+.snippet-board-form .tox .tox-toolbar, .snippet-board-form .tox .tox-toolbar__overflow, .snippet-board-form .tox .tox-toolbar__primary {
+    background: #F0F0F0 !important;
+}
+
+.snippet-board-form .tox .tox-editor-header.snippet-board-toolbar-lines-ready .tox-toolbar__primary {
+    border-bottom: 0;
+}
+
+.snippet-board-form .tox .tox-toolbar__primary {
+    border-bottom: 1px solid #C0C0C0;
+    padding: 0;
+}
+
+.snippet-board-form .tox .tox-editor-header.snippet-board-toolbar-lines-ready .tox-toolbar__overflow {
+    border-top: 0;
+    border-bottom: 0;
+}
+
+.snippet-board-form .tox .tox-toolbar__overflow {
+    border-top: 1px solid #C0C0C0;
+    border-bottom: 1px solid #C0C0C0;
+}
+
+.snippet-board-form .tox .snippet-board-toolbar-lines {
+    height: 100%;
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 2;
+}
+
+.snippet-board-form .tox .snippet-board-toolbar-line {
+    background: #C0C0C0;
+    height: 1px;
+    left: 0;
+    position: absolute;
+    right: 0;
+}
+
+.snippet-board-form .tox .tox-edit-area {
+    margin: 0;
+}
+
+.snippet-board-form .tox .tox-edit-area__iframe {
+    display: block;
+}
+
+.snippet-board-form .tox .tox-tbtn {
+    align-items: center;
+    background: #F0F0F0 !important;
+    border: 0;
+    border-radius: 0;
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: 0 0 28px;
+    font-size: 12px;
+    height: 28px;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    min-width: 28px;
+    overflow: visible;
+    padding: 0;
+    vertical-align: top;
+    width: 28px;
+}
+
+.snippet-board-form .tox .tox-toolbar__group {
+    padding: 0;
+}
+
+.snippet-board-form .tox:not([dir=rtl]) .tox-toolbar__group:not(:last-of-type) {
+    border-right: 1px solid #C0C0C0;
+}
+
+.snippet-board-form .tox:not([dir=rtl]) .tox-toolbar__group:last-of-type {
+    border-right: 1px solid #C0C0C0;
+}
+
+.snippet-board-form .tox .tox-icon {
+    align-items: center;
+    display: flex;
+    flex: 0 0 24px;
+    height: 24px;
+    justify-content: center;
+    line-height: 0;
+    overflow: visible;
+    width: 24px;
+}
+
+.snippet-board-form .tox .tox-tbtn__icon-wrap {
+    align-items: center;
+    display: flex;
+    height: 24px;
+    justify-content: center;
+    line-height: 0;
+    width: 24px;
+}
+
+.snippet-board-form .tox .tox-icon.tox-tbtn__icon-wrap {
+    align-items: center;
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: 0 0 28px;
+    height: 28px;
+    justify-content: center;
+    line-height: 0;
+    margin: 0;
+    padding: 2px;
+    width: 28px;
+}
+
+.snippet-board-form .tox .tox-tbtn svg {
+    display: block;
+    flex: 0 0 auto;
+    height: 24px;
+    margin: auto;
+    max-height: none;
+    max-width: none;
+    overflow: visible;
+    transform: scale(0.75);
+    transform-origin: center center;
+    width: 24px;
+}
+
+.snippet-board-form .tox .tox-split-button {
+    background: #F0F0F0 !important;
+    border: 0;
+    border-radius: 0;
+    box-sizing: border-box;
+    margin: 0;
+    overflow: visible;
+}
+
+.snippet-board-form .tox .tox-split-button__main, .snippet-board-form .tox .tox-split-button__chevron {
+    align-items: center;
+    background: #F0F0F0 !important;
+    border: 0;
+    border-radius: 0;
+    display: inline-flex;
+    height: 28px;
+    justify-content: center;
+    line-height: 1;
+    margin: 0;
+    padding: 0;
+    vertical-align: top;
+}
+
+.snippet-board-form .tox .tox-split-button__main {
+    width: 28px;
+}
+
+.snippet-board-form .tox .tox-split-button__chevron {
+    width: 14px;
+}
+
+.snippet-board-form .tox .tox-tbtn[data-mce-name="forecolor-chevron"], .snippet-board-form .tox .tox-tbtn[data-mce-name="backcolor-chevron"] {
+    flex: 0 0 23px;
+    min-width: 23px;
+    width: 23px;
+}
+
+.snippet-board-form .tox .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
+    flex: 0 0 24px;
+    min-width: 24px;
+    width: 24px;
+}
+
+.snippet-board-form .tox .tox-tbtn--select, .snippet-board-form .tox .tox-tbtn--bespoke {
+    background: #F0F0F0 !important;
+    flex: 0 0 auto;
+    height: 28px;
+    line-height: normal;
+    margin: 0;
+    padding: 0 3px;
+    width: auto;
+}
+
+.snippet-board-form .tox .tox-tbtn.tox-tbtn--select[data-mce-name="snippetbullist"] {
+    padding: 0 3px 0 4px;
+}
+
+.snippet-board-form .tox .tox-tbtn.tox-tbtn--select[data-mce-name="snippetnumlist"] {
+    padding: 0 4px;
+}
+
+.snippet-board-form .tox .tox-tbtn__select-label {
+    display: inline-block;
+    font-size: 12px;
+    height: 18px;
+    line-height: 18px;
+    overflow: visible;
+}
+
+.snippet-board-form .tox .tox-tbtn[data-mce-name="fontsize"] .tox-tbtn__select-label {
+    width: 30px;
+}
+
+.snippet-board-form .tox .tox-tbtn[data-mce-name="blocks"] .tox-tbtn__select-label {
+    width: 78px;
+}
+
+.snippet-board-form .tox .tox-tbtn[data-mce-name="fontfamily"] .tox-tbtn__select-label {
+    width: 107px;
+}
+
+body.mail-page .tox.tox-tinymce-aux .tox-menu.tox-collection.tox-collection--list {
+    min-width: 75px;
+}
+
+body.mail-page .tox.tox-tinymce-aux .tox-collection--list .tox-collection__item {
+    min-height: 28px;
+    padding-bottom: 6px;
+    padding-top: 6px;
+}
+
+body.mail-page .tox.tox-tinymce-aux .tox-menu .tox-collection__item-label {
+    min-width: 48px;
+    white-space: nowrap;
+}
+
+.snippet-board-form .tox .tox-tbtn:hover {
+    background: #D6D6D6 !important;
+}
+
+.snippet-board-form .tox .tox-tbtn--enabled, .snippet-board-form .tox .tox-tbtn--enabled:hover {
+    background: #C8D2E0 !important;
+}
+
+.snippet-board-form .tox .tox-statusbar__resize-handle {
+    display: none;
+}
+
+body[data-pmd-like="1"] .admin-controls {
+    flex-wrap: nowrap;
+}
+
+body[data-pmd-like="1"].mail-page {
+    bottom: 6px;
+    height: auto;
+    left: 6px;
+    margin: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+    position: fixed;
+    right: 6px;
+    top: 6px;
+    width: auto;
+}
+
+body[data-pmd-like="1"] .snippet-board-form {
+    overflow: hidden;
+}
+
+body[data-pmd-like="1"].mail-page .mail-form-fields {
+    gap: 3px 6px;
+    margin-bottom: 4px;
+}
+
+body[data-pmd-like="1"].mail-page .mail-form-fields label, body[data-pmd-like="1"].mail-page .mail-form-fields input[type="file"], body[data-pmd-like="1"].mail-page .mail-form-fields input[type="text"], body[data-pmd-like="1"].mail-page .mail-message-label {
+    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+    font-stretch: condensed;
+}
+
+body[data-pmd-like="1"].mail-page .mail-message-label {
+    margin-bottom: 2px;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-toolbar--scrolling {
+    flex-wrap: wrap;
+    overflow-x: visible;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-toolbar--scrolling .tox-toolbar__group {
+    flex-wrap: wrap;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-split-button__main {
+    width: 28px;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-split-button__chevron {
+    width: 14px;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="forecolor-chevron"], body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="backcolor-chevron"] {
+    flex: 0 0 23px;
+    min-width: 23px;
+    width: 23px;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
+    flex: 0 0 24px;
+    min-width: 24px;
+    width: 24px;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn.snippet-board-pmd-hover-active, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active .tox-split-button__main, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active .tox-split-button__chevron {
+    background: #D6D6D6 !important;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn--enabled.snippet-board-pmd-hover-active {
+    background: #C8D2E0 !important;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn.snippet-board-pmd-hover-expired:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired .tox-split-button__main:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired .tox-split-button__chevron:hover {
+    background: #F0F0F0 !important;
+}
+
+body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn--enabled.snippet-board-pmd-hover-expired:hover {
+    background: #C8D2E0 !important;
+}
+
 .admin-top {
     align-items: stretch;
     background: #F8F8F8;
@@ -393,6 +823,14 @@ table {
     height: 27px;
     margin-left: 0;
     padding: 2px 2px 3px 2px;
+}
+
+body.mail-page .admin-controls .mail-send-button {
+    flex: 0 0 auto;
+    padding-left: 8px;
+    padding-right: 8px;
+    white-space: nowrap;
+    width: auto;
 }
 
 .admin-controls label[for="table-filter"] {

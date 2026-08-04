@@ -6541,4 +6541,1512 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+var oMailPmdDropdown = null;
+var iMailPmdDropdownToken = 0;
+
+function submitMailAdminRequest(oData, fSuccess, fError) {
+    appendAdminCsrfToken(oData);
+    window.fetch(window.location.href, {
+        method: "POST",
+        headers: getAdminAjaxHeaders(),
+        body: oData,
+        credentials: "same-origin"
+    }).then(function(oResponse) {
+        return oResponse.text().then(function(sText) {
+            var aData = null;
+            try {
+                aData = JSON.parse(sText);
+            } catch (oException) {
+                aData = {
+                    success: false,
+                    message: "Unexpected server response."
+                };
+            }
+            if (!oResponse.ok || !aData.success) {
+                throw aData;
+            }
+            return aData;
+        });
+    }).then(function(aData) {
+        if (typeof fSuccess == "function") {
+            fSuccess(aData);
+        }
+    }).catch(function(oError) {
+        var sMessage = oError && oError.message ? oError.message : "Request failed.";
+        if (typeof fError == "function") {
+            fError(sMessage);
+        } else {
+            showAdminMessageDialog(sMessage);
+        }
+    });
+}
+
+function isMailFormAddressSeparator(sChar) {
+    return sChar == " " || sChar == "\t" || sChar == "," || sChar == ";";
+}
+
+function mailFormReadEmailToken(sValue, iOffset) {
+    var iLength = sValue.length;
+    var iNextOffset = iOffset;
+    var blEscaped = false;
+    var sChar;
+    if (iOffset >= iLength) {
+        return {token: "", nextOffset: iOffset};
+    }
+    if (sValue.charAt(iOffset) == "\"") {
+        iNextOffset++;
+        while (iNextOffset < iLength) {
+            sChar = sValue.charAt(iNextOffset);
+            if (blEscaped) {
+                blEscaped = false;
+            } else if (sChar == "\\") {
+                blEscaped = true;
+            } else if (sChar == "\"") {
+                iNextOffset++;
+                break;
+            }
+            iNextOffset++;
+        }
+        if (iNextOffset >= iLength || sValue.charAt(iNextOffset) != "@") {
+            return {token: "", nextOffset: iOffset};
+        }
+        iNextOffset++;
+        while (iNextOffset < iLength && !isMailFormAddressSeparator(sValue.charAt(iNextOffset))) {
+            iNextOffset++;
+        }
+        return {token: sValue.substring(iOffset, iNextOffset), nextOffset: iNextOffset};
+    }
+    while (iNextOffset < iLength && !isMailFormAddressSeparator(sValue.charAt(iNextOffset))) {
+        iNextOffset++;
+    }
+    return {token: sValue.substring(iOffset, iNextOffset), nextOffset: iNextOffset};
+}
+
+function mailFormFindUnquotedChar(sValue, sFind, iOffset) {
+    var iLength = sValue.length;
+    var blQuoted = false;
+    var blEscaped = false;
+    var sChar;
+    while (iOffset < iLength) {
+        sChar = sValue.charAt(iOffset);
+        if (blEscaped) {
+            blEscaped = false;
+        } else if (sChar == "\\") {
+            blEscaped = true;
+        } else if (sChar == "\"") {
+            blQuoted = !blQuoted;
+        } else if (!blQuoted && sChar == sFind) {
+            return iOffset;
+        }
+        iOffset++;
+    }
+    return -1;
+}
+
+function mailFormFindUnquotedCharBeforeListSeparator(sValue, sFind, iOffset) {
+    var iLength = sValue.length;
+    var blQuoted = false;
+    var blEscaped = false;
+    var sChar;
+    while (iOffset < iLength) {
+        sChar = sValue.charAt(iOffset);
+        if (blEscaped) {
+            blEscaped = false;
+        } else if (sChar == "\\") {
+            blEscaped = true;
+        } else if (sChar == "\"") {
+            blQuoted = !blQuoted;
+        } else if (!blQuoted && (sChar == "," || sChar == ";")) {
+            return -1;
+        } else if (!blQuoted && sChar == sFind) {
+            return iOffset;
+        }
+        iOffset++;
+    }
+    return -1;
+}
+
+function mailFormCleanDisplayName(sValue) {
+    var sName = String(sValue).trim();
+    var iLength = sName.length;
+    if (sName == "") {
+        return "";
+    }
+    if (/[\x00-\x1F\x7F]/.test(String(sName)) || sName.indexOf("<") !== -1 || sName.indexOf(">") !== -1) {
+        return false;
+    }
+    if (iLength >= 2 && sName.charAt(0) == "\"" && sName.charAt(iLength - 1) == "\"") {
+        sName = sName.substring(1, iLength - 1).replace(/\\\\/g, "\\").replace(/\\"/g, "\"");
+    }
+    return sName.replace(/[ \t]+/g, " ").trim();
+}
+
+function isMailFormEmailAddress(sValue) {
+    var sEmail = String(sValue).trim();
+    if (sEmail == "" || sEmail.length > 254) {
+        return false;
+    }
+    if (sEmail.indexOf("@") > 64) {
+        return false;
+    }
+    return /^(?:[A-Za-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`{|}~-]+)*|"(?:[^"\\\r\n]|\\[\x20-\x7E])*")@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(sEmail);
+}
+
+function mailFormParseMailbox(sValue, iOffset) {
+    var iLength = sValue.length;
+    var oToken;
+    var sToken = "";
+    var sEmail = "";
+    var sName = "";
+    var iOpen = -1;
+    var iClose = -1;
+    var iProbe = iOffset;
+    if (iOffset >= iLength) {
+        return false;
+    }
+    if (sValue.charAt(iOffset) == "<") {
+        iClose = mailFormFindUnquotedChar(sValue, ">", iOffset + 1);
+        if (iClose < 0) {
+            return false;
+        }
+        sToken = sValue.substring(iOffset + 1, iClose).trim();
+        iProbe = iClose + 1;
+        while (iProbe < iLength && (sValue.charAt(iProbe) == " " || sValue.charAt(iProbe) == "\t")) {
+            iProbe++;
+        }
+        if (iProbe >= iLength || sValue.charAt(iProbe) == "," || sValue.charAt(iProbe) == ";") {
+            if (!isMailFormEmailAddress(sToken)) {
+                return false;
+            }
+            return {name: "", email: sToken, nextOffset: iClose + 1};
+        }
+        sName = mailFormCleanDisplayName(sToken);
+        oToken = mailFormReadEmailToken(sValue, iProbe);
+        sEmail = oToken.token.trim();
+        if (sName === false || !isMailFormEmailAddress(sEmail)) {
+            return false;
+        }
+        return {name: sName, email: sEmail, nextOffset: oToken.nextOffset};
+    }
+    oToken = mailFormReadEmailToken(sValue, iOffset);
+    sEmail = oToken.token.trim();
+    if (isMailFormEmailAddress(sEmail)) {
+        return {name: "", email: sEmail, nextOffset: oToken.nextOffset};
+    }
+    iOpen = mailFormFindUnquotedCharBeforeListSeparator(sValue, "<", iOffset);
+    if (iOpen < 0) {
+        return false;
+    }
+    iClose = mailFormFindUnquotedChar(sValue, ">", iOpen + 1);
+    if (iClose < 0) {
+        return false;
+    }
+    sName = mailFormCleanDisplayName(sValue.substring(iOffset, iOpen));
+    sEmail = sValue.substring(iOpen + 1, iClose).trim();
+    if (sName === false || !isMailFormEmailAddress(sEmail)) {
+        return false;
+    }
+    return {name: sName, email: sEmail, nextOffset: iClose + 1};
+}
+
+function mailFormNormalizeEmailList(sValue) {
+    var aMailboxes = [];
+    var iLength;
+    var iOffset = 0;
+    var iCount = 0;
+    var oMailbox;
+    sValue = String(sValue || "");
+    iLength = sValue.length;
+    if (/[\x00-\x1F\x7F]/.test(String(sValue))) {
+        return false;
+    }
+    while (iOffset < iLength) {
+        while (iOffset < iLength && isMailFormAddressSeparator(sValue.charAt(iOffset))) {
+            iOffset++;
+        }
+        if (iOffset >= iLength) {
+            break;
+        }
+        oMailbox = mailFormParseMailbox(sValue, iOffset);
+        if (oMailbox === false || oMailbox.nextOffset <= iOffset) {
+            return false;
+        }
+        aMailboxes.push(oMailbox);
+        iCount++;
+        iOffset = oMailbox.nextOffset;
+        if (iOffset < iLength && !isMailFormAddressSeparator(sValue.charAt(iOffset))) {
+            return false;
+        }
+    }
+    return {count: iCount, mailboxes: aMailboxes};
+}
+
+function getMailFormRecipientSuggestSearchTerm(sValue) {
+    return String(sValue || "").replace(/[<>"]/g, " ").replace(/^[\s,;]+|[\s,;]+$/g, "").replace(/[ \t]+/g, " ");
+}
+
+function mailFormValueStartsWithMailbox(sValue) {
+    var iLength = String(sValue || "").length;
+    var iOffset = 0;
+    var oMailbox;
+    sValue = String(sValue || "");
+    while (iOffset < iLength && isMailFormAddressSeparator(sValue.charAt(iOffset))) {
+        iOffset++;
+    }
+    if (iOffset >= iLength) {
+        return false;
+    }
+    oMailbox = mailFormParseMailbox(sValue, iOffset);
+    return oMailbox !== false && oMailbox.nextOffset > iOffset;
+}
+
+function getMailFormRecipientSuggestRange(oInput, blSingleAddress) {
+    var sValue = String(oInput ? oInput.value || "" : "");
+    var iLength = sValue.length;
+    var iCaret = oInput && typeof oInput.selectionStart == "number" ? oInput.selectionStart : iLength;
+    var iOffset = 0;
+    var iStart = 0;
+    var oMailbox;
+    if (iCaret < 0 || iCaret > iLength) {
+        iCaret = iLength;
+    }
+    if (blSingleAddress) {
+        return {
+            start: 0,
+            end: iLength,
+            term: getMailFormRecipientSuggestSearchTerm(sValue)
+        };
+    }
+    while (iOffset < iCaret) {
+        while (iOffset < iCaret && isMailFormAddressSeparator(sValue.charAt(iOffset))) {
+            iOffset++;
+        }
+        iStart = iOffset;
+        if (iOffset >= iCaret) {
+            break;
+        }
+        oMailbox = mailFormParseMailbox(sValue, iOffset);
+        if (oMailbox === false || oMailbox.nextOffset <= iOffset || oMailbox.nextOffset >= iCaret) {
+            break;
+        }
+        iOffset = oMailbox.nextOffset;
+        if (iOffset < iCaret && !isMailFormAddressSeparator(sValue.charAt(iOffset))) {
+            break;
+        }
+    }
+    return {
+        start: iStart,
+        end: iCaret,
+        term: getMailFormRecipientSuggestSearchTerm(sValue.substring(iStart, iCaret))
+    };
+}
+
+function positionMailRecipientSuggestBox(oInput, oBox) {
+    var oRect;
+    if (!oInput || !oBox) {
+        return;
+    }
+    oRect = oInput.getBoundingClientRect();
+    oBox.style.left = Math.max(0, Math.floor(oRect.left)) + "px";
+    oBox.style.top = Math.floor(oRect.bottom + 1) + "px";
+    oBox.style.width = Math.max(240, Math.floor(oRect.width)) + "px";
+}
+
+function applyMailRecipientSuggestion(oInput, aRange, sSuggestion, blSingleAddress) {
+    var sValue = String(oInput ? oInput.value || "" : "");
+    var sBefore = sValue.substring(0, aRange.start);
+    var sAfter = sValue.substring(aRange.end);
+    var sInsert = String(sSuggestion || "");
+    var iCaret;
+    if (!oInput || sInsert == "") {
+        return;
+    }
+    if (blSingleAddress) {
+        sBefore = "";
+        sAfter = "";
+    } else {
+        if (sBefore != "" && !isMailFormAddressSeparator(sBefore.charAt(sBefore.length - 1))) {
+            sBefore += " ";
+        }
+        if (sAfter == "" || !isMailFormAddressSeparator(sAfter.charAt(0))) {
+            sInsert += " ";
+        }
+    }
+    oInput.value = sBefore + sInsert + sAfter;
+    iCaret = (sBefore + sInsert).length;
+    if (typeof oInput.setSelectionRange == "function") {
+        try {
+            oInput.setSelectionRange(iCaret, iCaret);
+        } catch (oException) {
+            logAdminException(oException);
+        }
+    }
+    focusAdminElement(oInput, false);
+    dispatchAdminInputEvent(oInput);
+}
+
+function bindMailRecipientSuggestInput(oInput) {
+    var oBox;
+    var iTimer = 0;
+    var iRequestIndex = 0;
+    var aSuggestions = [];
+    var iActiveIndex = -1;
+    var aCurrentRange = null;
+    var blSingleAddress = oInput && oInput.getAttribute("data-mail-recipient-suggest-single") == "1";
+    var blAllowedSenderDomains = oInput && oInput.getAttribute("data-mail-recipient-suggest-allowed-domains") == "1";
+    if (!window.fetch || !window.FormData || !oInput || oInput.getAttribute("data-mail-recipient-suggest-bound") == "1") {
+        return;
+    }
+    oInput.setAttribute("data-mail-recipient-suggest-bound", "1");
+    oBox = document.createElement("div");
+    oBox.className = "mail-recipient-suggest-box";
+    oBox.setAttribute("role", "listbox");
+    oBox.hidden = true;
+    document.body.appendChild(oBox);
+
+    function hideList() {
+        oBox.hidden = true;
+        oBox.innerHTML = "";
+        aSuggestions = [];
+        iActiveIndex = -1;
+    }
+
+    function setActiveIndex(iIndex) {
+        var aButtons = oBox.querySelectorAll(".mail-recipient-suggest-option");
+        var i;
+        if (!aButtons.length) {
+            iActiveIndex = -1;
+            return;
+        }
+        if (iIndex < 0) {
+            iIndex = aButtons.length - 1;
+        }
+        if (iIndex >= aButtons.length) {
+            iIndex = 0;
+        }
+        iActiveIndex = iIndex;
+        for (i = 0; i < aButtons.length; i++) {
+            if (i == iActiveIndex) {
+                addAdminClass(aButtons[i], "mail-recipient-suggest-active");
+                aButtons[i].setAttribute("aria-selected", "true");
+            } else {
+                removeAdminClass(aButtons[i], "mail-recipient-suggest-active");
+                aButtons[i].setAttribute("aria-selected", "false");
+            }
+        }
+    }
+
+    function insertSuggestion(iIndex) {
+        if (iIndex < 0 || iIndex >= aSuggestions.length || !aCurrentRange) {
+            return false;
+        }
+        applyMailRecipientSuggestion(oInput, aCurrentRange, aSuggestions[iIndex].value || "", blSingleAddress);
+        hideList();
+        return true;
+    }
+
+    function renderSuggestions(aItems) {
+        var oButton;
+        var i;
+        hideList();
+        if (!aItems || !aItems.length || document.activeElement != oInput) {
+            return;
+        }
+        aSuggestions = aItems;
+        for (i = 0; i < aSuggestions.length; i++) {
+            oButton = document.createElement("button");
+            oButton.type = "button";
+            oButton.className = "mail-recipient-suggest-option";
+            oButton.setAttribute("role", "option");
+            oButton.setAttribute("data-mail-recipient-suggest-index", String(i));
+            oButton.textContent = aSuggestions[i].value || "";
+            oButton.addEventListener("mousedown", function(oEvent) {
+                oEvent.preventDefault();
+            });
+            oButton.addEventListener("click", function() {
+                insertSuggestion(parseInt(this.getAttribute("data-mail-recipient-suggest-index") || "-1", 10));
+            });
+            oBox.appendChild(oButton);
+        }
+        positionMailRecipientSuggestBox(oInput, oBox);
+        oBox.hidden = false;
+        setActiveIndex(0);
+    }
+
+    function requestSuggestions(aRange) {
+        var oData = new FormData();
+        var iCurrentRequest = iRequestIndex;
+        oData.append("action", "suggest_mail_recipients");
+        oData.append("term", aRange.term);
+        if (blAllowedSenderDomains) {
+            oData.append("allowed_sender_domains", "1");
+        }
+        appendAdminCsrfToken(oData);
+        window.fetch(window.location.href, {
+            method: "POST",
+            headers: getAdminAjaxHeaders(),
+            body: oData,
+            credentials: "same-origin"
+        }).then(function(oResponse) {
+            return oResponse.text().then(function(sText) {
+                var aData = null;
+                try {
+                    aData = JSON.parse(sText);
+                } catch (oException) {
+                    aData = null;
+                }
+                if (!oResponse.ok || !aData || !aData.success) {
+                    throw aData || {};
+                }
+                return aData;
+            });
+        }).then(function(aData) {
+            if (iCurrentRequest != iRequestIndex) {
+                return;
+            }
+            aCurrentRange = aRange;
+            renderSuggestions(aData.recipients || []);
+        }).catch(function(oException) {
+            logAdminException(oException);
+            hideList();
+        });
+    }
+
+    function scheduleSuggestions() {
+        var aRange = getMailFormRecipientSuggestRange(oInput, blSingleAddress);
+        iRequestIndex += 1;
+        if (iTimer) {
+            window.clearTimeout(iTimer);
+        }
+        aCurrentRange = aRange;
+        if (blSingleAddress && mailFormValueStartsWithMailbox(oInput.value)) {
+            hideList();
+            return;
+        }
+        if (aRange.term.length < 3) {
+            hideList();
+            return;
+        }
+        iTimer = window.setTimeout(function() {
+            requestSuggestions(aRange);
+        }, 200);
+    }
+
+    oInput.addEventListener("input", scheduleSuggestions);
+    oInput.addEventListener("keydown", function(oEvent) {
+        if (oBox.hidden) {
+            return;
+        }
+        if (oEvent.key == "ArrowDown") {
+            oEvent.preventDefault();
+            setActiveIndex(iActiveIndex + 1);
+        } else if (oEvent.key == "ArrowUp") {
+            oEvent.preventDefault();
+            setActiveIndex(iActiveIndex - 1);
+        } else if (oEvent.key == "Enter" || oEvent.key == "Tab") {
+            if (insertSuggestion(iActiveIndex)) {
+                oEvent.preventDefault();
+            }
+        } else if (oEvent.key == "Escape") {
+            hideList();
+        }
+    });
+    oInput.addEventListener("click", function() {
+        scheduleSuggestions();
+        positionMailRecipientSuggestBox(oInput, oBox);
+    });
+    oInput.addEventListener("blur", function() {
+        window.setTimeout(hideList, 150);
+    });
+    window.addEventListener("resize", function() {
+        if (!oBox.hidden) {
+            positionMailRecipientSuggestBox(oInput, oBox);
+        }
+    });
+    window.addEventListener("scroll", hideList);
+    document.addEventListener("click", function(oEvent) {
+        if (oEvent.target == oInput || (oBox.contains && oBox.contains(oEvent.target))) {
+            return;
+        }
+        hideList();
+    });
+}
+
+function mailFormNormalizeSingleEmail(sValue) {
+    var aList = mailFormNormalizeEmailList(sValue);
+    if (aList === false || aList.count > 1) {
+        return false;
+    }
+    return aList;
+}
+
+function getMailFormFieldValue(oForm, sName) {
+    return oForm && oForm.elements[sName] ? String(oForm.elements[sName].value || "").trim() : "";
+}
+
+function getMailFormEmailDomain(sEmail) {
+    var iAt = String(sEmail).lastIndexOf("@");
+    if (iAt < 0) {
+        return "";
+    }
+    return String(sEmail).substring(iAt + 1).toLowerCase();
+}
+
+function getMailFormAllowedSenderDomains(oForm) {
+    var aDomains = [];
+    var aParsed;
+    var i;
+    try {
+        aParsed = JSON.parse(oForm.getAttribute("data-mail-allowed-sender-domains") || "[]");
+    } catch (oException) {
+        aParsed = [];
+    }
+    for (i = 0; i < aParsed.length; i++) {
+        if (String(aParsed[i]).trim() != "") {
+            aDomains.push(String(aParsed[i]).trim().toLowerCase());
+        }
+    }
+    return aDomains;
+}
+
+function mailFormEmailListUsesAllowedSenderDomains(aEmailList, aAllowedDomains) {
+    var sDomain;
+    var i;
+    if (aEmailList === false) {
+        return false;
+    }
+    for (i = 0; i < aEmailList.mailboxes.length; i++) {
+        sDomain = getMailFormEmailDomain(aEmailList.mailboxes[i].email);
+        if (sDomain == "" || aAllowedDomains.indexOf(sDomain) < 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function isMailFormBodyEmpty(sValue, sBodyFormat) {
+    var oNode = document.createElement("div");
+    var sText = String(sValue || "");
+    sText = sText.replace(/<\s*(script|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/ig, "");
+    if (sBodyFormat != "plain" && /<\s*img\b/i.test(sText)) {
+        return false;
+    }
+    sText = sText.replace(/<\s*br\s*\/?\s*>/ig, "\n");
+    sText = sText.replace(/<\s*\/\s*(p|div|h[1-6]|li|tr|blockquote|pre|table|ul|ol)\s*>/ig, "\n");
+    sText = sText.replace(/<\s*\/\s*(td|th)\s*>/ig, "\t");
+    oNode.innerHTML = sText;
+    sText = (oNode.textContent || oNode.innerText || "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+    return sText == "";
+}
+
+function validateMailForm(oForm, sBodyFormat) {
+    var aErrors = [];
+    var sTo = getMailFormFieldValue(oForm, "mail_to");
+    var sCc = getMailFormFieldValue(oForm, "mail_cc");
+    var sBcc = getMailFormFieldValue(oForm, "mail_bcc");
+    var sFrom = getMailFormFieldValue(oForm, "mail_from");
+    var sSender = getMailFormFieldValue(oForm, "mail_sender");
+    var sReplyTo = getMailFormFieldValue(oForm, "mail_reply_to");
+    var sMessage = oForm && oForm.elements.mail_message ? String(oForm.elements.mail_message.value || "") : "";
+    var oAttachmentInput = oForm ? oForm.querySelector("[name=\"mail_attachments[]\"]") : null;
+    var blHasAttachments = oAttachmentInput && oAttachmentInput.files && oAttachmentInput.files.length > 0;
+    var blMailBodyIsEmpty = sBodyFormat == "plain" ? isMailFormBodyEmpty(sMessage, "plain") : isMailFormBodyEmpty(sMessage, "html") && !blHasAttachments;
+    var aAllowedSenderDomains = getMailFormAllowedSenderDomains(oForm);
+    var blRestrictFromToSingleAddress = oForm && oForm.getAttribute("data-mail-restrict-from-to-single-address") == "1";
+    var aTo = mailFormNormalizeEmailList(sTo);
+    var aCc = mailFormNormalizeEmailList(sCc);
+    var aBcc = mailFormNormalizeEmailList(sBcc);
+    var aFrom = mailFormNormalizeEmailList(sFrom);
+    var aSender = mailFormNormalizeSingleEmail(sSender);
+    var aReplyTo = mailFormNormalizeEmailList(sReplyTo);
+    var iRecipientCount = (aTo !== false ? aTo.count : 0) + (aCc !== false ? aCc.count : 0) + (aBcc !== false ? aBcc.count : 0);
+    if (sTo != "" && aTo === false) {
+        aErrors.push({message: "Invalid To.", field: "mail_to"});
+    }
+    if (sCc != "" && aCc === false) {
+        aErrors.push({message: "Invalid carbon copy.", field: "mail_cc"});
+    }
+    if (sBcc != "" && aBcc === false) {
+        aErrors.push({message: "Invalid blind copy.", field: "mail_bcc"});
+    }
+    if (iRecipientCount < 1 && sTo == "" && sCc == "" && sBcc == "") {
+        aErrors.push({message: "Recipient required.", field: "mail_to"});
+    }
+    if (sFrom != "" && aFrom === false) {
+        aErrors.push({message: "Invalid From.", field: "mail_from"});
+    }
+    if (sFrom != "" && aFrom !== false && !mailFormEmailListUsesAllowedSenderDomains(aFrom, aAllowedSenderDomains)) {
+        aErrors.push({message: "Invalid From domain.", field: "mail_from"});
+    }
+    if (sSender != "" && aSender === false) {
+        aErrors.push({message: "Invalid Sender.", field: "mail_sender"});
+    }
+    if (sSender != "" && aSender !== false && !mailFormEmailListUsesAllowedSenderDomains(aSender, aAllowedSenderDomains)) {
+        aErrors.push({message: "Invalid Sender domain.", field: "mail_sender"});
+    }
+    if (aFrom !== false && aFrom.count > 1 && blRestrictFromToSingleAddress) {
+        aErrors.push({message: "Single From required.", field: "mail_from"});
+    }
+    if (aFrom !== false && aFrom.count > 1 && !blRestrictFromToSingleAddress && sSender == "") {
+        aErrors.push({message: "Sender required.", field: "mail_sender"});
+    }
+    if (sReplyTo != "" && aReplyTo === false) {
+        aErrors.push({message: "Invalid Reply-To.", field: "mail_reply_to"});
+    }
+    if (blMailBodyIsEmpty) {
+        aErrors.push({message: "Message required.", field: "mail_message"});
+    }
+    return {errors: aErrors};
+}
+
+function getMailFormValidationMessage(aValidation) {
+    var aMessages = [];
+    var i;
+    if (!aValidation || !aValidation.errors || aValidation.errors.length < 1) {
+        return "";
+    }
+    if (isMailPmdLike()) {
+        return aValidation.errors[0].message;
+    }
+    for (i = 0; i < aValidation.errors.length; i++) {
+        aMessages.push(aValidation.errors[i].message);
+    }
+    return aMessages.join(" ");
+}
+
+function setMailFormStatus(oStatus, sMessage, sStatusClass) {
+    if (!oStatus) {
+        return;
+    }
+    oStatus.textContent = sMessage;
+    oStatus.className = sStatusClass != "" ? "mail-form-status " + sStatusClass : "mail-form-status";
+}
+
+function bindMailForm() {
+    var oForm = document.getElementById("mail-form");
+    var oStatus = document.querySelector(".mail-form-status");
+    var sStatusClass = oStatus ? " " + (oStatus.className || "") + " " : "";
+    var aSuggestInputs;
+    var i;
+    if (!oForm) {
+        return;
+    }
+    aSuggestInputs = oForm.querySelectorAll("[data-mail-recipient-suggest]");
+    for (i = 0; i < aSuggestInputs.length; i++) {
+        bindMailRecipientSuggestInput(aSuggestInputs[i]);
+    }
+    if (oStatus && sStatusClass.indexOf(" message-success ") !== -1) {
+        window.setTimeout(function() {
+            oStatus.textContent = "";
+            oStatus.className = "mail-form-status";
+        }, 5000);
+    }
+    oForm.addEventListener("submit", function(oEvent) {
+        var aValidation;
+        var oField;
+        var oSubmitter = oEvent && oEvent.submitter ? oEvent.submitter : document.activeElement;
+        var sBodyFormat = oSubmitter && oSubmitter.name == "mail_body_format" && oSubmitter.value == "plain" ? "plain" : "html";
+        if (window.tinymce && typeof window.tinymce.triggerSave == "function") {
+            window.tinymce.triggerSave();
+        }
+        aValidation = validateMailForm(oForm, sBodyFormat);
+        if (aValidation.errors && aValidation.errors.length > 0) {
+            if (oEvent && typeof oEvent.preventDefault == "function") {
+                oEvent.preventDefault();
+            }
+            setMailFormStatus(oStatus, getMailFormValidationMessage(aValidation), "message-error");
+            oField = aValidation.errors[0].field && oForm.elements[aValidation.errors[0].field] ? oForm.elements[aValidation.errors[0].field] : null;
+            if (oField && typeof oField.focus == "function") {
+                oField.focus();
+            }
+            return false;
+        }
+    });
+}
+
+function resizeMailEditor(iHeight) {
+    var oTextarea = document.querySelector("#mail-form .js-snippet-board-textarea");
+    var oEditor;
+    var oContainer;
+    if (!oTextarea || !window.tinymce || typeof window.tinymce.get != "function") {
+        return;
+    }
+    window.setTimeout(function() {
+        oEditor = window.tinymce.get(oTextarea.id);
+        if (oEditor && typeof oEditor.getContainer == "function") {
+            oContainer = oEditor.getContainer();
+            if (oContainer) {
+                oContainer.style.height = iHeight + "px";
+                oContainer.style.minHeight = iHeight + "px";
+            }
+            if (typeof oEditor.dispatch == "function") {
+                oEditor.dispatch("ResizeEditor");
+            }
+            scheduleMailToolbarLines(oEditor);
+        }
+    }, 0);
+}
+
+function layoutMailForm() {
+    var oForm = document.getElementById("mail-form");
+    var oTextarea = oForm ? oForm.querySelector(".js-snippet-board-textarea") : null;
+    var oEditor = oTextarea && window.tinymce && typeof window.tinymce.get == "function" ? window.tinymce.get(oTextarea.id) : null;
+    var oContainer = oEditor && typeof oEditor.getContainer == "function" ? oEditor.getContainer() : null;
+    var oTarget = oContainer || oTextarea;
+    var oVisualViewport = window.visualViewport || null;
+    var iViewportHeight = oVisualViewport ? Math.floor(oVisualViewport.height) : (window.innerHeight || document.documentElement.clientHeight || 768);
+    var iTop;
+    var iEditorHeight;
+    if (!oForm || !oTextarea || !oTarget) {
+        return;
+    }
+    iTop = oTarget.getBoundingClientRect().top - (oVisualViewport ? oVisualViewport.offsetTop : 0);
+    iEditorHeight = Math.max(220, Math.floor(iViewportHeight - iTop - 6));
+    oTextarea.style.height = iEditorHeight + "px";
+    resizeMailEditor(iEditorHeight);
+}
+
+function isMailEditor(oEditor) {
+    var oElement = oEditor && typeof oEditor.getElement == "function" ? oEditor.getElement() : null;
+    return !!(oElement && oElement.form && oElement.form.id == "mail-form");
+}
+
+function getMailRichTextPasteInput() {
+    return document.querySelector("#mail-form .js-mail-rich-text-paste");
+}
+
+function setMailRichTextPasteInputValue(blEnabled) {
+    var oInput = getMailRichTextPasteInput();
+    if (oInput) {
+        oInput.value = blEnabled ? "1" : "0";
+    }
+}
+
+function setMailEditorPlainTextPasteMode(oEditor, blEnabled) {
+    var blCurrent;
+    if (!oEditor || typeof oEditor.execCommand != "function" || typeof oEditor.queryCommandState != "function") {
+        return;
+    }
+    blCurrent = oEditor.queryCommandState("mceTogglePlainTextPaste");
+    if ((blCurrent ? 1 : 0) != (blEnabled ? 1 : 0)) {
+        oEditor.execCommand("mceTogglePlainTextPaste");
+    }
+    scheduleMailPasteModeButtonSync(oEditor);
+}
+
+function setMailPasteModeButtonState(oButton, blActive) {
+    if (!oButton) {
+        return;
+    }
+    if (blActive) {
+        addAdminClass(oButton, "tox-tbtn--enabled");
+        addAdminClass(oButton, "tox-tbtn--active");
+    } else {
+        removeAdminClass(oButton, "tox-tbtn--enabled");
+        removeAdminClass(oButton, "tox-tbtn--active");
+    }
+    oButton.setAttribute("aria-pressed", blActive ? "true" : "false");
+}
+
+function updateMailPasteModeButtons(oEditor) {
+    var blPlainTextPaste;
+    var oContainer;
+    var aFormattedButtons;
+    var aPlainTextButtons;
+    var i;
+    if (!oEditor || typeof oEditor.queryCommandState != "function") {
+        return;
+    }
+    blPlainTextPaste = oEditor.queryCommandState("mceTogglePlainTextPaste");
+    oContainer = typeof oEditor.getContainer == "function" ? oEditor.getContainer() : null;
+    if (!oContainer) {
+        return;
+    }
+    aFormattedButtons = oContainer.querySelectorAll(".tox-tbtn[data-mce-name=\"snippetpasteformatted\"]");
+    aPlainTextButtons = oContainer.querySelectorAll(".tox-tbtn[data-mce-name=\"snippetpastetext\"]");
+    for (i = 0; i < aFormattedButtons.length; i++) {
+        setMailPasteModeButtonState(aFormattedButtons[i], !blPlainTextPaste);
+    }
+    for (i = 0; i < aPlainTextButtons.length; i++) {
+        setMailPasteModeButtonState(aPlainTextButtons[i], blPlainTextPaste);
+    }
+}
+
+function scheduleMailPasteModeButtonSync(oEditor) {
+    var iToken;
+    if (!oEditor) {
+        return;
+    }
+    oEditor._mailPasteModeSyncToken = (oEditor._mailPasteModeSyncToken || 0) + 1;
+    iToken = oEditor._mailPasteModeSyncToken;
+    updateMailPasteModeButtons(oEditor);
+    window.setTimeout(function() {
+        if (oEditor._mailPasteModeSyncToken == iToken) {
+            updateMailPasteModeButtons(oEditor);
+        }
+    }, 0);
+    window.setTimeout(function() {
+        if (oEditor._mailPasteModeSyncToken == iToken) {
+            updateMailPasteModeButtons(oEditor);
+        }
+    }, 80);
+    window.setTimeout(function() {
+        if (oEditor._mailPasteModeSyncToken == iToken) {
+            updateMailPasteModeButtons(oEditor);
+        }
+    }, 250);
+}
+
+function applyMailStoredRichTextPaste(oEditor) {
+    var oInput;
+    if (!isMailEditor(oEditor)) {
+        return;
+    }
+    oInput = getMailRichTextPasteInput();
+    setMailEditorPlainTextPasteMode(oEditor, !oInput || oInput.value != "1");
+}
+
+function saveMailRichTextPaste(blEnabled) {
+    var oData = new FormData();
+    setMailRichTextPasteInputValue(blEnabled);
+    appendAdminEncodedValue(oData, "action", "save_mail_rich_text_paste");
+    appendAdminEncodedValue(oData, "rich_text_paste", blEnabled ? "1" : "0");
+    submitMailAdminRequest(oData, null, function(sMessage) {
+        logAdminException(sMessage);
+    });
+}
+
+function setMailEditorStoredRichTextPaste(oEditor, blEnabled) {
+    setMailEditorPlainTextPasteMode(oEditor, !blEnabled);
+    saveMailRichTextPaste(blEnabled);
+    scheduleMailPasteModeButtonSync(oEditor);
+}
+
+function getMailEditorPlainTextContent(oEditor) {
+    var sText = "";
+    if (oEditor && oEditor.selection && typeof oEditor.selection.getContent == "function") {
+        sText = oEditor.selection.getContent({format: "text"});
+    }
+    if (sText == "" && oEditor && typeof oEditor.getContent == "function") {
+        sText = oEditor.getContent({format: "text"});
+    }
+    return sText;
+}
+
+function getMailEditorHtmlContent(oEditor) {
+    var sHtml = "";
+    if (oEditor && oEditor.selection && typeof oEditor.selection.getContent == "function") {
+        sHtml = oEditor.selection.getContent({format: "html"});
+    }
+    if (sHtml == "" && oEditor && typeof oEditor.getContent == "function") {
+        sHtml = oEditor.getContent({format: "html"});
+    }
+    return sHtml;
+}
+
+function copyMailPlainText(oEditor) {
+    var sText = getMailEditorPlainTextContent(oEditor);
+    var oTextarea;
+    var blCopied = false;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sText).catch(function(oException) {
+            logAdminException(oException);
+            showAdminMessageDialog("Plain text could not be copied.", "Clipboard Error");
+        });
+        return;
+    }
+    oTextarea = document.createElement("textarea");
+    oTextarea.value = sText;
+    oTextarea.setAttribute("readonly", "readonly");
+    oTextarea.style.position = "fixed";
+    oTextarea.style.left = "-9999px";
+    document.body.appendChild(oTextarea);
+    oTextarea.select();
+    try {
+        blCopied = document.execCommand("copy");
+    } catch (oException) {
+        logAdminException(oException);
+    }
+    document.body.removeChild(oTextarea);
+    if (!blCopied) {
+        showAdminMessageDialog("Plain text could not be copied.", "Clipboard Error");
+    }
+}
+
+function copyMailRichText(oEditor) {
+    var sHtml = getMailEditorHtmlContent(oEditor);
+    var sText = getMailEditorPlainTextContent(oEditor);
+    var oItem;
+    if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+        oItem = new ClipboardItem({
+            "text/html": new Blob([sHtml], {type: "text/html"}),
+            "text/plain": new Blob([sText], {type: "text/plain"})
+        });
+        navigator.clipboard.write([oItem]).catch(function(oException) {
+            logAdminException(oException);
+            copyMailPlainText(oEditor);
+        });
+        return;
+    }
+    copyMailPlainText(oEditor);
+}
+
+function isMailPmdLike() {
+    return document.body && document.body.getAttribute("data-pmd-like") == "1";
+}
+
+function isMailScrollLockPage() {
+    return !!(document.body && (" " + (document.body.className || "") + " ").indexOf(" mail-page ") !== -1);
+}
+
+function isMailPageScrollAllowedTarget(oTarget) {
+    var oElement = oTarget;
+    var sClass;
+    while (oElement && oElement != document.body) {
+        if (oElement.nodeType == 1 && typeof oElement.getAttribute == "function") {
+            sClass = " " + (oElement.getAttribute("class") || "") + " ";
+            if (sClass.indexOf(" tox-edit-area__iframe ") !== -1
+                || sClass.indexOf(" js-snippet-board-textarea ") !== -1
+                || sClass.indexOf(" confirm-dialog ") !== -1
+                || sClass.indexOf(" tox-tinymce-aux ") !== -1) {
+                return true;
+            }
+        }
+        oElement = oElement.parentNode;
+    }
+    return false;
+}
+
+function lockMailPageScroll() {
+    if (!isMailPmdLike()) {
+        return;
+    }
+    if ((window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft || 0) != 0
+        || (window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0) != 0) {
+        window.scrollTo(0, 0);
+    }
+    document.documentElement.scrollLeft = 0;
+    document.documentElement.scrollTop = 0;
+    document.body.scrollLeft = 0;
+    document.body.scrollTop = 0;
+}
+
+function preventMailPageScroll(oEvent) {
+    if (!isMailPmdLike() || isMailPageScrollAllowedTarget(oEvent.target)) {
+        return;
+    }
+    if (oEvent.cancelable) {
+        oEvent.preventDefault();
+    }
+    lockMailPageScroll();
+}
+
+function bindMailPageScrollLock() {
+    if (!isMailScrollLockPage()) {
+        return;
+    }
+    document.addEventListener("touchmove", preventMailPageScroll, {passive: false});
+    document.addEventListener("wheel", preventMailPageScroll, {passive: false});
+    window.addEventListener("scroll", lockMailPageScroll);
+    lockMailPageScroll();
+}
+
+function getMailPmdHoverButton(oTarget) {
+    var oButton;
+    var oParent;
+    var sClass;
+    var sParentClass;
+    if (!oTarget || !oTarget.closest) {
+        return null;
+    }
+    oButton = oTarget.closest(".tox-tbtn, .tox-split-button, .tox-split-button__main, .tox-split-button__chevron");
+    if (!oButton || !oButton.closest || !oButton.closest(".snippet-board-form .tox")) {
+        return null;
+    }
+    sClass = " " + (oButton.getAttribute("class") || "") + " ";
+    if (sClass.indexOf(" tox-split-button__main ") !== -1 || sClass.indexOf(" tox-split-button__chevron ") !== -1) {
+        oParent = oButton.parentNode;
+        sParentClass = oParent && typeof oParent.getAttribute == "function" ? " " + (oParent.getAttribute("class") || "") + " " : "";
+        if (sParentClass.indexOf(" tox-split-button ") !== -1) {
+            return oParent;
+        }
+    }
+    return oButton;
+}
+
+function isMailPmdDropdownButton(oButton) {
+    var sClass;
+    var sHasPopup;
+    var sName;
+    var oParent;
+    var sParentClass;
+    if (!oButton || typeof oButton.getAttribute != "function") {
+        return false;
+    }
+    sClass = " " + (oButton.getAttribute("class") || "") + " ";
+    sHasPopup = oButton.getAttribute("aria-haspopup") || "";
+    sName = oButton.getAttribute("data-mce-name") || "";
+    if (sClass.indexOf(" tox-split-button ") !== -1
+        || sClass.indexOf(" tox-tbtn--select ") !== -1
+        || sClass.indexOf(" tox-tbtn--bespoke ") !== -1
+        || (sHasPopup != "" && sHasPopup != "false")
+        || sName.substring(sName.length - 8) == "-chevron") {
+        return true;
+    }
+    oParent = oButton.parentNode;
+    sParentClass = oParent && typeof oParent.getAttribute == "function" ? " " + (oParent.getAttribute("class") || "") + " " : "";
+    return sParentClass.indexOf(" tox-split-button ") !== -1;
+}
+
+function clearMailPmdHoverButton(oButton, blExpire) {
+    if (!oButton) {
+        return;
+    }
+    if (oButton._mailPmdHoverTimer && window.clearTimeout) {
+        window.clearTimeout(oButton._mailPmdHoverTimer);
+    }
+    oButton._mailPmdHoverTimer = null;
+    removeAdminClass(oButton, "snippet-board-pmd-hover-active");
+    if (blExpire) {
+        addAdminClass(oButton, "snippet-board-pmd-hover-expired");
+    } else {
+        removeAdminClass(oButton, "snippet-board-pmd-hover-expired");
+    }
+}
+
+function getMailPmdDropdownMenu() {
+    var aMenus = document.querySelectorAll(".tox.tox-tinymce-aux .tox-menu, .tox.tox-tinymce-aux .tox-dropdown-content, .tox.tox-tinymce-aux .tox-collection, .tox.tox-tinymce-aux [role=\"menu\"], .tox.tox-tinymce-aux [role=\"listbox\"]");
+    var i;
+    for (i = 0; i < aMenus.length; i++) {
+        if (aMenus[i].getClientRects && aMenus[i].getClientRects().length > 0) {
+            return aMenus[i];
+        }
+    }
+    return null;
+}
+
+function clearMailPmdDropdown() {
+    var oButton = oMailPmdDropdown;
+    if (!oMailPmdDropdown) {
+        return;
+    }
+    oMailPmdDropdown = null;
+    iMailPmdDropdownToken += 1;
+    clearMailPmdHoverButton(oButton, true);
+}
+
+function syncMailPmdDropdown(iToken, blCloseWhenMissing) {
+    if (!oMailPmdDropdown || iToken != iMailPmdDropdownToken) {
+        return;
+    }
+    if (getMailPmdDropdownMenu()) {
+        removeAdminClass(oMailPmdDropdown, "snippet-board-pmd-hover-expired");
+        addAdminClass(oMailPmdDropdown, "snippet-board-pmd-hover-active");
+    } else if (blCloseWhenMissing) {
+        clearMailPmdDropdown();
+    }
+}
+
+function scheduleMailPmdDropdownSync(iToken, iDelay, blCloseWhenMissing) {
+    if (!window.setTimeout) {
+        return;
+    }
+    window.setTimeout(function() {
+        syncMailPmdDropdown(iToken, blCloseWhenMissing);
+    }, iDelay);
+}
+
+function watchMailPmdDropdown(oButton) {
+    var iToken;
+    if (!oButton || !window.setTimeout) {
+        return;
+    }
+    oMailPmdDropdown = oButton;
+    iMailPmdDropdownToken += 1;
+    iToken = iMailPmdDropdownToken;
+    removeAdminClass(oButton, "snippet-board-pmd-hover-expired");
+    syncMailPmdDropdown(iToken, false);
+    scheduleMailPmdDropdownSync(iToken, 0, false);
+    scheduleMailPmdDropdownSync(iToken, 80, false);
+    scheduleMailPmdDropdownSync(iToken, 250, false);
+    scheduleMailPmdDropdownSync(iToken, 1200, true);
+}
+
+function clearMailPmdHoverButtons(oCurrentButton) {
+    var aButtons = document.querySelectorAll(".snippet-board-form .tox .snippet-board-pmd-hover-active, .snippet-board-form .tox .snippet-board-pmd-hover-expired");
+    var i;
+    for (i = 0; i < aButtons.length; i++) {
+        if (aButtons[i] == oCurrentButton) {
+            continue;
+        }
+        clearMailPmdHoverButton(aButtons[i], true);
+    }
+}
+
+function startMailPmdHoverTimeout(oButton) {
+    if (!oButton || !window.setTimeout || !window.clearTimeout) {
+        return;
+    }
+    clearMailPmdHoverButtons(oButton);
+    removeAdminClass(oButton, "snippet-board-pmd-hover-expired");
+    addAdminClass(oButton, "snippet-board-pmd-hover-active");
+    if (oButton._mailPmdHoverTimer) {
+        window.clearTimeout(oButton._mailPmdHoverTimer);
+    }
+    oButton._mailPmdHoverTimer = window.setTimeout(function() {
+        clearMailPmdHoverButton(oButton, true);
+    }, 1000);
+}
+
+function handleMailPmdHoverStart(oEvent) {
+    var oButton;
+    if (!isMailPmdLike() || (oEvent.pointerType && oEvent.pointerType == "mouse")) {
+        return;
+    }
+    oButton = getMailPmdHoverButton(oEvent.target);
+    if (oButton) {
+        if (isMailPmdDropdownButton(oButton)) {
+            if (oMailPmdDropdown && oMailPmdDropdown != oButton) {
+                clearMailPmdDropdown();
+            }
+            clearMailPmdHoverButtons(oButton);
+            clearMailPmdHoverButton(oButton, false);
+            watchMailPmdDropdown(oButton);
+        } else {
+            clearMailPmdDropdown();
+            startMailPmdHoverTimeout(oButton);
+        }
+    } else if (!oEvent.target.closest || !oEvent.target.closest(".tox.tox-tinymce-aux")) {
+        clearMailPmdDropdown();
+    }
+}
+
+function handleMailPmdDropdownMenuClick(oEvent) {
+    if (!isMailPmdLike() || !oMailPmdDropdown || !oEvent.target.closest || !oEvent.target.closest(".tox.tox-tinymce-aux")) {
+        return;
+    }
+    window.setTimeout(clearMailPmdDropdown, 0);
+}
+
+function bindMailPmdHoverTimeout() {
+    if (!isMailScrollLockPage()) {
+        return;
+    }
+    if (window.PointerEvent) {
+        document.addEventListener("pointerdown", handleMailPmdHoverStart, {passive: true});
+    } else {
+        document.addEventListener("touchstart", handleMailPmdHoverStart, {passive: true});
+    }
+    document.addEventListener("click", handleMailPmdDropdownMenuClick);
+}
+
+function getMailEditorScrollState(oEditor) {
+    var oDoc = oEditor && typeof oEditor.getDoc == "function" ? oEditor.getDoc() : null;
+    var oRoot = oDoc ? oDoc.documentElement : null;
+    var oBody = oDoc ? oDoc.body : null;
+    var oScroll = oDoc ? (oDoc.scrollingElement || oRoot || oBody) : null;
+    var iScrollTop = Math.max(oScroll ? oScroll.scrollTop : 0, oRoot ? oRoot.scrollTop : 0, oBody ? oBody.scrollTop : 0);
+    var iClientHeight = oScroll ? oScroll.clientHeight : 0;
+    var iScrollHeight = Math.max(oScroll ? oScroll.scrollHeight : 0, oRoot ? oRoot.scrollHeight : 0, oBody ? oBody.scrollHeight : 0);
+    return {
+        scrollTop: iScrollTop,
+        clientHeight: iClientHeight,
+        scrollHeight: iScrollHeight
+    };
+}
+
+function shouldPreventMailEditorOverscroll(oEditor, iDeltaY) {
+    var aState = getMailEditorScrollState(oEditor);
+    if (aState.scrollHeight <= aState.clientHeight + 1) {
+        return true;
+    }
+    if (iDeltaY < 0 && aState.scrollTop <= 0) {
+        return true;
+    }
+    if (iDeltaY > 0 && aState.scrollTop + aState.clientHeight >= aState.scrollHeight - 1) {
+        return true;
+    }
+    return false;
+}
+
+function bindMailEditorScrollLock(oEditor) {
+    var oDoc = oEditor && typeof oEditor.getDoc == "function" ? oEditor.getDoc() : null;
+    var oRoot = oDoc ? oDoc.documentElement : null;
+    var oBody = oDoc ? oDoc.body : null;
+    if (!oDoc || !isMailPmdLike() || oEditor._mailScrollLockBound) {
+        return;
+    }
+    oEditor._mailScrollLockBound = true;
+    if (oRoot && oRoot.style) {
+        oRoot.style.overscrollBehavior = "contain";
+    }
+    if (oBody && oBody.style) {
+        oBody.style.overscrollBehavior = "contain";
+    }
+    oDoc.addEventListener("touchstart", function(oEvent) {
+        oEditor._mailTouchY = oEvent.touches && oEvent.touches.length ? oEvent.touches[0].clientY : 0;
+    }, {passive: true});
+    oDoc.addEventListener("touchmove", function(oEvent) {
+        var iClientY = oEvent.touches && oEvent.touches.length ? oEvent.touches[0].clientY : 0;
+        var iDeltaY = (oEditor._mailTouchY || iClientY) - iClientY;
+        oEditor._mailTouchY = iClientY;
+        if (shouldPreventMailEditorOverscroll(oEditor, iDeltaY) && oEvent.cancelable) {
+            oEvent.preventDefault();
+            lockMailPageScroll();
+        }
+    }, {passive: false});
+    oDoc.addEventListener("wheel", function(oEvent) {
+        if (shouldPreventMailEditorOverscroll(oEditor, oEvent.deltaY || 0) && oEvent.cancelable) {
+            oEvent.preventDefault();
+            lockMailPageScroll();
+        }
+    }, {passive: false});
+}
+
+function updateMailToolbarLines(oEditor) {
+    var oContainer = oEditor && typeof oEditor.getContainer == "function" ? oEditor.getContainer() : null;
+    var oHeader = oContainer ? oContainer.querySelector(".tox-editor-header") : null;
+    var aGroups = oHeader ? oHeader.querySelectorAll(".tox-toolbar__group") : [];
+    var oOldLayer = oHeader ? oHeader.querySelector(".snippet-board-toolbar-lines") : null;
+    var oHeaderRect;
+    var oGroupRect;
+    var oLayer;
+    var oUsedLines = {};
+    var oDrawnLines = {};
+    var iTop;
+    var iBottom;
+    var blHasToolbarRow = false;
+    var sKey;
+    var oLine;
+    var iLineTop;
+    var i;
+    if (oOldLayer && oOldLayer.parentNode) {
+        oOldLayer.parentNode.removeChild(oOldLayer);
+    }
+    if (!oHeader) {
+        return false;
+    }
+    removeAdminClass(oHeader, "snippet-board-toolbar-lines-ready");
+    oHeaderRect = oHeader.getBoundingClientRect();
+    if (!aGroups.length || !oHeaderRect.width || !oHeaderRect.height) {
+        return false;
+    }
+    for (i = 0; i < aGroups.length; i++) {
+        oGroupRect = aGroups[i].getBoundingClientRect();
+        if (!oGroupRect.width || !oGroupRect.height) {
+            continue;
+        }
+        iTop = Math.round(oGroupRect.top - oHeaderRect.top);
+        iBottom = Math.max(iTop, Math.round(oGroupRect.bottom - oHeaderRect.top) - 1);
+        sKey = "row-" + iTop;
+        blHasToolbarRow = true;
+        oUsedLines[sKey] = iBottom;
+    }
+    if (!blHasToolbarRow) {
+        return false;
+    }
+    addAdminClass(oHeader, "snippet-board-toolbar-lines-ready");
+    oLayer = document.createElement("div");
+    oLayer.className = "snippet-board-toolbar-lines";
+    oHeader.appendChild(oLayer);
+    for (sKey in oUsedLines) {
+        iLineTop = oUsedLines[sKey];
+        if (typeof iLineTop != "number") {
+            continue;
+        }
+        if (oDrawnLines["line-" + iLineTop]) {
+            continue;
+        }
+        oDrawnLines["line-" + iLineTop] = true;
+        oLine = document.createElement("div");
+        oLine.className = "snippet-board-toolbar-line";
+        oLine.style.top = iLineTop + "px";
+        oLayer.appendChild(oLine);
+    }
+    return true;
+}
+
+function scheduleMailToolbarLines(oEditor, iAttempt) {
+    var iCurrentAttempt = typeof iAttempt == "number" ? iAttempt : 0;
+    var iToken;
+    function runToolbarLinesUpdate() {
+        var blReady;
+        if (oEditor._mailToolbarLineSchedule != iToken) {
+            return;
+        }
+        blReady = updateMailToolbarLines(oEditor);
+        if (iCurrentAttempt < 6 || (!blReady && iCurrentAttempt < 20)) {
+            window.setTimeout(function() {
+                scheduleMailToolbarLines(oEditor, iCurrentAttempt + 1);
+            }, iCurrentAttempt < 6 ? 50 : 100);
+        }
+    }
+    if (!oEditor) {
+        return;
+    }
+    if (!iCurrentAttempt) {
+        oEditor._mailToolbarLineSchedule = (oEditor._mailToolbarLineSchedule || 0) + 1;
+    }
+    iToken = oEditor._mailToolbarLineSchedule;
+    if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(runToolbarLinesUpdate);
+    } else {
+        window.setTimeout(runToolbarLinesUpdate, 0);
+    }
+}
+
+function bindMailTinyMce() {
+    if (!document.querySelector("#mail-form textarea.js-snippet-board-textarea") || !window.tinymce || typeof window.tinymce.init != "function") {
+        return;
+    }
+    try {
+        window.tinymce.init({
+            selector: "#mail-form textarea.js-snippet-board-textarea",
+            menubar: false,
+            branding: false,
+            promotion: false,
+            browser_spellcheck: true,
+            convert_urls: false,
+            content_css: "tinymce-5",
+            entity_encoding: "raw",
+            height: 320,
+            license_key: "gpl",
+            mobile: {
+                toolbar_mode: "wrap"
+            },
+            resize: false,
+            skin: "tinymce-5",
+            statusbar: false,
+            toolbar: "undo redo | blocks fontfamily fontsize lineheight | cut snippetcopy snippetcopyplain snippetpasteformatted snippetpastetext | bold italic underline strikethrough subscript superscript | forecolor backcolor | alignleft aligncenter alignright alignjustify alignnone ltr rtl | snippetbullist snippetnumlist outdent indent blockquote hr | link unlink anchor table | charmap emoticons insertdatetime nonbreaking pagebreak | searchreplace visualblocks help codesample",
+            toolbar_mode: "wrap",
+            plugins: "advlist anchor autolink charmap codesample directionality emoticons help insertdatetime link lists nonbreaking pagebreak searchreplace table visualblocks",
+            content_style: "html{overscroll-behavior-y:contain;}body{background:#fff;color:#111;font-family:Arial,sans-serif;font-size:14px;line-height:1.35;margin:0;overscroll-behavior-y:contain;padding:1px;}p,h1,h2,h3,h4,h5,h6{margin:0;}ul,ol{margin:0 0 0 20px;padding-left:18px;}blockquote{margin:0 0 0 24px;}a{color:#075e9e;}",
+            setup: function(oEditor) {
+                oEditor.ui.registry.addIcon("snippet-copy-plain", "<svg width=\"24\" height=\"24\"><path d=\"M8 3h8l4 4v11c0 1.1-.9 2-2 2H8a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2Zm7 2H8v13h10V8h-3V5Z\"/><path d=\"M4 7H2v13c0 1.1.9 2 2 2h10v-2H4V7Zm6 2h4v1.5h-4V9Zm0 3h6v1.5h-6V12Zm0 3h6v1.5h-6V15Z\"/></svg>");
+                oEditor.ui.registry.addButton("snippetcopy", {
+                    icon: "copy",
+                    tooltip: "Copy formatted text",
+                    onAction: function() {
+                        copyMailRichText(oEditor);
+                    }
+                });
+                oEditor.ui.registry.addMenuButton("snippetbullist", {
+                    icon: "unordered-list",
+                    tooltip: "Bullet list",
+                    fetch: function(oCallback) {
+                        oCallback([
+                            {type: "menuitem", text: "Default", icon: "list-bull-default", onAction: function() { oEditor.execCommand("InsertUnorderedList", false, {"list-style-type": ""}); }},
+                            {type: "menuitem", text: "Disc", icon: "list-bull-disc", onAction: function() { oEditor.execCommand("InsertUnorderedList", false, {"list-style-type": "disc"}); }},
+                            {type: "menuitem", text: "Circle", icon: "list-bull-circle", onAction: function() { oEditor.execCommand("InsertUnorderedList", false, {"list-style-type": "circle"}); }},
+                            {type: "menuitem", text: "Square", icon: "list-bull-square", onAction: function() { oEditor.execCommand("InsertUnorderedList", false, {"list-style-type": "square"}); }}
+                        ]);
+                    }
+                });
+                oEditor.ui.registry.addMenuButton("snippetnumlist", {
+                    icon: "ordered-list",
+                    tooltip: "Numbered list",
+                    fetch: function(oCallback) {
+                        oCallback([
+                            {type: "menuitem", text: "Default", icon: "list-num-default", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": ""}); }},
+                            {type: "menuitem", text: "Lower Alpha", icon: "list-num-lower-alpha", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": "lower-alpha"}); }},
+                            {type: "menuitem", text: "Lower Greek", icon: "list-num-lower-greek", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": "lower-greek"}); }},
+                            {type: "menuitem", text: "Lower Roman", icon: "list-num-lower-roman", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": "lower-roman"}); }},
+                            {type: "menuitem", text: "Upper Alpha", icon: "list-num-upper-alpha", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": "upper-alpha"}); }},
+                            {type: "menuitem", text: "Upper Roman", icon: "list-num-upper-roman", onAction: function() { oEditor.execCommand("InsertOrderedList", false, {"list-style-type": "upper-roman"}); }}
+                        ]);
+                    }
+                });
+                oEditor.ui.registry.addButton("snippetpasteformatted", {
+                    icon: "paste",
+                    tooltip: "Formatted text paste mode",
+                    onAction: function() {
+                        setMailEditorStoredRichTextPaste(oEditor, true);
+                    },
+                    onSetup: function(oApi) {
+                        function updateFormattedPasteState() {
+                            scheduleMailPasteModeButtonSync(oEditor);
+                        }
+                        oEditor.on("PastePlainTextToggle", updateFormattedPasteState);
+                        oEditor.on("init", updateFormattedPasteState);
+                        updateFormattedPasteState();
+                        return function() {
+                            oEditor.off("PastePlainTextToggle", updateFormattedPasteState);
+                            oEditor.off("init", updateFormattedPasteState);
+                        };
+                    }
+                });
+                oEditor.ui.registry.addButton("snippetpastetext", {
+                    icon: "paste-text",
+                    tooltip: "Plain text paste mode",
+                    onAction: function() {
+                        setMailEditorStoredRichTextPaste(oEditor, false);
+                    },
+                    onSetup: function(oApi) {
+                        function updatePasteTextState() {
+                            scheduleMailPasteModeButtonSync(oEditor);
+                        }
+                        oEditor.on("PastePlainTextToggle", updatePasteTextState);
+                        oEditor.on("init", updatePasteTextState);
+                        updatePasteTextState();
+                        return function() {
+                            oEditor.off("PastePlainTextToggle", updatePasteTextState);
+                            oEditor.off("init", updatePasteTextState);
+                        };
+                    }
+                });
+                oEditor.ui.registry.addButton("snippetcopyplain", {
+                    icon: "snippet-copy-plain",
+                    tooltip: "Copy plain text",
+                    onAction: function() {
+                        copyMailPlainText(oEditor);
+                    }
+                });
+                function syncMailEditorChange() {
+                    var oElement = oEditor.getElement();
+                    var sValue;
+                    if (!oElement) {
+                        return;
+                    }
+                    sValue = oElement.value;
+                    oEditor.save();
+                    if (oElement.value != sValue) {
+                        dispatchAdminInputEvent(oElement);
+                    }
+                }
+                function syncMailEditorChangeAfterEvent() {
+                    window.setTimeout(syncMailEditorChange, 0);
+                }
+                oEditor.on("change keyup undo redo input", syncMailEditorChange);
+                oEditor.on("paste cut ExecCommand PastePostProcess SetContent", syncMailEditorChangeAfterEvent);
+                oEditor.on("init", function() {
+                    bindMailEditorScrollLock(oEditor);
+                    applyMailStoredRichTextPaste(oEditor);
+                    layoutMailForm();
+                    scheduleMailToolbarLines(oEditor);
+                });
+                oEditor.on("PostRender SkinLoaded ResizeEditor", function() {
+                    scheduleMailToolbarLines(oEditor);
+                });
+                window.addEventListener("resize", function() {
+                    scheduleMailToolbarLines(oEditor);
+                });
+            }
+        });
+    } catch (oException) {
+        logAdminException(oException);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    bindMailForm();
+    bindMailPageScrollLock();
+    bindMailPmdHoverTimeout();
+    bindMailTinyMce();
+    layoutMailForm();
+    window.addEventListener("resize", layoutMailForm);
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", layoutMailForm);
+    }
+});
+
 document.addEventListener("DOMContentLoaded", scheduleRenderThrobberHide);

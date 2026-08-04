@@ -7,10 +7,6 @@ function mailFormStripHeaderBreaks($sValue) {
     return trim(preg_replace("/[\r\n]+/", " ", (string)$sValue));
 }
 
-function mailFormHasHeaderControlChars($sValue) {
-    return preg_match("/[\x00-\x1F\x7F]/", (string)$sValue) ? true : false;
-}
-
 function mailFormAddError(&$aErrors, $sMessage) {
     $aErrors[] = $sMessage;
 }
@@ -111,7 +107,7 @@ function mailFormCleanDisplayName($sValue) {
     if ($sName == "") {
         return "";
     }
-    if (mailFormHasHeaderControlChars($sName) || strpos($sName, "<") !== false || strpos($sName, ">") !== false) {
+    if (preg_match("/[\x00-\x1F\x7F]/", (string)$sName) || strpos($sName, "<") !== false || strpos($sName, ">") !== false) {
         return false;
     }
     if ($iLength >= 2 && $sName[0] == "\"" && $sName[$iLength - 1] == "\"") {
@@ -219,7 +215,7 @@ function mailFormNormalizeEmailList($sValue) {
     $iNextOffset = 0;
     $aMailbox = array();
 
-    if (mailFormHasHeaderControlChars($sValue)) {
+    if (preg_match("/[\x00-\x1F\x7F]/", (string)$sValue)) {
         return false;
     }
     while ($iOffset < $iLength) {
@@ -299,6 +295,13 @@ function mailFormFormatRecipientSuggestion($sName, $sEmail) {
     return $sName != "" ? "<" . $sName . "> " . $sEmail : $sEmail;
 }
 
+function mailFormGetSubjectNameSelectSql() {
+    $sPersonDisplayBase = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.title_before, ''), NULLIF(p.first_name, ''), NULLIF(p.middle_name, ''), NULLIF(p.last_name, ''))), '')";
+    $sPersonDisplayName = "NULLIF(TRIM(CONCAT(COALESCE(" . $sPersonDisplayBase . ", ''), IF(NULLIF(p.title_after, '') IS NULL, '', IF(" . $sPersonDisplayBase . " IS NULL, p.title_after, CONCAT(', ', p.title_after))))), '')";
+    $sPersonSortName = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.last_name, ''), NULLIF(p.first_name, ''))), '')";
+    return "SELECT s.id AS subject_id, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_sort_name FROM ex_subjects AS s LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id LEFT JOIN (SELECT sc.subject_id, SUBSTRING_INDEX(GROUP_CONCAT(c.contact_value ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id GROUP BY sc.subject_id) AS c ON c.subject_id = s.id LEFT JOIN (SELECT subject_id, SUBSTRING_INDEX(GROUP_CONCAT(nickname ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n'), '\n', 1) AS primary_nickname FROM ex_subject_nicknames GROUP BY subject_id) AS n ON n.subject_id = s.id";
+}
+
 function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowedDomains = null) {
     $aSuggestions = array();
     $aSeen = array();
@@ -333,7 +336,7 @@ function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowe
         $sDomainSql = " AND LOWER(SUBSTRING_INDEX(c.contact_value, '@', -1)) IN (" . implode(", ", $aDomainPlaceholders) . ")";
     }
     $sLike = "%" . mailFormEscapeLike($sTerm) . "%";
-    $sSql = "SELECT subject_rows.subject_id, subject_rows.subject_name, subject_rows.subject_sort_name, c.contact_value AS email FROM (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows INNER JOIN ex_subject_contacts AS sc ON sc.subject_id = subject_rows.subject_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id INNER JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id WHERE ct.contact_type = 'email' AND sc.is_active = 1 AND c.contact_value <> ''" . $sDomainSql . " AND (LOWER(subject_rows.subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_rows.subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' OR LOWER(c.contact_value) LIKE LOWER(:email_term) ESCAPE '!') ORDER BY subject_rows.subject_sort_name COLLATE utf8mb4_czech_ci ASC, sc.is_primary DESC, c.contact_value ASC, sc.id ASC LIMIT " . $iLimit;
+    $sSql = "SELECT subject_rows.subject_id, subject_rows.subject_name, subject_rows.subject_sort_name, c.contact_value AS email FROM (" . mailFormGetSubjectNameSelectSql() . ") AS subject_rows INNER JOIN ex_subject_contacts AS sc ON sc.subject_id = subject_rows.subject_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id INNER JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id WHERE ct.contact_type = 'email' AND sc.is_active = 1 AND c.contact_value <> ''" . $sDomainSql . " AND (LOWER(subject_rows.subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_rows.subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' OR LOWER(c.contact_value) LIKE LOWER(:email_term) ESCAPE '!') ORDER BY subject_rows.subject_sort_name COLLATE utf8mb4_czech_ci ASC, sc.is_primary DESC, c.contact_value ASC, sc.id ASC LIMIT " . $iLimit;
     $oStatement = $oPdo->prepare($sSql);
     $aParams["subject_name_term"] = $sLike;
     $aParams["subject_sort_name_term"] = $sLike;
@@ -530,7 +533,7 @@ function mailFormBuildMixedMessage($sSubject, $sBody, $sBodyFormat, $aAttachment
     if ($sBodyFormat == "plain") {
         $sMessage .= mailFormBuildTextMessagePart($sBody, $sBoundary);
     } else {
-        $sAlternativeBoundary = "=_lm_mail_alt_" . md5(uniqid("", true));
+        $sAlternativeBoundary = "=_ex_mail_alt_" . md5(uniqid("", true));
         $sMessage .= mailFormBuildAlternativeMessagePart($sSubject, $sBody, $sBoundary, $sAlternativeBoundary);
     }
     foreach ($aAttachments as $aAttachment) {
@@ -560,7 +563,7 @@ function mailFormSendMessage($sTo, $sCc, $sBcc, $sFrom, $sSender, $sReplyTo, $sS
     }
     $aHeaders[] = "MIME-Version: 1.0";
     if ($aAttachments) {
-        $sBoundary = "=_lm_mail_mixed_" . md5(uniqid("", true));
+        $sBoundary = "=_ex_mail_mixed_" . md5(uniqid("", true));
         $aHeaders[] = "Content-Type: multipart/mixed; boundary=\"" . $sBoundary . "\"";
         $sMessage = mailFormBuildMixedMessage($sSubject, $sBody, $sBodyFormat, $aAttachments, $sBoundary);
     } elseif ($sBodyFormat == "plain") {
@@ -568,7 +571,7 @@ function mailFormSendMessage($sTo, $sCc, $sBcc, $sFrom, $sSender, $sReplyTo, $sS
         $aHeaders[] = "Content-Transfer-Encoding: 8bit";
         $sMessage = mailFormBuildPlainTextMessage($sBody);
     } else {
-        $sBoundary = "=_lm_mail_" . md5(uniqid("", true));
+        $sBoundary = "=_ex_mail_" . md5(uniqid("", true));
         $aHeaders[] = "Content-Type: multipart/alternative; boundary=\"" . $sBoundary . "\"";
         $sMessage = mailFormBuildMultipartAlternativeMessage($sSubject, $sBody, $sBoundary);
     }
@@ -578,17 +581,17 @@ function mailFormSendMessage($sTo, $sCc, $sBcc, $sFrom, $sSender, $sReplyTo, $sS
 
 
 $blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
-$sMailRichTextPasteSessionKey = "lm_mail_rich_text_paste";
-$sMailStatusSessionKey = "lm_mail_status";
-$sMailStatusClassSessionKey = "lm_mail_status_class";
-$sMailValuesSessionKey = "lm_mail_values";
+$sMailRichTextPasteSessionKey = "ex_mail_rich_text_paste";
+$sMailStatusSessionKey = "ex_mail_status";
+$sMailStatusClassSessionKey = "ex_mail_status_class";
+$sMailValuesSessionKey = "ex_mail_values";
 
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
 
-requireFullAccess($aAllowedIps, "portal", "lm_csrf_token", $blJsonResponse);
+requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", $blJsonResponse);
 
 
 $iMailRichTextPaste = isset($_SESSION[$sMailRichTextPasteSessionKey]) && (string)$_SESSION[$sMailRichTextPasteSessionKey] == "1" ? 1 : 0;
@@ -626,7 +629,7 @@ if ($_SERVER["REQUEST_METHOD"] != "POST") {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("lm_csrf_token", $blJsonResponse);
+    requireNamedCsrfToken("ex_csrf_token", $blJsonResponse);
     if (getPostedValue("action") == "save_mail_rich_text_paste") {
         $iMailRichTextPaste = getPostedValue("rich_text_paste") == "1" ? 1 : 0;
         $_SESSION[$sMailRichTextPasteSessionKey] = (string)$iMailRichTextPaste;
@@ -751,7 +754,7 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Cervinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
   <link rel="icon" href="<?php echo html($sBaseUrl . "favicon.ico"); ?>" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo html($sBaseUrl . "favicon.ico"); ?>" type="image/x-icon">
   <title><?php echo html(getPageTitleText("Mail", $aAllowedIps)); ?></title>
@@ -771,7 +774,7 @@ renderMenu();
   </p>
   <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="mail-form" class="snippet-board-form mail-form" enctype="multipart/form-data" autocomplete="on" data-mail-allowed-sender-domains="<?php echo html(json_encode($aMailAllowedSenderDomains)); ?>" data-mail-restrict-from-to-single-address="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
     <input type="hidden" name="action" value="send_mail">
-    <input type="hidden" name="lm_csrf_token" value="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
+    <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
     <input type="hidden" name="mail_rich_text_paste" class="js-mail-rich-text-paste" value="<?php echo (int)$iMailRichTextPaste; ?>">
     <div class="mail-form-fields">
       <label for="mail-to">To:</label>
@@ -805,7 +808,7 @@ if (!$blMailRestrictFromToSingleAddress) {
     <textarea id="mail-message" name="mail_message" class="snippet-board-textarea js-snippet-board-textarea mail-message-textarea" rows="18" spellcheck="true"><?php echo html($aMailValues["message"]); ?></textarea>
   </form>
   <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/tinymce-8.8.1/tinymce.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>../lm/vendors/tinymce-8.8.1/tinymce.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

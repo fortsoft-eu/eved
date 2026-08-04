@@ -98,6 +98,7 @@ $iCalendarFirstDay              = 1;
 $iBirthdayDisplayMinDays        = -2;
 $iBirthdayDisplayMaxDays        = 17;
 $sDateInputFormat               = "YYYY-MM-DD";
+$blMailRestrictFromToSingleAddress = true;
 
 
 $sError = "";
