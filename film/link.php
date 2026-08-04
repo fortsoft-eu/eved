@@ -168,7 +168,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo htmlspecialchars(getPageTitleText("Assign Film to Lab Bag", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -185,7 +185,7 @@ renderMenu();
   </p>
   <div class="admin-top">
     <form method="post" action="<?php echo $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]); ?>" enctype="application/x-www-form-urlencoded">
-      <input type="hidden" name="film_csrf_token" value="<?php echo htmlspecialchars(getCsrfToken("film_csrf_token"), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+      <input type="hidden" name="film_csrf_token" value="<?php echo html(getCsrfToken("film_csrf_token")); ?>">
       <label for="film_id">Film Roll</label>
       <select name="film_id" id="film_id" required>
         <option value="">– Choose film roll –</option>
@@ -292,7 +292,7 @@ foreach ($aLinks as $aLink) {
   </div>
   <div class="confirm-dialog" id="film-unassign-confirm-dialog" hidden>
     <form class="confirm-dialog-box" method="post" action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES, "UTF-8"); ?>" enctype="application/x-www-form-urlencoded">
-      <input type="hidden" name="film_csrf_token" value="<?php echo htmlspecialchars(getCsrfToken("film_csrf_token"), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+      <input type="hidden" name="film_csrf_token" value="<?php echo html(getCsrfToken("film_csrf_token")); ?>">
       <input type="hidden" name="unassign" value="">
       <div class="confirm-dialog-header">
         <strong>Confirm Unassignment</strong>

@@ -33,7 +33,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo htmlspecialchars(getPageTitleText("PHP Request Variables", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -65,7 +65,7 @@ renderMenu();
 foreach ($aRequestVariables as $sArrayName => $aValues) {
     if (!$aValues) {
         echo "      <tr>\n",
-            "        <td>" . htmlspecialchars($sArrayName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td>" . html($sArrayName) . "</td>\n",
             "        <td><em>Empty</em></td>\n",
             "        <td></td>\n",
             "        <td>array</td>\n",
@@ -75,10 +75,10 @@ foreach ($aRequestVariables as $sArrayName => $aValues) {
     foreach ($aValues as $sKey => $mValue) {
         $sValue = is_array($mValue) ? print_r($mValue, true) : (is_bool($mValue) ? ($mValue ? "true" : "false") : (string)$mValue);
         echo "      <tr>\n",
-            "        <td style=\"vertical-align: top;\">" . htmlspecialchars($sArrayName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-            "        <td style=\"vertical-align: top;\">" . htmlspecialchars((string)$sKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-            "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . htmlspecialchars($sValue, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-            "        <td style=\"vertical-align: top;\">" . htmlspecialchars(gettype($mValue), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td style=\"vertical-align: top;\">" . html($sArrayName) . "</td>\n",
+            "        <td style=\"vertical-align: top;\">" . html((string)$sKey) . "</td>\n",
+            "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . html($sValue) . "</td>\n",
+            "        <td style=\"vertical-align: top;\">" . html(gettype($mValue)) . "</td>\n",
             "      </tr>\n";
     }
 }

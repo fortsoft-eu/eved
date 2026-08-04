@@ -39,7 +39,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo htmlspecialchars(getPageTitleText("Database Information", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -68,8 +68,8 @@ renderMenu();
 
 foreach ($aDatabaseInfo as $aRow) {
     echo "      <tr>\n",
-        "        <td style=\"vertical-align: top;\">" . htmlspecialchars($aRow[0], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-        "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . htmlspecialchars((string)$aRow[1], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . html($aRow[0]) . "</td>\n",
+        "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . html((string)$aRow[1]) . "</td>\n",
         "      </tr>\n";
 }
 

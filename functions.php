@@ -477,7 +477,7 @@ function addPhpGeneratedViewportMeta($sHtml) {
 }
 
 function getPhpGeneratedStyleTag($sStyleNonce) {
-    $sNonce = $sStyleNonce != "" ? " nonce=\"" . htmlspecialchars($sStyleNonce, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"" : "";
+    $sNonce = $sStyleNonce != "" ? " nonce=\"" . html($sStyleNonce) . "\"" : "";
     return "  <style" . $sNonce . ">\n"
         . "body {background-color: #fff; color: #222; font-family: sans-serif;}\n"
         . "pre {margin: 0; font-family: monospace;}\n"
@@ -520,7 +520,7 @@ function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
         }
         return addPhpGeneratedViewportMeta($sHtml);
     }
-    $sTitle = htmlspecialchars($sTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sTitle = html($sTitle);
     ob_start();
     echo "<!DOCTYPE html>\n",
         "<html lang=\"en-US\" dir=\"ltr\">\n",
@@ -554,11 +554,9 @@ function sendPhpGeneratedOutputAndExit($sType, $iSelect) {
             phpinfo();
         }
     }
-    $sTitle = $sType == "credits" ? "PHP Credits" : "PHP Info";
-    $sTitle = getPageTitleText($sTitle, $aAllowedIps);
     $sHtml = ob_get_clean();
     $sStyleNonce = stripos($sHtml, "<html") !== false ? "" : base64_encode(random_bytes(16));
-    $sHtml = formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle);
+    $sHtml = formatPhpGeneratedOutput($sHtml, $sStyleNonce, getPageTitleText($aAllowedIps));
     sendPhpGeneratedHeaders($sStyleNonce);
     echo $sHtml;
     exit;
@@ -1105,9 +1103,10 @@ function isFullAccessAllowed($aAllowedIps, $sProject) {
     return isTrustedClient($aAllowedIps) || isProjectFullAllowed($sProject);
 }
 
-function getPageTitleText($sTitle, $aAllowedIps) {
+function getPageTitleText($aAllowedIps) {
     global $oPdo;
 
+    $sTitle = "";
     try {
         $oStatement = $oPdo->prepare("SELECT name FROM fs_menu WHERE path = :path AND icon IS NOT NULL AND name IS NOT NULL AND is_active = 1 ORDER BY `order` ASC, id ASC LIMIT 1");
         $oStatement->execute(array("path" => getCurrentMenuPath()));
@@ -1125,14 +1124,14 @@ function getPageTitleText($sTitle, $aAllowedIps) {
     if (refreshAuthSession()) {
         $aStates[] = "Authenticated";
     }
-    if (count($aStates) > 0) {
+    if (count($aStates) > 0 && $sTitle != "") {
         $sTitle .= " — " . implode(" + ", $aStates);
     }
     return $sTitle;
 }
 
 function getLoginMessageHtml($sMessage) {
-    return $sMessage ? "    <p class=\"message-error login-message\">" . htmlspecialchars($sMessage, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</p>\n" : "";
+    return $sMessage ? "    <p class=\"message-error login-message\">" . html($sMessage) . "</p>\n" : "";
 }
 
 function getCsrfToken($sTokenName) {
@@ -1235,10 +1234,10 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
     }
     $iTime = sendPageHeaders();
     $sScriptDirectory = dirname((string)$_SERVER["SCRIPT_FILENAME"]);
-    $sLoginScriptUrl = htmlspecialchars($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime($sScriptDirectory . "/js/admin.js")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-    $sAdminCssUrl = htmlspecialchars($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-    $sAction = htmlspecialchars(getCurrentUrlWithoutAuthActionForToken($sTokenName), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-    $sToken = htmlspecialchars(getLoginToken(), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sLoginScriptUrl = html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime($sScriptDirectory . "/js/admin.js")));
+    $sAdminCssUrl = html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")));
+    $sAction = html(getCurrentUrlWithoutAuthActionForToken($sTokenName));
+    $sToken = html(getLoginToken());
     $sMessageHtml = getLoginMessageHtml($sMessage);
     echo "<!DOCTYPE html>\n",
         "<html lang=\"en-US\" dir=\"ltr\">\n",
@@ -1707,12 +1706,12 @@ function formatDumpVarValue($mVar, $iLevel) {
         return "<span style=\"color: #808 !important; font-weight: bold !important; font-style: italic !important;\">null</span>";
     }
     if (is_int($mVar)) {
-        return "<span style=\"color: #888 !important;\">int:</span> <span style=\"color: #088 !important; font-weight: bold !important;\">" . htmlspecialchars((string)$mVar, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</span>";
+        return "<span style=\"color: #888 !important;\">int:</span> <span style=\"color: #088 !important; font-weight: bold !important;\">" . html((string)$mVar) . "</span>";
     }
     if (is_float($mVar)) {
-        return "<span style=\"color: #888 !important;\">float:</span> <span style=\"color: #080 !important; font-weight: bold !important;\">" . htmlspecialchars((string)$mVar, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</span>";
+        return "<span style=\"color: #888 !important;\">float:</span> <span style=\"color: #080 !important; font-weight: bold !important;\">" . html((string)$mVar) . "</span>";
     }
-    return "<span style=\"color: #080 !important;\">\"" . htmlspecialchars((string)$mVar, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"</span>";
+    return "<span style=\"color: #080 !important;\">\"" . html((string)$mVar) . "\"</span>";
 }
 
 function formatDumpVarArray($aArray, $iLevel) {
@@ -1735,7 +1734,7 @@ function formatDumpVarArray($aArray, $iLevel) {
 
 function formatDumpVarObject($oObject, $iLevel) {
     $aProperties = get_object_vars($oObject);
-    $sClassName = htmlspecialchars(get_class($oObject), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sClassName = html(get_class($oObject));
     if (!$aProperties) {
         return "<span style=\"color: #000 !important;\">" . $sClassName . " </span><span style=\"font-weight: bold !important; color: #F00 !important;\">Object</span><span style=\"color: #000 !important;\">()</span>\n";
     }
@@ -1754,7 +1753,7 @@ function formatDumpVarObject($oObject, $iLevel) {
 }
 
 function formatDumpVarKey($mKey) {
-    $sKey = htmlspecialchars((string)$mKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sKey = html((string)$mKey);
     if ($sKey != "" && $sKey[0] == "_") {
         return "<span style=\"color: #BBB !important;\">[" . $sKey . "] => </span>";
     }

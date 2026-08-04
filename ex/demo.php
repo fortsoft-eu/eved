@@ -574,7 +574,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html(getPageTitleText("Demo Subjects", $aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
@@ -596,7 +596,7 @@ renderMenu();
     <button type="button" class="button-link js-index-settings-open">Settings</button>
     <button type="button" class="button-link js-add-subject">New</button>
   </p>
-  <form id="complex-filter-reset-form" method="post" action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" enctype="application/x-www-form-urlencoded" hidden>
+  <form id="complex-filter-reset-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded" hidden>
     <input type="hidden" name="action" value="reset_full_list_complex_filter">
     <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
   </form>
@@ -606,7 +606,7 @@ echo renderCountryDatalist();
 
 ?>
   <div class="confirm-dialog complex-filter-dialog" id="complex-filter-dialog" hidden>
-    <form class="confirm-dialog-box complex-filter-form" method="post" action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" enctype="application/x-www-form-urlencoded">
+    <form class="confirm-dialog-box complex-filter-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_full_list_complex_filter">
       <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
       <div class="confirm-dialog-header">
@@ -660,7 +660,7 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
     </form>
   </div>
   <div class="confirm-dialog index-settings-dialog" id="index-settings-dialog" hidden>
-    <form class="confirm-dialog-box index-settings-form" method="post" action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" enctype="application/x-www-form-urlencoded">
+    <form class="confirm-dialog-box index-settings-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_full_list_settings">
       <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
       <div class="confirm-dialog-header">
@@ -727,8 +727,8 @@ if (!$aRows) {
 
     foreach ($aRows as $aRow) {
         $iSubjectId = (int)$aRow["subject_id"];
-        $sSubjectJson = htmlspecialchars(json_encode($aDummySubjectEditors[$iSubjectId], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-        $sPortalJson = htmlspecialchars(json_encode($aDummySubjectPortals[$iSubjectId], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+        $sSubjectJson = html(json_encode($aDummySubjectEditors[$iSubjectId], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
+        $sPortalJson = html(json_encode($aDummySubjectPortals[$iSubjectId], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
         $sRowHtml = renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, true, $aHiddenInactive, $aFullListSettings);
         $sRowHtml = str_replace(
             "class=\"item-action js-edit-subject\" data-subject-id=\"" . html($iSubjectId) . "\"",

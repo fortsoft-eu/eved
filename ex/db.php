@@ -116,15 +116,15 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo htmlspecialchars(getPageTitleText("Database Structure", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
-  <form action="<?php echo htmlspecialchars($sScriptUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="get" id="database-schema-download-form" hidden>
+  <form action="<?php echo html($sScriptUrl); ?>" method="get" id="database-schema-download-form" hidden>
     <input type="hidden" name="download" value="schema">
   </form>
-  <form action="<?php echo htmlspecialchars($sScriptUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="get" id="database-backup-download-form" hidden>
+  <form action="<?php echo html($sScriptUrl); ?>" method="get" id="database-backup-download-form" hidden>
     <input type="hidden" name="download" value="backup">
   </form>
   <p class="admin-controls">
@@ -139,9 +139,9 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="submit" form="database-schema-download-form" class="button-link database-action-button">Download schema</button>
-    <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo htmlspecialchars($sSchemaDownloadUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">Copy schema link</button>
+    <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo html($sSchemaDownloadUrl); ?>">Copy schema link</button>
     <button type="submit" form="database-backup-download-form" class="button-link database-action-button">Download backup</button>
-    <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo htmlspecialchars($sBackupDownloadUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">Copy backup link</button>
+    <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo html($sBackupDownloadUrl); ?>">Copy backup link</button>
   </p>
   <table id="database-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
@@ -155,7 +155,7 @@ renderMenu();
 
 foreach ($aTables as $aTable) {
     echo "      <tr>\n",
-        "        <td class=\"database-table-name\">" . htmlspecialchars($aTable[0], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td class=\"database-table-name\">" . html($aTable[0]) . "</td>\n",
         "        <td class=\"database-structure-cell\">" . formatDatabaseStructureHtml($aTable[1]) . "</td>\n",
         "      </tr>\n";
 }

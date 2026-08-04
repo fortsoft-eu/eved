@@ -30,7 +30,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo htmlspecialchars(getPageTitleText("Photographic Equipment", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -63,14 +63,14 @@ renderMenu();
 foreach ($aEquipment as $aRow) {
     $sAcquiredAt = substr((string)$aRow["acquired_at"], 0, 10);
     $sRetiredAt = $aRow["retired_at"] !== null ? substr((string)$aRow["retired_at"], 0, 10) : "";
-    $sAcquiredAt = htmlspecialchars($sAcquiredAt, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-    $sRetiredAt = htmlspecialchars($sRetiredAt, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sAcquiredAt = html($sAcquiredAt);
+    $sRetiredAt = html($sRetiredAt);
     echo "      <tr>\n",
-        "        <td style=\"vertical-align: top;\">" . htmlspecialchars(ucfirst($aRow["equip_type"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . htmlspecialchars($aRow["equip_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . html(ucfirst($aRow["equip_type"])) . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . html($aRow["equip_name"]) . "</td>\n",
         "        <td style=\"vertical-align: top;\">" . $sAcquiredAt . "</td>\n",
         "        <td style=\"vertical-align: top;\">" . $sRetiredAt . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . htmlspecialchars($aRow["disposition_note"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+        "        <td style=\"vertical-align: top;\">" . html($aRow["disposition_note"]) . "</td>\n",
         "      </tr>\n";
 }
 

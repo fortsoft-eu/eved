@@ -281,7 +281,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html(getPageTitleText("Groups", $aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
@@ -306,7 +306,7 @@ if ($blCanEdit) {
 
 ?>
   </p>
-  <table id="groups-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-permissions="<?php echo htmlspecialchars(json_encode($aPortalPermissions), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="groups-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-permissions="<?php echo html(json_encode($aPortalPermissions)); ?>">
     <thead>
       <tr>
         <th>Name</th>

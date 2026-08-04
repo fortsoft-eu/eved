@@ -82,7 +82,6 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
-$sTitle = getPageTitleText("Business Hours", $aAllowedIps);
 
 $iTime = sendPageHeaders();
 
@@ -98,7 +97,7 @@ $iTime = sendPageHeaders();
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html($sTitle); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>

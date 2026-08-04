@@ -122,7 +122,6 @@ if ($blCanEdit) {
 }
 
 
-$sTitle = getPageTitleText("Transactions", $aAllowedIps);
 $iTime = sendPageHeaders();
 
 ?>
@@ -136,7 +135,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html($sTitle); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
@@ -160,7 +159,7 @@ echo $sToolbarHtml;
 
 ?>
   </p>
-  <div id="transactions-data" data-display-currency="<?php echo html($sDisplayCurrency != "" ? $sDisplayCurrency : $sDefaultCurrency); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" hidden></div>
+  <div id="transactions-data" data-display-currency="<?php echo html($sDisplayCurrency != "" ? $sDisplayCurrency : $sDefaultCurrency); ?>" data-finance-types="<?php echo html(json_encode($aFinanceTypes)); ?>" data-currencies="<?php echo html(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency))); ?>" hidden></div>
 <?php
 
 if (!$aRows) {
@@ -168,7 +167,7 @@ if (!$aRows) {
 } else {
 
 ?>
-  <table id="transactions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-display-currency="<?php echo html($sDisplayCurrency != "" ? $sDisplayCurrency : $sDefaultCurrency); ?>" data-finance-types="<?php echo htmlspecialchars(json_encode($aFinanceTypes), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" data-currencies="<?php echo htmlspecialchars(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency)), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
+  <table id="transactions-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>" data-display-currency="<?php echo html($sDisplayCurrency != "" ? $sDisplayCurrency : $sDefaultCurrency); ?>" data-finance-types="<?php echo html(json_encode($aFinanceTypes)); ?>" data-currencies="<?php echo html(json_encode(getCurrencyOptions($oPdo, $sDefaultCurrency))); ?>">
     <thead>
       <tr>
         <th>Date</th>

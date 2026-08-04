@@ -3233,7 +3233,6 @@ function fetchSubjectPortalEditorData($oPdo, $iSubjectId) {
     );
 }
 
-
 function addressesNormalizeKey($sValue) {
     $sValue = str_replace("\r\n", "\n", (string)$sValue);
     $sValue = str_replace("\r", "\n", $sValue);

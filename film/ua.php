@@ -35,7 +35,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo htmlspecialchars(getPageTitleText("Film Access Log", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -89,7 +89,7 @@ if (!$aRows) {
     foreach ($aRows as $aRow) {
         $sCountryCode = strtoupper(trim((string)$aRow["x_geo_country_code"]));
         $sCountryFlag = formatUaCountryFlag($sCountryCode);
-        $sCountry = $sCountryFlag . ($sCountryFlag != "" ? " " : "") . htmlspecialchars($sCountryCode, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+        $sCountry = $sCountryFlag . ($sCountryFlag != "" ? " " : "") . html($sCountryCode);
         $sUserAgentRaw = (string)$aRow["user_agent"];
         $sUserAgent = formatUaUserAgent($sUserAgentRaw);
         $sBrowser = trim((string)$aRow["browser_name"] . " " . (string)$aRow["browser_version"]);
@@ -161,32 +161,32 @@ if (!$aRows) {
         } elseif ($aRow["requested_film_scan_id"] !== null) {
             $sFilmRoll = (string)$aRow["requested_film_scan_id"];
         }
-        $sScreenResolution = htmlspecialchars((string)$aRow["screen_resolution"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
-        $sScreenPhysical = htmlspecialchars((string)$aRow["screen_physical"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+        $sScreenResolution = html((string)$aRow["screen_resolution"]);
+        $sScreenPhysical = html((string)$aRow["screen_physical"]);
         $sScreenResolution = preg_replace("#^\\s*([0-9]+)\\s*[xX]\\s*([0-9]+)\\s*$#", "$1 &times; $2", $sScreenResolution);
         $sScreenPhysical = preg_replace("#^\\s*([0-9]+)\\s*[xX]\\s*([0-9]+)\\s*$#", "$1 &times; $2", $sScreenPhysical);
         $sTimestampRaw = (string)$aRow["timestamp"];
         $sTimestamp = substr($sTimestampRaw, 0, 19);
-        $sTimestamp = htmlspecialchars($sTimestamp, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+        $sTimestamp = html($sTimestamp);
 
         echo "      <tr>\n",
-            "        <td title=\"" . htmlspecialchars($sTimestampRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . $sTimestamp . "</td>\n",
-            "        <td>" . htmlspecialchars((string)$aRow["ip_address"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-            "        <td>" . ($aRow["x_geo_continent_code"] !== null && $aRow["x_geo_continent_code"] != "" ? htmlspecialchars(strtoupper((string)$aRow["x_geo_continent_code"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
+            "        <td title=\"" . html($sTimestampRaw) . "\">" . $sTimestamp . "</td>\n",
+            "        <td>" . html((string)$aRow["ip_address"]) . "</td>\n",
+            "        <td>" . ($aRow["x_geo_continent_code"] !== null && $aRow["x_geo_continent_code"] != "" ? html(strtoupper((string)$aRow["x_geo_continent_code"])) : "<em>&mdash;</em>") . "</td>\n",
             "        <td>" . ($sCountry != "" ? $sCountry : "<em>&mdash;</em>") . "</td>\n",
-            "        <td class=\"js-user-agent\" data-user-agent=\"" . htmlspecialchars($sUserAgentRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-browser-name=\"" . htmlspecialchars((string)$aRow["browser_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-browser-version=\"" . htmlspecialchars((string)$aRow["browser_version"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-os-name=\"" . htmlspecialchars((string)$aRow["os_name"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-os-version=\"" . htmlspecialchars((string)$aRow["os_version"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-platform-type=\"" . htmlspecialchars((string)$aRow["platform_type"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-device-vendor=\"" . htmlspecialchars((string)$aRow["device_vendor"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" data-device-model=\"" . htmlspecialchars((string)$aRow["device_model"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\" title=\"" . htmlspecialchars($sUserAgentTitle, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . htmlspecialchars($sUserAgent, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-            "        <td>" . ($sFilmRoll != "" ? htmlspecialchars($sFilmRoll, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
-            "        <td>" . ($aRow["requested_img"] !== null && (string)$aRow["requested_img"] != "" ? htmlspecialchars((string)$aRow["requested_img"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
-            "        <td title=\"" . htmlspecialchars($sGpuRaw, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . ($sGpu != "" ? htmlspecialchars($sGpu, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
-            "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["fonts"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . ($aRow["fonts"] !== null && $aRow["fonts"] != "" ? htmlspecialchars((string)$aRow["fonts"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
+            "        <td class=\"js-user-agent\" data-user-agent=\"" . html($sUserAgentRaw) . "\" data-browser-name=\"" . html((string)$aRow["browser_name"]) . "\" data-browser-version=\"" . html((string)$aRow["browser_version"]) . "\" data-os-name=\"" . html((string)$aRow["os_name"]) . "\" data-os-version=\"" . html((string)$aRow["os_version"]) . "\" data-platform-type=\"" . html((string)$aRow["platform_type"]) . "\" data-device-vendor=\"" . html((string)$aRow["device_vendor"]) . "\" data-device-model=\"" . html((string)$aRow["device_model"]) . "\" title=\"" . html($sUserAgentTitle) . "\">" . html($sUserAgent) . "</td>\n",
+            "        <td>" . ($sFilmRoll != "" ? html($sFilmRoll) : "<em>&mdash;</em>") . "</td>\n",
+            "        <td>" . ($aRow["requested_img"] !== null && (string)$aRow["requested_img"] != "" ? html((string)$aRow["requested_img"]) : "<em>&mdash;</em>") . "</td>\n",
+            "        <td title=\"" . html($sGpuRaw) . "\">" . ($sGpu != "" ? html($sGpu) : "<em>&mdash;</em>") . "</td>\n",
+            "        <td class=\"ua-clipped\" title=\"" . html((string)$aRow["fonts"]) . "\">" . ($aRow["fonts"] !== null && $aRow["fonts"] != "" ? html((string)$aRow["fonts"]) : "<em>&mdash;</em>") . "</td>\n",
             "        <td>" . ($sScreenResolution != "" ? $sScreenResolution : "<em>&mdash;</em>") . "</td>\n",
             "        <td>" . ($sScreenPhysical != "" ? $sScreenPhysical : "<em>&mdash;</em>") . "</td>\n",
-            "        <td>" . ($aRow["color_depth"] !== null && $aRow["color_depth"] != "" ? htmlspecialchars((string)$aRow["color_depth"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
-            "        <td>" . ($aRow["timezone"] !== null && $aRow["timezone"] != "" ? htmlspecialchars((string)$aRow["timezone"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
-            "        <td>" . ($aRow["language"] !== null && $aRow["language"] != "" ? htmlspecialchars((string)$aRow["language"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
-            "        <td>" . ($aRow["platform"] !== null && $aRow["platform"] != "" ? htmlspecialchars((string)$aRow["platform"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
-            "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["plugins"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . ($aRow["plugins"] !== null && $aRow["plugins"] != "" ? htmlspecialchars((string)$aRow["plugins"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
-            "        <td class=\"ua-clipped\" title=\"" . htmlspecialchars((string)$aRow["mime_types"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">" . ($aRow["mime_types"] !== null && $aRow["mime_types"] != "" ? htmlspecialchars((string)$aRow["mime_types"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") : "<em>&mdash;</em>") . "</td>\n",
+            "        <td>" . ($aRow["color_depth"] !== null && $aRow["color_depth"] != "" ? html((string)$aRow["color_depth"]) : "<em>&mdash;</em>") . "</td>\n",
+            "        <td>" . ($aRow["timezone"] !== null && $aRow["timezone"] != "" ? html((string)$aRow["timezone"]) : "<em>&mdash;</em>") . "</td>\n",
+            "        <td>" . ($aRow["language"] !== null && $aRow["language"] != "" ? html((string)$aRow["language"]) : "<em>&mdash;</em>") . "</td>\n",
+            "        <td>" . ($aRow["platform"] !== null && $aRow["platform"] != "" ? html((string)$aRow["platform"]) : "<em>&mdash;</em>") . "</td>\n",
+            "        <td class=\"ua-clipped\" title=\"" . html((string)$aRow["plugins"]) . "\">" . ($aRow["plugins"] !== null && $aRow["plugins"] != "" ? html((string)$aRow["plugins"]) : "<em>&mdash;</em>") . "</td>\n",
+            "        <td class=\"ua-clipped\" title=\"" . html((string)$aRow["mime_types"]) . "\">" . ($aRow["mime_types"] !== null && $aRow["mime_types"] != "" ? html((string)$aRow["mime_types"]) : "<em>&mdash;</em>") . "</td>\n",
             "      </tr>\n";
     }
 }

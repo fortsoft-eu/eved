@@ -57,7 +57,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo htmlspecialchars(getPageTitleText("Database Schema", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -83,8 +83,8 @@ renderMenu();
 <?php
 
 foreach ($aTables as $sTableName => $aColumns) {
-    echo "        <table class=\"schema-table\" data-table=\"" . htmlspecialchars($sTableName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n",
-        "          <caption>" . htmlspecialchars($sTableName, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</caption>\n",
+    echo "        <table class=\"schema-table\" data-table=\"" . html($sTableName) . "\">\n",
+        "          <caption>" . html($sTableName) . "</caption>\n",
         "          <colgroup>\n",
         "            <col class=\"schema-col-key\">\n",
         "            <col class=\"schema-col-column\">\n",
@@ -108,7 +108,7 @@ foreach ($aTables as $sTableName => $aColumns) {
         $sColumnType = (string)$aColumn["COLUMN_TYPE"];
         $sColumnTypeDisplay = schemaColumnTypeDisplay($sColumnType);
         $sColumnTypeTitleDisplay = schemaColumnTypeDisplay($sColumnType, false);
-        $sColumnTypeTitle = $sColumnTypeDisplay != $sColumnTypeTitleDisplay ? " title=\"" . str_replace("…", "&hellip;", htmlspecialchars($sColumnTypeTitleDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")) . "\"" : "";
+        $sColumnTypeTitle = $sColumnTypeDisplay != $sColumnTypeTitleDisplay ? " title=\"" . str_replace("…", "&hellip;", html($sColumnTypeTitleDisplay)) . "\"" : "";
         if ($aColumn["COLUMN_KEY"] == "PRI") {
             $sKey = "PK";
             $sKeyClass = " schema-key-pk";
@@ -119,12 +119,12 @@ foreach ($aTables as $sTableName => $aColumns) {
             $sKey = "UQ";
         }
         $sColumnId = "column-" . preg_replace("/[^a-zA-Z0-9_-]/", "-", $sTableName . "-" . $aColumn["COLUMN_NAME"]);
-        echo "            <tr id=\"" . htmlspecialchars($sColumnId, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\">\n",
+        echo "            <tr id=\"" . html($sColumnId) . "\">\n",
             "              <td class=\"schema-key" . $sKeyClass . "\">" . $sKey . "</td>\n",
-            "              <td>" . htmlspecialchars($aColumn["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-            "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . str_replace("…", "&hellip;", htmlspecialchars($sColumnTypeDisplay, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8")) . "</td>\n",
+            "              <td>" . html($aColumn["COLUMN_NAME"]) . "</td>\n",
+            "              <td class=\"schema-column-type\"" . $sColumnTypeTitle . ">" . str_replace("…", "&hellip;", html($sColumnTypeDisplay)) . "</td>\n",
             "              <td class=\"schema-null\">" . ($aColumn["IS_NULLABLE"] == "YES" ? "Yes" : "No") . "</td>\n",
-            "              <td>" . htmlspecialchars($aColumn["EXTRA"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "              <td>" . html($aColumn["EXTRA"]) . "</td>\n",
             "            </tr>\n";
     }
     echo "          </tbody>\n",
@@ -158,47 +158,47 @@ if (!$aRelations) {
         $sRelationKey = $aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"] . ">" . $aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"];
         $sRouteAttributes = "";
         if (isset($aSchemaRelationRoutes[$sRelationKey])) {
-            $sRouteAttributes = " data-source-side=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["source"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\""
-                . " data-target-side=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["target"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+            $sRouteAttributes = " data-source-side=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source"]) . "\""
+                . " data-target-side=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target"]) . "\"";
             if (isset($aSchemaRelationRoutes[$sRelationKey]["curve"])) {
-                $sRouteAttributes .= " data-curve=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["curve"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+                $sRouteAttributes .= " data-curve=\"" . html($aSchemaRelationRoutes[$sRelationKey]["curve"]) . "\"";
             }
             if (isset($aSchemaRelationRoutes[$sRelationKey]["source-x"])) {
-                $sRouteAttributes .= " data-source-x-offset=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["source-x"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+                $sRouteAttributes .= " data-source-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source-x"]) . "\"";
             }
             if (isset($aSchemaRelationRoutes[$sRelationKey]["source-y"])) {
-                $sRouteAttributes .= " data-source-y-offset=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["source-y"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+                $sRouteAttributes .= " data-source-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source-y"]) . "\"";
             }
             if (isset($aSchemaRelationRoutes[$sRelationKey]["target-x"])) {
-                $sRouteAttributes .= " data-target-x-offset=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["target-x"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+                $sRouteAttributes .= " data-target-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target-x"]) . "\"";
             }
             if (isset($aSchemaRelationRoutes[$sRelationKey]["target-y"])) {
-                $sRouteAttributes .= " data-target-y-offset=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["target-y"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+                $sRouteAttributes .= " data-target-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target-y"]) . "\"";
             }
             if (isset($aSchemaRelationRoutes[$sRelationKey]["via-x"])) {
-                $sRouteAttributes .= " data-via-x=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["via-x"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+                $sRouteAttributes .= " data-via-x=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-x"]) . "\"";
             }
             if (isset($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"])) {
-                $sRouteAttributes .= " data-via-x-offset=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+                $sRouteAttributes .= " data-via-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-x-offset"]) . "\"";
             }
             if (isset($aSchemaRelationRoutes[$sRelationKey]["via-y"])) {
-                $sRouteAttributes .= " data-via-y=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["via-y"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+                $sRouteAttributes .= " data-via-y=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-y"]) . "\"";
             }
             if (isset($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"])) {
-                $sRouteAttributes .= " data-via-y-offset=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+                $sRouteAttributes .= " data-via-y-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-y-offset"]) . "\"";
             }
             if (isset($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"])) {
-                $sRouteAttributes .= " data-via-table-bottom-offset=\"" . htmlspecialchars($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"";
+                $sRouteAttributes .= " data-via-table-bottom-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["via-table-bottom-offset"]) . "\"";
             }
         }
-        echo "      <tr data-source-table=\"" . htmlspecialchars($aRelation["TABLE_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"),
-            "\" data-source-column=\"" . htmlspecialchars($aRelation["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"),
-            "\" data-target-table=\"" . htmlspecialchars($aRelation["REFERENCED_TABLE_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"),
-            "\" data-target-column=\"" . htmlspecialchars($aRelation["REFERENCED_COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "\"",
+        echo "      <tr data-source-table=\"" . html($aRelation["TABLE_NAME"]),
+            "\" data-source-column=\"" . html($aRelation["COLUMN_NAME"]),
+            "\" data-target-table=\"" . html($aRelation["REFERENCED_TABLE_NAME"]),
+            "\" data-target-column=\"" . html($aRelation["REFERENCED_COLUMN_NAME"]) . "\"",
             $sRouteAttributes . ">\n",
-            "        <td>" . htmlspecialchars($aRelation["CONSTRAINT_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-            "        <td>" . htmlspecialchars($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
-            "        <td>" . htmlspecialchars($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"], ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</td>\n",
+            "        <td>" . html($aRelation["CONSTRAINT_NAME"]) . "</td>\n",
+            "        <td>" . html($aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"]) . "</td>\n",
+            "        <td>" . html($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"]) . "</td>\n",
             "      </tr>\n";
     }
 

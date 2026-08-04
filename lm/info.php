@@ -67,7 +67,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html(getPageTitleText("PHP Info and PHP Credits", $aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -80,7 +80,7 @@ renderMenu();
 ?>
   </p>
   <div id="phpinfo-select-form">
-    <form action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="get" target="phpinfo-frame">
+    <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="get" target="phpinfo-frame">
       <fieldset>
         <legend>PHP INFO</legend>
         <input type="hidden" name="type" value="info">
@@ -90,7 +90,7 @@ renderMenu();
 foreach ($aInfoTypes as $sKey => $iValue) {
     echo "        <label><input type=\"checkbox\" name=\"info[]\" value=\"" . (int)$iValue . "\" class=\"js-submit-on-change\""
         . ($iValue == $iDefaultSelectedInfo ? " checked" : "") . "> "
-        . htmlspecialchars($sKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</label><br>\n";
+        . html($sKey) . "</label><br>\n";
 }
 
 ?>
@@ -103,7 +103,7 @@ foreach ($aInfoTypes as $sKey => $iValue) {
         </div>
       </fieldset>
     </form>
-    <form action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="get" target="phpinfo-frame">
+    <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="get" target="phpinfo-frame">
       <fieldset>
         <legend>PHP CREDITS</legend>
         <input type="hidden" name="type" value="credits">
@@ -111,7 +111,7 @@ foreach ($aInfoTypes as $sKey => $iValue) {
 <?php
 
 foreach ($aCreditsTypes as $sKey => $iValue) {
-    echo "        <label><input type=\"checkbox\" name=\"credits[]\" value=\"" . (int)$iValue . "\" class=\"js-submit-on-change\"" . ($iValue == $iDefaultSelectedCredits ? " checked" : "") . "> " . htmlspecialchars($sKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</label><br>\n";
+    echo "        <label><input type=\"checkbox\" name=\"credits[]\" value=\"" . (int)$iValue . "\" class=\"js-submit-on-change\"" . ($iValue == $iDefaultSelectedCredits ? " checked" : "") . "> " . html($sKey) . "</label><br>\n";
 }
 
 ?>
@@ -125,7 +125,7 @@ foreach ($aCreditsTypes as $sKey => $iValue) {
       </fieldset>
     </form>
   </div>
-  <iframe class="phpinfo-frame" name="phpinfo-frame" src="<?php echo htmlspecialchars($sDefaultFrameUrl, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" title="PHP Info"></iframe>
+  <iframe class="phpinfo-frame" name="phpinfo-frame" src="<?php echo html($sDefaultFrameUrl); ?>" title="PHP Info"></iframe>
   <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>

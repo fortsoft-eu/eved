@@ -54,7 +54,7 @@ $iTime = sendPageHeaders();
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo htmlspecialchars(getPageTitleText("PHP Info and PHP Credits", $aAllowedIps), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?></title>
+  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -66,19 +66,19 @@ renderMenu();
 
 ?>
   </p>
-  <form action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" method="get" target="phpinfo-frame" id="phpinfo-select-form">
+  <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="get" target="phpinfo-frame" id="phpinfo-select-form">
     <label for="select">Select:</label>
     <select name="select" id="select" class="js-submit-on-change">
       <optgroup label="PHP INFO">
 <?php
 
 foreach ($aInfoTypes as $sKey => $iValue) {
-    echo "        <option value=\"info_" . $iValue . "\"" . ($iValue == $iDefaultSelectedInfo ? " selected" : "") . ">" . htmlspecialchars($sKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</option>\n";
+    echo "        <option value=\"info_" . $iValue . "\"" . ($iValue == $iDefaultSelectedInfo ? " selected" : "") . ">" . html($sKey) . "</option>\n";
 }
 echo "      </optgroup>\n",
     "      <optgroup label=\"PHP CREDITS\">\n";
 foreach ($aCreditsTypes as $sKey => $iValue) {
-    echo "        <option value=\"credits_" . $iValue . "\">" . htmlspecialchars($sKey, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8") . "</option>\n";
+    echo "        <option value=\"credits_" . $iValue . "\">" . html($sKey) . "</option>\n";
 }
 
 ?>
@@ -86,7 +86,7 @@ foreach ($aCreditsTypes as $sKey => $iValue) {
     </select>
     <button type="submit" formtarget="_blank">Open Selected in New Window</button>
   </form>
-  <iframe class="phpinfo-frame" name="phpinfo-frame" src="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]) . "?select=info_" . $iDefaultSelectedInfo, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>" title="PHP Info"></iframe>
+  <iframe class="phpinfo-frame" name="phpinfo-frame" src="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]) . "?select=info_" . $iDefaultSelectedInfo); ?>" title="PHP Info"></iframe>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>
