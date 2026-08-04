@@ -116,22 +116,19 @@ form {
     color: #8A6D3B;
 }
 
-.snippet-board-form.mail-form {
-    box-sizing: border-box;
-    padding: 0;
-    width: 100%;
-}
-
-.mail-form-status {
+.mail-form-status, .snippet-board-status {
     box-sizing: border-box;
     display: inline-block;
     line-height: 18px;
-    min-height: 27px;
     padding: 4px 8px 3px 8px;
+}
+
+.mail-form-status {
+    min-height: 27px;
     white-space: nowrap;
 }
 
-.mail-form-status:empty {
+.mail-form-status:empty, .snippet-board-status:empty {
     display: none;
 }
 
@@ -1988,15 +1985,7 @@ html[data-pmd-like="1"].snippet-board-html, html[data-pmd-like="1"].mail-html {
 }
 
 .snippet-board-status {
-    box-sizing: border-box;
-    display: inline-block;
     height: 27px;
-    line-height: 18px;
-    padding: 4px 8px 3px 8px;
-}
-
-.snippet-board-status:empty {
-    display: none;
 }
 
 .snippet-board-tabs {

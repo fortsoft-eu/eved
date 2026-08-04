@@ -187,23 +187,21 @@ function getCurrencyOptions($oPdo, $sSelectedCurrency = "") {
     $aCurrencies = array(
         "CZK" => array("currency" => "CZK", "label" => "CZK" . $sCurrencySeparator . "Czech koruna")
     );
-    if ($oPdo) {
-        try {
-            $oStatement = $oPdo->query("SELECT currency_code, MIN(currency) AS currency_name FROM kf_exchange_rates GROUP BY currency_code ORDER BY currency_code ASC");
-            while ($aRow = $oStatement->fetch()) {
-                $sCurrency = normalizeCurrency($aRow["currency_code"]);
-                if ($sCurrency == "") {
-                    continue;
-                }
-                $sCurrencyName = trim((string)$aRow["currency_name"]);
-                $aCurrencies[$sCurrency] = array(
-                    "currency" => $sCurrency,
-                    "label" => $sCurrencyName != "" ? $sCurrency . $sCurrencySeparator . $sCurrencyName : $sCurrency
-                );
+    try {
+        $oStatement = $oPdo->query("SELECT currency_code, MIN(currency) AS currency_name FROM kf_exchange_rates GROUP BY currency_code ORDER BY currency_code ASC");
+        while ($aRow = $oStatement->fetch()) {
+            $sCurrency = normalizeCurrency($aRow["currency_code"]);
+            if ($sCurrency == "") {
+                continue;
             }
-        } catch (Exception $oException) {
-            error_log((string)$oException);
+            $sCurrencyName = trim((string)$aRow["currency_name"]);
+            $aCurrencies[$sCurrency] = array(
+                "currency" => $sCurrency,
+                "label" => $sCurrencyName != "" ? $sCurrency . $sCurrencySeparator . $sCurrencyName : $sCurrency
+            );
         }
+    } catch (Exception $oException) {
+        error_log((string)$oException);
     }
     $sSelectedCurrency = normalizeCurrency($sSelectedCurrency);
     if ($sSelectedCurrency != "" && !isset($aCurrencies[$sSelectedCurrency])) {
