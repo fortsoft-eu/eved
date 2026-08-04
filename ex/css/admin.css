@@ -1003,6 +1003,9 @@ body.phpinfo-page .admin-controls {
     #phone-book-table thead th, #contacts-table thead th, #addresses-table thead th {
         width: 50%;
     }
+    #contacts-table thead th:nth-last-child(n+3), #contacts-table thead th:nth-last-child(n+3) ~ th {
+        width: auto;
+    }
 }
 
 #contacts-table thead th, #birthdays-table thead th, #interactions-table thead th, .schema-table td:nth-child(2), .schema-table th:nth-child(2) {

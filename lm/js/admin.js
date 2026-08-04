@@ -3309,6 +3309,473 @@ function bindAdminSubmitOnChange() {
     }
 }
 
+function isMailFormAddressSeparator(sChar) {
+    return sChar == " " || sChar == "\t" || sChar == "," || sChar == ";";
+}
+
+function mailFormReadEmailToken(sValue, iOffset) {
+    var iLength = sValue.length;
+    var iNextOffset = iOffset;
+    var blEscaped = false;
+    var sChar;
+    if (iOffset >= iLength) {
+        return {token: "", nextOffset: iOffset};
+    }
+    if (sValue.charAt(iOffset) == "\"") {
+        iNextOffset++;
+        while (iNextOffset < iLength) {
+            sChar = sValue.charAt(iNextOffset);
+            if (blEscaped) {
+                blEscaped = false;
+            } else if (sChar == "\\") {
+                blEscaped = true;
+            } else if (sChar == "\"") {
+                iNextOffset++;
+                break;
+            }
+            iNextOffset++;
+        }
+        if (iNextOffset >= iLength || sValue.charAt(iNextOffset) != "@") {
+            return {token: "", nextOffset: iOffset};
+        }
+        iNextOffset++;
+        while (iNextOffset < iLength && !isMailFormAddressSeparator(sValue.charAt(iNextOffset))) {
+            iNextOffset++;
+        }
+        return {token: sValue.substring(iOffset, iNextOffset), nextOffset: iNextOffset};
+    }
+    while (iNextOffset < iLength && !isMailFormAddressSeparator(sValue.charAt(iNextOffset))) {
+        iNextOffset++;
+    }
+    return {token: sValue.substring(iOffset, iNextOffset), nextOffset: iNextOffset};
+}
+
+function mailFormFindUnquotedChar(sValue, sFind, iOffset) {
+    var iLength = sValue.length;
+    var blQuoted = false;
+    var blEscaped = false;
+    var sChar;
+    while (iOffset < iLength) {
+        sChar = sValue.charAt(iOffset);
+        if (blEscaped) {
+            blEscaped = false;
+        } else if (sChar == "\\") {
+            blEscaped = true;
+        } else if (sChar == "\"") {
+            blQuoted = !blQuoted;
+        } else if (!blQuoted && sChar == sFind) {
+            return iOffset;
+        }
+        iOffset++;
+    }
+    return -1;
+}
+
+function mailFormFindUnquotedCharBeforeListSeparator(sValue, sFind, iOffset) {
+    var iLength = sValue.length;
+    var blQuoted = false;
+    var blEscaped = false;
+    var sChar;
+    while (iOffset < iLength) {
+        sChar = sValue.charAt(iOffset);
+        if (blEscaped) {
+            blEscaped = false;
+        } else if (sChar == "\\") {
+            blEscaped = true;
+        } else if (sChar == "\"") {
+            blQuoted = !blQuoted;
+        } else if (!blQuoted && (sChar == "," || sChar == ";")) {
+            return -1;
+        } else if (!blQuoted && sChar == sFind) {
+            return iOffset;
+        }
+        iOffset++;
+    }
+    return -1;
+}
+
+function mailFormCleanDisplayName(sValue) {
+    var sName = String(sValue).trim();
+    var iLength = sName.length;
+    if (sName == "") {
+        return "";
+    }
+    if (/[\x00-\x1F\x7F]/.test(String(sName)) || sName.indexOf("<") !== -1 || sName.indexOf(">") !== -1) {
+        return false;
+    }
+    if (iLength >= 2 && sName.charAt(0) == "\"" && sName.charAt(iLength - 1) == "\"") {
+        sName = sName.substring(1, iLength - 1).replace(/\\\\/g, "\\").replace(/\\"/g, "\"");
+    }
+    return sName.replace(/[ \t]+/g, " ").trim();
+}
+
+function isMailFormEmailAddress(sValue) {
+    var sEmail = String(sValue).trim();
+    if (sEmail == "" || sEmail.length > 254) {
+        return false;
+    }
+    if (sEmail.indexOf("@") > 64) {
+        return false;
+    }
+    return /^(?:[A-Za-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+\/=?^_`{|}~-]+)*|"(?:[^"\\\r\n]|\\[\x20-\x7E])*")@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(sEmail);
+}
+
+function mailFormParseMailbox(sValue, iOffset) {
+    var iLength = sValue.length;
+    var iTokenEnd = iOffset;
+    var oToken;
+    var sToken = "";
+    var sEmail = "";
+    var sName = "";
+    var iOpen = -1;
+    var iClose = -1;
+    var iProbe = iOffset;
+    if (iOffset >= iLength) {
+        return false;
+    }
+    if (sValue.charAt(iOffset) == "<") {
+        iClose = mailFormFindUnquotedChar(sValue, ">", iOffset + 1);
+        if (iClose < 0) {
+            return false;
+        }
+        sToken = sValue.substring(iOffset + 1, iClose).trim();
+        iProbe = iClose + 1;
+        while (iProbe < iLength && (sValue.charAt(iProbe) == " " || sValue.charAt(iProbe) == "\t")) {
+            iProbe++;
+        }
+        if (iProbe >= iLength || sValue.charAt(iProbe) == "," || sValue.charAt(iProbe) == ";") {
+            if (!isMailFormEmailAddress(sToken)) {
+                return false;
+            }
+            return {name: "", email: sToken, nextOffset: iClose + 1};
+        }
+        sName = mailFormCleanDisplayName(sToken);
+        oToken = mailFormReadEmailToken(sValue, iProbe);
+        sEmail = oToken.token.trim();
+        if (sName === false || !isMailFormEmailAddress(sEmail)) {
+            return false;
+        }
+        return {name: sName, email: sEmail, nextOffset: oToken.nextOffset};
+    }
+
+    oToken = mailFormReadEmailToken(sValue, iOffset);
+    sEmail = oToken.token.trim();
+    if (isMailFormEmailAddress(sEmail)) {
+        return {name: "", email: sEmail, nextOffset: oToken.nextOffset};
+    }
+
+    iOpen = mailFormFindUnquotedCharBeforeListSeparator(sValue, "<", iOffset);
+    if (iOpen < 0) {
+        return false;
+    }
+    iClose = mailFormFindUnquotedChar(sValue, ">", iOpen + 1);
+    if (iClose < 0) {
+        return false;
+    }
+    sName = mailFormCleanDisplayName(sValue.substring(iOffset, iOpen));
+    sEmail = sValue.substring(iOpen + 1, iClose).trim();
+    if (sName === false || !isMailFormEmailAddress(sEmail)) {
+        return false;
+    }
+    return {name: sName, email: sEmail, nextOffset: iClose + 1};
+}
+
+function mailFormNormalizeEmailList(sValue) {
+    var aMailboxes = [];
+    var iLength;
+    var iOffset = 0;
+    var iCount = 0;
+    var oMailbox;
+    sValue = String(sValue || "");
+    iLength = sValue.length;
+    if (/[\x00-\x1F\x7F]/.test(String(sValue))) {
+        return false;
+    }
+    while (iOffset < iLength) {
+        while (iOffset < iLength && isMailFormAddressSeparator(sValue.charAt(iOffset))) {
+            iOffset++;
+        }
+        if (iOffset >= iLength) {
+            break;
+        }
+        oMailbox = mailFormParseMailbox(sValue, iOffset);
+        if (oMailbox === false || oMailbox.nextOffset <= iOffset) {
+            return false;
+        }
+        aMailboxes.push(oMailbox);
+        iCount++;
+        iOffset = oMailbox.nextOffset;
+        if (iOffset < iLength && !isMailFormAddressSeparator(sValue.charAt(iOffset))) {
+            return false;
+        }
+    }
+    return {count: iCount, mailboxes: aMailboxes};
+}
+
+function mailFormNormalizeSingleEmail(sValue) {
+    var aList = mailFormNormalizeEmailList(sValue);
+    if (aList === false || aList.count > 1) {
+        return false;
+    }
+    return aList;
+}
+
+function getMailFormFieldValue(oForm, sName) {
+    return oForm && oForm.elements[sName] ? String(oForm.elements[sName].value || "").trim() : "";
+}
+
+function getMailFormEmailDomain(sEmail) {
+    var iAt = String(sEmail).lastIndexOf("@");
+    if (iAt < 0) {
+        return "";
+    }
+    return String(sEmail).substring(iAt + 1).toLowerCase();
+}
+
+function getMailFormAllowedSenderDomains(oForm) {
+    var aDomains = [];
+    var aParsed;
+    var i;
+    try {
+        aParsed = JSON.parse(oForm.getAttribute("data-mail-allowed-sender-domains") || "[]");
+    } catch (oException) {
+        aParsed = [];
+    }
+    for (i = 0; i < aParsed.length; i++) {
+        if (String(aParsed[i]).trim() != "") {
+            aDomains.push(String(aParsed[i]).trim().toLowerCase());
+        }
+    }
+    return aDomains;
+}
+
+function mailFormEmailListUsesAllowedSenderDomains(aEmailList, aAllowedDomains) {
+    var sDomain;
+    var i;
+    if (aEmailList === false) {
+        return false;
+    }
+    for (i = 0; i < aEmailList.mailboxes.length; i++) {
+        sDomain = getMailFormEmailDomain(aEmailList.mailboxes[i].email);
+        if (sDomain == "" || aAllowedDomains.indexOf(sDomain) < 0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function isMailFormHtmlBodyEmpty(sValue) {
+    var oNode = document.createElement("div");
+    var sText = String(sValue || "");
+    sText = sText.replace(/<\s*(script|style)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/ig, "");
+    sText = sText.replace(/<\s*br\s*\/?\s*>/ig, "\n");
+    sText = sText.replace(/<\s*\/\s*(p|div|h[1-6]|li|tr|blockquote|pre|table|ul|ol)\s*>/ig, "\n");
+    sText = sText.replace(/<\s*\/\s*(td|th)\s*>/ig, "\t");
+    oNode.innerHTML = sText;
+    sText = (oNode.textContent || oNode.innerText || "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+    return sText == "";
+}
+
+function validateMailForm(oForm) {
+    var aErrors = [];
+    var sTo = getMailFormFieldValue(oForm, "mail_to");
+    var sCc = getMailFormFieldValue(oForm, "mail_cc");
+    var sBcc = getMailFormFieldValue(oForm, "mail_bcc");
+    var sFrom = getMailFormFieldValue(oForm, "mail_from");
+    var sSender = getMailFormFieldValue(oForm, "mail_sender");
+    var sReplyTo = getMailFormFieldValue(oForm, "mail_reply_to");
+    var sMessage = oForm && oForm.elements.mail_message ? String(oForm.elements.mail_message.value || "") : "";
+    var aAllowedSenderDomains = getMailFormAllowedSenderDomains(oForm);
+    var blRestrictFromToSingleAddress = oForm && oForm.getAttribute("data-mail-restrict-from-to-single-address") == "1";
+    var aTo = mailFormNormalizeEmailList(sTo);
+    var aCc = mailFormNormalizeEmailList(sCc);
+    var aBcc = mailFormNormalizeEmailList(sBcc);
+    var aFrom = mailFormNormalizeEmailList(sFrom);
+    var aSender = mailFormNormalizeSingleEmail(sSender);
+    var aReplyTo = mailFormNormalizeEmailList(sReplyTo);
+    var iRecipientCount = (aTo !== false ? aTo.count : 0) + (aCc !== false ? aCc.count : 0) + (aBcc !== false ? aBcc.count : 0);
+    if (sTo != "" && aTo === false) {
+        aErrors.push({message: "Invalid To.", field: "mail_to"});
+    }
+    if (sCc != "" && aCc === false) {
+        aErrors.push({message: "Invalid carbon copy.", field: "mail_cc"});
+    }
+    if (sBcc != "" && aBcc === false) {
+        aErrors.push({message: "Invalid blind copy.", field: "mail_bcc"});
+    }
+    if (iRecipientCount < 1 && sTo == "" && sCc == "" && sBcc == "") {
+        aErrors.push({message: "Recipient required.", field: "mail_to"});
+    }
+    if (sFrom != "" && aFrom === false) {
+        aErrors.push({message: "Invalid From.", field: "mail_from"});
+    }
+    if (sFrom != "" && aFrom !== false && !mailFormEmailListUsesAllowedSenderDomains(aFrom, aAllowedSenderDomains)) {
+        aErrors.push({message: "Invalid From domain.", field: "mail_from"});
+    }
+    if (sSender != "" && aSender === false) {
+        aErrors.push({message: "Invalid Sender.", field: "mail_sender"});
+    }
+    if (sSender != "" && aSender !== false && !mailFormEmailListUsesAllowedSenderDomains(aSender, aAllowedSenderDomains)) {
+        aErrors.push({message: "Invalid Sender domain.", field: "mail_sender"});
+    }
+    if (aFrom !== false && aFrom.count > 1 && blRestrictFromToSingleAddress) {
+        aErrors.push({message: "Single From required.", field: "mail_from"});
+    }
+    if (aFrom !== false && aFrom.count > 1 && !blRestrictFromToSingleAddress && sSender == "") {
+        aErrors.push({message: "Sender required.", field: "mail_sender"});
+    }
+    if (sReplyTo != "" && aReplyTo === false) {
+        aErrors.push({message: "Invalid Reply-To.", field: "mail_reply_to"});
+    }
+    if (isMailFormHtmlBodyEmpty(sMessage)) {
+        aErrors.push({message: "Message required.", field: "mail_message"});
+    }
+    return {errors: aErrors};
+}
+
+function getMailFormValidationMessage(aValidation) {
+    var aMessages = [];
+    var i;
+    if (!aValidation || !aValidation.errors || aValidation.errors.length < 1) {
+        return "";
+    }
+    if (isSnippetBoardPmdLike()) {
+        return aValidation.errors[0].message;
+    }
+    for (i = 0; i < aValidation.errors.length; i++) {
+        aMessages.push(aValidation.errors[i].message);
+    }
+    return aMessages.join(" ");
+}
+
+function setMailFormStatus(oStatus, sMessage, sStatusClass) {
+    if (!oStatus) {
+        return;
+    }
+    oStatus.textContent = sMessage;
+    oStatus.className = sStatusClass != "" ? "mail-form-status " + sStatusClass : "mail-form-status";
+}
+
+function bindMailForm() {
+    var oForm = document.getElementById("mail-form");
+    var oStatus = document.querySelector(".mail-form-status");
+    var sStatusClass = oStatus ? " " + (oStatus.className || "") + " " : "";
+    if (!oForm) {
+        return;
+    }
+    if (oStatus && sStatusClass.indexOf(" message-success ") !== -1) {
+        window.setTimeout(function() {
+            oStatus.textContent = "";
+            oStatus.className = "mail-form-status";
+        }, 5000);
+    }
+    oForm.addEventListener("submit", function(oEvent) {
+        var aValidation;
+        var oField;
+        if (window.tinymce && typeof window.tinymce.triggerSave == "function") {
+            window.tinymce.triggerSave();
+        }
+        aValidation = validateMailForm(oForm);
+        if (aValidation.errors && aValidation.errors.length > 0) {
+            if (oEvent && typeof oEvent.preventDefault == "function") {
+                oEvent.preventDefault();
+            }
+            setMailFormStatus(oStatus, getMailFormValidationMessage(aValidation), "message-error");
+            oField = aValidation.errors[0].field && oForm.elements[aValidation.errors[0].field] ? oForm.elements[aValidation.errors[0].field] : null;
+            if (oField && typeof oField.focus == "function") {
+                oField.focus();
+            }
+            return false;
+        }
+    });
+}
+
+function resizeMailEditor(iHeight) {
+    var oTextarea = document.querySelector("#mail-form .js-snippet-board-textarea");
+    var oEditor;
+    var oContainer;
+    if (!oTextarea || !window.tinymce || typeof window.tinymce.get != "function") {
+        return;
+    }
+    window.setTimeout(function() {
+        oEditor = window.tinymce.get(oTextarea.id);
+        if (oEditor && typeof oEditor.getContainer == "function") {
+            oContainer = oEditor.getContainer();
+            if (oContainer) {
+                oContainer.style.height = iHeight + "px";
+                oContainer.style.minHeight = iHeight + "px";
+            }
+            if (typeof oEditor.dispatch == "function") {
+                oEditor.dispatch("ResizeEditor");
+            }
+            scheduleSnippetBoardToolbarLines(oEditor);
+        }
+    }, 0);
+}
+
+function layoutMailForm() {
+    var oForm = document.getElementById("mail-form");
+    var oTextarea = oForm ? oForm.querySelector(".js-snippet-board-textarea") : null;
+    var oEditor = oTextarea && window.tinymce && typeof window.tinymce.get == "function" ? window.tinymce.get(oTextarea.id) : null;
+    var oContainer = oEditor && typeof oEditor.getContainer == "function" ? oEditor.getContainer() : null;
+    var oTarget = oContainer || oTextarea;
+    var oVisualViewport = window.visualViewport || null;
+    var iViewportHeight = oVisualViewport ? Math.floor(oVisualViewport.height) : (window.innerHeight || document.documentElement.clientHeight || 768);
+    var iTop;
+    var iEditorHeight;
+    if (!oForm || !oTextarea || !oTarget) {
+        return;
+    }
+    iTop = oTarget.getBoundingClientRect().top - (oVisualViewport ? oVisualViewport.offsetTop : 0);
+    iEditorHeight = Math.max(220, Math.floor(iViewportHeight - iTop - 6));
+    oTextarea.style.height = iEditorHeight + "px";
+    resizeMailEditor(iEditorHeight);
+}
+
+function isMailEditor(oEditor) {
+    var oElement = oEditor && typeof oEditor.getElement == "function" ? oEditor.getElement() : null;
+    return !!(oElement && oElement.form && oElement.form.id == "mail-form");
+}
+
+function getMailRichTextPasteInput() {
+    return document.querySelector("#mail-form .js-mail-rich-text-paste");
+}
+
+function setMailRichTextPasteInputValue(blEnabled) {
+    var oInput = getMailRichTextPasteInput();
+    if (oInput) {
+        oInput.value = blEnabled ? "1" : "0";
+    }
+}
+
+function applyMailStoredRichTextPaste(oEditor) {
+    var oInput;
+    if (!isMailEditor(oEditor)) {
+        return false;
+    }
+    oInput = getMailRichTextPasteInput();
+    setSnippetBoardEditorPlainTextPasteMode(oEditor, !oInput || oInput.value != "1");
+    return true;
+}
+
+function saveMailRichTextPaste(blEnabled) {
+    var oData = new FormData();
+    setMailRichTextPasteInputValue(blEnabled);
+    appendAdminEncodedValue(oData, "action", "save_mail_rich_text_paste");
+    appendAdminEncodedValue(oData, "rich_text_paste", blEnabled ? "1" : "0");
+    submitAdminRequest(oData, null, function(sMessage) {
+        logAdminException(sMessage);
+    });
+}
+
+function saveMailEditorRichTextPaste(oEditor) {
+    if (!isMailEditor(oEditor) || !oEditor || typeof oEditor.queryCommandState != "function") {
+        return false;
+    }
+    saveMailRichTextPaste(!oEditor.queryCommandState("mceTogglePlainTextPaste"));
+    return true;
+}
+
 var blSnippetBoardApplyingRemote = false;
 
 function resizeSnippetBoardEditors() {
@@ -3340,6 +3807,15 @@ function resizeSnippetBoardEditors() {
 
 function isSnippetBoardPmdLike() {
     return document.body && document.body.getAttribute("data-pmd-like") == "1";
+}
+
+function isSnippetBoardScrollLockPage() {
+    var sClass;
+    if (!document.body) {
+        return false;
+    }
+    sClass = " " + (document.body.className || "") + " ";
+    return sClass.indexOf(" snippet-board-page ") !== -1 || sClass.indexOf(" mail-page ") !== -1;
 }
 
 function isSnippetBoardPageScrollAllowedTarget(oTarget) {
@@ -3385,7 +3861,7 @@ function preventSnippetBoardPageScroll(oEvent) {
 }
 
 function bindSnippetBoardPageScrollLock() {
-    if (!document.body || (" " + document.body.className + " ").indexOf(" snippet-board-page ") === -1) {
+    if (!isSnippetBoardScrollLockPage()) {
         return;
     }
     document.addEventListener("touchmove", preventSnippetBoardPageScroll, {passive: false});
@@ -3741,12 +4217,12 @@ function getSnippetBoardEditorSlot(oEditor) {
     return oElement && oElement.id ? oElement.id.replace(/^snippet-/, "") : "";
 }
 
-function getSnippetBoardRichTextCopyModeInput(sSlot) {
-    return document.querySelector("[data-snippet-rich-text-copy-mode=\"" + sSlot + "\"]");
+function getSnippetBoardRichTextPasteInput(sSlot) {
+    return document.querySelector("[data-snippet-rich-text-paste=\"" + sSlot + "\"]");
 }
 
-function setSnippetBoardRichTextCopyModeInputValue(sSlot, blEnabled, blDispatch) {
-    var oInput = getSnippetBoardRichTextCopyModeInput(sSlot);
+function setSnippetBoardRichTextPasteInputValue(sSlot, blEnabled, blDispatch) {
+    var oInput = getSnippetBoardRichTextPasteInput(sSlot);
     var sValue = blEnabled ? "1" : "0";
     if (!oInput || oInput.value == sValue) {
         return;
@@ -3832,23 +4308,29 @@ function scheduleSnippetBoardPasteModeButtonSync(oEditor) {
     }, 250);
 }
 
-function applySnippetBoardStoredRichTextCopyMode(oEditor) {
+function applySnippetBoardStoredRichTextPaste(oEditor) {
     var sSlot = getSnippetBoardEditorSlot(oEditor);
-    var oInput = getSnippetBoardRichTextCopyModeInput(sSlot);
+    var oInput = getSnippetBoardRichTextPasteInput(sSlot);
+    if (applyMailStoredRichTextPaste(oEditor)) {
+        return;
+    }
     setSnippetBoardEditorPlainTextPasteMode(oEditor, oInput && oInput.value != "1");
 }
 
-function saveSnippetBoardEditorRichTextCopyMode(oEditor) {
+function saveSnippetBoardEditorRichTextPaste(oEditor) {
     var sSlot = getSnippetBoardEditorSlot(oEditor);
+    if (saveMailEditorRichTextPaste(oEditor)) {
+        return;
+    }
     if (!sSlot || !oEditor || typeof oEditor.queryCommandState != "function") {
         return;
     }
-    setSnippetBoardRichTextCopyModeInputValue(sSlot, !oEditor.queryCommandState("mceTogglePlainTextPaste"), true);
+    setSnippetBoardRichTextPasteInputValue(sSlot, !oEditor.queryCommandState("mceTogglePlainTextPaste"), true);
 }
 
-function setSnippetBoardEditorStoredPlainTextPasteMode(oEditor, blEnabled) {
-    setSnippetBoardEditorPlainTextPasteMode(oEditor, blEnabled);
-    saveSnippetBoardEditorRichTextCopyMode(oEditor);
+function setSnippetBoardEditorStoredRichTextPaste(oEditor, blEnabled) {
+    setSnippetBoardEditorPlainTextPasteMode(oEditor, !blEnabled);
+    saveSnippetBoardEditorRichTextPaste(oEditor);
     scheduleSnippetBoardPasteModeButtonSync(oEditor);
 }
 
@@ -3916,13 +4398,13 @@ function bindSnippetBoardForm() {
         return aValues;
     }
 
-    function getSnippetBoardRichTextCopyModes() {
-        var aInputs = oForm.querySelectorAll(".js-snippet-board-rich-text-copy-mode");
+    function getSnippetBoardRichTextPasteModes() {
+        var aInputs = oForm.querySelectorAll(".js-snippet-board-rich-text-paste");
         var aValues = {};
         var sSlot;
         var i;
         for (i = 0; i < aInputs.length; i++) {
-            sSlot = aInputs[i].getAttribute("data-snippet-rich-text-copy-mode") || "";
+            sSlot = aInputs[i].getAttribute("data-snippet-rich-text-paste") || "";
             if (sSlot != "") {
                 aValues[sSlot] = aInputs[i].value == "1" ? "1" : "0";
             }
@@ -3933,7 +4415,7 @@ function bindSnippetBoardForm() {
     function collectSnippetBoardData() {
         var oData = new FormData();
         var aValues = getSnippetBoardValues();
-        var aRichTextCopyModes = getSnippetBoardRichTextCopyModes();
+        var aRichTextPasteModes = getSnippetBoardRichTextPasteModes();
         var sSlot;
         oData.append("action", "save_snippet_board");
         for (sSlot in aValues) {
@@ -3941,17 +4423,17 @@ function bindSnippetBoardForm() {
                 appendAdminEncodedValue(oData, "snippet_" + sSlot, aValues[sSlot]);
             }
         }
-        for (sSlot in aRichTextCopyModes) {
-            if (Object.prototype.hasOwnProperty.call(aRichTextCopyModes, sSlot)) {
-                appendAdminEncodedValue(oData, "rich_text_copy_mode_" + sSlot, aRichTextCopyModes[sSlot]);
+        for (sSlot in aRichTextPasteModes) {
+            if (Object.prototype.hasOwnProperty.call(aRichTextPasteModes, sSlot)) {
+                appendAdminEncodedValue(oData, "rich_text_paste_" + sSlot, aRichTextPasteModes[sSlot]);
             }
         }
         return oData;
     }
 
-    function applySnippetBoardValues(aValues, aRichTextCopyModes) {
+    function applySnippetBoardValues(aValues, aRichTextPasteModes) {
         var aTextareas = oForm.querySelectorAll(".js-snippet-board-textarea");
-        var aInputs = oForm.querySelectorAll(".js-snippet-board-rich-text-copy-mode");
+        var aInputs = oForm.querySelectorAll(".js-snippet-board-rich-text-paste");
         var oEditor;
         var sSlot;
         var sValue;
@@ -3974,11 +4456,11 @@ function bindSnippetBoardForm() {
                 }
             }
             for (i = 0; i < aInputs.length; i++) {
-                sSlot = aInputs[i].getAttribute("data-snippet-rich-text-copy-mode") || "";
+                sSlot = aInputs[i].getAttribute("data-snippet-rich-text-paste") || "";
                 if (sSlot == "") {
                     continue;
                 }
-                sValue = aRichTextCopyModes && Object.prototype.hasOwnProperty.call(aRichTextCopyModes, sSlot) && String(aRichTextCopyModes[sSlot]) == "1" ? "1" : "0";
+                sValue = aRichTextPasteModes && Object.prototype.hasOwnProperty.call(aRichTextPasteModes, sSlot) && String(aRichTextPasteModes[sSlot]) == "1" ? "1" : "0";
                 aInputs[i].value = sValue;
                 oEditor = window.tinymce && typeof window.tinymce.get == "function" ? window.tinymce.get("snippet-" + sSlot) : null;
                 setSnippetBoardEditorPlainTextPasteMode(oEditor, sValue != "1");
@@ -4008,7 +4490,7 @@ function bindSnippetBoardForm() {
                 type: "saved",
                 revision: sBoardRevision,
                 snippets: getSnippetBoardValues(),
-                richTextCopyModes: getSnippetBoardRichTextCopyModes()
+                richTextPasteModes: getSnippetBoardRichTextPasteModes()
             });
         } catch (oException) {
             logAdminException(oException);
@@ -4026,7 +4508,7 @@ function bindSnippetBoardForm() {
             } else if (aData.revision) {
                 setSnippetBoardRevision(aData.revision);
             }
-            applySnippetBoardValues(aData.snippets || {}, aData.richTextCopyModes || {});
+            applySnippetBoardValues(aData.snippets || {}, aData.richTextPasteModes || {});
             setSnippetBoardStatus("Updated.", "saved");
         }, function(sMessage) {
             logAdminException(sMessage);
@@ -4046,7 +4528,7 @@ function bindSnippetBoardForm() {
             return;
         }
         setSnippetBoardRevision(aMessage.revision || "");
-        applySnippetBoardValues(aMessage.snippets || {}, aMessage.richTextCopyModes || {});
+        applySnippetBoardValues(aMessage.snippets || {}, aMessage.richTextPasteModes || {});
         setSnippetBoardStatus("Updated.", "saved");
     }
 
@@ -4474,7 +4956,7 @@ function bindSnippetBoardTinyMce() {
                     icon: "paste",
                     tooltip: "Formatted text paste mode",
                     onAction: function() {
-                        setSnippetBoardEditorStoredPlainTextPasteMode(oEditor, false);
+                        setSnippetBoardEditorStoredRichTextPaste(oEditor, true);
                     },
                     onSetup: function(oApi) {
                         function updateFormattedPasteState() {
@@ -4493,7 +4975,7 @@ function bindSnippetBoardTinyMce() {
                     icon: "paste-text",
                     tooltip: "Plain text paste mode",
                     onAction: function() {
-                        setSnippetBoardEditorStoredPlainTextPasteMode(oEditor, true);
+                        setSnippetBoardEditorStoredRichTextPaste(oEditor, false);
                     },
                     onSetup: function(oApi) {
                         function updatePasteTextState() {
@@ -4537,8 +5019,9 @@ function bindSnippetBoardTinyMce() {
                 oEditor.on("paste cut ExecCommand PastePostProcess SetContent", syncSnippetBoardEditorChangeAfterEvent);
                 oEditor.on("init", function() {
                     bindSnippetBoardEditorScrollLock(oEditor);
-                    applySnippetBoardStoredRichTextCopyMode(oEditor);
+                    applySnippetBoardStoredRichTextPaste(oEditor);
                     layoutSnippetBoard();
+                    layoutMailForm();
                     scheduleSnippetBoardToolbarLines(oEditor);
                 });
                 oEditor.on("PostRender SkinLoaded ResizeEditor", function() {
@@ -4674,16 +5157,20 @@ document.addEventListener("DOMContentLoaded", function() {
     layoutBusinessHours();
     bindIssueTracker();
     bindAdminSubmitOnChange();
+    bindMailForm();
     bindSnippetBoardPageScrollLock();
     bindSbPmdHoverTimeout();
     bindSnippetBoardTabs();
     bindSnippetBoardForm();
     bindSnippetBoardTinyMce();
     layoutSnippetBoard();
+    layoutMailForm();
     window.addEventListener("resize", layoutBusinessHours);
     window.addEventListener("resize", layoutSnippetBoard);
+    window.addEventListener("resize", layoutMailForm);
     if (window.visualViewport) {
         window.visualViewport.addEventListener("resize", layoutBusinessHours);
         window.visualViewport.addEventListener("resize", layoutSnippetBoard);
+        window.visualViewport.addEventListener("resize", layoutMailForm);
     }
 });

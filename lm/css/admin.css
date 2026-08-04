@@ -116,6 +116,50 @@ form {
     color: #8A6D3B;
 }
 
+.snippet-board-form.mail-form {
+    box-sizing: border-box;
+    padding: 0;
+    width: 100%;
+}
+
+.mail-form-status {
+    box-sizing: border-box;
+    display: inline-block;
+    line-height: 18px;
+    min-height: 27px;
+    padding: 4px 8px 3px 8px;
+    white-space: nowrap;
+}
+
+.mail-form-status:empty {
+    display: none;
+}
+
+.mail-form-fields {
+    display: grid;
+    gap: 8px 10px;
+    grid-template-columns: max-content minmax(0, 1fr);
+    margin-bottom: 10px;
+}
+
+.mail-form-fields label {
+    align-self: center;
+    margin-top: 0;
+    white-space: nowrap;
+}
+
+.mail-form-fields input[type="email"], .mail-form-fields input[type="text"] {
+    align-self: center;
+    box-sizing: border-box;
+    min-width: 0;
+    width: 100%;
+}
+
+.mail-message-label {
+    display: block;
+    margin: 0 0 4px;
+}
+
 button, select {
     border: 1px solid #C0C0C0;
     margin-top: 10px;
@@ -280,6 +324,14 @@ table {
     height: 27px;
     margin-left: 0;
     padding: 2px 2px 3px 2px;
+}
+
+body.mail-page .admin-controls .mail-send-button {
+    flex: 0 0 auto;
+    padding-left: 8px;
+    padding-right: 8px;
+    white-space: nowrap;
+    width: auto;
 }
 
 .admin-controls label[for="table-filter"] {
@@ -1921,7 +1973,7 @@ html.snippet-board-html {
     min-height: 100%;
 }
 
-html[data-pmd-like="1"].snippet-board-html {
+html[data-pmd-like="1"].snippet-board-html, html[data-pmd-like="1"].mail-html {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
@@ -2212,17 +2264,17 @@ html[data-pmd-like="1"].snippet-board-html {
     width: 107px;
 }
 
-body.snippet-board-page .tox.tox-tinymce-aux .tox-menu.tox-collection.tox-collection--list {
+body.snippet-board-page .tox.tox-tinymce-aux .tox-menu.tox-collection.tox-collection--list, body.mail-page .tox.tox-tinymce-aux .tox-menu.tox-collection.tox-collection--list {
     min-width: 75px;
 }
 
-body.snippet-board-page .tox.tox-tinymce-aux .tox-collection--list .tox-collection__item {
+body.snippet-board-page .tox.tox-tinymce-aux .tox-collection--list .tox-collection__item, body.mail-page .tox.tox-tinymce-aux .tox-collection--list .tox-collection__item {
     min-height: 28px;
     padding-bottom: 6px;
     padding-top: 6px;
 }
 
-body.snippet-board-page .tox.tox-tinymce-aux .tox-menu .tox-collection__item-label {
+body.snippet-board-page .tox.tox-tinymce-aux .tox-menu .tox-collection__item-label, body.mail-page .tox.tox-tinymce-aux .tox-menu .tox-collection__item-label {
     min-width: 48px;
     white-space: nowrap;
 }
@@ -2250,7 +2302,7 @@ body[data-pmd-like="1"] .admin-controls {
     flex-wrap: nowrap;
 }
 
-body[data-pmd-like="1"].snippet-board-page {
+body[data-pmd-like="1"].snippet-board-page, body[data-pmd-like="1"].mail-page {
     bottom: 6px;
     height: auto;
     left: 6px;
@@ -2265,6 +2317,20 @@ body[data-pmd-like="1"].snippet-board-page {
 
 body[data-pmd-like="1"] .snippet-board-form {
     overflow: hidden;
+}
+
+body[data-pmd-like="1"].mail-page .mail-form-fields {
+    gap: 3px 6px;
+    margin-bottom: 4px;
+}
+
+body[data-pmd-like="1"].mail-page .mail-form-fields label, body[data-pmd-like="1"].mail-page .mail-form-fields input[type="text"], body[data-pmd-like="1"].mail-page .mail-message-label {
+    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
+    font-stretch: condensed;
+}
+
+body[data-pmd-like="1"].mail-page .mail-message-label {
+    margin-bottom: 2px;
 }
 
 body[data-pmd-like="1"] .snippet-board-form .tox .tox-toolbar--scrolling {

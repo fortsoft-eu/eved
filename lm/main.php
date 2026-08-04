@@ -80,6 +80,9 @@ $sEmptyValueEmoji  = "&#10134;";
 $sThrobberEmoji    = "&#8987;";
 
 
+$blMailRestrictFromToSingleAddress = true;
+
+
 $sError = "";
 $oPdo = null;
 
