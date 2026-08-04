@@ -401,7 +401,7 @@ function getFinanceTypes($blIncludeGroups = false) {
     return $oStatement->fetchAll();
 }
 
-function renderEmojiData() {
+function kfRenderEmojiData() {
     global $sCopyEmoji, $sCopySuccessEmoji, $sCopyFailureEmoji;
 
     $aValues = array(
@@ -416,23 +416,6 @@ function renderEmojiData() {
     return $sHtml . "></span>\n";
 }
 
-
-function getSubjectNameSelectSql() {
-    $sPersonDisplayBase = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.title_before, ''), NULLIF(p.first_name, ''), NULLIF(p.middle_name, ''), NULLIF(p.last_name, ''))), '')";
-    $sPersonDisplayName = "NULLIF(TRIM(CONCAT(COALESCE(" . $sPersonDisplayBase . ", ''), IF(NULLIF(p.title_after, '') IS NULL, '', IF(" . $sPersonDisplayBase . " IS NULL, p.title_after, CONCAT(', ', p.title_after))))), '')";
-    $sPersonSortName = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.last_name, ''), NULLIF(p.first_name, ''))), '')";
-    return "SELECT s.id AS subject_id, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_sort_name FROM ex_subjects AS s LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id LEFT JOIN (SELECT sc.subject_id, SUBSTRING_INDEX(GROUP_CONCAT(c.contact_value ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id GROUP BY sc.subject_id) AS c ON c.subject_id = s.id LEFT JOIN (SELECT subject_id, SUBSTRING_INDEX(GROUP_CONCAT(nickname ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n'), '\n', 1) AS primary_nickname FROM ex_subject_nicknames GROUP BY subject_id) AS n ON n.subject_id = s.id";
-}
-
-function fetchSubjectNameRow($oPdo, $iSubjectId) {
-    if ((int)$iSubjectId < 1) {
-        return null;
-    }
-    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name, subject_sort_name FROM (" . getSubjectNameSelectSql() . ") AS subject_rows WHERE subject_id = :subject_id");
-    $oStatement->execute(array("subject_id" => (int)$iSubjectId));
-    $aRow = $oStatement->fetch();
-    return $aRow ? $aRow : null;
-}
 
 function fetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
     $sTerm = trim((string)$sTerm);
@@ -1270,7 +1253,7 @@ function renderFinanceTypeAdminRows($aRows, $blShowActions = true) {
     return $sHtml;
 }
 
-function normalizeEmailContactValue($sValue) {
+function kfNormalizeEmailContactValue($sValue) {
     $sText = strtolower(trim((string)$sValue));
     if ($sText == "") {
         return "";
@@ -1279,7 +1262,7 @@ function normalizeEmailContactValue($sValue) {
 }
 
 
-function contactValueIsInvalid($sType, $sValue) {
+function kfContactValueIsInvalid($sType, $sValue) {
     $sType = contactTypeKey($sType);
     if (trim((string)$sValue) == "") {
         return false;
@@ -1288,36 +1271,36 @@ function contactValueIsInvalid($sType, $sValue) {
         return normalizePhoneContactValue($sValue) === false;
     }
     if ((string)$sType == "email") {
-        return normalizeEmailContactValue($sValue) === false;
+        return kfNormalizeEmailContactValue($sValue) === false;
     }
     return false;
 }
 
-function contactDisplayValue($sType, $sValue) {
+function kfContactDisplayValue($sType, $sValue) {
     $sType = contactTypeKey($sType);
     if (isPhoneContactType($sType)) {
         return phoneContactDisplayValue($sValue);
     }
     if ((string)$sType == "email") {
-        $mEmail = normalizeEmailContactValue($sValue);
+        $mEmail = kfNormalizeEmailContactValue($sValue);
         return $mEmail !== false ? (string)$mEmail : (string)$sValue;
     }
     return (string)$sValue;
 }
 
-function contactHref($sType, $sValue, $blAllowExternalLinks = false) {
+function kfContactHref($sType, $sValue, $blAllowExternalLinks = false) {
     $sType = contactTypeKey($sType);
     if (isPhoneContactType($sType)) {
         return phoneContactHref($sValue);
     }
     if ($sType == "email") {
-        $sText = normalizeEmailContactValue($sValue);
+        $sText = kfNormalizeEmailContactValue($sValue);
         return $sText !== false && $sText != "" ? "mailto:" . $sText : "";
     }
     return "";
 }
 
-function contactLinkEmoji($sType) {
+function kfContactLinkEmoji($sType) {
     global $sContactEmailEmoji, $sContactLandlineEmoji, $sContactCellEmoji, $sContactFaxEmoji, $sContactPagerEmoji;
 
     $sType = contactTypeKey($sType);
@@ -1339,7 +1322,7 @@ function contactLinkEmoji($sType) {
     return "";
 }
 
-function contactLinkTitle($sType) {
+function kfContactLinkTitle($sType) {
     $sType = contactTypeKey($sType);
     if ($sType == "email") {
         return "Send e-mail";
@@ -1359,6 +1342,32 @@ function contactLinkTitle($sType) {
     return "";
 }
 
+function kfRenderContactValueText($sType, $sValue, $sTooltipAttribute = "") {
+    $sDisplayValue = kfContactDisplayValue($sType, $sValue);
+    $sClass = "contact-value" . (kfContactValueIsInvalid($sType, $sValue) ? " invalid-contact-value" : "");
+    return "<span class=\"" . html($sClass) . "\"" . $sTooltipAttribute . ">" . html($sDisplayValue) . "</span>";
+}
+
+function kfRenderContactValueActions($sType, $sValue, $blShowCopy = false, $blAllowExternalLinks = false) {
+    global $sCopyEmoji;
+
+    $sDisplayValue = kfContactDisplayValue($sType, $sValue);
+    $sHref = kfContactHref($sType, $sValue, $blAllowExternalLinks);
+    $sHtml = "";
+    $sLinkTitle = "";
+    $blHasIcon = false;
+    if ($blShowCopy && $sDisplayValue != "") {
+        $sHtml .= "<a class=\"contact-copy\" href=\"#\" title=\"Copy\" aria-label=\"Copy\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
+        $blHasIcon = true;
+    }
+    if ($sHref != "") {
+        $sTarget = $blAllowExternalLinks && preg_match("#^https?://#i", $sHref) ? " target=\"_blank\" rel=\"noopener noreferrer\"" : "";
+        $sLinkTitle = kfContactLinkTitle($sType);
+        return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"contact-link\" href=\"" . html($sHref) . "\"" . $sTarget . " title=\"" . html($sLinkTitle) . "\" aria-label=\"" . html($sLinkTitle) . "\">" . kfContactLinkEmoji($sType) . "</a>";
+    }
+    return $sHtml;
+}
+
 function renderDebtNoteValue($sNote) {
     global $sEmptyValueEmoji;
 
@@ -1372,14 +1381,14 @@ function renderDebtNoteValue($sNote) {
 function renderDebtContactValue($sType, $sValue, $sNote, $blIsPrimary = false) {
     global $sEmptyValueEmoji, $sPrimaryEmoji;
 
-    $sDisplayValue = contactDisplayValue($sType, $sValue);
+    $sDisplayValue = kfContactDisplayValue($sType, $sValue);
     $sNote = trim((string)$sNote);
     if (trim($sDisplayValue) == "") {
         return $sEmptyValueEmoji;
     }
     return "<span class=\"contact-item\" data-contact-value=\"" . html($sDisplayValue) . "\">"
-        . "<span class=\"contact-db-values\">" . renderContactValueText($sType, $sValue) . "</span>"
-        . renderContactValueActions($sType, $sValue, true, false)
+        . "<span class=\"contact-db-values\">" . kfRenderContactValueText($sType, $sValue) . "</span>"
+        . kfRenderContactValueActions($sType, $sValue, true, false)
         . "<span class=\"contact-note\">" . ($sNote != "" ? "(" . html($sNote) . ")" : "") . "</span>"
         . "<span class=\"contact-flags\"><span class=\"contact-primary\" title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span></span>"
         . "</span>";

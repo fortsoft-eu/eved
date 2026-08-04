@@ -96,33 +96,6 @@ function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension, $aAllowedIps) {
     ), $aData);
 }
 
-function getFilmUaFingerprintText($aData, $sName) {
-    if (!isset($aData[$sName])) {
-        return "";
-    }
-    if (is_array($aData[$sName])) {
-        $aValues = array();
-        foreach ($aData[$sName] as $mValue) {
-            if (is_scalar($mValue)) {
-                $aValues[] = (string)$mValue;
-            }
-        }
-        return implode(",", $aValues);
-    }
-    return is_scalar($aData[$sName]) ? (string)$aData[$sName] : "";
-}
-
-function getFilmUaFingerprintNullableText($aData, $sName, $iMaxLength = 0) {
-    $sValue = trim(getFilmUaFingerprintText($aData, $sName));
-    if ($sValue == "") {
-        return null;
-    }
-    if ($iMaxLength > 0) {
-        $sValue = substr($sValue, 0, $iMaxLength);
-    }
-    return $sValue;
-}
-
 function insertFilmUaRequest($oPdo, $aRequest, $aData) {
     if (!$oPdo) {
         return false;
@@ -142,31 +115,31 @@ function insertFilmUaRequest($oPdo, $aRequest, $aData) {
             "x_geo_continent_code"   => isset($_SERVER["HTTP_X_GEO_CONTINENT_CODE"]) ? substr($_SERVER["HTTP_X_GEO_CONTINENT_CODE"], 0, 2) : null,
             "x_geo_country_code"     => isset($_SERVER["HTTP_X_GEO_COUNTRY_CODE"]) ? substr($_SERVER["HTTP_X_GEO_COUNTRY_CODE"], 0, 2) : null,
             "user_agent"             => isset($_SERVER["HTTP_USER_AGENT"]) ? $_SERVER["HTTP_USER_AGENT"] : "",
-            "browser_name"           => getFilmUaFingerprintNullableText($aData, "browser_name", 100),
-            "browser_version"        => getFilmUaFingerprintNullableText($aData, "browser_version", 100),
-            "os_name"                => getFilmUaFingerprintNullableText($aData, "os_name", 100),
-            "os_version"             => getFilmUaFingerprintNullableText($aData, "os_version", 100),
-            "platform_type"          => getFilmUaFingerprintNullableText($aData, "platform_type", 32),
-            "device_vendor"          => getFilmUaFingerprintNullableText($aData, "device_vendor", 100),
-            "device_model"           => getFilmUaFingerprintNullableText($aData, "device_model", 191),
-            "architecture"           => getFilmUaFingerprintNullableText($aData, "architecture", 32),
-            "bitness"                => getFilmUaFingerprintNullableText($aData, "bitness", 16),
+            "browser_name"           => getUaFingerprintNullableText($aData, "browser_name", 100),
+            "browser_version"        => getUaFingerprintNullableText($aData, "browser_version", 100),
+            "os_name"                => getUaFingerprintNullableText($aData, "os_name", 100),
+            "os_version"             => getUaFingerprintNullableText($aData, "os_version", 100),
+            "platform_type"          => getUaFingerprintNullableText($aData, "platform_type", 32),
+            "device_vendor"          => getUaFingerprintNullableText($aData, "device_vendor", 100),
+            "device_model"           => getUaFingerprintNullableText($aData, "device_model", 191),
+            "architecture"           => getUaFingerprintNullableText($aData, "architecture", 32),
+            "bitness"                => getUaFingerprintNullableText($aData, "bitness", 16),
             "is_mobile"              => $mIsMobile,
-            "ua_brands"              => getFilmUaFingerprintNullableText($aData, "ua_brands"),
+            "ua_brands"              => getUaFingerprintNullableText($aData, "ua_brands"),
             "request_uri"            => isset($aRequest["request_uri"]) && is_scalar($aRequest["request_uri"]) ? (string)$aRequest["request_uri"] : "",
             "requested_film_scan_id" => isset($aRequest["requested_film_scan_id"]) && is_int($aRequest["requested_film_scan_id"]) ? $aRequest["requested_film_scan_id"] : null,
             "requested_img"          => isset($aRequest["requested_img"]) && is_scalar($aRequest["requested_img"]) ? (string)$aRequest["requested_img"] : null,
             "referer"                => isset($aRequest["referer"]) && is_scalar($aRequest["referer"]) ? (string)$aRequest["referer"] : "",
-            "gpu_info"               => getFilmUaFingerprintText($aData, "gpu"),
-            "fonts"                  => getFilmUaFingerprintText($aData, "fonts"),
-            "screen_resolution"      => getFilmUaFingerprintText($aData, "screen"),
-            "screen_physical"        => getFilmUaFingerprintText($aData, "screen_physical"),
-            "color_depth"            => getFilmUaFingerprintText($aData, "depth"),
-            "timezone"               => getFilmUaFingerprintText($aData, "tz"),
-            "language"               => getFilmUaFingerprintText($aData, "lang"),
-            "platform"               => getFilmUaFingerprintText($aData, "platform"),
-            "plugins"                => getFilmUaFingerprintText($aData, "plugins"),
-            "mime_types"             => getFilmUaFingerprintText($aData, "mimes")
+            "gpu_info"               => getUaFingerprintText($aData, "gpu"),
+            "fonts"                  => getUaFingerprintText($aData, "fonts"),
+            "screen_resolution"      => getUaFingerprintText($aData, "screen"),
+            "screen_physical"        => getUaFingerprintText($aData, "screen_physical"),
+            "color_depth"            => getUaFingerprintText($aData, "depth"),
+            "timezone"               => getUaFingerprintText($aData, "tz"),
+            "language"               => getUaFingerprintText($aData, "lang"),
+            "platform"               => getUaFingerprintText($aData, "platform"),
+            "plugins"                => getUaFingerprintText($aData, "plugins"),
+            "mime_types"             => getUaFingerprintText($aData, "mimes")
         ));
     } catch (PDOException $oException) {
         error_log((string)$oException);
@@ -175,29 +148,20 @@ function insertFilmUaRequest($oPdo, $aRequest, $aData) {
     return true;
 }
 
-function sendFilmUaJsonAndExit($aResponse, $iStatus = 200) {
-    http_response_code($iStatus);
-    header("Content-Type: application/json; charset=utf-8", true);
-    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0", true);
-    sendSecurityHeaders();
-    echo json_encode($aResponse);
-    exit;
-}
-
 function sendFilmUaFingerprintResponse($oPdo, $aAllowedIps) {
     if (!isset($_SESSION["film"]) || !is_array($_SESSION["film"])) {
         $_SESSION["film"] = array();
     }
     if (isAllowedIp($aAllowedIps)) {
         unset($_SESSION["film"]["ua"]);
-        sendFilmUaJsonAndExit(array("status" => "ignored"));
+        sendUaJsonAndExit(array("status" => "ignored"));
     }
     if (!$oPdo) {
-        sendFilmUaJsonAndExit(array("status" => "error"), 500);
+        sendUaJsonAndExit(array("status" => "error"), 500);
     }
     if (!isset($_SESSION["film"]["ua"]["request"]) || !is_array($_SESSION["film"]["ua"]["request"])) {
         unset($_SESSION["film"]["ua"]["request"]);
-        sendFilmUaJsonAndExit(array("status" => "ignored"));
+        sendUaJsonAndExit(array("status" => "ignored"));
     }
     $sInput = file_get_contents("php://input");
     $aData = json_decode($sInput, true);
@@ -206,10 +170,10 @@ function sendFilmUaFingerprintResponse($oPdo, $aAllowedIps) {
     }
     $_SESSION["film"]["ua"]["fingerprint"] = $aData;
     if (!insertFilmUaRequest($oPdo, $_SESSION["film"]["ua"]["request"], $aData)) {
-        sendFilmUaJsonAndExit(array("status" => "error"), 500);
+        sendUaJsonAndExit(array("status" => "error"), 500);
     }
     unset($_SESSION["film"]["ua"]["request"]);
-    sendFilmUaJsonAndExit(array("status" => "ok"));
+    sendUaJsonAndExit(array("status" => "ok"));
 }
 
 function getFilmPhpFileLinkGroups() {
@@ -477,77 +441,4 @@ function formatOrderOptionLabel($aOrder) {
         $sLabel .= " (" . $aOrder["order_no"] . ")";
     }
     return htmlspecialchars($sLabel, ENT_QUOTES, "UTF-8");
-}
-
-function formatFilmUaCountryFlag($sCountryCode) {
-    $sCountryCode = strtoupper(trim((string)$sCountryCode));
-    if (strlen($sCountryCode) != 2 || !ctype_alpha($sCountryCode)) {
-        return "";
-    }
-    return "&#" . (127462 + ord($sCountryCode[0]) - 65) . ";&#" . (127462 + ord($sCountryCode[1]) - 65) . ";";
-}
-
-function formatFilmUaUserAgent($sUserAgent) {
-    $sUserAgent = trim((string)$sUserAgent);
-    $sBrowser = "Unknown browser";
-    $sOperatingSystem = "Unknown operating system";
-    $sArchitecture = "";
-    $aMatches = array();
-    $aWindowsVersions = array(
-        "10.0" => "Windows 10/11",
-        "6.3"  => "Windows 8.1",
-        "6.2"  => "Windows 8",
-        "6.1"  => "Windows 7",
-        "6.0"  => "Windows Vista",
-        "5.1"  => "Windows XP"
-    );
-    if (preg_match("#Edg(?:A|iOS)?/([0-9.]+)#", $sUserAgent, $aMatches)) {
-        $sBrowser = "Microsoft Edge " . $aMatches[1];
-    } elseif (preg_match("#OPR/([0-9.]+)#", $sUserAgent, $aMatches)) {
-        $sBrowser = "Opera " . $aMatches[1];
-    } elseif (preg_match("#Firefox/([0-9.]+)#", $sUserAgent, $aMatches)) {
-        $sBrowser = "Firefox " . $aMatches[1];
-    } elseif (preg_match("#CriOS/([0-9.]+)#", $sUserAgent, $aMatches)) {
-        $sBrowser = "Chrome " . $aMatches[1];
-    } elseif (preg_match("#Chrome/([0-9.]+)#", $sUserAgent, $aMatches)) {
-        $sBrowser = "Chrome " . $aMatches[1];
-    } elseif (preg_match("#Version/([0-9.]+).*Safari/#", $sUserAgent, $aMatches)) {
-        $sBrowser = "Safari " . $aMatches[1];
-    }
-    if (preg_match("#Windows NT ([0-9.]+)#", $sUserAgent, $aMatches)) {
-        $sOperatingSystem = isset($aWindowsVersions[$aMatches[1]]) ? $aWindowsVersions[$aMatches[1]] : "Windows NT " . $aMatches[1];
-    } elseif (preg_match("#Android ([0-9.]+)#", $sUserAgent, $aMatches)) {
-        $sOperatingSystem = "Android " . $aMatches[1];
-    } elseif (preg_match("#(?:iPhone|CPU) OS ([0-9_]+)#", $sUserAgent, $aMatches)) {
-        $sOperatingSystem = "iOS " . str_replace("_", ".", $aMatches[1]);
-    } elseif (preg_match("#Mac OS X ([0-9_]+)#", $sUserAgent, $aMatches)) {
-        $sOperatingSystem = "macOS " . str_replace("_", ".", $aMatches[1]);
-    } elseif (stripos($sUserAgent, "Linux") !== false) {
-        $sOperatingSystem = "Linux";
-    }
-    if (preg_match("#Win64|x86_64|x64|amd64#i", $sUserAgent)) {
-        $sArchitecture = " (64-bit)";
-    } elseif (preg_match("#i[3-6]86|Win32#i", $sUserAgent)) {
-        $sArchitecture = " (32-bit)";
-    }
-    return $sBrowser . " on " . $sOperatingSystem . $sArchitecture;
-}
-
-function formatFilmUaGpu($sGpuInfo) {
-    $sGpuInfo = trim((string)$sGpuInfo);
-    if ($sGpuInfo == "") {
-        return "";
-    }
-    $sFriendly = preg_replace("#^ANGLE\\s*\\(#i", "", $sGpuInfo);
-    $sFriendly = preg_replace("#\\)?,?\\s*or similar\\s*$#i", "", $sFriendly);
-    $sFriendly = preg_replace("#\\)\\s*$#", "", $sFriendly);
-    $aParts = array_map("trim", explode(",", $sFriendly));
-    if (isset($aParts[1]) && $aParts[1] != "") {
-        $sFriendly = $aParts[1];
-    } elseif (isset($aParts[0])) {
-        $sFriendly = $aParts[0];
-    }
-    $sFriendly = preg_replace("#\\s+(?:Direct3D|OpenGL|Vulkan|Metal)\\b.*$#i", "", $sFriendly);
-    $sFriendly = preg_replace("#\\s+vs_[0-9_]+.*$#i", "", $sFriendly);
-    return trim($sFriendly);
 }

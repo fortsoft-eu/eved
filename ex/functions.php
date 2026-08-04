@@ -1422,6 +1422,32 @@ function contactLinkTitle($sType) {
     return "";
 }
 
+function renderContactValueText($sType, $sValue, $sTooltipAttribute = "") {
+    $sDisplayValue = contactDisplayValue($sType, $sValue);
+    $sClass = "contact-value" . (contactValueIsInvalid($sType, $sValue) ? " invalid-contact-value" : "");
+    return "<span class=\"" . html($sClass) . "\"" . $sTooltipAttribute . ">" . html($sDisplayValue) . "</span>";
+}
+
+function renderContactValueActions($sType, $sValue, $blShowCopy = false, $blAllowExternalLinks = false) {
+    global $sCopyEmoji;
+
+    $sDisplayValue = contactDisplayValue($sType, $sValue);
+    $sHref = contactHref($sType, $sValue, $blAllowExternalLinks);
+    $sHtml = "";
+    $sLinkTitle = "";
+    $blHasIcon = false;
+    if ($blShowCopy && $sDisplayValue != "") {
+        $sHtml .= "<a class=\"contact-copy\" href=\"#\" title=\"Copy\" aria-label=\"Copy\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
+        $blHasIcon = true;
+    }
+    if ($sHref != "") {
+        $sTarget = $blAllowExternalLinks && preg_match("#^https?://#i", $sHref) ? " target=\"_blank\" rel=\"noopener noreferrer\"" : "";
+        $sLinkTitle = contactLinkTitle($sType);
+        return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"contact-link\" href=\"" . html($sHref) . "\"" . $sTarget . " title=\"" . html($sLinkTitle) . "\" aria-label=\"" . html($sLinkTitle) . "\">" . contactLinkEmoji($sType) . "</a>";
+    }
+    return $sHtml;
+}
+
 function postalCodeMetadata() {
     static $aMetadata = null;
 
@@ -4706,175 +4732,6 @@ function getDemoFullListComplexFilterFields() {
     );
 }
 
-function normalizeDemoFullListComplexFilter($aPayload, $aFields, $aOperators) {
-    $aFilter = getDefaultFullListComplexFilter();
-    if (isset($aPayload["match"]) && (string)$aPayload["match"] == "any") {
-        $aFilter["match"] = "any";
-    } elseif (isset($aPayload["complex_filter_match"]) && (string)$aPayload["complex_filter_match"] == "any") {
-        $aFilter["match"] = "any";
-    }
-    if (isset($aPayload["conditions"]) && is_array($aPayload["conditions"])) {
-        $iCount = 0;
-        foreach ($aPayload["conditions"] as $aCondition) {
-            if ($iCount >= 25) {
-                break;
-            }
-            $sField = isset($aCondition["field"]) ? (string)$aCondition["field"] : "";
-            $sOperator = isset($aCondition["operator"]) ? (string)$aCondition["operator"] : "";
-            $sValue = isset($aCondition["value"]) ? (string)$aCondition["value"] : "";
-            if (!isset($aFields[$sField])) {
-                continue;
-            }
-            if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
-                $sOperator = "equals";
-            } elseif (!isset($aOperators[$sOperator])) {
-                continue;
-            }
-            if (!isFullListComplexFilterOperatorAllowed($aFields[$sField], $sOperator)) {
-                continue;
-            }
-            if (empty($aOperators[$sOperator]["needs_value"])) {
-                $sValue = "";
-            } else {
-                $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
-            }
-            $aFilter["conditions"][] = array(
-                "field" => $sField,
-                "operator" => $sOperator,
-                "value" => $sValue
-            );
-            $iCount += 1;
-        }
-        return $aFilter;
-    }
-    $aInputFields = isset($aPayload["complex_filter_field"]) && is_array($aPayload["complex_filter_field"]) ? $aPayload["complex_filter_field"] : array();
-    $aInputOperators = isset($aPayload["complex_filter_operator"]) && is_array($aPayload["complex_filter_operator"]) ? $aPayload["complex_filter_operator"] : array();
-    $aInputValues = isset($aPayload["complex_filter_value"]) && is_array($aPayload["complex_filter_value"]) ? $aPayload["complex_filter_value"] : array();
-    $iCount = max(count($aInputFields), count($aInputOperators), count($aInputValues));
-    for ($iI = 0; $iI < $iCount && $iI < 25; $iI += 1) {
-        $sField = isset($aInputFields[$iI]) ? (string)$aInputFields[$iI] : "";
-        $sOperator = isset($aInputOperators[$iI]) ? (string)$aInputOperators[$iI] : "";
-        $sValue = isset($aInputValues[$iI]) ? (string)$aInputValues[$iI] : "";
-        if (!isset($aFields[$sField])) {
-            continue;
-        }
-        if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
-            $sOperator = "equals";
-        } elseif (!isset($aOperators[$sOperator])) {
-            continue;
-        }
-        if (!isFullListComplexFilterOperatorAllowed($aFields[$sField], $sOperator)) {
-            continue;
-        }
-        if (empty($aOperators[$sOperator]["needs_value"])) {
-            $sValue = "";
-        } else {
-            $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
-        }
-        $aFilter["conditions"][] = array(
-            "field" => $sField,
-            "operator" => $sOperator,
-            "value" => $sValue
-        );
-    }
-    return $aFilter;
-}
-
-function normalizeDemoFullListComplexFilterDraft($aPayload, $aFields, $aOperators) {
-    $aFilter = getDefaultFullListComplexFilterDraft();
-    $aFilter["conditions"] = array();
-    if (isset($aPayload["match"]) && (string)$aPayload["match"] == "any") {
-        $aFilter["match"] = "any";
-    } elseif (isset($aPayload["complex_filter_match"]) && (string)$aPayload["complex_filter_match"] == "any") {
-        $aFilter["match"] = "any";
-    }
-    if (isset($aPayload["conditions"]) && is_array($aPayload["conditions"])) {
-        $iCount = 0;
-        foreach ($aPayload["conditions"] as $aCondition) {
-            if ($iCount >= 25) {
-                break;
-            }
-            $sField = isset($aCondition["field"]) ? (string)$aCondition["field"] : "";
-            $sOperator = isset($aCondition["operator"]) ? (string)$aCondition["operator"] : "";
-            $sValue = isset($aCondition["value"]) ? (string)$aCondition["value"] : "";
-            if ($sField == "" || $sOperator == "") {
-                $aFilter["conditions"][] = array(
-                    "field" => $sField,
-                    "operator" => $sOperator,
-                    "value" => $sValue
-                );
-                $iCount += 1;
-                continue;
-            }
-            if (!isset($aFields[$sField])) {
-                $sField = "subject_name";
-            }
-            if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
-                $sOperator = "equals";
-            } elseif (!isset($aOperators[$sOperator])) {
-                $sOperator = getFullListComplexFilterDefaultOperator($aFields[$sField]);
-            }
-            if (!isFullListComplexFilterOperatorAllowed($aFields[$sField], $sOperator)) {
-                $sOperator = getFullListComplexFilterDefaultOperator($aFields[$sField]);
-            }
-            if (empty($aOperators[$sOperator]["needs_value"])) {
-                $sValue = "";
-            } else {
-                $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
-            }
-            $aFilter["conditions"][] = array(
-                "field" => $sField,
-                "operator" => $sOperator,
-                "value" => $sValue
-            );
-            $iCount += 1;
-        }
-    } else {
-        $aInputFields = isset($aPayload["complex_filter_field"]) && is_array($aPayload["complex_filter_field"]) ? $aPayload["complex_filter_field"] : array();
-        $aInputOperators = isset($aPayload["complex_filter_operator"]) && is_array($aPayload["complex_filter_operator"]) ? $aPayload["complex_filter_operator"] : array();
-        $aInputValues = isset($aPayload["complex_filter_value"]) && is_array($aPayload["complex_filter_value"]) ? $aPayload["complex_filter_value"] : array();
-        $iCount = max(count($aInputFields), count($aInputOperators), count($aInputValues));
-        for ($iI = 0; $iI < $iCount && $iI < 25; $iI += 1) {
-            $sField = isset($aInputFields[$iI]) ? (string)$aInputFields[$iI] : "";
-            $sOperator = isset($aInputOperators[$iI]) ? (string)$aInputOperators[$iI] : "";
-            $sValue = isset($aInputValues[$iI]) ? (string)$aInputValues[$iI] : "";
-            if ($sField == "" || $sOperator == "") {
-                $aFilter["conditions"][] = array(
-                    "field" => $sField,
-                    "operator" => $sOperator,
-                    "value" => $sValue
-                );
-                continue;
-            }
-            if (!isset($aFields[$sField])) {
-                $sField = "subject_name";
-            }
-            if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
-                $sOperator = "equals";
-            } elseif (!isset($aOperators[$sOperator])) {
-                $sOperator = getFullListComplexFilterDefaultOperator($aFields[$sField]);
-            }
-            if (!isFullListComplexFilterOperatorAllowed($aFields[$sField], $sOperator)) {
-                $sOperator = getFullListComplexFilterDefaultOperator($aFields[$sField]);
-            }
-            if (empty($aOperators[$sOperator]["needs_value"])) {
-                $sValue = "";
-            } else {
-                $sValue = normalizeFullListComplexFilterInputValue($aFields[$sField], $sValue);
-            }
-            $aFilter["conditions"][] = array(
-                "field" => $sField,
-                "operator" => $sOperator,
-                "value" => $sValue
-            );
-        }
-    }
-    if (!$aFilter["conditions"]) {
-        $aFilter = getDefaultFullListComplexFilterDraft();
-    }
-    return $aFilter;
-}
-
 function demoFullListLower($sValue) {
     return function_exists("mb_strtolower") ? mb_strtolower((string)$sValue, "UTF-8") : strtolower((string)$sValue);
 }
@@ -6655,4 +6512,545 @@ function isThrobberLockTarget($sUserAgent) {
     $blThrobberPmdLike = preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle)/i", $sUserAgent);
     $blThrobberChromiumEngine = preg_match("/(?:Chrome|Chromium|CriOS|EdgA|SamsungBrowser|OPR|Opera)/i", $sUserAgent);
     return !$blThrobberGeckoEngine && $blThrobberPmdLike && $blThrobberChromiumEngine;
+}
+
+function mailFormStripHeaderBreaks($sValue) {
+    return trim(preg_replace("/[\r\n]+/", " ", (string)$sValue));
+}
+
+function mailFormNormalizeEmailAddress($sValue) {
+    $sEmail = trim((string)$sValue);
+    if ($sEmail == "") {
+        return "";
+    }
+    return filter_var($sEmail, FILTER_VALIDATE_EMAIL) !== false ? $sEmail : false;
+}
+
+function mailFormIsAddressSeparator($sChar) {
+    return $sChar == " " || $sChar == "\t" || $sChar == "," || $sChar == ";";
+}
+
+function mailFormReadEmailToken($sValue, $iOffset, &$iNextOffset) {
+    $iLength = strlen($sValue);
+    $iNextOffset = $iOffset;
+    if ($iOffset >= $iLength) {
+        return "";
+    }
+    if ($sValue[$iOffset] == "\"") {
+        $iNextOffset++;
+        $blEscaped = false;
+        while ($iNextOffset < $iLength) {
+            $sChar = $sValue[$iNextOffset];
+            if ($blEscaped) {
+                $blEscaped = false;
+            } elseif ($sChar == "\\") {
+                $blEscaped = true;
+            } elseif ($sChar == "\"") {
+                $iNextOffset++;
+                break;
+            }
+            $iNextOffset++;
+        }
+        if ($iNextOffset >= $iLength || $sValue[$iNextOffset] != "@") {
+            return "";
+        }
+        $iNextOffset++;
+        while ($iNextOffset < $iLength && !mailFormIsAddressSeparator($sValue[$iNextOffset])) {
+            $iNextOffset++;
+        }
+        return substr($sValue, $iOffset, $iNextOffset - $iOffset);
+    }
+    while ($iNextOffset < $iLength && !mailFormIsAddressSeparator($sValue[$iNextOffset])) {
+        $iNextOffset++;
+    }
+    return substr($sValue, $iOffset, $iNextOffset - $iOffset);
+}
+
+function mailFormFindUnquotedChar($sValue, $sFind, $iOffset) {
+    $iLength = strlen($sValue);
+    $blQuoted = false;
+    $blEscaped = false;
+    while ($iOffset < $iLength) {
+        $sChar = $sValue[$iOffset];
+        if ($blEscaped) {
+            $blEscaped = false;
+        } elseif ($sChar == "\\") {
+            $blEscaped = true;
+        } elseif ($sChar == "\"") {
+            $blQuoted = !$blQuoted;
+        } elseif (!$blQuoted && $sChar == $sFind) {
+            return $iOffset;
+        }
+        $iOffset++;
+    }
+    return false;
+}
+
+function mailFormFindUnquotedCharBeforeListSeparator($sValue, $sFind, $iOffset) {
+    $iLength = strlen($sValue);
+    $blQuoted = false;
+    $blEscaped = false;
+    while ($iOffset < $iLength) {
+        $sChar = $sValue[$iOffset];
+        if ($blEscaped) {
+            $blEscaped = false;
+        } elseif ($sChar == "\\") {
+            $blEscaped = true;
+        } elseif ($sChar == "\"") {
+            $blQuoted = !$blQuoted;
+        } elseif (!$blQuoted && ($sChar == "," || $sChar == ";")) {
+            return false;
+        } elseif (!$blQuoted && $sChar == $sFind) {
+            return $iOffset;
+        }
+        $iOffset++;
+    }
+    return false;
+}
+
+function mailFormCleanDisplayName($sValue) {
+    $sName = trim((string)$sValue);
+    $iLength = strlen($sName);
+    if ($sName == "") {
+        return "";
+    }
+    if (preg_match("/[\x00-\x1F\x7F]/", (string)$sName) || strpos($sName, "<") !== false || strpos($sName, ">") !== false) {
+        return false;
+    }
+    if ($iLength >= 2 && $sName[0] == "\"" && $sName[$iLength - 1] == "\"") {
+        $sName = substr($sName, 1, -1);
+        $sName = str_replace(array("\\\\", "\\\""), array("\\", "\""), $sName);
+    }
+    $sName = trim(preg_replace("/[ \t]+/", " ", $sName));
+    return $sName;
+}
+
+function mailFormParseMailbox($sValue, $iOffset, &$iNextOffset) {
+    $iLength = strlen($sValue);
+    $iTokenEnd = $iOffset;
+    $sToken = "";
+    $sEmail = "";
+    $sName = "";
+    $iOpen = false;
+    $iClose = false;
+    $iProbe = $iOffset;
+
+    $iNextOffset = $iOffset;
+    if ($iOffset >= $iLength) {
+        return false;
+    }
+    if ($sValue[$iOffset] == "<") {
+        $iClose = mailFormFindUnquotedChar($sValue, ">", $iOffset + 1);
+        if ($iClose === false) {
+            return false;
+        }
+        $sToken = trim(substr($sValue, $iOffset + 1, $iClose - $iOffset - 1));
+        $iProbe = $iClose + 1;
+        while ($iProbe < $iLength && ($sValue[$iProbe] == " " || $sValue[$iProbe] == "\t")) {
+            $iProbe++;
+        }
+        if ($iProbe >= $iLength || $sValue[$iProbe] == "," || $sValue[$iProbe] == ";") {
+            $sEmail = mailFormNormalizeEmailAddress($sToken);
+            if ($sEmail === false || $sEmail == "") {
+                return false;
+            }
+            $iNextOffset = $iClose + 1;
+            return array("name" => "", "email" => $sEmail);
+        }
+        $sName = mailFormCleanDisplayName($sToken);
+        if ($sName === false) {
+            return false;
+        }
+        $sEmail = mailFormNormalizeEmailAddress(mailFormReadEmailToken($sValue, $iProbe, $iTokenEnd));
+        if ($sEmail === false || $sEmail == "") {
+            return false;
+        }
+        $iNextOffset = $iTokenEnd;
+        return array("name" => $sName, "email" => $sEmail);
+    }
+
+    $sToken = mailFormReadEmailToken($sValue, $iOffset, $iTokenEnd);
+    $sEmail = mailFormNormalizeEmailAddress($sToken);
+    if ($sEmail !== false && $sEmail != "") {
+        $iNextOffset = $iTokenEnd;
+        return array("name" => "", "email" => $sEmail);
+    }
+
+    $iOpen = mailFormFindUnquotedCharBeforeListSeparator($sValue, "<", $iOffset);
+    if ($iOpen === false) {
+        return false;
+    }
+    $iClose = mailFormFindUnquotedChar($sValue, ">", $iOpen + 1);
+    if ($iClose === false) {
+        return false;
+    }
+    $sName = mailFormCleanDisplayName(substr($sValue, $iOffset, $iOpen - $iOffset));
+    $sEmail = mailFormNormalizeEmailAddress(trim(substr($sValue, $iOpen + 1, $iClose - $iOpen - 1)));
+    if ($sName === false || $sEmail === false || $sEmail == "") {
+        return false;
+    }
+    $iNextOffset = $iClose + 1;
+    return array("name" => $sName, "email" => $sEmail);
+}
+
+function mailFormEncodeDisplayName($sValue) {
+    $sName = trim(preg_replace("/[ \t]+/", " ", (string)$sValue));
+    if ($sName == "") {
+        return "";
+    }
+    if (preg_match("/[^\x20-\x7E]/", $sName)) {
+        return "=?UTF-8?B?" . base64_encode($sName) . "?=";
+    }
+    if (preg_match("/[()<>@,;:\\\\\".\[\]]/", $sName)) {
+        return "\"" . str_replace(array("\\", "\""), array("\\\\", "\\\""), $sName) . "\"";
+    }
+    return $sName;
+}
+
+function mailFormFormatMailbox($aMailbox) {
+    $sName = isset($aMailbox["name"]) ? mailFormEncodeDisplayName($aMailbox["name"]) : "";
+    $sEmail = isset($aMailbox["email"]) ? (string)$aMailbox["email"] : "";
+    return $sName != "" ? $sName . " <" . $sEmail . ">" : $sEmail;
+}
+
+function mailFormNormalizeEmailList($sValue) {
+    $aMailboxes = array();
+    $aHeaderMailboxes = array();
+    $sValue = (string)$sValue;
+    $iLength = strlen($sValue);
+    $iOffset = 0;
+    $iNextOffset = 0;
+    $aMailbox = array();
+
+    if (preg_match("/[\x00-\x1F\x7F]/", (string)$sValue)) {
+        return false;
+    }
+    while ($iOffset < $iLength) {
+        while ($iOffset < $iLength && mailFormIsAddressSeparator($sValue[$iOffset])) {
+            $iOffset++;
+        }
+        if ($iOffset >= $iLength) {
+            break;
+        }
+        $aMailbox = mailFormParseMailbox($sValue, $iOffset, $iNextOffset);
+        if ($aMailbox === false || $iNextOffset <= $iOffset) {
+            return false;
+        }
+        $aMailboxes[] = $aMailbox;
+        $iOffset = $iNextOffset;
+        if ($iOffset < $iLength && !mailFormIsAddressSeparator($sValue[$iOffset])) {
+            return false;
+        }
+    }
+    foreach ($aMailboxes as $aMailbox) {
+        $aHeaderMailboxes[] = mailFormFormatMailbox($aMailbox);
+    }
+    return array(
+        "count" => count($aMailboxes),
+        "header" => implode(", ", $aHeaderMailboxes),
+        "mailboxes" => $aMailboxes
+    );
+}
+
+function mailFormNormalizeSingleEmail($sValue) {
+    $aList = mailFormNormalizeEmailList($sValue);
+    if ($aList === false || $aList["count"] > 1) {
+        return false;
+    }
+    return $aList;
+}
+
+function mailFormEmailDomain($sEmail) {
+    $iAt = strrpos((string)$sEmail, "@");
+    if ($iAt === false) {
+        return "";
+    }
+    return strtolower(substr((string)$sEmail, $iAt + 1));
+}
+
+function mailFormAllowedSenderDomainMap($aAllowedDomains) {
+    $aDomainMap = array();
+    foreach ($aAllowedDomains as $sDomain) {
+        $sDomain = strtolower(trim((string)$sDomain));
+        if ($sDomain != "") {
+            $aDomainMap[$sDomain] = true;
+        }
+    }
+    return $aDomainMap;
+}
+
+function mailFormEmailListUsesAllowedSenderDomains($aEmailList, $aAllowedDomains) {
+    $aDomainMap = mailFormAllowedSenderDomainMap($aAllowedDomains);
+    $sDomain = "";
+    if ($aEmailList === false) {
+        return false;
+    }
+    foreach ($aEmailList["mailboxes"] as $aMailbox) {
+        $sDomain = mailFormEmailDomain($aMailbox["email"]);
+        if ($sDomain == "" || !isset($aDomainMap[$sDomain])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowedDomains = null) {
+    $aSuggestions = array();
+    $aSeen = array();
+    $aParams = array();
+    $aAllowedDomainMap = array();
+    $aDomainPlaceholders = array();
+    $sDomainSql = "";
+    $sParam = "";
+    $iDomain = 0;
+    $sTerm = trim(preg_replace("/[<>]+/", " ", (string)$sTerm));
+    if (strlen($sTerm) < 3) {
+        return $aSuggestions;
+    }
+    $iLimit = (int)$iLimit;
+    if ($iLimit < 1) {
+        $iLimit = 12;
+    }
+    if ($iLimit > 30) {
+        $iLimit = 30;
+    }
+    if (is_array($aAllowedDomains)) {
+        $aAllowedDomainMap = mailFormAllowedSenderDomainMap($aAllowedDomains);
+        if (!$aAllowedDomainMap) {
+            return $aSuggestions;
+        }
+        foreach ($aAllowedDomainMap as $sDomain => $blAllowed) {
+            $sParam = "domain_" . $iDomain;
+            $aDomainPlaceholders[] = ":" . $sParam;
+            $aParams[$sParam] = $sDomain;
+            $iDomain++;
+        }
+        $sDomainSql = " AND LOWER(SUBSTRING_INDEX(c.contact_value, '@', -1)) IN (" . implode(", ", $aDomainPlaceholders) . ")";
+    }
+    $sLike = "%" . strtr($sTerm, array("!" => "!!", "%" => "!%", "_" => "!_")) . "%";
+    $sSql = "SELECT subject_rows.subject_id, subject_rows.subject_name, subject_rows.subject_sort_name, c.contact_value AS email FROM (" . getSubjectNameSelectSql() . ") AS subject_rows INNER JOIN ex_subject_contacts AS sc ON sc.subject_id = subject_rows.subject_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id INNER JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id WHERE ct.contact_type = 'email' AND sc.is_active = 1 AND c.contact_value <> ''" . $sDomainSql . " AND (LOWER(subject_rows.subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_rows.subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' OR LOWER(c.contact_value) LIKE LOWER(:email_term) ESCAPE '!') ORDER BY subject_rows.subject_sort_name COLLATE utf8mb4_czech_ci ASC, sc.is_primary DESC, c.contact_value ASC, sc.id ASC LIMIT " . $iLimit;
+    $oStatement = $oPdo->prepare($sSql);
+    $aParams["subject_name_term"] = $sLike;
+    $aParams["subject_sort_name_term"] = $sLike;
+    $aParams["email_term"] = $sLike;
+    $oStatement->execute($aParams);
+    while ($aRow = $oStatement->fetch()) {
+        $sName = mailFormCleanDisplayName($aRow["subject_name"]);
+        $sEmail = mailFormNormalizeEmailAddress($aRow["email"]);
+        $sKey = strtolower((string)$sEmail) . "\n" . strtolower((string)$sName);
+        if ($sName === false || $sEmail === false || $sEmail == "" || isset($aSeen[$sKey])) {
+            continue;
+        }
+        if (is_array($aAllowedDomains) && !isset($aAllowedDomainMap[mailFormEmailDomain($sEmail)])) {
+            continue;
+        }
+        $aSeen[$sKey] = true;
+        $aSuggestions[] = array(
+            "subject_id" => (int)$aRow["subject_id"],
+            "name" => $sName,
+            "email" => $sEmail,
+            "value" => $sName != "" ? "<" . $sName . "> " . $sEmail : $sEmail
+        );
+    }
+    return $aSuggestions;
+}
+
+function mailFormEncodeHeader($sValue) {
+    $sValue = mailFormStripHeaderBreaks($sValue);
+    if ($sValue == "") {
+        return "";
+    }
+    if (preg_match("/[^\x20-\x7E]/", $sValue)) {
+        return "=?UTF-8?B?" . base64_encode($sValue) . "?=";
+    }
+    return $sValue;
+}
+
+function mailFormEncodeMimeParameter($sValue) {
+    $sValue = mailFormStripHeaderBreaks($sValue);
+    if ($sValue == "") {
+        $sValue = "attachment";
+    }
+    if (preg_match("/[^\x20-\x7E]/", $sValue)) {
+        return "=?UTF-8?B?" . base64_encode($sValue) . "?=";
+    }
+    return str_replace(array("\\", "\""), array("\\\\", "\\\""), $sValue);
+}
+
+function mailFormHtmlBodyIsEmpty($sValue) {
+    $sHtml = preg_replace("/<\s*(script|style)[^>]*>.*?<\s*\/\s*\\1\s*>/is", "", (string)$sValue);
+    if (preg_match("/<\s*img\b/i", $sHtml)) {
+        return false;
+    }
+    $sText = html_entity_decode(strip_tags($sHtml), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    return trim($sText) == "";
+}
+
+function mailFormUploadedAttachments($sFieldName, &$aErrors) {
+    $aAttachments = array();
+    $aUpload = isset($_FILES[$sFieldName]) && is_array($_FILES[$sFieldName]) ? $_FILES[$sFieldName] : null;
+    if (!$aUpload || !isset($aUpload["name"], $aUpload["type"], $aUpload["tmp_name"], $aUpload["error"], $aUpload["size"])) {
+        return $aAttachments;
+    }
+    $aNames = is_array($aUpload["name"]) ? $aUpload["name"] : array($aUpload["name"]);
+    $aTypes = is_array($aUpload["type"]) ? $aUpload["type"] : array($aUpload["type"]);
+    $aTmpNames = is_array($aUpload["tmp_name"]) ? $aUpload["tmp_name"] : array($aUpload["tmp_name"]);
+    $aUploadErrors = is_array($aUpload["error"]) ? $aUpload["error"] : array($aUpload["error"]);
+    $aSizes = is_array($aUpload["size"]) ? $aUpload["size"] : array($aUpload["size"]);
+    foreach ($aNames as $iIndex => $sName) {
+        $iError = isset($aUploadErrors[$iIndex]) ? (int)$aUploadErrors[$iIndex] : UPLOAD_ERR_NO_FILE;
+        $sTmpName = isset($aTmpNames[$iIndex]) ? (string)$aTmpNames[$iIndex] : "";
+        if ($iError == UPLOAD_ERR_NO_FILE) {
+            continue;
+        }
+        if ($iError != UPLOAD_ERR_OK || $sTmpName == "" || !is_uploaded_file($sTmpName)) {
+            $aErrors[] = $iError == UPLOAD_ERR_INI_SIZE || $iError == UPLOAD_ERR_FORM_SIZE ? "Attachment too large." : "Attachment upload failed.";
+            continue;
+        }
+        $sContent = file_get_contents($sTmpName);
+        if ($sContent === false) {
+            $aErrors[] = "Attachment upload failed.";
+            continue;
+        }
+        $sAttachmentName = trim(basename(str_replace("\\", "/", mailFormStripHeaderBreaks($sName))));
+        $sAttachmentType = strtolower(trim(mailFormStripHeaderBreaks(isset($aTypes[$iIndex]) ? $aTypes[$iIndex] : "")));
+        $aAttachments[] = array(
+            "name" => $sAttachmentName != "" ? $sAttachmentName : "attachment",
+            "type" => preg_match("~^[a-z0-9][a-z0-9!#$&^_.+\\-]*/[a-z0-9][a-z0-9!#$&^_.+\\-]*$~", $sAttachmentType) ? $sAttachmentType : "application/octet-stream",
+            "size" => isset($aSizes[$iIndex]) ? (int)$aSizes[$iIndex] : strlen($sContent),
+            "content" => $sContent
+        );
+    }
+    return $aAttachments;
+}
+
+function mailFormNormalizeBodyLineEndings($sValue) {
+    return preg_replace("/\r\n|\r|\n/", "\r\n", (string)$sValue);
+}
+
+function mailFormBuildPlainTextMessage($sBody) {
+    $sText = (string)$sBody;
+    $sText = preg_replace("/<\s*(script|style)[^>]*>.*?<\s*\/\s*\\1\s*>/is", "", $sText);
+    $sText = preg_replace("/<\s*br\s*\/?\s*>/i", "\n", $sText);
+    $sText = preg_replace("/<\s*\/\s*(p|div|h[1-6]|li|tr|blockquote|pre|table|ul|ol)\s*>/i", "\n", $sText);
+    $sText = preg_replace("/<\s*\/\s*(td|th)\s*>/i", "\t", $sText);
+    $sText = strip_tags($sText);
+    $sText = html_entity_decode($sText, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+    $sText = str_replace("\xc2\xa0", " ", $sText);
+    $sText = preg_replace("/\r\n|\r/", "\n", $sText);
+    $aLines = explode("\n", $sText);
+    foreach ($aLines as $iLine => $sLine) {
+        $aLines[$iLine] = trim(preg_replace("/[ \t]+/", " ", $sLine));
+    }
+    $sText = implode("\n", $aLines);
+    $sText = preg_replace("/\n{3,}/", "\n\n", $sText);
+    return mailFormNormalizeBodyLineEndings(trim($sText));
+}
+
+function mailFormBuildHtmlMessage($sSubject, $sBody) {
+    return "<!DOCTYPE html>\r\n"
+        . "<html lang=\"en-US\">\r\n"
+        . "<head>\r\n"
+        . "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n"
+        . "  <title>" . html($sSubject) . "</title>\r\n"
+        . "</head>\r\n"
+        . "<body>\r\n"
+        . mailFormNormalizeBodyLineEndings($sBody) . "\r\n"
+        . "</body>\r\n"
+        . "</html>\r\n";
+}
+
+function mailFormBuildMultipartAlternativeMessage($sSubject, $sBody, $sBoundary) {
+    return "--" . $sBoundary . "\r\n"
+        . "Content-Type: text/plain; charset=UTF-8\r\n"
+        . "Content-Transfer-Encoding: 8bit\r\n"
+        . "\r\n"
+        . mailFormBuildPlainTextMessage($sBody) . "\r\n"
+        . "\r\n"
+        . "--" . $sBoundary . "\r\n"
+        . "Content-Type: text/html; charset=UTF-8\r\n"
+        . "Content-Transfer-Encoding: 8bit\r\n"
+        . "\r\n"
+        . mailFormBuildHtmlMessage($sSubject, $sBody)
+        . "\r\n"
+        . "--" . $sBoundary . "--\r\n";
+}
+
+function mailFormBuildTextMessagePart($sBody, $sBoundary) {
+    return "--" . $sBoundary . "\r\n"
+        . "Content-Type: text/plain; charset=UTF-8\r\n"
+        . "Content-Transfer-Encoding: 8bit\r\n"
+        . "\r\n"
+        . mailFormBuildPlainTextMessage($sBody) . "\r\n"
+        . "\r\n";
+}
+
+function mailFormBuildAlternativeMessagePart($sSubject, $sBody, $sBoundary, $sAlternativeBoundary) {
+    return "--" . $sBoundary . "\r\n"
+        . "Content-Type: multipart/alternative; boundary=\"" . $sAlternativeBoundary . "\"\r\n"
+        . "\r\n"
+        . mailFormBuildMultipartAlternativeMessage($sSubject, $sBody, $sAlternativeBoundary)
+        . "\r\n";
+}
+
+function mailFormBuildAttachmentPart($aAttachment, $sBoundary) {
+    $sFileName = mailFormEncodeMimeParameter($aAttachment["name"]);
+    return "--" . $sBoundary . "\r\n"
+        . "Content-Type: " . $aAttachment["type"] . "; name=\"" . $sFileName . "\"\r\n"
+        . "Content-Transfer-Encoding: base64\r\n"
+        . "Content-Disposition: attachment; filename=\"" . $sFileName . "\"\r\n"
+        . "\r\n"
+        . chunk_split(base64_encode($aAttachment["content"]), 76, "\r\n")
+        . "\r\n";
+}
+
+function mailFormBuildMixedMessage($sSubject, $sBody, $sBodyFormat, $aAttachments, $sBoundary) {
+    $sMessage = "";
+    if ($sBodyFormat == "plain") {
+        $sMessage .= mailFormBuildTextMessagePart($sBody, $sBoundary);
+    } else {
+        $sAlternativeBoundary = "=_ex_mail_alt_" . md5(uniqid("", true));
+        $sMessage .= mailFormBuildAlternativeMessagePart($sSubject, $sBody, $sBoundary, $sAlternativeBoundary);
+    }
+    foreach ($aAttachments as $aAttachment) {
+        $sMessage .= mailFormBuildAttachmentPart($aAttachment, $sBoundary);
+    }
+    return $sMessage . "--" . $sBoundary . "--\r\n";
+}
+
+function mailFormSendMessage($sTo, $sCc, $sBcc, $sFrom, $sSender, $sReplyTo, $sSubject, $sBody, $sBodyFormat, $aAttachments) {
+    $aHeaders = array();
+    $sMessage = "";
+    $sBoundary = "";
+    if ($sFrom != "") {
+        $aHeaders[] = "From: " . $sFrom;
+    }
+    if ($sSender != "") {
+        $aHeaders[] = "Sender: " . $sSender;
+    }
+    if ($sReplyTo != "") {
+        $aHeaders[] = "Reply-To: " . $sReplyTo;
+    }
+    if ($sCc != "") {
+        $aHeaders[] = "Cc: " . $sCc;
+    }
+    if ($sBcc != "") {
+        $aHeaders[] = "Bcc: " . $sBcc;
+    }
+    $aHeaders[] = "MIME-Version: 1.0";
+    if ($aAttachments) {
+        $sBoundary = "=_ex_mail_mixed_" . md5(uniqid("", true));
+        $aHeaders[] = "Content-Type: multipart/mixed; boundary=\"" . $sBoundary . "\"";
+        $sMessage = mailFormBuildMixedMessage($sSubject, $sBody, $sBodyFormat, $aAttachments, $sBoundary);
+    } elseif ($sBodyFormat == "plain") {
+        $aHeaders[] = "Content-Type: text/plain; charset=UTF-8";
+        $aHeaders[] = "Content-Transfer-Encoding: 8bit";
+        $sMessage = mailFormBuildPlainTextMessage($sBody);
+    } else {
+        $sBoundary = "=_ex_mail_" . md5(uniqid("", true));
+        $aHeaders[] = "Content-Type: multipart/alternative; boundary=\"" . $sBoundary . "\"";
+        $sMessage = mailFormBuildMultipartAlternativeMessage($sSubject, $sBody, $sBoundary);
+    }
+    $aHeaders[] = "X-Mailer: PHP/" . phpversion();
+    return mail($sTo, mailFormEncodeHeader($sSubject), $sMessage, implode("\r\n", $aHeaders));
 }

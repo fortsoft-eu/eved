@@ -199,7 +199,7 @@ function normalizeInputDateTimeForDatabase($mValue) {
     return $oDateTime ? $oDateTime->format("Y-m-d H:i:s") : false;
 }
 
-function getEvedUaFingerprintText($aData, $sName) {
+function getUaFingerprintText($aData, $sName) {
     if (!isset($aData[$sName])) {
         return "";
     }
@@ -215,8 +215,8 @@ function getEvedUaFingerprintText($aData, $sName) {
     return is_scalar($aData[$sName]) ? (string)$aData[$sName] : "";
 }
 
-function getEvedUaFingerprintNullableText($aData, $sName, $iMaxLength = 0) {
-    $sValue = trim(getEvedUaFingerprintText($aData, $sName));
+function getUaFingerprintNullableText($aData, $sName, $iMaxLength = 0) {
+    $sValue = trim(getUaFingerprintText($aData, $sName));
     if ($sValue == "") {
         return null;
     }
@@ -259,27 +259,27 @@ function updateEvedUaFingerprint($oPdo, $iEvedUaId, $aData) {
             $mIsMobile = $aData["is_mobile"] ? 1 : 0;
         }
         $aParameters = array(
-            "browser_name"      => getEvedUaFingerprintNullableText($aData, "browser_name", 100),
-            "browser_version"   => getEvedUaFingerprintNullableText($aData, "browser_version", 100),
-            "os_name"           => getEvedUaFingerprintNullableText($aData, "os_name", 100),
-            "os_version"        => getEvedUaFingerprintNullableText($aData, "os_version", 100),
-            "platform_type"     => getEvedUaFingerprintNullableText($aData, "platform_type", 32),
-            "device_vendor"     => getEvedUaFingerprintNullableText($aData, "device_vendor", 100),
-            "device_model"      => getEvedUaFingerprintNullableText($aData, "device_model", 191),
-            "architecture"      => getEvedUaFingerprintNullableText($aData, "architecture", 32),
-            "bitness"           => getEvedUaFingerprintNullableText($aData, "bitness", 16),
+            "browser_name"      => getUaFingerprintNullableText($aData, "browser_name", 100),
+            "browser_version"   => getUaFingerprintNullableText($aData, "browser_version", 100),
+            "os_name"           => getUaFingerprintNullableText($aData, "os_name", 100),
+            "os_version"        => getUaFingerprintNullableText($aData, "os_version", 100),
+            "platform_type"     => getUaFingerprintNullableText($aData, "platform_type", 32),
+            "device_vendor"     => getUaFingerprintNullableText($aData, "device_vendor", 100),
+            "device_model"      => getUaFingerprintNullableText($aData, "device_model", 191),
+            "architecture"      => getUaFingerprintNullableText($aData, "architecture", 32),
+            "bitness"           => getUaFingerprintNullableText($aData, "bitness", 16),
             "is_mobile"         => $mIsMobile,
-            "ua_brands"         => getEvedUaFingerprintNullableText($aData, "ua_brands"),
-            "gpu_info"          => getEvedUaFingerprintText($aData, "gpu"),
-            "fonts"             => getEvedUaFingerprintText($aData, "fonts"),
-            "screen_resolution" => getEvedUaFingerprintText($aData, "screen"),
-            "screen_physical"   => getEvedUaFingerprintText($aData, "screen_physical"),
-            "color_depth"       => getEvedUaFingerprintText($aData, "depth"),
-            "timezone"          => getEvedUaFingerprintText($aData, "tz"),
-            "language"          => getEvedUaFingerprintText($aData, "lang"),
-            "platform"          => getEvedUaFingerprintText($aData, "platform"),
-            "plugins"           => getEvedUaFingerprintText($aData, "plugins"),
-            "mime_types"        => getEvedUaFingerprintText($aData, "mimes"),
+            "ua_brands"         => getUaFingerprintNullableText($aData, "ua_brands"),
+            "gpu_info"          => getUaFingerprintText($aData, "gpu"),
+            "fonts"             => getUaFingerprintText($aData, "fonts"),
+            "screen_resolution" => getUaFingerprintText($aData, "screen"),
+            "screen_physical"   => getUaFingerprintText($aData, "screen_physical"),
+            "color_depth"       => getUaFingerprintText($aData, "depth"),
+            "timezone"          => getUaFingerprintText($aData, "tz"),
+            "language"          => getUaFingerprintText($aData, "lang"),
+            "platform"          => getUaFingerprintText($aData, "platform"),
+            "plugins"           => getUaFingerprintText($aData, "plugins"),
+            "mime_types"        => getUaFingerprintText($aData, "mimes"),
             "id"                => $iEvedUaId,
             "ip_address"        => isset($_SERVER["REMOTE_ADDR"]) ? substr((string)$_SERVER["REMOTE_ADDR"], 0, 45) : "",
             "user_agent"        => isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : ""
@@ -302,7 +302,7 @@ function updateEvedUaFingerprint($oPdo, $iEvedUaId, $aData) {
     return false;
 }
 
-function sendEvedUaJsonAndExit($aResponse, $iStatus = 200) {
+function sendUaJsonAndExit($aResponse, $iStatus = 200) {
     http_response_code($iStatus);
     header("Content-Type: application/json; charset=utf-8", true);
     header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0", true);
@@ -313,10 +313,10 @@ function sendEvedUaJsonAndExit($aResponse, $iStatus = 200) {
 
 function sendEvedUaFingerprintResponse($oPdo, $aAllowedIps) {
     if (isAllowedIp($aAllowedIps)) {
-        sendEvedUaJsonAndExit(array("status" => "ignored"));
+        sendUaJsonAndExit(array("status" => "ignored"));
     }
     if (!$oPdo) {
-        sendEvedUaJsonAndExit(array("status" => "error"), 500);
+        sendUaJsonAndExit(array("status" => "error"), 500);
     }
     $sInput = file_get_contents("php://input");
     $aData = json_decode($sInput, true);
@@ -325,9 +325,9 @@ function sendEvedUaFingerprintResponse($oPdo, $aAllowedIps) {
     }
     $iEvedUaId = isset($aData["ua_id"]) ? (int)$aData["ua_id"] : 0;
     if (!updateEvedUaFingerprint($oPdo, $iEvedUaId, $aData)) {
-        sendEvedUaJsonAndExit(array("status" => "error"), 500);
+        sendUaJsonAndExit(array("status" => "error"), 500);
     }
-    sendEvedUaJsonAndExit(array("status" => "ok"));
+    sendUaJsonAndExit(array("status" => "ok"));
 }
 
 function formatUaCountryFlag($sCountryCode) {
@@ -406,36 +406,20 @@ function formatUaGpu($sGpuInfo) {
 function getContentSecurityPolicySource() {
     global $sScheme;
 
-    if (!isset($_SERVER["HTTP_HOST"]) || !isset($_SERVER["REQUEST_URI"])) {
+    if (!isset($_SERVER["HTTP_HOST"])) {
         return "'self'";
     }
     $sRequestScheme = $sScheme;
     $sHost = preg_replace("/[^A-Za-z0-9\\.\\-\\:\\[\\]]/", "", $_SERVER["HTTP_HOST"]);
-    $sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
-    if (!$sPath) {
-        $sPath = "/";
+    if ($sHost == "") {
+        return "'self'";
     }
-    if (substr($sPath, -1) != "/") {
-        $sPath = dirname($sPath) . "/";
-    }
-    $sPath = preg_replace("#[^A-Za-z0-9/_\\-.%~]#", "", $sPath);
-    if (!$sPath) {
-        $sPath = "/";
-    }
-    return $sRequestScheme . "://" . $sHost . $sPath;
+    return $sRequestScheme . "://" . $sHost;
 }
 
 function sendSecurityHeaders($sStyleNonce = "") {
-    global $sScheme;
-
     $sContentSecurityPolicySource = getContentSecurityPolicySource();
     $sScriptSource = $sContentSecurityPolicySource;
-    if (isset($_SERVER["HTTP_HOST"])) {
-        $sHost = preg_replace("/[^A-Za-z0-9\\.\\-\\:\\[\\]]/", "", $_SERVER["HTTP_HOST"]);
-        if ($sHost != "") {
-            $sScriptSource .= " " . $sScheme . "://" . $sHost;
-        }
-    }
     $sStyleSource = $sContentSecurityPolicySource;
     if ($sStyleNonce != "") {
         $sStyleSource .= " 'nonce-" . $sStyleNonce . "'";
@@ -1424,24 +1408,21 @@ function htmlValue($mValue, $sEmptyValue = "&#10134;") {
     return $sValue != "" ? html($sValue) : $sEmptyValue;
 }
 
-function getPhpGeneratedSelectedFlags($sName, $aTypes, $iDefaultValue) {
-    $iSelected = 0;
-    $aValues = array();
-    if (isset($_GET[$sName])) {
-        $aValues = is_array($_GET[$sName]) ? $_GET[$sName] : array($_GET[$sName]);
+function getSubjectNameSelectSql() {
+    $sPersonDisplayBase = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.title_before, ''), NULLIF(p.first_name, ''), NULLIF(p.middle_name, ''), NULLIF(p.last_name, ''))), '')";
+    $sPersonDisplayName = "NULLIF(TRIM(CONCAT(COALESCE(" . $sPersonDisplayBase . ", ''), IF(NULLIF(p.title_after, '') IS NULL, '', IF(" . $sPersonDisplayBase . " IS NULL, p.title_after, CONCAT(', ', p.title_after))))), '')";
+    $sPersonSortName = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.last_name, ''), NULLIF(p.first_name, ''))), '')";
+    return "SELECT s.id AS subject_id, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_sort_name FROM ex_subjects AS s LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id LEFT JOIN (SELECT sc.subject_id, SUBSTRING_INDEX(GROUP_CONCAT(c.contact_value ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id GROUP BY sc.subject_id) AS c ON c.subject_id = s.id LEFT JOIN (SELECT subject_id, SUBSTRING_INDEX(GROUP_CONCAT(nickname ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n'), '\n', 1) AS primary_nickname FROM ex_subject_nicknames GROUP BY subject_id) AS n ON n.subject_id = s.id";
+}
+
+function fetchSubjectNameRow($oPdo, $iSubjectId) {
+    if ((int)$iSubjectId < 1) {
+        return null;
     }
-    foreach ($aValues as $sValue) {
-        if (ctype_digit((string)$sValue)) {
-            $iValue = (int)$sValue;
-            if (in_array($iValue, $aTypes, true)) {
-                $iSelected |= $iValue;
-            }
-        }
-    }
-    if ($iSelected == 0) {
-        $iSelected = $iDefaultValue;
-    }
-    return $iSelected;
+    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name, subject_sort_name FROM (" . getSubjectNameSelectSql() . ") AS subject_rows WHERE subject_id = :subject_id");
+    $oStatement->execute(array("subject_id" => (int)$iSubjectId));
+    $aRow = $oStatement->fetch();
+    return $aRow ? $aRow : null;
 }
 
 function renderCopyAction($mValue, $sTitle = "Copy") {
@@ -1452,61 +1433,6 @@ function renderCopyAction($mValue, $sTitle = "Copy") {
         return "";
     }
     return "<a class=\"copy-action\" href=\"#\" data-copy-value=\"" . html($sValue) . "\" title=\"" . html($sTitle) . "\" aria-label=\"" . html($sTitle) . "\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
-}
-
-function getRequestHeaders() {
-    if (function_exists("getallheaders")) {
-        return getallheaders();
-    }
-    $aHeaders = array();
-    foreach ($_SERVER as $sKey => $mValue) {
-        if (strpos($sKey, "HTTP_") !== 0) {
-            continue;
-        }
-        $sName = str_replace(" ", "-", ucwords(strtolower(str_replace("_", " ", substr($sKey, 5)))));
-        $aHeaders[$sName] = $mValue;
-    }
-    return $aHeaders;
-}
-
-function getRequestPlainTextInfo() {
-    $sOutput = "";
-    $sOutput .= "<b>Navigation</b>\n";
-    $sOutput .= "Referer: " . (isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : "N/A") . "\n";
-    $sOutput .= "<hr>";
-    $sOutput .= "<b>IP address sources</b>\n";
-    $sOutput .= "Remote address: " . (isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : "N/A") . "\n";
-    $sOutput .= "X-Real-IP: " . (isset($_SERVER["HTTP_X_REAL_IP"]) ? $_SERVER["HTTP_X_REAL_IP"] : "N/A") . "\n";
-    $sOutput .= "X-Forwarded-For: " . (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ? $_SERVER["HTTP_X_FORWARDED_FOR"] : "N/A") . "\n";
-    $sOutput .= "<hr>";
-    $sOutput .= "<b>HTTP headers</b>\n";
-    foreach (getRequestHeaders() as $sHeaderName => $sHeaderValue) {
-        $sOutput .= $sHeaderName . ": " . $sHeaderValue . "\n";
-    }
-    $sOutput .= "<hr>";
-    $sOutput .= "<b>PHP \$_SERVER array</b>\n";
-    foreach ($_SERVER as $sKey => $sValue) {
-        $sOutput .= $sKey . ": " . $sValue . "\n";
-    }
-    $sOutput .= "<hr>";
-    $sOutput .= "<b>PHP \$_SESSION array</b>\n";
-    if (isset($_SESSION)) {
-        foreach ($_SESSION as $sKey => $mValue) {
-            if (is_array($mValue)) {
-                $mValue = dumpVar($mValue);
-            }
-            $sOutput .= $sKey . ": " . $mValue . "\n";
-        }
-    }
-    $sOutput .= "<hr>";
-    $sOutput .= "<b>PHP \$_COOKIE array</b>\n";
-    foreach ($_COOKIE as $sKey => $mValue) {
-        if (is_array($mValue)) {
-            $mValue = dumpVar($mValue);
-        }
-        $sOutput .= $sKey . ": " . $mValue . "\n";
-    }
-    return $sOutput;
 }
 
 function phoneContactTypes() {
@@ -1723,70 +1649,6 @@ function phoneContactHref($sValue) {
 
 function contactTypeKey($sContactType) {
     return strtolower(trim((string)$sContactType));
-}
-
-function renderContactValueText($sType, $sValue, $sTooltipAttribute = "") {
-    $sDisplayValue = contactDisplayValue($sType, $sValue);
-    $sClass = "contact-value" . (contactValueIsInvalid($sType, $sValue) ? " invalid-contact-value" : "");
-    return "<span class=\"" . html($sClass) . "\"" . $sTooltipAttribute . ">" . html($sDisplayValue) . "</span>";
-}
-
-function renderContactValueActions($sType, $sValue, $blShowCopy = false, $blAllowExternalLinks = false) {
-    global $sCopyEmoji;
-
-    $sDisplayValue = contactDisplayValue($sType, $sValue);
-    $sHref = contactHref($sType, $sValue, $blAllowExternalLinks);
-    $sHtml = "";
-    $sLinkTitle = "";
-    $blHasIcon = false;
-    if ($blShowCopy && $sDisplayValue != "") {
-        $sHtml .= "<a class=\"contact-copy\" href=\"#\" title=\"Copy\" aria-label=\"Copy\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
-        $blHasIcon = true;
-    }
-    if ($sHref != "") {
-        $sTarget = $blAllowExternalLinks && preg_match("#^https?://#i", $sHref) ? " target=\"_blank\" rel=\"noopener noreferrer\"" : "";
-        $sLinkTitle = contactLinkTitle($sType);
-        return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"contact-link\" href=\"" . html($sHref) . "\"" . $sTarget . " title=\"" . html($sLinkTitle) . "\" aria-label=\"" . html($sLinkTitle) . "\">" . contactLinkEmoji($sType) . "</a>";
-    }
-    return $sHtml;
-}
-
-function encryptTextMessage($sText, $sPassword) {
-    if (!function_exists("openssl_encrypt")) {
-        throw new RuntimeException("OpenSSL extension is required.");
-    }
-    $iOptions = defined("OPENSSL_RAW_DATA") ? constant("OPENSSL_RAW_DATA") : 1;
-    $sPayload = (string)$sText . md5((string)$sText, true);
-    $sEncrypted = openssl_encrypt($sPayload, "AES-128-CBC", md5((string)$sPassword, true), $iOptions, str_repeat("\0", 16));
-    if ($sEncrypted === false) {
-        throw new RuntimeException("Text encryption failed.");
-    }
-    return base64_encode($sEncrypted);
-}
-
-function decryptTextMessage($sText, $sPassword) {
-    if (!function_exists("openssl_decrypt")) {
-        throw new RuntimeException("OpenSSL extension is required.");
-    }
-    $sBytes = base64_decode((string)$sText, true);
-    if ($sBytes === false) {
-        throw new RuntimeException("Invalid encrypted text.");
-    }
-    $iOptions = defined("OPENSSL_RAW_DATA") ? constant("OPENSSL_RAW_DATA") : 1;
-    $sPayload = openssl_decrypt($sBytes, "AES-128-CBC", md5((string)$sPassword, true), $iOptions, str_repeat("\0", 16));
-    if ($sPayload === false) {
-        throw new RuntimeException("Text decryption failed.");
-    }
-    $iLength = strlen($sPayload) - 16;
-    if ($iLength < 0) {
-        throw new RuntimeException("Message hash is missing.");
-    }
-    $sMessage = substr($sPayload, 0, $iLength);
-    $sHash = substr($sPayload, $iLength, 16);
-    if (!hash_equals(md5($sMessage, true), $sHash)) {
-        throw new RuntimeException("Message hash is invalid.");
-    }
-    return $sMessage;
 }
 
 function decodePostedBase64Value($sValue) {

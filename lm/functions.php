@@ -16,6 +16,119 @@ function renderDateTimeWithNbspIndent($mValue) {
     return html($sValue);
 }
 
+function getPhpGeneratedSelectedFlags($sName, $aTypes, $iDefaultValue) {
+    $iSelected = 0;
+    $aValues = array();
+    if (isset($_GET[$sName])) {
+        $aValues = is_array($_GET[$sName]) ? $_GET[$sName] : array($_GET[$sName]);
+    }
+    foreach ($aValues as $sValue) {
+        if (ctype_digit((string)$sValue)) {
+            $iValue = (int)$sValue;
+            if (in_array($iValue, $aTypes, true)) {
+                $iSelected |= $iValue;
+            }
+        }
+    }
+    if ($iSelected == 0) {
+        $iSelected = $iDefaultValue;
+    }
+    return $iSelected;
+}
+
+function getRequestHeaders() {
+    if (function_exists("getallheaders")) {
+        return getallheaders();
+    }
+    $aHeaders = array();
+    foreach ($_SERVER as $sKey => $mValue) {
+        if (strpos($sKey, "HTTP_") !== 0) {
+            continue;
+        }
+        $sName = str_replace(" ", "-", ucwords(strtolower(str_replace("_", " ", substr($sKey, 5)))));
+        $aHeaders[$sName] = $mValue;
+    }
+    return $aHeaders;
+}
+
+function getRequestPlainTextInfo() {
+    $sOutput = "";
+    $sOutput .= "<b>Navigation</b>\n";
+    $sOutput .= "Referer: " . (isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : "N/A") . "\n";
+    $sOutput .= "<hr>";
+    $sOutput .= "<b>IP address sources</b>\n";
+    $sOutput .= "Remote address: " . (isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : "N/A") . "\n";
+    $sOutput .= "X-Real-IP: " . (isset($_SERVER["HTTP_X_REAL_IP"]) ? $_SERVER["HTTP_X_REAL_IP"] : "N/A") . "\n";
+    $sOutput .= "X-Forwarded-For: " . (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ? $_SERVER["HTTP_X_FORWARDED_FOR"] : "N/A") . "\n";
+    $sOutput .= "<hr>";
+    $sOutput .= "<b>HTTP headers</b>\n";
+    foreach (getRequestHeaders() as $sHeaderName => $sHeaderValue) {
+        $sOutput .= $sHeaderName . ": " . $sHeaderValue . "\n";
+    }
+    $sOutput .= "<hr>";
+    $sOutput .= "<b>PHP \$_SERVER array</b>\n";
+    foreach ($_SERVER as $sKey => $sValue) {
+        $sOutput .= $sKey . ": " . $sValue . "\n";
+    }
+    $sOutput .= "<hr>";
+    $sOutput .= "<b>PHP \$_SESSION array</b>\n";
+    if (isset($_SESSION)) {
+        foreach ($_SESSION as $sKey => $mValue) {
+            if (is_array($mValue)) {
+                $mValue = dumpVar($mValue);
+            }
+            $sOutput .= $sKey . ": " . $mValue . "\n";
+        }
+    }
+    $sOutput .= "<hr>";
+    $sOutput .= "<b>PHP \$_COOKIE array</b>\n";
+    foreach ($_COOKIE as $sKey => $mValue) {
+        if (is_array($mValue)) {
+            $mValue = dumpVar($mValue);
+        }
+        $sOutput .= $sKey . ": " . $mValue . "\n";
+    }
+    return $sOutput;
+}
+
+function encryptTextMessage($sText, $sPassword) {
+    if (!function_exists("openssl_encrypt")) {
+        throw new RuntimeException("OpenSSL extension is required.");
+    }
+    $iOptions = defined("OPENSSL_RAW_DATA") ? constant("OPENSSL_RAW_DATA") : 1;
+    $sPayload = (string)$sText . md5((string)$sText, true);
+    $sEncrypted = openssl_encrypt($sPayload, "AES-128-CBC", md5((string)$sPassword, true), $iOptions, str_repeat("\0", 16));
+    if ($sEncrypted === false) {
+        throw new RuntimeException("Text encryption failed.");
+    }
+    return base64_encode($sEncrypted);
+}
+
+function decryptTextMessage($sText, $sPassword) {
+    if (!function_exists("openssl_decrypt")) {
+        throw new RuntimeException("OpenSSL extension is required.");
+    }
+    $sBytes = base64_decode((string)$sText, true);
+    if ($sBytes === false) {
+        throw new RuntimeException("Invalid encrypted text.");
+    }
+    $iOptions = defined("OPENSSL_RAW_DATA") ? constant("OPENSSL_RAW_DATA") : 1;
+    $sPayload = openssl_decrypt($sBytes, "AES-128-CBC", md5((string)$sPassword, true), $iOptions, str_repeat("\0", 16));
+    if ($sPayload === false) {
+        throw new RuntimeException("Text decryption failed.");
+    }
+    $iLength = strlen($sPayload) - 16;
+    if ($iLength < 0) {
+        throw new RuntimeException("Message hash is missing.");
+    }
+    $sMessage = substr($sPayload, 0, $iLength);
+    $sHash = substr($sPayload, $iLength, 16);
+    if (!hash_equals(md5($sMessage, true), $sHash)) {
+        throw new RuntimeException("Message hash is invalid.");
+    }
+    return $sMessage;
+}
+
 function menuAdminPathIsValid($sPath) {
     $sPath = normalizeMenuPath($sPath);
     if ($sPath == "") {
@@ -620,23 +733,6 @@ function businessHoursEncodeHours($aHours) {
     return $sJson === false ? "{}" : $sJson;
 }
 
-function businessHoursGetSubjectNameSelectSql() {
-    $sPersonDisplayBase = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.title_before, ''), NULLIF(p.first_name, ''), NULLIF(p.middle_name, ''), NULLIF(p.last_name, ''))), '')";
-    $sPersonDisplayName = "NULLIF(TRIM(CONCAT(COALESCE(" . $sPersonDisplayBase . ", ''), IF(NULLIF(p.title_after, '') IS NULL, '', IF(" . $sPersonDisplayBase . " IS NULL, p.title_after, CONCAT(', ', p.title_after))))), '')";
-    $sPersonSortName = "NULLIF(TRIM(CONCAT_WS(' ', NULLIF(p.last_name, ''), NULLIF(p.first_name, ''))), '')";
-    return "SELECT s.id AS subject_id, COALESCE(IF(s.subject_type = 'person', " . $sPersonDisplayName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_name, COALESCE(IF(s.subject_type = 'person', " . $sPersonSortName . ", NULL), NULLIF(subn.name, ''), n.primary_nickname, c.primary_contact, 'Unnamed subject') AS subject_sort_name FROM ex_subjects AS s LEFT JOIN ex_persons AS p ON p.subject_id = s.id LEFT JOIN ex_subject_names AS subn ON subn.subject_id = s.id LEFT JOIN (SELECT sc.subject_id, SUBSTRING_INDEX(GROUP_CONCAT(c.contact_value ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id GROUP BY sc.subject_id) AS c ON c.subject_id = s.id LEFT JOIN (SELECT subject_id, SUBSTRING_INDEX(GROUP_CONCAT(nickname ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n'), '\n', 1) AS primary_nickname FROM ex_subject_nicknames GROUP BY subject_id) AS n ON n.subject_id = s.id";
-}
-
-function businessHoursFetchSubjectNameRow($oPdo, $iSubjectId) {
-    if ((int)$iSubjectId < 1) {
-        return null;
-    }
-    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name, subject_sort_name FROM (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows WHERE subject_id = :subject_id");
-    $oStatement->execute(array("subject_id" => (int)$iSubjectId));
-    $aRow = $oStatement->fetch();
-    return $aRow ? $aRow : null;
-}
-
 function businessHoursFetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
     $sTerm = trim((string)$sTerm);
     if ($sTerm == "") {
@@ -649,7 +745,7 @@ function businessHoursFetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
     if ($iLimit > 30) {
         $iLimit = 30;
     }
-    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name FROM (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows WHERE subject_name = :subject_name_term OR subject_sort_name = :subject_sort_name_term ORDER BY subject_sort_name COLLATE utf8mb4_czech_ci ASC, subject_id ASC LIMIT " . $iLimit);
+    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name FROM (" . getSubjectNameSelectSql() . ") AS subject_rows WHERE subject_name = :subject_name_term OR subject_sort_name = :subject_sort_name_term ORDER BY subject_sort_name COLLATE utf8mb4_czech_ci ASC, subject_id ASC LIMIT " . $iLimit);
     $oStatement->execute(array(
         "subject_name_term" => $sTerm,
         "subject_sort_name_term" => $sTerm
@@ -670,7 +766,7 @@ function businessHoursFetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
         $iLimit = 30;
     }
     $sLike = "%" . strtr($sTerm, array("!" => "!!", "%" => "!%", "_" => "!_")) . "%";
-    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name FROM (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows WHERE LOWER(subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' ORDER BY subject_sort_name COLLATE utf8mb4_czech_ci ASC, subject_id ASC LIMIT " . $iLimit);
+    $oStatement = $oPdo->prepare("SELECT subject_id, subject_name FROM (" . getSubjectNameSelectSql() . ") AS subject_rows WHERE LOWER(subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' ORDER BY subject_sort_name COLLATE utf8mb4_czech_ci ASC, subject_id ASC LIMIT " . $iLimit);
     $oStatement->execute(array(
         "subject_name_term" => $sLike,
         "subject_sort_name_term" => $sLike
@@ -684,7 +780,7 @@ function businessHoursFetchSingleSubjectInputRow($oPdo, $sTerm) {
         return null;
     }
     if (preg_match('/^(.*) \(#([1-9][0-9]*)\)$/', $sTerm, $aMatches)) {
-        $aRow = businessHoursFetchSubjectNameRow($oPdo, (int)$aMatches[2]);
+        $aRow = fetchSubjectNameRow($oPdo, (int)$aMatches[2]);
         if ($aRow && (string)$aRow["subject_name"] == trim((string)$aMatches[1])) {
             return $aRow;
         }
@@ -803,7 +899,7 @@ function businessHoursFetchSingleAddressInputRow($oPdo, $iSubjectId, $sTerm) {
 
 function businessHoursFetchRows($oPdo, $iId = 0) {
     $aRows = array();
-    $sSql = "SELECT bh.id, bh.subject_id, bh.address_id, bh.hours, bh.icon, bh.is_active, bh.`order` AS bh_order, DATE_FORMAT(bh.created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(bh.updated_at, '%Y-%m-%d %H:%i') AS updated_at_text, subject_rows.subject_name, subject_rows.subject_sort_name, a.address_type, a.organization_name, a.department_name, a.care_of, a.street_name, a.house_number, a.evidence_number, a.orientation_number, a.orientation_suffix, a.address_line2, a.city, a.city_part, a.postal_code, a.region, a.country, a.is_primary AS address_primary, a.is_active AS address_active, a.note AS address_note FROM fs_business_hours AS bh LEFT JOIN (" . businessHoursGetSubjectNameSelectSql() . ") AS subject_rows ON subject_rows.subject_id = bh.subject_id LEFT JOIN ex_subject_addresses AS a ON a.id = bh.address_id";
+    $sSql = "SELECT bh.id, bh.subject_id, bh.address_id, bh.hours, bh.icon, bh.is_active, bh.`order` AS bh_order, DATE_FORMAT(bh.created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(bh.updated_at, '%Y-%m-%d %H:%i') AS updated_at_text, subject_rows.subject_name, subject_rows.subject_sort_name, a.address_type, a.organization_name, a.department_name, a.care_of, a.street_name, a.house_number, a.evidence_number, a.orientation_number, a.orientation_suffix, a.address_line2, a.city, a.city_part, a.postal_code, a.region, a.country, a.is_primary AS address_primary, a.is_active AS address_active, a.note AS address_note FROM fs_business_hours AS bh LEFT JOIN (" . getSubjectNameSelectSql() . ") AS subject_rows ON subject_rows.subject_id = bh.subject_id LEFT JOIN ex_subject_addresses AS a ON a.id = bh.address_id";
     if ((int)$iId > 0) {
         $oStatement = $oPdo->prepare($sSql . " WHERE bh.id = :id");
         $oStatement->execute(array("id" => (int)$iId));
@@ -1067,7 +1163,7 @@ function businessHoursCreateOrUpdate($oPdo, $iId) {
             $iSubjectId = (int)$aSubjectRow["subject_id"];
         }
     }
-    if ($iSubjectId < 1 || !businessHoursFetchSubjectNameRow($oPdo, $iSubjectId)) {
+    if ($iSubjectId < 1 || !fetchSubjectNameRow($oPdo, $iSubjectId)) {
         sendJsonAndExit(array("success" => false, "message" => "Subject is required."), 400);
     }
     if ($iAddressId < 1 && $sAddressText != "") {

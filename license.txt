@@ -30,7 +30,7 @@ third-party component states a different license. Third-party components
 included with this project remain under their own licenses, as listed below.
 
 
-lm/vendors/tinymce-8.8.1/
+vendors/tinymce-8.8.1/
 -------------------------
 
 TinyMCE 8.8.1
@@ -45,8 +45,8 @@ GPL mode by configuring TinyMCE with license_key: "gpl".
 TinyMCE is a third-party component and is not licensed under this project's
 MIT License. See the bundled TinyMCE license and notices:
 
-lm/vendors/tinymce-8.8.1/license.md
-lm/vendors/tinymce-8.8.1/notices.txt
+vendors/tinymce-8.8.1/license.md
+vendors/tinymce-8.8.1/notices.txt
 
 Source project:
 https://github.com/tinymce/tinymce

@@ -35,12 +35,12 @@ $aFullListComplexFilter = getDefaultFullListComplexFilter();
 $aFullListComplexFilterDraft = getDefaultFullListComplexFilterDraft();
 
 if (isset($_SESSION["ex_demo_full_list_complex_filter"]) && is_array($_SESSION["ex_demo_full_list_complex_filter"])) {
-    $aFullListComplexFilter = normalizeDemoFullListComplexFilter($_SESSION["ex_demo_full_list_complex_filter"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilter = normalizeFullListComplexFilter($_SESSION["ex_demo_full_list_complex_filter"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 }
 if (isset($_SESSION["ex_demo_full_list_complex_filter_draft"]) && is_array($_SESSION["ex_demo_full_list_complex_filter_draft"])) {
-    $aFullListComplexFilterDraft = normalizeDemoFullListComplexFilterDraft($_SESSION["ex_demo_full_list_complex_filter_draft"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($_SESSION["ex_demo_full_list_complex_filter_draft"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 } elseif (count($aFullListComplexFilter["conditions"]) > 0) {
-    $aFullListComplexFilterDraft = normalizeDemoFullListComplexFilterDraft($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 }
 
 
@@ -65,8 +65,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter") {
     $aFullListComplexFilterPayload = getFullListComplexFilterPostPayload();
-    $aFullListComplexFilterDraft = normalizeDemoFullListComplexFilterDraft($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
-    $aFullListComplexFilter = normalizeDemoFullListComplexFilter($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilter = normalizeFullListComplexFilter($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
     $_SESSION["ex_demo_full_list_complex_filter"] = $aFullListComplexFilter;
     $_SESSION["ex_demo_full_list_complex_filter_draft"] = $aFullListComplexFilterDraft;
     session_write_close();
@@ -77,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter_draft") {
-    $aFullListComplexFilterDraft = normalizeDemoFullListComplexFilterDraft(getFullListComplexFilterPostPayload(), $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
+    $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft(getFullListComplexFilterPostPayload(), $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
     $_SESSION["ex_demo_full_list_complex_filter_draft"] = $aFullListComplexFilterDraft;
     session_write_close();
     sendJsonAndExit(array("success" => true));

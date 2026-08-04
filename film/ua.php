@@ -88,10 +88,10 @@ if (!$aRows) {
 
     foreach ($aRows as $aRow) {
         $sCountryCode = strtoupper(trim((string)$aRow["x_geo_country_code"]));
-        $sCountryFlag = formatFilmUaCountryFlag($sCountryCode);
+        $sCountryFlag = formatUaCountryFlag($sCountryCode);
         $sCountry = $sCountryFlag . ($sCountryFlag != "" ? " " : "") . htmlspecialchars($sCountryCode, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
         $sUserAgentRaw = (string)$aRow["user_agent"];
-        $sUserAgent = formatFilmUaUserAgent($sUserAgentRaw);
+        $sUserAgent = formatUaUserAgent($sUserAgentRaw);
         $sBrowser = trim((string)$aRow["browser_name"] . " " . (string)$aRow["browser_version"]);
         $sOperatingSystem = trim((string)$aRow["os_name"] . " " . (string)$aRow["os_version"]);
         $sDevice = trim((string)$aRow["device_vendor"] . " " . (string)$aRow["device_model"]);
@@ -154,7 +154,7 @@ if (!$aRows) {
         }
         $sUserAgentTitle = implode("\n", $aUserAgentDetails);
         $sGpuRaw = (string)$aRow["gpu_info"];
-        $sGpu = formatFilmUaGpu($sGpuRaw);
+        $sGpu = formatUaGpu($sGpuRaw);
         $sFilmRoll = "";
         if ($aRow["folder_name"] !== null && $aRow["folder_name"] != "") {
             $sFilmRoll = (string)$aRow["folder_name"];
@@ -195,7 +195,7 @@ if (!$aRows) {
     </tbody>
   </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>vendors/bowser-2.14.1/es5.js"></script>
+  <script type="text/javascript" src="/vendors/bowser-2.14.1/es5.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>
