@@ -186,7 +186,7 @@ renderMenu();
   <div class="admin-top">
     <form method="post" action="<?php echo $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="film_csrf_token" value="<?php echo htmlspecialchars(getCsrfToken("film_csrf_token"), ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8"); ?>">
-      <label for="film_id">Film Roll:</label>
+      <label for="film_id">Film Roll</label>
       <select name="film_id" id="film_id" required>
         <option value="">– Choose film roll –</option>
 <?php
@@ -197,7 +197,7 @@ foreach ($aFilms as $aFilm) {
 
 ?>
       </select>
-      <label for="order_id">Bag Number:</label>
+      <label for="order_id">Bag Number</label>
       <select name="order_id" id="order_id" required>
         <option value="">– Choose bag number –</option>
 <?php

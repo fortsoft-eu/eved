@@ -464,7 +464,7 @@ function menuAdminRenderRow($aRow) {
 }
 
 function menuAdminRenderTableStart() {
-    return "      <table class=\"menu-admin-table\">\n"
+    return "      <table class=\"menu-admin-table table-filter-target\">\n"
         . "        <colgroup><col class=\"menu-col-path\"><col class=\"menu-col-icon\"><col class=\"menu-col-name\"><col class=\"menu-col-title\"><col class=\"menu-col-target\"><col class=\"menu-col-access\"><col class=\"menu-col-active\"><col class=\"menu-col-separator\"><col class=\"menu-col-order\"><col class=\"menu-col-actions\"></colgroup>\n";
 }
 

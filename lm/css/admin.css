@@ -23,7 +23,7 @@ form {
     min-height: calc(100vh - 24px);
 }
 
-.login-dialog {
+.login-dialog, .business-hours-table tbody, .business-hours-table tr {
     background: transparent;
 }
 
@@ -47,16 +47,16 @@ form {
     width: calc(100% - 48px);
 }
 
-.login-fields {
+.login-fields, .snippet-board-form .tox .tox-toolbar__group {
     padding: 0;
 }
 
-.login-fields label {
+.login-fields label, .subject-edit-dialog label {
     display: block;
     margin: 10px 16px 4px;
 }
 
-.login-fields input[type="text"], .login-fields input[type="password"] {
+.login-fields input[type="text"], .login-fields input[type="password"], .edit-dialog input[type="date"], .edit-dialog input[type="datetime-local"], .edit-dialog input[type="email"], .edit-dialog input[type="text"], .edit-dialog select, .subject-edit-dialog input[type="text"], .subject-edit-dialog input[type="password"], .subject-edit-dialog input[type="date"], .subject-edit-dialog input[type="datetime-local"], .subject-edit-dialog input[type="number"], .subject-edit-dialog input[type="url"], .subject-edit-dialog select {
     box-sizing: border-box;
     margin: 0 16px;
     width: calc(100% - 32px);
@@ -82,7 +82,7 @@ form {
     text-align: left;
 }
 
-.login-form .confirm-dialog-actions {
+.login-form .confirm-dialog-actions, .edit-dialog .confirm-dialog-actions, .subject-edit-dialog .confirm-dialog-actions {
     padding-top: 16px;
 }
 
@@ -128,7 +128,7 @@ form {
     white-space: nowrap;
 }
 
-.mail-form-status:empty, .snippet-board-status:empty {
+.mail-form-status:empty, .snippet-board-status:empty, .mail-recipient-suggest-box[hidden], .confirm-dialog[hidden], .menu-panel[hidden], .schema-unavailable-message, .snippet-board-form .tox .tox-statusbar__resize-handle, body[data-pmd-like="1"] .snippet-board-panel {
     display: none;
 }
 
@@ -169,10 +169,6 @@ form {
     z-index: 9;
 }
 
-.mail-recipient-suggest-box[hidden] {
-    display: none;
-}
-
 .mail-recipient-suggest-option {
     background: #FFF;
     border: 0;
@@ -188,7 +184,7 @@ form {
     width: 100%;
 }
 
-.mail-recipient-suggest-option:hover, .mail-recipient-suggest-active {
+.mail-recipient-suggest-option:hover, .mail-recipient-suggest-active, .menu-button:hover, .menu-link-active, .menu-link:hover, .filter-focus-button:hover {
     background: #DCDCE4;
 }
 
@@ -234,10 +230,6 @@ input[type="date"], input[type="datetime-local"], input[type="email"], input[typ
     top: 0;
     width: 100vw;
     z-index: 8;
-}
-
-.confirm-dialog[hidden], .menu-panel[hidden], .schema-unavailable-message {
-    display: none;
 }
 
 @supports (height: 100dvh) {
@@ -323,7 +315,7 @@ table {
     width: 100%;
 }
 
-.condensed-table {
+.condensed-table, .condensed-table .database-table-name, .condensed-table .database-structure-cell, .condensed-table .database-structure-cell pre, body[data-pmd-like="1"].mail-page .mail-form-fields label, body[data-pmd-like="1"].mail-page .mail-form-fields input[type="file"], body[data-pmd-like="1"].mail-page .mail-form-fields input[type="text"], body[data-pmd-like="1"].mail-page .mail-message-label {
     font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
     font-stretch: condensed;
 }
@@ -400,7 +392,7 @@ body.mail-page .admin-controls .mail-send-button {
     flex: 0 0 75px;
 }
 
-.admin-controls input, .admin-controls label {
+.admin-controls input, .admin-controls label, #phpinfo-select-form button, #phpinfo-select-form label, #phpinfo-select-form select, .kf-help-list dt:first-child, .lm-help-list dt:first-child {
     margin-top: 0;
 }
 
@@ -465,10 +457,6 @@ body.mail-page .admin-controls .mail-send-button {
     margin: 8px 0;
 }
 
-.menu-button:hover, .menu-link-active, .menu-link:hover, .filter-focus-button:hover {
-    background: #DCDCE4;
-}
-
 .admin-controls .quick-filter-active, .menu-link-active, .filter-focus-button.filter-focus-active {
     font-weight: bold;
 }
@@ -505,12 +493,12 @@ body.mail-page .admin-controls .mail-send-button {
     word-break: normal;
 }
 
-#extensions-table, #streams-table {
+#extensions-table, #streams-table, #types-table {
     table-layout: auto;
     width: auto;
 }
 
-#extensions-table td, #extensions-table th, #streams-table td, #streams-table th {
+#extensions-table td, #extensions-table th, #streams-table td, #streams-table th, #database-table td, #database-table th, #transactions-table td, #transactions-table th, #subscriptions-table td, #subscriptions-table th, #exchange-rates-table td, #exchange-rates-table th, #types-table td, #types-table th, #debts-table td, #debts-table th, .menu-admin-table td, .menu-admin-table th, .dashboard-services-table th, .issue-date {
     overflow-wrap: normal;
     white-space: nowrap;
     word-break: normal;
@@ -521,28 +509,17 @@ body.mail-page .admin-controls .mail-send-button {
     vertical-align: top;
 }
 
-#database-table {
+#database-table, #transactions-table, #subscriptions-table, #exchange-rates-table, #debts-table {
     table-layout: auto;
     width: 100%;
 }
 
-#database-table td, #database-table th {
-    overflow-wrap: normal;
-    white-space: nowrap;
-    word-break: normal;
-}
-
-#database-table td {
+#database-table td, .business-hours-day-name {
     line-height: 1;
 }
 
 #database-table .database-structure-cell {
     white-space: pre;
-}
-
-.condensed-table .database-table-name, .condensed-table .database-structure-cell, .condensed-table .database-structure-cell pre {
-    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
-    font-stretch: condensed;
 }
 
 .database-structure-cell {
@@ -561,7 +538,7 @@ body.mail-page .admin-controls .mail-send-button {
     color: #7A3E9D;
 }
 
-.database-structure-cell .sql-string {
+.database-structure-cell .sql-string, .schema-key-fk {
     color: #A32929;
 }
 
@@ -571,7 +548,7 @@ body.mail-page .admin-controls .mail-send-button {
     word-break: normal;
 }
 
-.ua-table td, .ua-table th {
+.ua-table td, .ua-table th, .schema-relations td, .schema-relations th, .debt-movements-cell {
     vertical-align: top;
 }
 
@@ -597,7 +574,7 @@ tr:nth-child(even) {
     background: #F9F9F9;
 }
 
-.error-cell {
+.error-cell, .issue-due-overdue {
     color: #D00;
     font-weight: bold;
 }
@@ -680,10 +657,6 @@ tr:nth-child(even) {
     color: #075E9E;
 }
 
-.schema-key-fk {
-    color: #A32929;
-}
-
 .schema-null {
     color: #666;
 }
@@ -720,10 +693,6 @@ tr:nth-child(even) {
 
 .schema-relations {
     margin-top: 24px;
-}
-
-.schema-relations td, .schema-relations th {
-    vertical-align: top;
 }
 
 .schema-column-type[title] {
@@ -791,15 +760,11 @@ body.phpinfo-page .admin-controls {
     padding-top: 8px;
 }
 
-#phpinfo-select-form button, #phpinfo-select-form label, #phpinfo-select-form select {
-    margin-top: 0;
-}
-
-#phpinfo-select-form button, #phpinfo-select-form select {
+#phpinfo-select-form button, #phpinfo-select-form select, .business-hours-col-hours {
     width: auto;
 }
 
-#phpinfo-select-form button {
+#phpinfo-select-form button, .list-item-actions, .dashboard-service-http, .dashboard-service-checked, .dashboard-services-table .admin-action-column {
     white-space: nowrap;
 }
 
@@ -822,7 +787,7 @@ body.phpinfo-page .admin-controls {
 }
 
 @media print {
-    .admin-controls, p:has(.js-table-filter) {
+    .admin-controls, p:has(.js-table-filter), .snippet-board-tabs {
         display: none;
     }
 }
@@ -833,17 +798,7 @@ body.phpinfo-page .admin-controls {
     margin: 10px 16px 4px;
 }
 
-.edit-dialog input[type="date"], .edit-dialog input[type="datetime-local"], .edit-dialog input[type="email"], .edit-dialog input[type="text"], .edit-dialog select, .subject-edit-dialog input[type="text"], .subject-edit-dialog input[type="password"], .subject-edit-dialog input[type="date"], .subject-edit-dialog input[type="datetime-local"], .subject-edit-dialog input[type="number"], .subject-edit-dialog input[type="url"], .subject-edit-dialog select {
-    box-sizing: border-box;
-    margin: 0 16px;
-    width: calc(100% - 32px);
-}
-
-.edit-dialog .confirm-dialog-actions, .subject-edit-dialog .confirm-dialog-actions {
-    padding-top: 16px;
-}
-
-.edit-dialog input[type="checkbox"] {
+.edit-dialog input[type="checkbox"], .subject-edit-dialog .business-hours-closed-label input[type="checkbox"] {
     margin: 0 6px 0 0;
     width: auto;
 }
@@ -861,11 +816,6 @@ body.phpinfo-page .admin-controls {
     max-height: calc(100vh - 48px);
     max-width: 520px;
     overflow: auto;
-}
-
-.subject-edit-dialog label {
-    display: block;
-    margin: 10px 16px 4px;
 }
 
 .subject-edit-dialog input[type="checkbox"] {
@@ -1015,7 +965,7 @@ body.phpinfo-page .admin-controls {
     margin-right: 6px;
 }
 
-.index-settings-options select {
+.index-settings-options select, .authors-table, .domain-result-table {
     width: 100%;
 }
 
@@ -1030,26 +980,6 @@ body.phpinfo-page .admin-controls {
     margin: 0 16px 12px;
 }
 
-#types-table {
-    table-layout: auto;
-    width: auto;
-}
-
-#transactions-table, #subscriptions-table, #exchange-rates-table, #debts-table {
-    table-layout: auto;
-    width: 100%;
-}
-
-#transactions-table td, #transactions-table th, #subscriptions-table td, #subscriptions-table th, #exchange-rates-table td, #exchange-rates-table th, #types-table td, #types-table th, #debts-table td, #debts-table th {
-    overflow-wrap: normal;
-    white-space: nowrap;
-    word-break: normal;
-}
-
-.debt-movements-cell {
-    vertical-align: top;
-}
-
 .subscription-in-column {
     overflow-wrap: normal;
     text-align: right;
@@ -1058,11 +988,11 @@ body.phpinfo-page .admin-controls {
     word-break: normal;
 }
 
-.debt-movements-heading {
+.debt-movements-heading, .empty-table-message, .business-hours-table .business-hours-divider, body.php-generated-output .center {
     text-align: center;
 }
 
-.debt-movement {
+.debt-movement, .business-hours-card-title strong, .business-hours-card-title span, .snippet-board-form .tox .tox-edit-area__iframe, body[data-pmd-like="1"] .snippet-board-grid, body[data-pmd-like="1"] .snippet-board-panel-active {
     display: block;
 }
 
@@ -1084,15 +1014,11 @@ body.phpinfo-page .admin-controls {
     margin-left: 4px;
 }
 
-.list-item-actions {
-    white-space: nowrap;
-}
-
 .monthly-overview-table {
     table-layout: fixed;
 }
 
-.monthly-overview-table td, .monthly-overview-table th {
+.monthly-overview-table td, .monthly-overview-table th, .authors-table .pages, .dashboard-service-url, .dashboard-service-expected, .dashboard-service-detail {
     overflow-wrap: normal;
     white-space: normal;
     word-break: normal;
@@ -1103,7 +1029,7 @@ body.phpinfo-page .admin-controls {
     white-space: nowrap;
 }
 
-td.numeric, th.numeric {
+td.numeric, th.numeric, .business-hours-time-close, .business-hours-time-range-second {
     text-align: right;
 }
 
@@ -1187,7 +1113,7 @@ td.numeric, th.numeric {
     text-decoration: none;
 }
 
-.column-header-icon {
+.column-header-icon, .contact-flags span:not(:empty) {
     display: inline-block;
     margin-left: 1px;
     vertical-align: top;
@@ -1232,12 +1158,6 @@ td.numeric, th.numeric {
     font-size: inherit;
 }
 
-.contact-flags span:not(:empty) {
-    display: inline-block;
-    margin-left: 1px;
-    vertical-align: top;
-}
-
 .amount-positive {
     color: #080;
 }
@@ -1257,10 +1177,6 @@ td.numeric, th.numeric {
 .kf-help-list dt, .lm-help-list dt {
     font-weight: bold;
     margin-top: 18px;
-}
-
-.kf-help-list dt:first-child, .lm-help-list dt:first-child {
-    margin-top: 0;
 }
 
 .kf-help-list dd, .lm-help-list dd {
@@ -1293,12 +1209,6 @@ td.numeric, th.numeric {
     min-width: 100%;
     table-layout: auto;
     width: auto;
-}
-
-.menu-admin-table td, .menu-admin-table th {
-    overflow-wrap: normal;
-    white-space: nowrap;
-    word-break: normal;
 }
 
 .menu-admin-table .menu-admin-group-row th {
@@ -1352,26 +1262,8 @@ td.numeric, th.numeric {
     width: 5.5em;
 }
 
-.empty-table-message {
-    text-align: center;
-}
-
-.authors-table {
-    width: 100%;
-}
-
 .authors-table td:first-child, .authors-table th:first-child {
     width: 1px;
-}
-
-.authors-table .pages {
-    overflow-wrap: normal;
-    white-space: normal;
-    word-break: normal;
-}
-
-.domain-result-table {
-    width: 100%;
 }
 
 .domain-result-table caption, .domain-dns-table caption {
@@ -1384,7 +1276,7 @@ td.numeric, th.numeric {
     text-align: left;
 }
 
-.domain-result-table td:first-child, .domain-result-table th:first-child {
+.domain-result-table td:first-child, .domain-result-table th:first-child, .domain-dns-table td:first-child, .domain-dns-table th:first-child, .domain-dns-table td:nth-child(3), .domain-dns-table th:nth-child(3) {
     white-space: nowrap;
     width: 1px;
 }
@@ -1392,11 +1284,6 @@ td.numeric, th.numeric {
 .domain-dns-table {
     margin-top: 18px;
     width: 100%;
-}
-
-.domain-dns-table td:first-child, .domain-dns-table th:first-child, .domain-dns-table td:nth-child(3), .domain-dns-table th:nth-child(3) {
-    white-space: nowrap;
-    width: 1px;
 }
 
 .domain-dns-table td:last-child {
@@ -1409,22 +1296,6 @@ td.numeric, th.numeric {
     min-width: 103em;
     table-layout: auto;
     width: 100%;
-}
-
-.dashboard-services-table th {
-    overflow-wrap: normal;
-    white-space: nowrap;
-    word-break: normal;
-}
-
-.dashboard-service-url, .dashboard-service-expected, .dashboard-service-detail {
-    overflow-wrap: normal;
-    white-space: normal;
-    word-break: normal;
-}
-
-.dashboard-service-http, .dashboard-service-checked, .dashboard-services-table .admin-action-column {
-    white-space: nowrap;
 }
 
 #debts-table .admin-action-column, #dashboard-services-table th:last-child, #dashboard-services-table td:last-child, #issues-table .admin-action-column {
@@ -1502,17 +1373,6 @@ td.numeric, th.numeric {
     word-break: normal;
 }
 
-.issue-date {
-    overflow-wrap: normal;
-    white-space: nowrap;
-    word-break: normal;
-}
-
-.issue-due-overdue {
-    color: #D00;
-    font-weight: bold;
-}
-
 .issue-type-bug {
     background: #F9D6D5;
 }
@@ -1536,14 +1396,14 @@ body.business-hours-page {
     overflow: hidden;
 }
 
-.business-hours-tabs {
+.business-hours-tabs, .snippet-board-tabs {
     display: none;
     flex-wrap: wrap;
     gap: 6px;
     margin: 0;
 }
 
-.admin-controls .business-hours-tab {
+.admin-controls .business-hours-tab, .admin-controls .snippet-board-tab {
     box-sizing: border-box;
     flex: 0 0 27px;
     height: 27px;
@@ -1552,7 +1412,7 @@ body.business-hours-page {
     width: 27px;
 }
 
-.business-hours-tab-active {
+.business-hours-tab-active, .snippet-board-tab-active {
     background: #DCDCE4;
     font-weight: bold;
 }
@@ -1606,10 +1466,6 @@ body.business-hours-page {
     overflow-wrap: normal;
     white-space: normal;
     word-break: normal;
-}
-
-.business-hours-card-title strong, .business-hours-card-title span {
-    display: block;
 }
 
 .business-hours-linear-break, .business-hours-linear-gap {
@@ -1669,10 +1525,6 @@ body.business-hours-page {
     width: calc(3ch + 42px);
 }
 
-.business-hours-col-hours {
-    width: auto;
-}
-
 .business-hours-col-interval {
     width: 11ch;
 }
@@ -1691,10 +1543,6 @@ body.business-hours-page {
     white-space: nowrap;
 }
 
-.business-hours-table tbody, .business-hours-table tr {
-    background: transparent;
-}
-
 .business-hours-table th {
     color: #000;
     font-weight: bold;
@@ -1702,27 +1550,15 @@ body.business-hours-page {
     text-align: left;
 }
 
-.business-hours-hours, .business-hours-time-open, .business-hours-time-range {
+.business-hours-hours, .business-hours-time-open, .business-hours-time-range, .business-hours-closed, body.php-generated-output .p {
     text-align: left;
 }
 
-.business-hours-table .business-hours-divider {
-    text-align: center;
-}
-
-.business-hours-time-close, .business-hours-time-range-second {
-    text-align: right;
-}
-
-.business-hours-closed {
-    text-align: left;
-}
-
-.business-hours-card.admin-row-modal {
+.business-hours-card.admin-row-modal, .admin-row-modal > td {
     background: #EADFFF !important;
 }
 
-.business-hours-card.admin-row-saved {
+.business-hours-card.admin-row-saved, .admin-row-saved > td {
     animation: adminRowSavedBlink 0.22s linear 6;
 }
 
@@ -1739,10 +1575,6 @@ body.business-hours-page {
     grid-template-columns: 38px 76px repeat(4, minmax(80px, 1fr));
 }
 
-.business-hours-day-name {
-    line-height: 1;
-}
-
 .subject-edit-dialog label.business-hours-closed-label {
     align-items: center;
     display: inline-flex;
@@ -1750,11 +1582,6 @@ body.business-hours-page {
     line-height: 1;
     margin: 0;
     white-space: nowrap;
-}
-
-.subject-edit-dialog .business-hours-closed-label input[type="checkbox"] {
-    margin: 0 6px 0 0;
-    width: auto;
 }
 
 .subject-edit-dialog .business-hours-day-row input[type="text"] {
@@ -1816,7 +1643,7 @@ body.business-hours-page {
     }
 }
 
-body[data-pmd-like="1"] .business-hours-tabs {
+body[data-pmd-like="1"] .business-hours-tabs, body[data-pmd-like="1"] .snippet-board-tabs {
     display: inline-flex;
     flex: 0 0 auto;
     flex-wrap: nowrap;
@@ -1869,10 +1696,6 @@ body.php-generated-output table {
     width: 934px;
 }
 
-body.php-generated-output .center {
-    text-align: center;
-}
-
 body.php-generated-output .center table {
     margin: 1em auto;
     text-align: left;
@@ -1909,10 +1732,6 @@ body.php-generated-output h2 > a, body.php-generated-output a:hover, .contact-co
 
 body.php-generated-output h2 > a:hover {
     text-decoration: underline;
-}
-
-body.php-generated-output .p {
-    text-align: left;
 }
 
 body.php-generated-output .e {
@@ -1974,14 +1793,6 @@ body.php-generated-output hr {
     }
 }
 
-.admin-row-modal > td {
-    background: #EADFFF !important;
-}
-
-.admin-row-saved > td {
-    animation: adminRowSavedBlink 0.22s linear 6;
-}
-
 @keyframes adminRowSavedBlink {
     0%, 100% {
         background-color: transparent;
@@ -2023,27 +1834,6 @@ html[data-pmd-like="1"].snippet-board-html, html[data-pmd-like="1"].mail-html {
     height: 27px;
 }
 
-.snippet-board-tabs {
-    display: none;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 0;
-}
-
-.admin-controls .snippet-board-tab {
-    box-sizing: border-box;
-    flex: 0 0 27px;
-    height: 27px;
-    margin: 0;
-    padding: 2px 2px 3px 2px;
-    width: 27px;
-}
-
-.snippet-board-tab-active {
-    background: #DCDCE4;
-    font-weight: bold;
-}
-
 .snippet-board-grid {
     display: grid;
     gap: 5px;
@@ -2080,7 +1870,7 @@ html[data-pmd-like="1"].snippet-board-html, html[data-pmd-like="1"].mail-html {
     position: relative;
 }
 
-.snippet-board-form .tox .tox-toolbar, .snippet-board-form .tox .tox-toolbar__overflow, .snippet-board-form .tox .tox-toolbar__primary {
+.snippet-board-form .tox .tox-toolbar, .snippet-board-form .tox .tox-toolbar__overflow, .snippet-board-form .tox .tox-toolbar__primary, body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn.snippet-board-pmd-hover-expired:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired .tox-split-button__main:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired .tox-split-button__chevron:hover {
     background: #F0F0F0 !important;
 }
 
@@ -2125,10 +1915,6 @@ html[data-pmd-like="1"].snippet-board-html, html[data-pmd-like="1"].mail-html {
     margin: 0;
 }
 
-.snippet-board-form .tox .tox-edit-area__iframe {
-    display: block;
-}
-
 .snippet-board-form .tox .tox-tbtn {
     align-items: center;
     background: #F0F0F0 !important;
@@ -2149,15 +1935,7 @@ html[data-pmd-like="1"].snippet-board-html, html[data-pmd-like="1"].mail-html {
     width: 28px;
 }
 
-.snippet-board-form .tox .tox-toolbar__group {
-    padding: 0;
-}
-
-.snippet-board-form .tox:not([dir=rtl]) .tox-toolbar__group:not(:last-of-type) {
-    border-right: 1px solid #C0C0C0;
-}
-
-.snippet-board-form .tox:not([dir=rtl]) .tox-toolbar__group:last-of-type {
+.snippet-board-form .tox:not([dir=rtl]) .tox-toolbar__group:not(:last-of-type), .snippet-board-form .tox:not([dir=rtl]) .tox-toolbar__group:last-of-type {
     border-right: 1px solid #C0C0C0;
 }
 
@@ -2230,21 +2008,21 @@ html[data-pmd-like="1"].snippet-board-html, html[data-pmd-like="1"].mail-html {
     vertical-align: top;
 }
 
-.snippet-board-form .tox .tox-split-button__main {
+.snippet-board-form .tox .tox-split-button__main, body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-split-button__main {
     width: 28px;
 }
 
-.snippet-board-form .tox .tox-split-button__chevron {
+.snippet-board-form .tox .tox-split-button__chevron, body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-split-button__chevron {
     width: 14px;
 }
 
-.snippet-board-form .tox .tox-tbtn[data-mce-name="forecolor-chevron"], .snippet-board-form .tox .tox-tbtn[data-mce-name="backcolor-chevron"] {
+.snippet-board-form .tox .tox-tbtn[data-mce-name="forecolor-chevron"], .snippet-board-form .tox .tox-tbtn[data-mce-name="backcolor-chevron"], body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="forecolor-chevron"], body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="backcolor-chevron"] {
     flex: 0 0 23px;
     min-width: 23px;
     width: 23px;
 }
 
-.snippet-board-form .tox .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
+.snippet-board-form .tox .tox-tbtn[data-mce-name="insertdatetime-chevron"], body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
     flex: 0 0 24px;
     min-width: 24px;
     width: 24px;
@@ -2303,23 +2081,12 @@ body.snippet-board-page .tox.tox-tinymce-aux .tox-menu .tox-collection__item-lab
     white-space: nowrap;
 }
 
-.snippet-board-form .tox .tox-tbtn:hover {
+.snippet-board-form .tox .tox-tbtn:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn.snippet-board-pmd-hover-active, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active .tox-split-button__main, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active .tox-split-button__chevron {
     background: #D6D6D6 !important;
 }
 
-.snippet-board-form .tox .tox-tbtn--enabled, .snippet-board-form .tox .tox-tbtn--enabled:hover {
+.snippet-board-form .tox .tox-tbtn--enabled, .snippet-board-form .tox .tox-tbtn--enabled:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn--enabled.snippet-board-pmd-hover-active, body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn--enabled.snippet-board-pmd-hover-expired:hover {
     background: #C8D2E0 !important;
-}
-
-.snippet-board-form .tox .tox-statusbar__resize-handle {
-    display: none;
-}
-
-body[data-pmd-like="1"] .snippet-board-tabs {
-    display: inline-flex;
-    flex: 0 0 auto;
-    flex-wrap: nowrap;
-    gap: 6px;
 }
 
 body[data-pmd-like="1"] .admin-controls {
@@ -2348,11 +2115,6 @@ body[data-pmd-like="1"].mail-page .mail-form-fields {
     margin-bottom: 4px;
 }
 
-body[data-pmd-like="1"].mail-page .mail-form-fields label, body[data-pmd-like="1"].mail-page .mail-form-fields input[type="file"], body[data-pmd-like="1"].mail-page .mail-form-fields input[type="text"], body[data-pmd-like="1"].mail-page .mail-message-label {
-    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
-    font-stretch: condensed;
-}
-
 body[data-pmd-like="1"].mail-page .mail-message-label {
     margin-bottom: 2px;
 }
@@ -2366,60 +2128,9 @@ body[data-pmd-like="1"] .snippet-board-form .tox .tox-toolbar--scrolling .tox-to
     flex-wrap: wrap;
 }
 
-body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-split-button__main {
-    width: 28px;
-}
-
-body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-split-button__chevron {
-    width: 14px;
-}
-
-body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="forecolor-chevron"], body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="backcolor-chevron"] {
-    flex: 0 0 23px;
-    min-width: 23px;
-    width: 23px;
-}
-
-body[data-pmd-like="1"] .snippet-board-form .tox.tox-platform-touch .tox-tbtn[data-mce-name="insertdatetime-chevron"] {
-    flex: 0 0 24px;
-    min-width: 24px;
-    width: 24px;
-}
-
-body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn.snippet-board-pmd-hover-active, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active .tox-split-button__main, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-active .tox-split-button__chevron {
-    background: #D6D6D6 !important;
-}
-
-body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn--enabled.snippet-board-pmd-hover-active {
-    background: #C8D2E0 !important;
-}
-
-body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn.snippet-board-pmd-hover-expired:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired .tox-split-button__main:hover, body[data-pmd-like="1"] .snippet-board-form .tox .tox-split-button.snippet-board-pmd-hover-expired .tox-split-button__chevron:hover {
-    background: #F0F0F0 !important;
-}
-
-body[data-pmd-like="1"] .snippet-board-form .tox .tox-tbtn--enabled.snippet-board-pmd-hover-expired:hover {
-    background: #C8D2E0 !important;
-}
-
-body[data-pmd-like="1"] .snippet-board-grid {
-    display: block;
-}
-
-body[data-pmd-like="1"] .snippet-board-panel {
-    display: none;
-}
-
-body[data-pmd-like="1"] .snippet-board-panel-active {
-    display: block;
-}
-
 @media print {
     body.snippet-board-page {
         height: auto;
         overflow: visible;
-    }
-    .snippet-board-tabs {
-        display: none;
     }
 }

@@ -3643,6 +3643,249 @@
         window.bindAdminTableRow = bindTableRow;
     }
 
+    function setupIbanCalculator() {
+        var oForm = document.getElementById("iban-form");
+        var oInput = document.getElementById("iban-national-account");
+        var oNormalizedAccount = document.getElementById("iban-normalized-account");
+        var oIbanPlain = document.getElementById("iban-plain");
+        var oIbanFormatted = document.getElementById("iban-formatted");
+        var oSwift = document.getElementById("iban-swift");
+        var oMessage = document.getElementById("iban-message");
+        var aWeights = [1, 2, 4, 8, 5, 10, 9, 7, 3, 6];
+        var aSwiftCodes = {
+            "0100": "KOMBCZPP",
+            "0300": "CEKOCZPP",
+            "0600": "AGBACZPP",
+            "0710": "CNBACZPP",
+            "0800": "GIBACZPX",
+            "2010": "FIOBCZPP",
+            "2060": "CITFCZPP",
+            "2070": "MPUBCZPP",
+            "2100": "?",
+            "2200": "?",
+            "2220": "ARTTCZPP",
+            "2250": "CTASCZ22",
+            "2600": "CITICZPX",
+            "2700": "BACXCZPP",
+            "3030": "AIRACZPP",
+            "3060": "BPKOCZPP",
+            "3500": "INGBCZPP",
+            "4300": "NROZCZPP",
+            "5500": "RZBCCZPP",
+            "5800": "JTBPCZPP",
+            "6000": "PMBPCZPP",
+            "6200": "COBACZPX",
+            "6210": "BREXCZPP",
+            "6300": "GEBACZPP",
+            "6363": "PTBNCZPP",
+            "6600": "?",
+            "6700": "SUBACZPP",
+            "6800": "VBOECZ2X",
+            "7910": "DEUTCZPX",
+            "7950": "?",
+            "7960": "?",
+            "7970": "?",
+            "7990": "?",
+            "8030": "GENOCZ21",
+            "8040": "OBKLCZ2X",
+            "8060": "?",
+            "8090": "CZEECZPP",
+            "8150": "MIDLCZPP",
+            "8190": "?",
+            "8198": "FFCSCZP1",
+            "8220": "PAERCZP1",
+            "8250": "BKCHCZPP",
+            "8255": "COMMCZPP",
+            "8265": "ICBKCZPP",
+            "8500": "?",
+            "8610": "?",
+            "8660": "?"
+        };
+
+        function clearIbanResult() {
+            oNormalizedAccount.value = "";
+            oIbanPlain.value = "";
+            oIbanFormatted.value = "";
+            oSwift.value = "";
+            oMessage.textContent = "";
+            oMessage.className = "iban-message";
+        }
+
+        function setIbanError(sMessage) {
+            oNormalizedAccount.value = "";
+            oIbanPlain.value = "";
+            oIbanFormatted.value = "";
+            oSwift.value = "";
+            oMessage.textContent = sMessage;
+            oMessage.className = "iban-message message-error";
+        }
+
+        function leftPadIbanValue(sValue, iLength) {
+            sValue = String(sValue || "");
+            while (sValue.length < iLength) {
+                sValue = "0" + sValue;
+            }
+            return sValue.substring(sValue.length - iLength);
+        }
+
+        function testCzechAccountPart(sValue) {
+            var iSum = 0;
+            var blHasNonZero = false;
+            var iI;
+            var iDigit;
+            for (iI = sValue.length - 1; iI >= 0; iI -= 1) {
+                iDigit = parseInt(sValue.charAt(iI), 10);
+                if (iDigit !== 0) {
+                    blHasNonZero = true;
+                }
+                iSum += iDigit * aWeights[sValue.length - 1 - iI];
+            }
+            return {
+                "hasNonZero": blHasNonZero,
+                "valid": iSum % 11 === 0
+            };
+        }
+
+        function modIbanNumber(sValue, iDivisor) {
+            var iRemainder = 0;
+            var iI;
+            for (iI = 0; iI < sValue.length; iI += 1) {
+                iRemainder = (iRemainder * 10 + parseInt(sValue.charAt(iI), 10)) % iDivisor;
+            }
+            return iRemainder;
+        }
+
+        function formatIban(sIban) {
+            return sIban.substring(0, 4) + " " + sIban.substring(4, 8) + " " + sIban.substring(8, 12) + " " + sIban.substring(12, 16) + " " + sIban.substring(16, 20) + " " + sIban.substring(20, 24);
+        }
+
+        function parseCzechNationalAccount(sValue) {
+            var sCompact = String(sValue || "").replace(/\s+/g, "").toUpperCase();
+            var aMatch;
+            if (/^CZ[0-9]{22}$/.test(sCompact)) {
+                return {
+                    "type": "iban",
+                    "iban": sCompact
+                };
+            }
+            aMatch = /^([0-9]{1,6})-([0-9]{1,10})\/([0-9]{1,4})$/.exec(sCompact);
+            if (aMatch) {
+                return {
+                    "type": "account",
+                    "prefix": aMatch[1],
+                    "account": aMatch[2],
+                    "bank": leftPadIbanValue(aMatch[3], 4)
+                };
+            }
+            aMatch = /^([0-9]{1,10})\/([0-9]{1,4})$/.exec(sCompact);
+            if (aMatch) {
+                return {
+                    "type": "account",
+                    "prefix": "",
+                    "account": aMatch[1],
+                    "bank": leftPadIbanValue(aMatch[2], 4)
+                };
+            }
+            aMatch = /^([0-9]{1,4})$/.exec(sCompact);
+            if (aMatch) {
+                return {
+                    "type": "bank",
+                    "bank": leftPadIbanValue(aMatch[1], 4)
+                };
+            }
+            return null;
+        }
+
+        function calculateIban() {
+            var aAccount = parseCzechNationalAccount(oInput.value);
+            var sPrefix;
+            var sAccount;
+            var sBank;
+            var aPrefixStatus;
+            var aAccountStatus;
+            var sSwift;
+            var iCheckDigits;
+            var sIban;
+            if (!aAccount) {
+                setIbanError("Use account number, IBAN, or bank code.");
+                return;
+            }
+            if (aAccount.type == "bank") {
+                sBank = aAccount.bank;
+                if (!Object.prototype.hasOwnProperty.call(aSwiftCodes, sBank)) {
+                    setIbanError("Bank code is invalid.");
+                    return;
+                }
+                sSwift = aSwiftCodes[sBank];
+                oNormalizedAccount.value = "";
+                oIbanPlain.value = "";
+                oIbanFormatted.value = "";
+                oSwift.value = sSwift;
+                oMessage.textContent = "";
+                oMessage.className = "iban-message";
+                return;
+            }
+            if (aAccount.type == "iban") {
+                sIban = aAccount.iban;
+                if (modIbanNumber(sIban.substring(4) + "1235" + sIban.substring(2, 4), 97) !== 1) {
+                    setIbanError("IBAN check digits are invalid.");
+                    return;
+                }
+                sBank = sIban.substring(4, 8);
+                sPrefix = sIban.substring(8, 14);
+                sAccount = sIban.substring(14, 24);
+                if (!Object.prototype.hasOwnProperty.call(aSwiftCodes, sBank)) {
+                    setIbanError("Bank code is invalid.");
+                    return;
+                }
+                sSwift = aSwiftCodes[sBank];
+            } else {
+                sBank = aAccount.bank;
+                if (!Object.prototype.hasOwnProperty.call(aSwiftCodes, sBank)) {
+                    setIbanError("Bank code is invalid.");
+                    return;
+                }
+                sSwift = aSwiftCodes[sBank];
+                sPrefix = leftPadIbanValue(aAccount.prefix, 6);
+                sAccount = leftPadIbanValue(aAccount.account, 10);
+                iCheckDigits = 98 - modIbanNumber(sBank + sPrefix + sAccount + "123500", 97);
+                sIban = "CZ" + (iCheckDigits < 10 ? "0" : "") + iCheckDigits + sBank + sPrefix + sAccount;
+            }
+            aPrefixStatus = testCzechAccountPart(sPrefix);
+            if (!aPrefixStatus.valid) {
+                setIbanError("Account prefix is invalid.");
+                return;
+            }
+            aAccountStatus = testCzechAccountPart(sAccount);
+            if (!aAccountStatus.hasNonZero) {
+                setIbanError("Account number is empty.");
+                return;
+            }
+            if (!aAccountStatus.valid) {
+                setIbanError("Account number is invalid.");
+                return;
+            }
+            oNormalizedAccount.value = sPrefix + "-" + sAccount + "/" + sBank;
+            oIbanPlain.value = sIban;
+            oIbanFormatted.value = formatIban(sIban);
+            oSwift.value = sSwift;
+            oMessage.textContent = "";
+            oMessage.className = "iban-message";
+        }
+
+        if (!oForm || !oInput || !oNormalizedAccount || !oIbanPlain || !oIbanFormatted || !oSwift || !oMessage) {
+            return;
+        }
+        oForm.addEventListener("submit", function (oEvent) {
+            oEvent.preventDefault();
+            calculateIban();
+        });
+        oForm.addEventListener("reset", function () {
+            window.setTimeout(clearIbanResult, 0);
+        });
+        oInput.addEventListener("input", clearIbanResult);
+    }
+
 
     document.addEventListener("DOMContentLoaded", function () {
         setupMonthlyOverviewColumns();
@@ -3657,6 +3900,7 @@
         setupCopyLinks();
         setupCopyActions();
         setupTableRows();
+        setupIbanCalculator();
     });
 })();
 

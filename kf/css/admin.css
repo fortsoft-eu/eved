@@ -51,29 +51,35 @@ form {
     padding: 0;
 }
 
-.login-fields label {
+.login-fields label, .subject-edit-dialog label {
     display: block;
     margin: 10px 16px 4px;
 }
 
-.login-fields input[type="text"], .login-fields input[type="password"] {
+.login-fields input[type="text"], .login-fields input[type="password"], .edit-dialog input[type="date"], .edit-dialog input[type="datetime-local"], .edit-dialog input[type="email"], .edit-dialog input[type="text"], .edit-dialog select, .subject-edit-dialog input[type="text"], .subject-edit-dialog input[type="password"], .subject-edit-dialog input[type="date"], .subject-edit-dialog input[type="datetime-local"], .subject-edit-dialog select {
     box-sizing: border-box;
     margin: 0 16px;
     width: calc(100% - 32px);
 }
 
-.confirm-dialog-box .login-message {
+.confirm-dialog-box .login-message, .subject-edit-error, .iban-message {
     box-sizing: border-box;
     line-height: 1.35;
-    margin: 16px 16px 0;
     overflow-wrap: normal;
     padding: 8px 10px;
-    position: static;
     text-align: left;
+}
+
+.confirm-dialog-box .login-message, .subject-edit-error {
+    margin: 16px 16px 0;
     width: calc(100% - 32px);
 }
 
-.login-form .confirm-dialog-actions {
+.confirm-dialog-box .login-message {
+    position: static;
+}
+
+.login-form .confirm-dialog-actions, .edit-dialog .confirm-dialog-actions, .subject-edit-dialog .confirm-dialog-actions {
     padding-top: 16px;
 }
 
@@ -95,7 +101,7 @@ form {
     color: #2E5E2E;
 }
 
-.message-error {
+.message-error, .subject-edit-error {
     background: #FEE;
     border: 1px solid #DCA7A7;
     color: #8A1F11;
@@ -114,7 +120,7 @@ button, select {
     width: 100%;
 }
 
-.currency-select, .currency-select option {
+.currency-select, .currency-select option, .iban-result-input {
     font-family: Consolas, "Courier New", monospace;
 }
 
@@ -238,7 +244,7 @@ table {
     width: 100%;
 }
 
-.condensed-table {
+.condensed-table, .condensed-table .database-table-name, .condensed-table .database-structure-cell, .condensed-table .database-structure-cell pre {
     font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
     font-stretch: condensed;
 }
@@ -292,7 +298,7 @@ table {
     flex: 0 0 130px;
 }
 
-.admin-controls input, .admin-controls label {
+.admin-controls input, .admin-controls label, .iban-page .admin-top form label:first-of-type, .kf-help-list dt:first-child {
     margin-top: 0;
 }
 
@@ -398,12 +404,12 @@ table {
     vertical-align: top;
 }
 
-#database-table {
+#database-table, #types-table, #transactions-table, #subscriptions-table, #exchange-rates-table, #debts-table {
     table-layout: auto;
     width: 100%;
 }
 
-#database-table td, #database-table th {
+#database-table td, #database-table th, #transactions-table td, #transactions-table th, #subscriptions-table td, #subscriptions-table th, #exchange-rates-table td, #exchange-rates-table th, #types-table td, #types-table th, #debts-table td, #debts-table th, .schema-table td:nth-child(2), .schema-table th:nth-child(2) {
     overflow-wrap: normal;
     white-space: nowrap;
     word-break: normal;
@@ -415,11 +421,6 @@ table {
 
 #database-table .database-structure-cell {
     white-space: pre;
-}
-
-.condensed-table .database-table-name, .condensed-table .database-structure-cell, .condensed-table .database-structure-cell pre {
-    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
-    font-stretch: condensed;
 }
 
 .database-structure-cell {
@@ -438,7 +439,7 @@ table {
     color: #7A3E9D;
 }
 
-.database-structure-cell .sql-string {
+.database-structure-cell .sql-string, .schema-key-fk {
     color: #A32929;
 }
 
@@ -548,10 +549,6 @@ tr:nth-child(even) {
     color: #075E9E;
 }
 
-.schema-key-fk {
-    color: #A32929;
-}
-
 .schema-null {
     color: #666;
 }
@@ -590,7 +587,7 @@ tr:nth-child(even) {
     margin-top: 24px;
 }
 
-.schema-relations td, .schema-relations th {
+.schema-relations td, .schema-relations th, .debt-movements-cell {
     vertical-align: top;
 }
 
@@ -622,16 +619,6 @@ tr:nth-child(even) {
     margin: 10px 16px 4px;
 }
 
-.edit-dialog input[type="date"], .edit-dialog input[type="datetime-local"], .edit-dialog input[type="email"], .edit-dialog input[type="text"], .edit-dialog select, .subject-edit-dialog input[type="text"], .subject-edit-dialog input[type="password"], .subject-edit-dialog input[type="date"], .subject-edit-dialog input[type="datetime-local"], .subject-edit-dialog select {
-    box-sizing: border-box;
-    margin: 0 16px;
-    width: calc(100% - 32px);
-}
-
-.edit-dialog .confirm-dialog-actions, .subject-edit-dialog .confirm-dialog-actions {
-    padding-top: 16px;
-}
-
 .edit-dialog input[type="checkbox"] {
     margin: 0 6px 0 0;
     width: auto;
@@ -650,11 +637,6 @@ tr:nth-child(even) {
     max-height: calc(100vh - 48px);
     max-width: 520px;
     overflow: auto;
-}
-
-.subject-edit-dialog label {
-    display: block;
-    margin: 10px 16px 4px;
 }
 
 .subject-date-field {
@@ -772,19 +754,6 @@ tr:nth-child(even) {
     margin: 10px 16px 0;
 }
 
-.subject-edit-error {
-    background: #FEE;
-    border: 1px solid #DCA7A7;
-    box-sizing: border-box;
-    color: #8A1F11;
-    line-height: 1.35;
-    margin: 16px 16px 0;
-    overflow-wrap: normal;
-    padding: 8px 10px;
-    text-align: left;
-    width: calc(100% - 32px);
-}
-
 .index-settings-form {
     max-width: 420px;
 }
@@ -813,25 +782,49 @@ tr:nth-child(even) {
     height: 0;
 }
 
+.iban-page .admin-top {
+    background: #F8F8F8;
+    padding-bottom: 8px;
+}
+
+.iban-page .admin-top > form {
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: 10px;
+    width: 560px;
+}
+
+.iban-page .admin-top form label {
+    display: block;
+    margin: 10px 0 4px;
+}
+
+.iban-page .admin-top input[type="text"] {
+    box-sizing: border-box;
+    margin-top: 0;
+    width: 100%;
+}
+
+.iban-page .admin-top form .admin-controls {
+    margin: 8px 0 5px;
+}
+
+.iban-message {
+    height: 37px;
+    margin: 12px 0;
+    overflow: hidden;
+    visibility: hidden;
+    white-space: nowrap;
+}
+
+.iban-message.message-error {
+    visibility: visible;
+}
+
 .confirm-dialog-box .index-settings-note {
     color: #555;
     font-size: 12px;
     margin: 0 16px 12px;
-}
-
-#types-table, #transactions-table, #subscriptions-table, #exchange-rates-table, #debts-table {
-    table-layout: auto;
-    width: 100%;
-}
-
-#transactions-table td, #transactions-table th, #subscriptions-table td, #subscriptions-table th, #exchange-rates-table td, #exchange-rates-table th, #types-table td, #types-table th, #debts-table td, #debts-table th, .schema-table td:nth-child(2), .schema-table th:nth-child(2) {
-    overflow-wrap: normal;
-    white-space: nowrap;
-    word-break: normal;
-}
-
-.debt-movements-cell {
-    vertical-align: top;
 }
 
 .subscription-in-column {
@@ -963,7 +956,7 @@ td.numeric, th.numeric {
     text-decoration: none;
 }
 
-.column-header-icon {
+.column-header-icon, .contact-flags span:not(:empty) {
     display: inline-block;
     margin-left: 1px;
     vertical-align: top;
@@ -1018,12 +1011,6 @@ td.numeric, th.numeric {
     font-size: inherit;
 }
 
-.contact-flags span:not(:empty) {
-    display: inline-block;
-    margin-left: 1px;
-    vertical-align: top;
-}
-
 .amount-positive {
     color: #080;
 }
@@ -1043,10 +1030,6 @@ td.numeric, th.numeric {
 .kf-help-list dt {
     font-weight: bold;
     margin-top: 18px;
-}
-
-.kf-help-list dt:first-child {
-    margin-top: 0;
 }
 
 .kf-help-list dd {

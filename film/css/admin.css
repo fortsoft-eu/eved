@@ -142,7 +142,7 @@ form {
     grid-template-columns: 1fr;
 }
 
-.order-detail dt {
+.order-detail dt, .admin-controls .quick-filter-active, .menu-link-active, .filter-focus-button.filter-focus-active {
     font-weight: bold;
 }
 
@@ -186,7 +186,7 @@ form {
     margin: 10px 0 4px;
 }
 
-.film-link-page .admin-top form label:first-of-type {
+.film-link-page .admin-top form label:first-of-type, .admin-controls input, .admin-controls label, .film-help-list dt:first-child, #phpinfo-select-form button, #phpinfo-select-form label, #phpinfo-select-form select {
     margin-top: 0;
 }
 
@@ -210,7 +210,7 @@ form {
     width: 100%;
 }
 
-.film-link-page .order-detail h2 {
+.film-link-page .order-detail h2, body.film-link-page[data-pmd-like="1"] .admin-top > form {
     margin-bottom: 8px;
 }
 
@@ -218,7 +218,7 @@ form {
     grid-template-columns: 230px 160px 160px 160px;
 }
 
-.film-link-page .order-detail dt {
+.film-link-page .order-detail dt, #extensions-table td, #extensions-table th, #streams-table td, #streams-table th, #database-table td, #database-table th, .schema-table td:nth-child(2), .schema-table th:nth-child(2) {
     overflow-wrap: normal;
     white-space: nowrap;
     word-break: normal;
@@ -242,7 +242,7 @@ form {
     word-break: normal;
 }
 
-.film-link-page .order-detail dd.multiline {
+.film-link-page .order-detail dd.multiline, #database-table .database-structure-cell {
     white-space: pre;
 }
 
@@ -263,7 +263,7 @@ form {
     width: max-content;
 }
 
-.film-link-page .film-link-table thead th {
+.film-link-page .film-link-table thead th, th {
     background: #F0F0F0;
 }
 
@@ -419,7 +419,7 @@ table {
     background: #FFF;
 }
 
-.condensed-table {
+.condensed-table, .condensed-table .database-table-name, .condensed-table .database-structure-cell, .condensed-table .database-structure-cell pre {
     font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
     font-stretch: condensed;
 }
@@ -465,20 +465,12 @@ table {
     width: 154px;
 }
 
-.admin-controls .js-filter-operator {
-    width: 75px;
-}
-
-.admin-controls .js-filter-reset {
+.admin-controls .js-filter-operator, .admin-controls .js-filter-reset {
     width: 75px;
 }
 
 .admin-controls .database-action-button {
     flex: 0 0 130px;
-}
-
-.admin-controls input, .admin-controls label {
-    margin-top: 0;
 }
 
 .admin-controls input[type="checkbox"] {
@@ -546,10 +538,6 @@ table {
     background: #DCDCE4;
 }
 
-.admin-controls .quick-filter-active, .menu-link-active, .filter-focus-button.filter-focus-active {
-    font-weight: bold;
-}
-
 .filter-focus-button {
     align-items: center;
     background: #F0F0F0;
@@ -587,12 +575,6 @@ table {
     width: auto;
 }
 
-#extensions-table td, #extensions-table th, #streams-table td, #streams-table th {
-    overflow-wrap: normal;
-    white-space: nowrap;
-    word-break: normal;
-}
-
 .database-table-name {
     font-family: Consolas, "Courier New", monospace;
     vertical-align: top;
@@ -603,23 +585,8 @@ table {
     width: 100%;
 }
 
-#database-table td, #database-table th, .schema-table td:nth-child(2), .schema-table th:nth-child(2) {
-    overflow-wrap: normal;
-    white-space: nowrap;
-    word-break: normal;
-}
-
 #database-table td {
     line-height: 1;
-}
-
-#database-table .database-structure-cell {
-    white-space: pre;
-}
-
-.condensed-table .database-table-name, .condensed-table .database-structure-cell, .condensed-table .database-structure-cell pre {
-    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
-    font-stretch: condensed;
 }
 
 .database-structure-cell {
@@ -638,7 +605,7 @@ table {
     color: #7A3E9D;
 }
 
-.database-structure-cell .sql-string {
+.database-structure-cell .sql-string, .schema-key-fk {
     color: #A32929;
 }
 
@@ -648,7 +615,7 @@ table {
     word-break: normal;
 }
 
-.ua-table td, .ua-table th {
+.ua-table td, .ua-table th, .schema-relations td, .schema-relations th {
     vertical-align: top;
 }
 
@@ -664,10 +631,6 @@ td, th {
     text-align: left;
     white-space: nowrap;
     height: 18px;
-}
-
-th {
-    background: #F0F0F0;
 }
 
 tr:nth-child(even) {
@@ -817,10 +780,6 @@ tr:nth-child(even) {
     color: #075E9E;
 }
 
-.schema-key-fk {
-    color: #A32929;
-}
-
 .schema-null {
     color: #666;
 }
@@ -863,10 +822,6 @@ tr:nth-child(even) {
     margin-top: 24px;
 }
 
-.schema-relations td, .schema-relations th {
-    vertical-align: top;
-}
-
 .film-help-list {
     max-width: 1100px;
 }
@@ -874,10 +829,6 @@ tr:nth-child(even) {
 .film-help-list dt {
     font-weight: bold;
     margin-top: 18px;
-}
-
-.film-help-list dt:first-child {
-    margin-top: 0;
 }
 
 .film-help-list dd {
@@ -896,10 +847,6 @@ body.film-link-page[data-pmd-like="1"] .admin-top {
 body.film-link-page[data-pmd-like="1"] .admin-top > form, body.film-link-page[data-pmd-like="1"] .order-detail {
     justify-self: stretch;
     width: 100%;
-}
-
-body.film-link-page[data-pmd-like="1"] .admin-top > form {
-    margin-bottom: 8px;
 }
 
 body.film-link-page[data-pmd-like="1"] .order-detail {
@@ -992,10 +939,6 @@ body.film-link-page[data-pmd-like="1"] .order-detail-columns {
     gap: 8px;
     padding: 0;
     width: auto;
-}
-
-#phpinfo-select-form button, #phpinfo-select-form label, #phpinfo-select-form select {
-    margin-top: 0;
 }
 
 #phpinfo-select-form button, #phpinfo-select-form select {
