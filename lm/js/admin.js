@@ -5350,6 +5350,466 @@ function bindSnippetBoardTinyMce() {
     }
 }
 
+function bindCharacterConverter() {
+    var oForm = document.getElementById("character-converter-form");
+    var aInputs;
+    var oFields = {};
+    var oNamedEntities = {};
+    var oNamedEntityCharacters = {};
+    var oNamedEntityNames = {};
+    var oActiveInput = null;
+    var blApplying = false;
+    var iIndex;
+
+    function fromCodePoint(iCodePoint) {
+        var iValue = Number(iCodePoint);
+        if (!isFinite(iValue) || iValue < 0 || iValue > 0x10FFFF || (iValue >= 0xD800 && iValue <= 0xDFFF)) {
+            return "";
+        }
+        if (iValue <= 0xFFFF) {
+            return String.fromCharCode(iValue);
+        }
+        iValue -= 0x10000;
+        return String.fromCharCode(0xD800 + Math.floor(iValue / 0x400), 0xDC00 + (iValue % 0x400));
+    }
+
+    function codePointAt(sText, iPosition) {
+        var iFirst = sText.charCodeAt(iPosition);
+        var iSecond;
+        if (iFirst >= 0xD800 && iFirst <= 0xDBFF && iPosition + 1 < sText.length) {
+            iSecond = sText.charCodeAt(iPosition + 1);
+            if (iSecond >= 0xDC00 && iSecond <= 0xDFFF) {
+                return ((iFirst - 0xD800) * 0x400) + (iSecond - 0xDC00) + 0x10000;
+            }
+        }
+        return iFirst;
+    }
+
+    function codePointsFromText(sText) {
+        var aCodePoints = [];
+        var iPosition;
+        var iCodePoint;
+        for (iPosition = 0; iPosition < sText.length; iPosition += 1) {
+            iCodePoint = codePointAt(sText, iPosition);
+            if (iCodePoint >= 0xD800 && iCodePoint <= 0xDFFF) {
+                return null;
+            }
+            aCodePoints.push(iCodePoint);
+            if (iCodePoint > 0xFFFF) {
+                iPosition += 1;
+            }
+        }
+        return aCodePoints;
+    }
+
+    function textFromCodePoints(aCodePoints) {
+        var sResult = "";
+        var iPosition;
+        for (iPosition = 0; iPosition < aCodePoints.length; iPosition += 1) {
+            sResult += fromCodePoint(aCodePoints[iPosition]);
+        }
+        return sResult;
+    }
+
+    function parseCodePoints(sValue, iRadix) {
+        var sText = String(sValue).replace(/[,;]/g, " ").replace(/\s+/g, " ").replace(/^\s+|\s+$/g, "");
+        var aTokens;
+        var aCodePoints = [];
+        var iPosition;
+        var sToken;
+        var iCodePoint;
+        if (sText == "") {
+            return [];
+        }
+        aTokens = sText.split(" ");
+        for (iPosition = 0; iPosition < aTokens.length; iPosition += 1) {
+            sToken = aTokens[iPosition];
+            if (iRadix == 16) {
+                sToken = sToken.replace(/^U\+/i, "").replace(/^0x/i, "");
+                if (!/^[0-9A-F]+$/i.test(sToken)) {
+                    return null;
+                }
+            } else if (!/^[0-9]+$/.test(sToken)) {
+                return null;
+            }
+            iCodePoint = parseInt(sToken, iRadix);
+            if (fromCodePoint(iCodePoint) == "") {
+                return null;
+            }
+            aCodePoints.push(iCodePoint);
+        }
+        return aCodePoints;
+    }
+
+    function parseNumericEntityTokenCodePoint(sToken, iRadix) {
+        var iCodePoint;
+        sToken = String(sToken).replace(/^&/, "");
+        if (/^#x[0-9A-F]+$/i.test(sToken)) {
+            iCodePoint = parseInt(sToken.substring(2), 16);
+        } else if (/^#[0-9]+$/.test(sToken)) {
+            iCodePoint = parseInt(sToken.substring(1), 10);
+        } else if (/^U\+[0-9A-F]+$/i.test(sToken)) {
+            iCodePoint = parseInt(sToken.substring(2), 16);
+        } else if (/^0x[0-9A-F]+$/i.test(sToken)) {
+            iCodePoint = parseInt(sToken.substring(2), 16);
+        } else if (iRadix == 16) {
+            sToken = sToken.replace(/^x/i, "");
+            if (!/^[0-9A-F]+$/i.test(sToken)) {
+                return null;
+            }
+            iCodePoint = parseInt(sToken, 16);
+        } else {
+            if (!/^[0-9]+$/.test(sToken)) {
+                return null;
+            }
+            iCodePoint = parseInt(sToken, 10);
+        }
+        return fromCodePoint(iCodePoint) == "" ? null : iCodePoint;
+    }
+
+    function parseNumericEntities(sValue, iRadix, blSubmit) {
+        var sInput = "";
+        var sToken = "";
+        var sValueText = String(sValue);
+        var aCodePoints = [];
+        var iPosition;
+        var sCharacter;
+        var iCodePoint;
+        var sEntityText;
+        var blPendingAmpersand = false;
+        function closeToken(sDelimiter) {
+            var sSuffix = sDelimiter == "&" ? "&" : "";
+            if (sToken == "") {
+                if (sDelimiter == "&") {
+                    blPendingAmpersand = true;
+                }
+                return true;
+            }
+            iCodePoint = parseNumericEntityTokenCodePoint(sToken, iRadix);
+            if (iCodePoint === null) {
+                return false;
+            }
+            aCodePoints.push(iCodePoint);
+            sEntityText = iRadix == 16 ? "&#x" + iCodePoint.toString(16).toUpperCase() + ";" : "&#" + iCodePoint + ";";
+            sInput += sInput.charAt(sInput.length - 1) == "&" && sEntityText.charAt(0) == "&" ? sEntityText.substring(1) + sSuffix : sEntityText + sSuffix;
+            sToken = "";
+            blPendingAmpersand = false;
+            return true;
+        }
+
+        for (iPosition = 0; iPosition < sValueText.length; iPosition += 1) {
+            sCharacter = sValueText.charAt(iPosition);
+            if (sCharacter == "&") {
+                if (!closeToken("&")) {
+                    return null;
+                }
+            } else if (sCharacter == ";") {
+                if (!closeToken(";")) {
+                    return null;
+                }
+            } else if (/[\s,]/.test(sCharacter)) {
+                if (!closeToken(" ")) {
+                    return null;
+                }
+            } else {
+                sToken += sCharacter;
+            }
+        }
+        if (sToken != "") {
+            if (blSubmit) {
+                if (!closeToken("")) {
+                    return null;
+                }
+            } else {
+                sInput += (blPendingAmpersand ? "&" : "") + sToken;
+            }
+        } else if (blPendingAmpersand) {
+            sInput += "&";
+        }
+        if (aCodePoints.length < 1 && blSubmit) {
+            return null;
+        }
+        return {codePoints: aCodePoints, input: sInput};
+    }
+
+    function parseNamedEntityTokenText(sToken) {
+        var iCodePoint;
+        sToken = String(sToken).replace(/^&/, "");
+        if (/^#x[0-9A-F]+$/i.test(sToken)) {
+            iCodePoint = parseInt(sToken.substring(2), 16);
+            return fromCodePoint(iCodePoint) == "" ? null : fromCodePoint(iCodePoint);
+        }
+        if (/^#[0-9]+$/.test(sToken)) {
+            iCodePoint = parseInt(sToken.substring(1), 10);
+            return fromCodePoint(iCodePoint) == "" ? null : fromCodePoint(iCodePoint);
+        }
+        if (/^U\+[0-9A-F]+$/i.test(sToken)) {
+            iCodePoint = parseInt(sToken.substring(2), 16);
+            return fromCodePoint(iCodePoint) == "" ? null : fromCodePoint(iCodePoint);
+        }
+        if (/^0x[0-9A-F]+$/i.test(sToken)) {
+            iCodePoint = parseInt(sToken.substring(2), 16);
+            return fromCodePoint(iCodePoint) == "" ? null : fromCodePoint(iCodePoint);
+        }
+        if (/^[0-9]+$/.test(sToken)) {
+            iCodePoint = parseInt(sToken, 10);
+            return fromCodePoint(iCodePoint) == "" ? null : fromCodePoint(iCodePoint);
+        }
+        if (/^[A-Za-z][A-Za-z0-9]*$/.test(sToken) && oNamedEntityNames[sToken]) {
+            return oNamedEntityNames[sToken];
+        }
+        return null;
+    }
+
+    function parseNamedEntityText(sValue, blSubmit) {
+        var sText = "";
+        var sInput = "";
+        var sToken = "";
+        var sValueText = String(sValue);
+        var iPosition;
+        var sCharacter;
+        var sTokenText;
+        var sEntityText;
+        var blPendingAmpersand = false;
+        function closeToken(sDelimiter) {
+            var sSuffix = "";
+            if (sDelimiter == "&") {
+                sSuffix = "&";
+            }
+            if (sToken == "") {
+                if (sDelimiter == "&") {
+                    blPendingAmpersand = true;
+                }
+                return true;
+            }
+            sTokenText = parseNamedEntityTokenText(sToken);
+            if (sTokenText === null || sTokenText == "") {
+                return false;
+            }
+            sText += sTokenText;
+            sEntityText = namedEntityFromText(sTokenText);
+            sInput += sInput.charAt(sInput.length - 1) == "&" && sEntityText.charAt(0) == "&" ? sEntityText.substring(1) + sSuffix : sEntityText + sSuffix;
+            sToken = "";
+            blPendingAmpersand = false;
+            return true;
+        }
+
+        for (iPosition = 0; iPosition < sValueText.length; iPosition += 1) {
+            sCharacter = sValueText.charAt(iPosition);
+            if (sCharacter == "&") {
+                if (!closeToken("&")) {
+                    return null;
+                }
+            } else if (sCharacter == ";") {
+                if (!closeToken(";")) {
+                    return null;
+                }
+            } else if (/[\s,]/.test(sCharacter)) {
+                if (!closeToken(" ")) {
+                    return null;
+                }
+            } else {
+                sToken += sCharacter;
+            }
+        }
+        if (sToken != "") {
+            if (blSubmit) {
+                if (!closeToken("")) {
+                    return null;
+                }
+            } else {
+                sInput += (blPendingAmpersand ? "&" : "") + sToken;
+            }
+        } else if (blPendingAmpersand) {
+            sInput += "&";
+        }
+        if (sText == "") {
+            if (blSubmit) {
+                return null;
+            }
+        }
+        return {text: sText, input: sInput};
+    }
+
+    function namedEntityFromText(sText) {
+        var aCodePoints;
+        var sResult = "";
+        var sCharacter;
+        var iPosition;
+        if (oNamedEntities[sText]) {
+            return oNamedEntities[sText];
+        }
+        aCodePoints = codePointsFromText(sText);
+        if (!aCodePoints || aCodePoints.length < 1) {
+            return "";
+        }
+        for (iPosition = 0; iPosition < aCodePoints.length; iPosition += 1) {
+            sCharacter = fromCodePoint(aCodePoints[iPosition]);
+            sResult += oNamedEntities[sCharacter] ? oNamedEntities[sCharacter] : "&#" + aCodePoints[iPosition] + ";";
+        }
+        return sResult;
+    }
+
+    function setValues(sText, oExcept) {
+        var aCodePoints = codePointsFromText(sText);
+        var aDecimals = [];
+        var aHexadecimals = [];
+        var aDecimalEntities = [];
+        var aHexadecimalEntities = [];
+        var iPosition;
+        if (!aCodePoints) {
+            return false;
+        }
+        for (iPosition = 0; iPosition < aCodePoints.length; iPosition += 1) {
+            aDecimals.push(String(aCodePoints[iPosition]));
+            aHexadecimals.push(aCodePoints[iPosition].toString(16).toUpperCase());
+            aDecimalEntities.push("&#" + aCodePoints[iPosition] + ";");
+            aHexadecimalEntities.push("&#x" + aCodePoints[iPosition].toString(16).toUpperCase() + ";");
+        }
+        if (oFields.text !== oExcept) {
+            oFields.text.value = sText;
+        }
+        if (oFields.decimal !== oExcept) {
+            oFields.decimal.value = aDecimals.join(" ");
+        }
+        if (oFields.hexadecimal !== oExcept) {
+            oFields.hexadecimal.value = aHexadecimals.join(" ");
+        }
+        if (oFields["decimal-entity"] !== oExcept) {
+            oFields["decimal-entity"].value = aDecimalEntities.join("");
+        }
+        if (oFields["hexadecimal-entity"] !== oExcept) {
+            oFields["hexadecimal-entity"].value = aHexadecimalEntities.join("");
+        }
+        if (oFields["named-entity"] !== oExcept) {
+            oFields["named-entity"].value = namedEntityFromText(sText);
+        }
+        return true;
+    }
+
+    function clearValues(oExcept) {
+        var iFieldIndex;
+        for (iFieldIndex = 0; iFieldIndex < aInputs.length; iFieldIndex += 1) {
+            if (aInputs[iFieldIndex] !== oExcept) {
+                aInputs[iFieldIndex].value = "";
+            }
+        }
+    }
+
+    function applyInput(oInput, blSubmit) {
+        var sField = oInput.getAttribute("data-character-converter-field");
+        var sValue = oInput.value;
+        var aCodePoints = null;
+        var sText = "";
+        var sEntityInputValue = "";
+        var sNamedInputValue = "";
+        var oEntityResult;
+        var oNamedResult;
+        if (sValue == "") {
+            clearValues(oInput);
+            return;
+        }
+        if (sField == "text") {
+            sText = sValue;
+        } else if (sField == "decimal") {
+            aCodePoints = parseCodePoints(sValue, 10);
+        } else if (sField == "hexadecimal") {
+            aCodePoints = parseCodePoints(sValue, 16);
+        } else if (sField == "decimal-entity" || sField == "hexadecimal-entity") {
+            oEntityResult = parseNumericEntities(sValue, sField == "hexadecimal-entity" ? 16 : 10, blSubmit);
+            if (oEntityResult === null) {
+                return;
+            }
+            aCodePoints = oEntityResult.codePoints;
+            sEntityInputValue = oEntityResult.input;
+            if (aCodePoints.length < 1) {
+                if (!blSubmit && sEntityInputValue != sValue) {
+                    oInput.value = sEntityInputValue;
+                }
+                return;
+            }
+        } else if (sField == "named-entity") {
+            oNamedResult = parseNamedEntityText(sValue, blSubmit);
+            if (oNamedResult === null) {
+                return;
+            }
+            sText = oNamedResult.text;
+            sNamedInputValue = oNamedResult.input;
+            if (sText == "") {
+                if (!blSubmit && sNamedInputValue != sValue) {
+                    oInput.value = sNamedInputValue;
+                }
+                return;
+            }
+        }
+        if (aCodePoints === null && sText == "") {
+            return;
+        }
+        if (aCodePoints) {
+            sText = textFromCodePoints(aCodePoints);
+        }
+        if (sText == "") {
+            return;
+        }
+        if (!setValues(sText, blSubmit ? null : oInput)) {
+            return;
+        }
+        if (!blSubmit && sField == "named-entity" && sNamedInputValue != "") {
+            oInput.value = sNamedInputValue;
+        } else if (!blSubmit && (sField == "decimal-entity" || sField == "hexadecimal-entity") && sEntityInputValue != "") {
+            oInput.value = sEntityInputValue;
+        }
+    }
+
+    if (!oForm) {
+        return;
+    }
+    aInputs = oForm.querySelectorAll("[data-character-converter-field]");
+    for (iIndex = 0; iIndex < aInputs.length; iIndex += 1) {
+        oFields[aInputs[iIndex].getAttribute("data-character-converter-field")] = aInputs[iIndex];
+    }
+    aInputs = oForm.querySelectorAll("#character-named-entities option");
+    for (iIndex = 0; iIndex < aInputs.length; iIndex += 1) {
+        if (aInputs[iIndex].value != "" && aInputs[iIndex].getAttribute("data-entity") != "" && !oNamedEntities[aInputs[iIndex].value]) {
+            oNamedEntities[aInputs[iIndex].value] = aInputs[iIndex].getAttribute("data-entity");
+            oNamedEntityCharacters[aInputs[iIndex].getAttribute("data-entity")] = aInputs[iIndex].value;
+            oNamedEntityNames[aInputs[iIndex].getAttribute("data-entity").substring(1, aInputs[iIndex].getAttribute("data-entity").length - 1)] = aInputs[iIndex].value;
+        }
+    }
+    aInputs = oForm.querySelectorAll("[data-character-converter-field]");
+    for (iIndex = 0; iIndex < aInputs.length; iIndex += 1) {
+        aInputs[iIndex].addEventListener("focus", function(oEvent) {
+            oActiveInput = oEvent.target;
+        });
+        aInputs[iIndex].addEventListener("input", function(oEvent) {
+            if (blApplying) {
+                return;
+            }
+            blApplying = true;
+            applyInput(oEvent.target, false);
+            blApplying = false;
+        });
+    }
+    oForm.addEventListener("submit", function(oEvent) {
+        var oInput = oActiveInput;
+        var iSubmitIndex;
+        oEvent.preventDefault();
+        if (!oInput || !oInput.getAttribute("data-character-converter-field")) {
+            for (iSubmitIndex = 0; iSubmitIndex < aInputs.length; iSubmitIndex += 1) {
+                if (aInputs[iSubmitIndex].value != "") {
+                    oInput = aInputs[iSubmitIndex];
+                    break;
+                }
+            }
+        }
+        if (oInput) {
+            blApplying = true;
+            applyInput(oInput, true);
+            blApplying = false;
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     var aUserAgents = document.querySelectorAll(".js-user-agent");
     var iUserAgentIndex = 0;
@@ -5470,6 +5930,7 @@ document.addEventListener("DOMContentLoaded", function() {
     layoutBusinessHours();
     bindIssueTracker();
     bindAdminSubmitOnChange();
+    bindCharacterConverter();
     bindMailForm();
     bindSnippetBoardPageScrollLock();
     bindSbPmdHoverTimeout();
