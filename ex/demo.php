@@ -678,7 +678,11 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
         <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aFullListSettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aFullListSettings["show_czechia_country"] && $aFullListSettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aFullListSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
         <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aFullListSettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aFullListSettings["show_czechia_country"] && $aFullListSettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aFullListSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show &#268;esk&#225; republika instead of &#268;esko</label>
       </div>
-      <?php echo renderSettingsScopeNote(); ?>
+<?php
+
+echo renderSettingsScopeNote();
+
+?>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Save</button>
         <button type="button" class="confirm-dialog-button js-index-settings-cancel">Cancel</button>

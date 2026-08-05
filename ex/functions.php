@@ -2340,7 +2340,7 @@ function removeCountrySettings($aSettings) {
 }
 
 function renderSettingsScopeNote() {
-    return "<p class=\"index-settings-note\">Options above the line apply only to this listing. Country options below the line are shared across the EX subproject.</p>";
+    return "      <p class=\"index-settings-note\">Options above the line apply only to this listing. Country options below the line are shared across the EX subproject.</p>\n";
 }
 
 function normalizeBirthNumber($mValue) {
