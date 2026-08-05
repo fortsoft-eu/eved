@@ -154,6 +154,7 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
+$sCsrfToken = getCsrfToken("film_csrf_token");
 session_write_close();
 $iTime = sendPageHeaders();
 
@@ -175,24 +176,24 @@ $iTime = sendPageHeaders();
 <body class="film-link-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>">
 <?php
 
-if ($sMessage) {
-    echo "  <div class=\"message-box message-" . htmlspecialchars($sMessageType, ENT_QUOTES, "UTF-8") . "\" id=\"message-box\">" . $sMessage . "</div>\n";
-}
 echo "  <p class=\"admin-controls\">\n";
 renderMenu();
+if ($sMessage) {
+    echo "    <span class=\"message-box message-" . html($sMessageType) . "\" id=\"message-box\">" . $sMessage . "</span>\n";
+}
 
 ?>
   </p>
   <div class="admin-top">
     <form method="post" action="<?php echo $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]); ?>" enctype="application/x-www-form-urlencoded">
-      <input type="hidden" name="film_csrf_token" value="<?php echo html(getCsrfToken("film_csrf_token")); ?>">
+      <input type="hidden" name="film_csrf_token" value="<?php echo html($sCsrfToken); ?>">
       <label for="film_id">Film Roll</label>
       <select name="film_id" id="film_id" required>
         <option value="">– Choose film roll –</option>
 <?php
 
 foreach ($aFilms as $aFilm) {
-    echo "        <option value=\"" . htmlspecialchars((string)$aFilm["id"], ENT_QUOTES, "UTF-8") . "\">" . formatFilmOptionLabel($aFilm) . "</option>\n";
+    echo "        <option value=\"" . html((string)$aFilm["id"]) . "\">" . formatFilmOptionLabel($aFilm) . "</option>\n";
 }
 
 ?>
@@ -205,7 +206,7 @@ foreach ($aFilms as $aFilm) {
 foreach ($aOrders as $aOrder) {
     $sLabel = formatOrderOptionLabel($aOrder);
     $blSelected = $iLastBagId !== null && $aOrder["id"] === $iLastBagId;
-    echo "        <option value=\"" . htmlspecialchars((string)$aOrder["id"], ENT_QUOTES, "UTF-8") . "\"" . ($blSelected ? " selected" : "") . ">" . $sLabel . "</option>\n";
+    echo "        <option value=\"" . html((string)$aOrder["id"]) . "\"" . ($blSelected ? " selected" : "") . ">" . $sLabel . "</option>\n";
 }
 
 ?>
@@ -265,21 +266,21 @@ foreach ($aLinks as $aLink) {
     $sReturnDetailDate = substr($sReturnDate, 0, 10);
     $sInvoiceDetailDate = substr($sInvoiceDate, 0, 10);
     $sScanDetailDates = (string)($aLink["scan_dates"] ?? "");
-    $sOrderDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", htmlspecialchars($sOrderDate, ENT_QUOTES, "UTF-8"));
-    $sScanDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", htmlspecialchars($sScanDate, ENT_QUOTES, "UTF-8"));
+    $sOrderDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sOrderDate));
+    $sScanDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sScanDate));
     $sFilmLabel = formatFilmOptionLabel($aLink);
     $sOrderLabel = formatOrderOptionLabel($aLink);
     $sPrice = $aLink["price_vat"] === null ? "" : number_format((float)$aLink["price_vat"], 2, ".", "");
 
 ?>
-      <tr data-order-id="<?php echo htmlspecialchars((string)($aLink["lab_order_id"] ?? ""), ENT_QUOTES, "UTF-8"); ?>" data-order-no="<?php echo htmlspecialchars((string)($aLink["order_no"] ?? ""), ENT_QUOTES, "UTF-8"); ?>" data-lab="<?php echo htmlspecialchars((string)($aLink["lab"] ?? ""), ENT_QUOTES, "UTF-8"); ?>" data-bag-no="<?php echo htmlspecialchars((string)($aLink["bag_no"] ?? ""), ENT_QUOTES, "UTF-8"); ?>" data-price="<?php echo htmlspecialchars($sPrice, ENT_QUOTES, "UTF-8"); ?>" data-currency="<?php echo htmlspecialchars((string)($aLink["currency"] ?? ""), ENT_QUOTES, "UTF-8"); ?>" data-order-date="<?php echo htmlspecialchars($sOrderDetailDate, ENT_QUOTES, "UTF-8"); ?>" data-return-date="<?php echo htmlspecialchars($sReturnDetailDate, ENT_QUOTES, "UTF-8"); ?>" data-invoice-date="<?php echo htmlspecialchars($sInvoiceDetailDate, ENT_QUOTES, "UTF-8"); ?>" data-film-scan-dates="<?php echo htmlspecialchars((string)($aLink["film_scan_dates"] ?? ""), ENT_QUOTES, "UTF-8"); ?>" data-lab-scan-dates="<?php echo htmlspecialchars($sScanDetailDates, ENT_QUOTES, "UTF-8"); ?>">
-        <td style="text-align: right;"><?php echo htmlspecialchars((string)$aLink["archive_no"], ENT_QUOTES, "UTF-8"); ?></td>
-        <td><?php echo htmlspecialchars((string)$aLink["folder_name"], ENT_QUOTES, "UTF-8"); ?></td>
-        <td><?php echo htmlspecialchars((string)($aLink["bag_no"] ?? ""), ENT_QUOTES, "UTF-8"); ?></td>
-        <td><?php echo htmlspecialchars((string)($aLink["order_no"] ?? ""), ENT_QUOTES, "UTF-8"); ?></td>
+      <tr data-order-id="<?php echo html((string)($aLink["lab_order_id"] ?? "")); ?>" data-order-no="<?php echo html((string)($aLink["order_no"] ?? "")); ?>" data-lab="<?php echo html((string)($aLink["lab"] ?? "")); ?>" data-bag-no="<?php echo html((string)($aLink["bag_no"] ?? "")); ?>" data-price="<?php echo html($sPrice); ?>" data-currency="<?php echo html((string)($aLink["currency"] ?? "")); ?>" data-order-date="<?php echo html($sOrderDetailDate); ?>" data-return-date="<?php echo html($sReturnDetailDate); ?>" data-invoice-date="<?php echo html($sInvoiceDetailDate); ?>" data-film-scan-dates="<?php echo html((string)($aLink["film_scan_dates"] ?? "")); ?>" data-lab-scan-dates="<?php echo html($sScanDetailDates); ?>">
+        <td style="text-align: right;"><?php echo html((string)$aLink["archive_no"]); ?></td>
+        <td><?php echo html((string)$aLink["folder_name"]); ?></td>
+        <td><?php echo html((string)($aLink["bag_no"] ?? "")); ?></td>
+        <td><?php echo html((string)($aLink["order_no"] ?? "")); ?></td>
         <td><?php echo $sOrderDateDisplay; ?></td>
         <td><?php echo $sScanDateDisplay; ?></td>
-        <td><?php echo htmlspecialchars($sReturnDate, ENT_QUOTES, "UTF-8"); ?></td>
+        <td><?php echo html($sReturnDate); ?></td>
         <td><?php echo $aLink["lab_order_id"] === null ? "No" : (((int)$aLink["can_unassign"] == 1) ? "Yes <button type=\"button\" class=\"button-link js-confirm-unassign\" data-confirm-action=\"" . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]) . "\" data-unassign-id=\"" . (int)$aLink["film_id"] . "\" data-film-roll=\"" . $sFilmLabel . "\" data-lab-bag=\"" . $sOrderLabel . "\">Unassign</button>" : "Yes"); ?></td>
       </tr>
 <?php
@@ -291,8 +292,8 @@ foreach ($aLinks as $aLink) {
   </table>
   </div>
   <div class="confirm-dialog" id="film-unassign-confirm-dialog" hidden>
-    <form class="confirm-dialog-box" method="post" action="<?php echo htmlspecialchars($sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), ENT_QUOTES, "UTF-8"); ?>" enctype="application/x-www-form-urlencoded">
-      <input type="hidden" name="film_csrf_token" value="<?php echo html(getCsrfToken("film_csrf_token")); ?>">
+    <form class="confirm-dialog-box" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
+      <input type="hidden" name="film_csrf_token" value="<?php echo html($sCsrfToken); ?>">
       <input type="hidden" name="unassign" value="">
       <div class="confirm-dialog-header">
         <strong>Confirm Unassignment</strong>

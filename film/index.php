@@ -211,7 +211,7 @@ if (isAllowedIp($aAllowedIps)) {
 }
 
 session_write_close();
-$sTitle = $sError ? "Error" : ($sJoined ? htmlspecialchars($sJoined) : "Film Scans");
+$sTitle = $sError ? "Error" : ($sJoined ? html($sJoined) : "Film Scans");
 $iTime = sendPageHeaders();
 
 ?>
@@ -325,7 +325,7 @@ if ($oPdo) {
                 } else {
                     $sJoin = $aParts[0] ?? "";
                 }
-                echo "           <li id=\"" . htmlspecialchars($sRow["id"]) . "\"><a href=\"" . $sBaseUrl . "?id=" . htmlspecialchars($sRow["id"]) . "\">" . htmlspecialchars($sJoin) . "</a></li>\n";
+                echo "           <li id=\"" . html($sRow["id"]) . "\"><a href=\"" . $sBaseUrl . "?id=" . html($sRow["id"]) . "\">" . html($sJoin) . "</a></li>\n";
             }
         }
     }
@@ -416,7 +416,7 @@ if ($oPdo) {
               <button class="btn btn-default" type="submit" aria-label="Save TXT">Save TXT</button>
             </form>
             <form method="get" action="<?php echo $sBaseUrl; ?>" enctype="application/x-www-form-urlencoded">
-              <button class="btn btn-default js-save-png" type="button" data-file-name="<?php echo htmlspecialchars($sFileName, ENT_QUOTES, "UTF-8"); ?>" aria-label="Save PNG">Save PNG</button>
+              <button class="btn btn-default js-save-png" type="button" data-file-name="<?php echo html($sFileName); ?>" aria-label="Save PNG">Save PNG</button>
             </form>
 <?php
 
@@ -427,13 +427,13 @@ if ($oPdo) {
             "            <div class=\"btn-group btn-group\" role=\"group\">\n";
 
         if ($sJoinedPrev) {
-            echo "              <a class=\"btn btn-default\" href=\"" . $sBaseUrl . "?id=" . (int)$aPrevious["id"] . "\" title=\"" . htmlspecialchars($sJoinedPrev),
+            echo "              <a class=\"btn btn-default\" href=\"" . $sBaseUrl . "?id=" . (int)$aPrevious["id"] . "\" title=\"" . html($sJoinedPrev),
                 "\" role=\"button\"><span class=\"glyphicon glyphicon-menu-left\" aria-hidden=\"true\"></span></a>\n";
         } else {
             echo "              <a class=\"btn btn-default disabled\" href=\"" . $sBaseUrl . "\" role=\"button\"><span class=\"glyphicon glyphicon-menu-left\" aria-hidden=\"true\"></span></a>\n";
         }
         if ($sJoinedNext) {
-            echo "              <a class=\"btn btn-default\" href=\"" . $sBaseUrl . "?id=" . (int)$aNext["id"] . "\" title=\"" . htmlspecialchars($sJoinedNext),
+            echo "              <a class=\"btn btn-default\" href=\"" . $sBaseUrl . "?id=" . (int)$aNext["id"] . "\" title=\"" . html($sJoinedNext),
                 "\" role=\"button\"><span class=\"glyphicon glyphicon-menu-right\" aria-hidden=\"true\"></span></a>\n";
         } else {
             echo "              <a class=\"btn btn-default disabled\" href=\"" . $sBaseUrl . "\" role=\"button\"><span class=\"glyphicon glyphicon-menu-right\" aria-hidden=\"true\"></span></a>\n";
@@ -449,7 +449,7 @@ echo "        <a id=\"main-content\"></a>\n",
     "        <div class=\"main-content\" id=\"main-content-gallery\">\n";
 
 if ($sError) {
-    echo "<p><strong>Error:</strong> " . htmlspecialchars($sError) . "</p>\n";
+    echo "<p><strong>Error:</strong> " . html($sError) . "</p>\n";
 }
 
 if ($oPdo) {
@@ -507,7 +507,7 @@ if ($oPdo) {
                     }
                     break;
             }
-            $sBaseName = htmlspecialchars(pathinfo($sFileName, PATHINFO_FILENAME));
+            $sBaseName = html(pathinfo($sFileName, PATHINFO_FILENAME));
             echo "            <figure>\n",
                 "              <div class=\"thumb";
             if ($_SESSION["film"]["gallery"]["cover"]) {

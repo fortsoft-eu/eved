@@ -2167,27 +2167,28 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+function closeExMenu(oMenu) {
+    var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
+    var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+    if (oPanel) {
+        oPanel.hidden = true;
+    }
+    if (oButton) {
+        oButton.setAttribute("aria-expanded", "false");
+    }
+}
+
+function closeExMenus(oExcept) {
+    var aMenus = document.querySelectorAll("[data-menu]");
+    for (var iI = 0; iI < aMenus.length; iI += 1) {
+        if (aMenus[iI] !== oExcept) {
+            closeExMenu(aMenus[iI]);
+        }
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     var aMenus = document.querySelectorAll("[data-menu]");
-
-    function closeExMenu(oMenu) {
-        var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
-        var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
-        if (oPanel) {
-            oPanel.hidden = true;
-        }
-        if (oButton) {
-            oButton.setAttribute("aria-expanded", "false");
-        }
-    }
-
-    function closeExMenus(oExcept) {
-        for (var iI = 0; iI < aMenus.length; iI += 1) {
-            if (aMenus[iI] !== oExcept) {
-                closeExMenu(aMenus[iI]);
-            }
-        }
-    }
 
     function openExMenu(oMenu) {
         var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
@@ -8000,6 +8001,9 @@ function bindMailTinyMce() {
                     onAction: function() {
                         copyMailPlainText(oEditor);
                     }
+                });
+                oEditor.on("focus click mousedown", function() {
+                    closeExMenus(null);
                 });
                 function syncMailEditorChange() {
                     var oElement = oEditor.getElement();

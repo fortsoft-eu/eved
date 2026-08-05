@@ -44,7 +44,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="orders-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="orders-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>

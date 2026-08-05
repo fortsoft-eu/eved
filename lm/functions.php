@@ -2049,7 +2049,7 @@ function issueTrackerRenderBadge($sClass, $sText) {
 
 function issueTrackerFetchRows($oPdo) {
     $aRows = array();
-    $oStatement = $oPdo->query("SELECT id, issue_type, status, priority, title, description, CASE WHEN due_date IS NULL THEN NULL WHEN TIME(due_date) = '00:00:00' THEN DATE_FORMAT(due_date, '%Y-%m-%d') ELSE DATE_FORMAT(due_date, '%Y-%m-%d %H:%i') END AS due_date_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text, DATE_FORMAT(closed_at, '%Y-%m-%d %H:%i') AS closed_at_text FROM fs_issues ORDER BY status = 'done' ASC, FIELD(status, 'open', 'in_progress', 'waiting', 'done'), due_date IS NULL ASC, due_date ASC, FIELD(priority, 'urgent', 'high', 'normal', 'low'), created_at DESC, id DESC");
+    $oStatement = $oPdo->query("SELECT id, issue_type, status, priority, title, description, DATE_FORMAT(due_date, '%Y-%m-%d %H:%i') AS due_date_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text, DATE_FORMAT(closed_at, '%Y-%m-%d %H:%i') AS closed_at_text FROM fs_issues ORDER BY status = 'done' ASC, FIELD(status, 'open', 'in_progress', 'waiting', 'done'), due_date IS NULL ASC, due_date ASC, FIELD(priority, 'urgent', 'high', 'normal', 'low'), created_at DESC, id DESC");
     while ($aRow = $oStatement->fetch()) {
         $aRows[] = array(
             "id" => (int)$aRow["id"],
@@ -2109,7 +2109,7 @@ function issueTrackerRenderRow($aRow) {
         . "<td>" . issueTrackerRenderBadge("issue-priority-" . $aRow["priority"], issueTrackerLabel($aRow["priority"], $aPriorities)) . "</td>"
         . "<td class=\"issue-title-cell\"><strong>" . html($aRow["title"]) . "</strong>" . ($sDescription != "" ? "<div class=\"issue-description\">" . nl2br(html($sDescription), false) . "</div>" : "") . "</td>"
         . "<td class=\"issue-date" . $sDueClass . "\">" . ($sDueDate != "" ? renderDateTimeWithNbspIndent($sDueDate) : "&mdash;") . "</td>"
-        . "<td class=\"issue-date\">" . html($aRow["updated_at"]) . "</td>"
+        . "<td class=\"issue-date\">" . renderDateTimeWithNbspIndent($aRow["updated_at"]) . "</td>"
         . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-toggle-issue\" title=\"" . html($sToggleTitle) . "\" aria-label=\"" . html($sToggleTitle) . "\">" . $sToggleEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-issue\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-issue issue-delete-action\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
         . "</tr>\n";
 }

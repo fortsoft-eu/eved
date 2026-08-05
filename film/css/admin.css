@@ -93,6 +93,21 @@ form {
     color: #8A6D3B;
 }
 
+.admin-controls .message-box {
+    display: inline-block;
+    left: auto;
+    line-height: 18px;
+    min-height: 27px;
+    padding: 4px 8px 3px 8px;
+    position: static;
+    right: auto;
+    text-align: left;
+    top: auto;
+    white-space: nowrap;
+    width: auto;
+    z-index: auto;
+}
+
 .admin-top {
     align-items: stretch;
     background: #F8F8F8;
@@ -171,6 +186,10 @@ form {
     position: static;
     top: auto;
     z-index: auto;
+}
+
+.film-link-page .admin-controls:has(.message-box) {
+    flex-wrap: nowrap;
 }
 
 .film-link-page .admin-top > form {

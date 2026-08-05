@@ -213,7 +213,7 @@ sendSecurityHeaders($sStyleNonce);
   <title>עבד יהוה</title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <meta name="eved-ua-id" content="<?php echo (int)$iEvedUaId; ?>">
-  <style type="text/css" nonce="<?php echo htmlspecialchars($sStyleNonce, ENT_QUOTES, "UTF-8"); ?>">
+  <style type="text/css" nonce="<?php echo html($sStyleNonce); ?>">
     html, body {
         overscroll-behavior-y: none;
     }

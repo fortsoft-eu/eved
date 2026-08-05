@@ -250,7 +250,7 @@ function printPhpFileLinks($sBaseUrl) {
     $aGroups = getFilmPhpFileLinkGroups();
     foreach ($aGroups as $iGroup => $aGroup) {
         foreach ($aGroup as $aItem) {
-            $sTitle = htmlspecialchars($aItem["title"], ENT_QUOTES, "UTF-8");
+            $sTitle = html($aItem["title"]);
             echo "          <p><a href=\"" . $sBaseUrl . $aItem["file_name"] . "\" target=\"_blank\" rel=\"noopener\" data-admin-link=\"1\" title=\"" . $sTitle . "\">" . $sTitle . "</a></p>\n";
         }
         if ($iGroup == 0) {
@@ -343,7 +343,7 @@ function renderFilmScanHtml($oPdo, $aRow) {
     );
     $sHtml = "          <table class=\"film-metadata\">\n";
     foreach ($aFields as $sLabel => $sValue) {
-        $sHtml .= "            <tr><th>" . htmlspecialchars($sLabel) . "</th><td>" . htmlspecialchars($sValue) . "</td></tr>\n";
+        $sHtml .= "            <tr><th>" . html($sLabel) . "</th><td>" . html($sValue) . "</td></tr>\n";
     }
     $sHtml .= "          </table>\n";
     return $sHtml;
@@ -410,7 +410,7 @@ function sendFilmMetadataTxt($oPdo, $aRow) {
 }
 
 function renderCell($mValue, $blError) {
-    $sValue = htmlspecialchars((string)$mValue, ENT_QUOTES, "UTF-8");
+    $sValue = html((string)$mValue);
     if ($blError) {
         echo "      <td class=\"error-cell\">" . $sValue . "</td>\n";
     } else {
@@ -419,7 +419,7 @@ function renderCell($mValue, $blError) {
 }
 
 function formatFilmOptionLabel($aFilm) {
-    return htmlspecialchars((string)$aFilm["archive_no"] . " – " . $aFilm["folder_name"], ENT_QUOTES, "UTF-8");
+    return html((string)$aFilm["archive_no"] . " – " . $aFilm["folder_name"]);
 }
 
 function formatOrderOptionLabel($aOrder) {
@@ -430,5 +430,5 @@ function formatOrderOptionLabel($aOrder) {
     if ($aOrder["order_no"] !== null && $aOrder["order_no"] != "") {
         $sLabel .= " (" . $aOrder["order_no"] . ")";
     }
-    return htmlspecialchars($sLabel, ENT_QUOTES, "UTF-8");
+    return html($sLabel);
 }

@@ -772,7 +772,7 @@ function send500AndExit($sMessage) {
         . "<title>500 Internal Server Error</title>\n"
         . "</head><body>\n"
         . "<h1>Internal Server Error</h1>\n"
-        . "<p>" . htmlspecialchars($sMessage, ENT_QUOTES, "UTF-8") . "</p>\n"
+        . "<p>" . html($sMessage) . "</p>\n"
         . "</body></html>\n";
     error_log("500 Internal Server Error: " . (string)$sMessage . " [" . $_SERVER["REQUEST_METHOD"] . " " . $_SERVER["REQUEST_URI"] . "]");
     http_response_code(500);

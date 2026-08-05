@@ -1418,7 +1418,7 @@ td.numeric, th.numeric, .business-hours-time-close, .business-hours-time-range-s
 }
 
 .issues-table {
-    min-width: 71em;
+    min-width: 80em;
     table-layout: fixed;
     width: 100%;
 }
@@ -1428,7 +1428,7 @@ td.numeric, th.numeric, .business-hours-time-close, .business-hours-time-range-s
 }
 
 .issues-table .issue-col-date {
-    width: 8.5em;
+    width: 13em;
 }
 
 #issues-table .admin-action-column .issue-delete-action {

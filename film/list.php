@@ -40,7 +40,7 @@ $iTime = sendPageHeaders();
 <?php
 
 if ($sError) {
-    echo "  <p><strong>Error:</strong> " . htmlspecialchars($sError) . "</p>\n";
+    echo "  <p><strong>Error:</strong> " . html($sError) . "</p>\n";
 } elseif (!$aRows) {
     echo "  <p>No records found.</p>\n";
 } else {
@@ -49,7 +49,7 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="film-scans-table" value="<?php echo htmlspecialchars(getQuickTableFilterValue("table-filter"), ENT_QUOTES, "UTF-8"); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="film-scans-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
@@ -100,10 +100,10 @@ renderMenu();
             $sScanDateDisplay = "not set";
             $blScanError = true;
         }
-        $sScanDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", htmlspecialchars($sScanDateDisplay, ENT_QUOTES, "UTF-8"));
+        $sScanDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sScanDateDisplay));
         $sOrderNumber = (string)($aRow["order_no"] ?? "");
-        echo "      <tr data-order-id=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\" data-order-no=\"" . htmlspecialchars($sOrderNumber, ENT_QUOTES, "UTF-8") . "\">\n",
-            "      <td style=\"text-align: right;\">" . htmlspecialchars((string)$aRow["archive_no"], ENT_QUOTES, "UTF-8") . "</td>\n";
+        echo "      <tr data-order-id=\"" . html($sOrderNumber) . "\" data-order-no=\"" . html($sOrderNumber) . "\">\n",
+            "      <td style=\"text-align: right;\">" . html((string)$aRow["archive_no"]) . "</td>\n";
         renderCell($sFolderName, false);
         renderCell($aRow["film_stock"], !$blFilmStockOk);
         renderCell($aRow["cartridge"], !$blCartridgeOk);
