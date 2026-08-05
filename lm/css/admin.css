@@ -184,7 +184,7 @@ form {
     width: 100%;
 }
 
-.mail-recipient-suggest-option:hover, .mail-recipient-suggest-active, .menu-button:hover, .menu-link-active, .menu-link:hover, .filter-focus-button:hover {
+.mail-recipient-suggest-option:hover, .mail-recipient-suggest-active, .menu-button:hover, .character-palette-button:hover, .menu-link-active, .menu-link:hover, .filter-focus-button:hover {
     background: #DCDCE4;
 }
 
@@ -437,7 +437,7 @@ body.mail-page .admin-controls .mail-send-button {
     position: relative;
 }
 
-.menu-button {
+.menu-button, .character-palette-button {
     background: #F0F0F0;
     border: 1px solid #C0C0C0;
     box-sizing: border-box;
@@ -447,6 +447,41 @@ body.mail-page .admin-controls .mail-send-button {
     margin-top: 0;
     padding: 0;
     width: 27px;
+}
+
+.character-palette-button {
+    touch-action: manipulation;
+}
+
+.character-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+}
+
+.character-palette-scroll {
+    flex: 1 1 0;
+    margin-top: 10px;
+    max-width: 100%;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+}
+
+.character-palette-tone-popup {
+    background: #F0F0F0;
+    border: 1px solid #C0C0C0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    box-sizing: border-box;
+    display: flex;
+    gap: 6px;
+    padding: 6px;
+    position: fixed;
+    z-index: 8;
 }
 
 .menu-panel {
@@ -1446,6 +1481,19 @@ body.business-hours-page {
     overflow: hidden;
 }
 
+body.character-converter-page {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 12px);
+    height: calc(100dvh - 12px);
+    overflow: hidden;
+}
+
+body.character-converter-page .admin-controls, body.character-converter-page .character-converter-form {
+    flex: 0 0 auto;
+}
+
 .business-hours-tabs, .snippet-board-tabs {
     display: none;
     flex-wrap: wrap;
@@ -1866,7 +1914,7 @@ html.snippet-board-html {
     min-height: 100%;
 }
 
-html[data-pmd-like="1"].snippet-board-html, html[data-pmd-like="1"].mail-html {
+html[data-pmd-like="1"].snippet-board-html, html[data-pmd-like="1"].mail-html, html[data-pmd-like="1"].character-converter-html {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
@@ -2143,6 +2191,10 @@ body[data-pmd-like="1"] .admin-controls {
     flex-wrap: nowrap;
 }
 
+body[data-pmd-like="1"].character-converter-page .admin-controls {
+    flex-wrap: wrap;
+}
+
 body[data-pmd-like="1"].snippet-board-page, body[data-pmd-like="1"].mail-page {
     bottom: 6px;
     height: auto;
@@ -2154,6 +2206,12 @@ body[data-pmd-like="1"].snippet-board-page, body[data-pmd-like="1"].mail-page {
     right: 6px;
     top: 6px;
     width: auto;
+}
+
+body[data-pmd-like="1"].character-converter-page {
+    bottom: auto;
+    height: calc(100vh - 12px);
+    height: calc(100dvh - 12px);
 }
 
 body[data-pmd-like="1"] .snippet-board-form {

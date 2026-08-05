@@ -177,10 +177,18 @@ function sendFilmUaFingerprintResponse($oPdo, $aAllowedIps) {
 }
 
 function getFilmPhpFileLinkGroups() {
+    global $oPdo;
+
     $aExcludedFiles = array("index.php", "main.php", "functions.php");
     $aPhotoFiles = array("equip.php", "link.php", "list.php", "orders.php", "ua.php");
     $aPhpFiles = array();
+    $aMenuNames = array();
     $aGroups = array();
+    $oStatement = $oPdo->prepare("SELECT path, name FROM fs_menu WHERE is_active = 1 AND path LIKE '/film/%.php' AND name IS NOT NULL ORDER BY `order` ASC, id ASC");
+    $oStatement->execute();
+    while ($aMenuRow = $oStatement->fetch()) {
+        $aMenuNames[basename($aMenuRow["path"])] = $aMenuRow["name"];
+    }
     foreach (scandir(".") as $sFileName) {
         if (!is_file($sFileName)) {
             continue;
@@ -201,27 +209,9 @@ function getFilmPhpFileLinkGroups() {
             }
             $sName = pathinfo($sFileName, PATHINFO_FILENAME);
             $blTitleFromPage = false;
-            $aLines = file($sFileName);
-            if ($aLines) {
-                $blHtmlOutput = false;
-                foreach ($aLines as $sLine) {
-                    if (!$blHtmlOutput) {
-                        if (strpos($sLine, "?>") !== false) {
-                            $blHtmlOutput = true;
-                        }
-                        continue;
-                    }
-                    if (preg_match('#<title>\s*<\?php\s+echo\s+htmlspecialchars\(getPageTitleText\("([^"]+)"#i', $sLine, $aMatches)) {
-                        $sName = trim($aMatches[1]);
-                        $blTitleFromPage = true;
-                        break;
-                    }
-                    if (preg_match("#<title>([^<]+)</title>#i", $sLine, $aMatches)) {
-                        $sName = trim($aMatches[1]);
-                        $blTitleFromPage = true;
-                        break;
-                    }
-                }
+            if (isset($aMenuNames[$sFileName])) {
+                $sName = $aMenuNames[$sFileName];
+                $blTitleFromPage = true;
             }
             $sTitle = "";
             if ($sName) {

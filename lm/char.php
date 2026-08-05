@@ -16,11 +16,186 @@ if (session_status() == PHP_SESSION_ACTIVE) {
 
 
 $aNamedEntities = get_html_translation_table(HTML_ENTITIES, ENT_QUOTES | ENT_HTML5, "UTF-8");
+$aCharacterPalette = array(
+    "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/",
+    ":", ";", "<", "=", ">", "?", "@", "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~",
+    " ", "­", "–", "—", "―", "…", "·", "•", "‣", "◦", "′", "″", "‹", "›", "«", "»",
+    "‘", "’", "‚", "‛", "“", "”", "„", "‟", "©", "®", "™", "℠", "℅", "§", "¶", "†", "‡",
+    "°", "№", "ª", "º", "¹", "²", "³", "⁰", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹", "₀", "₁",
+    "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉", "¼", "½", "¾", "⅐", "⅑", "⅒", "⅓", "⅔",
+    "⅕", "⅖", "⅗", "⅘", "⅙", "⅚", "⅛", "⅜", "⅝", "⅞", "€", "£", "¥", "¢", "₹", "₿",
+    "Æ", "æ", "Œ", "œ", "ß", "ẞ", "Ĳ", "ĳ", "Ǆ", "ǅ", "ǆ", "Ǉ", "ǈ", "ǉ", "Ǌ", "ǋ",
+    "ǌ", "ﬀ", "ﬁ", "ﬂ", "ﬃ", "ﬄ", "ﬅ", "ﬆ",
+    "±", "×", "÷", "−", "≠", "≈", "≡", "≤", "≥", "∞", "√", "∑", "∏", "∫", "∂", "∆",
+    "∇", "π", "µ", "Ω", "←", "↑", "→", "↓", "↔", "↕", "↖", "↗", "↘", "↙", "↩", "↪",
+    "⇐", "⇒", "⇔", "✓", "✔", "☑", "✅", "✕", "✖", "✗", "✘", "★", "☆", "✦", "✧", "✩",
+    "♠", "♥", "♦", "♣", "♪", "♫", "☀", "☁", "☂", "☃", "☄", "☕", "⚠", "⚡", "⚙", "⛔",
+);
+$aCharacterPaletteScriptRanges = array(
+    "Latin" => array(
+        array(0x00C0, 0x00FF),
+        array(0x0100, 0x024F),
+        array(0x0250, 0x02AF),
+        array(0x1D00, 0x1DBF),
+        array(0x1E00, 0x1EFF),
+        array(0x2C60, 0x2C7F),
+        array(0xA720, 0xA7AD),
+        array(0xA7B0, 0xA7B1),
+        array(0xA7F7, 0xA7FF),
+        array(0xAB30, 0xAB5F),
+        array(0xAB64, 0xAB65),
+        array(0xAB6A, 0xAB6F),
+        array(0x1DF2B, 0x1DFFF)
+    ),
+    "Greek" => array(
+        array(0x0370, 0x03FF),
+        array(0x1F00, 0x1FFF)
+    ),
+    "Hebrew" => array(
+        array(0x0590, 0x05EE),
+        array(0x05F0, 0x05FF),
+        array(0xFB1D, 0xFB4F)
+    )
+);
+foreach ($aCharacterPaletteScriptRanges as $sCharacterPaletteScript => $aCharacterPaletteRanges) {
+    foreach ($aCharacterPaletteRanges as $aCharacterPaletteRange) {
+        for ($iCharacterPaletteCodePoint = $aCharacterPaletteRange[0]; $iCharacterPaletteCodePoint <= $aCharacterPaletteRange[1]; ++$iCharacterPaletteCodePoint) {
+            $sCharacterPaletteCharacter = html_entity_decode("&#x" . strtoupper(dechex($iCharacterPaletteCodePoint)) . ";", ENT_QUOTES | ENT_HTML5, "UTF-8");
+            if ($sCharacterPaletteCharacter != "" && preg_match("/^\\p{" . $sCharacterPaletteScript . "}$/u", $sCharacterPaletteCharacter) && !preg_match("/^\\p{M}$/u", $sCharacterPaletteCharacter)) {
+                $aCharacterPalette[] = $sCharacterPaletteCharacter;
+            }
+        }
+    }
+}
+$aFitzpatrickModifiers = array(
+    json_decode('"\uD83C\uDFFB"'),
+    json_decode('"\uD83C\uDFFC"'),
+    json_decode('"\uD83C\uDFFD"'),
+    json_decode('"\uD83C\uDFFE"'),
+    json_decode('"\uD83C\uDFFF"')
+);
+$sTextVariationSelector = json_decode('"\uFE0E"');
+$sEmojiVariationSelector = json_decode('"\uFE0F"');
+$sCombiningEnclosingKeycap = json_decode('"\u20E3"');
+$aCharacterPaletteEntries = array();
+$aCharacterPaletteEntryIndexes = array();
+$aCharacterPaletteEmojiKeys = array();
+$aCharacterPaletteEmojiSorts = array();
+$aCharacterPaletteEmojiFlagKeys = array();
+$aCharacterPaletteCharacterNames = array();
+foreach ($aCharacterPalette as $sCharacter) {
+    $blCharacterPaletteEmoji = false;
+    if (!preg_match('/^[#*0-9]$/u', $sCharacter) && preg_match("/^(.)(.*)$/us", $sCharacter, $aCharacterPaletteParts) && preg_match('/^\p{Emoji}$/u', $aCharacterPaletteParts[1])) {
+        $blCharacterPaletteEmoji = true;
+        if (strpos($sCharacter, $sEmojiVariationSelector) === false && !preg_match('/^\p{Emoji_Presentation}$/u', $aCharacterPaletteParts[1])) {
+            $sCharacter = $aCharacterPaletteParts[1] . $sEmojiVariationSelector . $aCharacterPaletteParts[2];
+        }
+    }
+    $sCharacterPaletteKey = str_replace(array($sTextVariationSelector, $sEmojiVariationSelector), "", $sCharacter);
+    if ($blCharacterPaletteEmoji) {
+        $aCharacterPaletteEmojiKeys[$sCharacterPaletteKey] = true;
+    }
+    if (!isset($aCharacterPaletteEntryIndexes[$sCharacterPaletteKey])) {
+        $aCharacterPaletteEntries[] = array(
+            "character" => $sCharacter,
+            "variants" => array()
+        );
+        $aCharacterPaletteEntryIndexes[$sCharacterPaletteKey] = count($aCharacterPaletteEntries) - 1;
+    }
+}
+$sEmojiDataFile = __DIR__ . "/../vendors/tinymce-8.8.1/plugins/emoticons/js/emojis.js";
+$sEmojiData = is_file($sEmojiDataFile) ? file_get_contents($sEmojiDataFile) : false;
+if ($sEmojiData !== false && preg_match_all("/(?:^|[,{])(\"[^\"]+\"|[A-Za-z0-9_]+):\\{[^{}]*?\\bchar:\"((?:\\\\\\\\.|[^\"\\\\\\\\])*)\",fitzpatrick_scale:(true|false),category:\"([^\"]+)\"/u", $sEmojiData, $aEmojiMatches, PREG_SET_ORDER)) {
+    $iCharacterPaletteEmojiSort = 0;
+    foreach ($aEmojiMatches as $aEmojiMatch) {
+        $sEmojiName = trim($aEmojiMatch[1], "\"");
+        $sEmojiCharacter = json_decode("\"" . $aEmojiMatch[2] . "\"");
+        if (!is_string($sEmojiCharacter)) {
+            $sEmojiCharacter = $aEmojiMatch[2];
+        }
+        $sEmojiCharacter = str_replace($sTextVariationSelector, "", $sEmojiCharacter);
+        if (preg_match('/^([#*0-9])(?:\x{FE0F})?\x{20E3}?$/u', $sEmojiCharacter, $aKeycapMatch)) {
+            $sEmojiCharacter = $aKeycapMatch[1] . $sEmojiVariationSelector . $sCombiningEnclosingKeycap;
+        } else if (strpos($sEmojiCharacter, $sEmojiVariationSelector) === false && preg_match("/^(.)(.*)$/us", $sEmojiCharacter, $aEmojiParts) && preg_match('/^\p{Emoji}$/u', $aEmojiParts[1]) && !preg_match('/^\p{Emoji_Presentation}$/u', $aEmojiParts[1])) {
+            $sEmojiCharacter = $aEmojiParts[1] . $sEmojiVariationSelector . $aEmojiParts[2];
+        }
+        $sCharacterPaletteKey = str_replace(array($sTextVariationSelector, $sEmojiVariationSelector), "", $sEmojiCharacter);
+        if ($sEmojiCharacter == "") {
+            continue;
+        }
+        $aCharacterPaletteEmojiKeys[$sCharacterPaletteKey] = true;
+        if (!isset($aCharacterPaletteEmojiSorts[$sCharacterPaletteKey])) {
+            $aCharacterPaletteEmojiSorts[$sCharacterPaletteKey] = $iCharacterPaletteEmojiSort;
+        }
+        if (!isset($aCharacterPaletteCharacterNames[$sCharacterPaletteKey]) && $sEmojiName != "") {
+            if ($sEmojiName == "+1") {
+                $aCharacterPaletteCharacterNames[$sCharacterPaletteKey] = "THUMBS UP";
+            } else if ($sEmojiName == "-1") {
+                $aCharacterPaletteCharacterNames[$sCharacterPaletteKey] = "THUMBS DOWN";
+            } else {
+                $aCharacterPaletteCharacterNames[$sCharacterPaletteKey] = strtoupper(str_replace("_", " ", $sEmojiName));
+            }
+        }
+        if ($aEmojiMatch[4] == "flags") {
+            $aCharacterPaletteEmojiFlagKeys[$sCharacterPaletteKey] = true;
+        }
+        ++$iCharacterPaletteEmojiSort;
+        if (isset($aCharacterPaletteEntryIndexes[$sCharacterPaletteKey])) {
+            $iCharacterPaletteEntryIndex = $aCharacterPaletteEntryIndexes[$sCharacterPaletteKey];
+            $blExistingEmojiPresentation = strpos($aCharacterPaletteEntries[$iCharacterPaletteEntryIndex]["character"], $sEmojiVariationSelector) !== false;
+            $blNewEmojiPresentation = strpos($sEmojiCharacter, $sEmojiVariationSelector) !== false;
+            if ($blNewEmojiPresentation || !$blExistingEmojiPresentation) {
+                $aCharacterPaletteEntries[$iCharacterPaletteEntryIndex]["character"] = $sEmojiCharacter;
+            }
+        } else {
+            $aCharacterPaletteEntries[] = array(
+                "character" => $sEmojiCharacter,
+                "variants" => array()
+            );
+            $iCharacterPaletteEntryIndex = count($aCharacterPaletteEntries) - 1;
+            $aCharacterPaletteEntryIndexes[$sCharacterPaletteKey] = $iCharacterPaletteEntryIndex;
+        }
+        if ($aEmojiMatch[3] == "true" && preg_match("/^(.)(.*)$/us", $sEmojiCharacter, $aEmojiParts)) {
+            $aCharacterToneVariants = array($aCharacterPaletteEntries[$iCharacterPaletteEntryIndex]["character"]);
+            $sEmojiToneRemainder = preg_replace('/^\x{FE0F}/u', "", $aEmojiParts[2]);
+            foreach ($aFitzpatrickModifiers as $sFitzpatrickModifier) {
+                $sEmojiCharacter = $aEmojiParts[1] . $sFitzpatrickModifier . $sEmojiToneRemainder;
+                $aCharacterToneVariants[] = $sEmojiCharacter;
+            }
+            $aCharacterPaletteEntries[$iCharacterPaletteEntryIndex]["variants"] = $aCharacterToneVariants;
+        }
+    }
+}
+$aCharacterPaletteNonEmojiEntries = array();
+$aCharacterPaletteNonEmojiSort = array();
+$aCharacterPaletteEmojiEntries = array();
+$aCharacterPaletteEmojiGroupSort = array();
+$aCharacterPaletteEmojiSort = array();
+$aCharacterPaletteEmojiFallbackSort = array();
+foreach ($aCharacterPaletteEntries as $aCharacterPaletteEntry) {
+    $sCharacterPaletteKey = str_replace(array($sTextVariationSelector, $sEmojiVariationSelector), "", $aCharacterPaletteEntry["character"]);
+    if (isset($aCharacterPaletteEmojiKeys[$sCharacterPaletteKey])) {
+        $aCharacterPaletteEmojiEntries[] = $aCharacterPaletteEntry;
+        $aCharacterPaletteEmojiGroupSort[] = isset($aCharacterPaletteEmojiFlagKeys[$sCharacterPaletteKey]) ? 1 : 0;
+        $aCharacterPaletteEmojiSort[] = isset($aCharacterPaletteEmojiSorts[$sCharacterPaletteKey]) ? $aCharacterPaletteEmojiSorts[$sCharacterPaletteKey] : 1000000;
+        $aCharacterPaletteEmojiFallbackSort[] = bin2hex($aCharacterPaletteEntry["character"]);
+    } else {
+        $aCharacterPaletteNonEmojiEntries[] = $aCharacterPaletteEntry;
+        $aCharacterPaletteNonEmojiSort[] = bin2hex($aCharacterPaletteEntry["character"]);
+    }
+}
+if ($aCharacterPaletteNonEmojiEntries) {
+    array_multisort($aCharacterPaletteNonEmojiSort, SORT_ASC, SORT_STRING, $aCharacterPaletteNonEmojiEntries);
+}
+if ($aCharacterPaletteEmojiEntries) {
+    array_multisort($aCharacterPaletteEmojiGroupSort, SORT_ASC, SORT_NUMERIC, $aCharacterPaletteEmojiSort, SORT_ASC, SORT_NUMERIC, $aCharacterPaletteEmojiFallbackSort, SORT_ASC, SORT_STRING, $aCharacterPaletteEmojiEntries);
+}
+$aCharacterPaletteEntries = array_merge($aCharacterPaletteNonEmojiEntries, $aCharacterPaletteEmojiEntries);
 $iTime = sendPageHeaders();
 
 ?>
 <!DOCTYPE html>
-<html lang="en-US" dir="ltr">
+<html lang="en-US" dir="ltr" class="character-converter-html" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -40,9 +215,10 @@ $iTime = sendPageHeaders();
 renderMenu();
 
 ?>
-    <button type="submit" form="character-converter-form" class="button-link mail-send-button">Convert</button>
-    <button type="button" id="character-text-presentation" class="button-link mail-send-button">Text Presentation</button>
-    <button type="button" id="character-emoji-presentation" class="button-link mail-send-button">Emoji Presentation</button>
+    <button type="submit" form="character-converter-form" class="button-link">Convert</button>
+    <button type="button" id="character-text-presentation" class="button-link">Text</button>
+    <button type="button" id="character-emoji-presentation" class="button-link">Emoji</button>
+    <button type="button" id="character-reset" class="button-link">Reset</button>
   </p>
   <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="get" id="character-converter-form" class="snippet-board-form mail-form character-converter-form" autocomplete="on" novalidate>
     <div class="mail-form-fields">
@@ -69,6 +245,69 @@ foreach ($aNamedEntities as $sCharacter => $sEntity) {
 ?>
     </select>
   </form>
+  <div class="character-palette-scroll">
+    <div class="character-palette" aria-label="Character palette">
+<?php
+
+$blCharacterPaletteHasIntlChar = class_exists("IntlChar");
+foreach ($aCharacterPaletteEntries as $aCharacterPaletteEntry) {
+    $sCharacter = $aCharacterPaletteEntry["character"];
+    $aCharacterTitleValues = array($sCharacter);
+    $aCharacterTitles = array();
+    $aCharacterVariantTitles = array();
+    foreach ($aCharacterPaletteEntry["variants"] as $sCharacterVariant) {
+        $aCharacterTitleValues[] = $sCharacterVariant;
+    }
+    foreach ($aCharacterTitleValues as $sCharacterTitleValue) {
+        $aCharacterCodePointNames = array();
+        $aCharacterCodePointTitles = array();
+        $sCharacterPaletteKey = str_replace(array($sTextVariationSelector, $sEmojiVariationSelector), "", $sCharacterTitleValue);
+        if (preg_match_all("/./us", $sCharacterTitleValue, $aCharacterCodePointMatches)) {
+            foreach ($aCharacterCodePointMatches[0] as $sCharacterCodePoint) {
+                $aCharacterBytes = array_values(unpack("C*", $sCharacterCodePoint));
+                $iCharacterCodePoint = 0;
+                if ($aCharacterBytes[0] < 0x80) {
+                    $iCharacterCodePoint = $aCharacterBytes[0];
+                } else if (($aCharacterBytes[0] & 0xE0) == 0xC0 && count($aCharacterBytes) >= 2) {
+                    $iCharacterCodePoint = (($aCharacterBytes[0] & 0x1F) << 6) | ($aCharacterBytes[1] & 0x3F);
+                } else if (($aCharacterBytes[0] & 0xF0) == 0xE0 && count($aCharacterBytes) >= 3) {
+                    $iCharacterCodePoint = (($aCharacterBytes[0] & 0x0F) << 12) | (($aCharacterBytes[1] & 0x3F) << 6) | ($aCharacterBytes[2] & 0x3F);
+                } else if (($aCharacterBytes[0] & 0xF8) == 0xF0 && count($aCharacterBytes) >= 4) {
+                    $iCharacterCodePoint = (($aCharacterBytes[0] & 0x07) << 18) | (($aCharacterBytes[1] & 0x3F) << 12) | (($aCharacterBytes[2] & 0x3F) << 6) | ($aCharacterBytes[3] & 0x3F);
+                }
+                if ($iCharacterCodePoint > 0) {
+                    if ($blCharacterPaletteHasIntlChar) {
+                        $sCharacterCodePointName = IntlChar::charName($iCharacterCodePoint);
+                        if (is_string($sCharacterCodePointName) && $sCharacterCodePointName != "") {
+                            $aCharacterCodePointNames[] = $sCharacterCodePointName;
+                        }
+                    }
+                    $aCharacterCodePointTitles[] = sprintf("U+%04X", $iCharacterCodePoint);
+                }
+            }
+        }
+        if (!$aCharacterCodePointNames && isset($aCharacterPaletteCharacterNames[$sCharacterPaletteKey])) {
+            $aCharacterCodePointNames[] = $aCharacterPaletteCharacterNames[$sCharacterPaletteKey];
+        }
+        if ($aCharacterCodePointTitles) {
+            if ($aCharacterCodePointNames) {
+                $aCharacterTitles[$sCharacterTitleValue] = implode(" + ", $aCharacterCodePointNames) . "\n" . implode(" ", $aCharacterCodePointTitles);
+            } else {
+                $aCharacterTitles[$sCharacterTitleValue] = implode(" ", $aCharacterCodePointTitles);
+            }
+        }
+    }
+    foreach ($aCharacterPaletteEntry["variants"] as $sCharacterVariant) {
+        $aCharacterVariantTitles[] = isset($aCharacterTitles[$sCharacterVariant]) ? $aCharacterTitles[$sCharacterVariant] : "";
+    }
+    $sCharacterTitle = isset($aCharacterTitles[$sCharacter]) ? $aCharacterTitles[$sCharacter] : "";
+    $sCharacterVariantsAttribute = count($aCharacterPaletteEntry["variants"]) > 0 ? " data-character-variants=\"" . html(json_encode($aCharacterPaletteEntry["variants"])) . "\" data-character-variant-titles=\"" . html(json_encode($aCharacterVariantTitles)) . "\"" : "";
+    echo "      <button type=\"button\" class=\"character-palette-button\" data-character-insert=\"" . html($sCharacter) . "\" title=\"" . html($sCharacterTitle) . "\"" . $sCharacterVariantsAttribute . ">" . html($sCharacter) . "</button>\n";
+}
+
+?>
+    </div>
+  </div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

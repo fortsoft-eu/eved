@@ -4045,6 +4045,26 @@ function layoutMailForm() {
     resizeMailEditor(iEditorHeight);
 }
 
+function layoutCharacterConverter() {
+    var oBody = document.body;
+    var oForm = document.getElementById("character-converter-form");
+    var oVisualViewport = window.visualViewport || null;
+    var iViewportHeight = oVisualViewport ? Math.floor(oVisualViewport.height) : (window.innerHeight || document.documentElement.clientHeight || 768);
+    var iViewportTop = oVisualViewport ? Math.floor(oVisualViewport.offsetTop) : 0;
+    if (!oBody || !oForm) {
+        return;
+    }
+    if (isSnippetBoardPmdLike()) {
+        oBody.style.top = Math.max(0, iViewportTop + 6) + "px";
+        oBody.style.bottom = "auto";
+        oBody.style.height = Math.max(160, iViewportHeight - 12) + "px";
+    } else {
+        oBody.style.top = "";
+        oBody.style.bottom = "";
+        oBody.style.height = "";
+    }
+}
+
 function isMailEditor(oEditor) {
     var oElement = oEditor && typeof oEditor.getElement == "function" ? oEditor.getElement() : null;
     return !!(oElement && oElement.form && oElement.form.id == "mail-form");
@@ -4139,6 +4159,10 @@ function isSnippetBoardPageScrollAllowedTarget(oTarget) {
             sClass = " " + (oElement.getAttribute("class") || "") + " ";
             if (sClass.indexOf(" tox-edit-area__iframe ") !== -1
                 || sClass.indexOf(" js-snippet-board-textarea ") !== -1
+                || sClass.indexOf(" character-palette-scroll ") !== -1
+                || sClass.indexOf(" character-palette ") !== -1
+                || sClass.indexOf(" character-palette-button ") !== -1
+                || sClass.indexOf(" character-palette-tone-popup ") !== -1
                 || sClass.indexOf(" confirm-dialog ") !== -1
                 || sClass.indexOf(" tox-tinymce-aux ") !== -1) {
                 return true;
@@ -5354,6 +5378,11 @@ function bindCharacterConverter() {
     var oForm = document.getElementById("character-converter-form");
     var oTextPresentationButton = document.getElementById("character-text-presentation");
     var oEmojiPresentationButton = document.getElementById("character-emoji-presentation");
+    var oResetButton = document.getElementById("character-reset");
+    var aCharacterPaletteButtons = document.querySelectorAll("[data-character-insert]");
+    var oCharacterPaletteScroll = document.querySelector(".character-palette-scroll");
+    var oCharacterPaletteTonePopup = null;
+    var oCharacterPaletteTonePopupButton = null;
     var aInputs;
     var oFields = {};
     var oNamedEntities = {};
@@ -5480,6 +5509,24 @@ function bindCharacterConverter() {
         return sResult;
     }
 
+    function formatUnicodeCodeTitle(sText) {
+        var aCodePoints = codePointsFromText(sText);
+        var aCodes = [];
+        var iPosition;
+        var sCode;
+        if (!aCodePoints) {
+            return "";
+        }
+        for (iPosition = 0; iPosition < aCodePoints.length; iPosition += 1) {
+            sCode = aCodePoints[iPosition].toString(16).toUpperCase();
+            while (sCode.length < 4) {
+                sCode = "0" + sCode;
+            }
+            aCodes.push("U+" + sCode);
+        }
+        return aCodes.join(" ");
+    }
+
     function codePointIsInRanges(iCodePoint, aRanges) {
         var iRangeIndex;
         for (iRangeIndex = 0; iRangeIndex < aRanges.length; iRangeIndex += 1) {
@@ -5528,6 +5575,93 @@ function bindCharacterConverter() {
         }
         oActiveInput = oFields.text;
         setValues(sText, null);
+    }
+
+    function closeCharacterPaletteTonePopup() {
+        if (oCharacterPaletteTonePopup && oCharacterPaletteTonePopup.parentNode) {
+            oCharacterPaletteTonePopup.parentNode.removeChild(oCharacterPaletteTonePopup);
+        }
+        oCharacterPaletteTonePopup = null;
+        oCharacterPaletteTonePopupButton = null;
+    }
+
+    function positionCharacterPaletteTonePopup() {
+        var oRect;
+        var iWidth;
+        var iHeight;
+        var iLeft;
+        var iTop;
+        if (!oCharacterPaletteTonePopup || !oCharacterPaletteTonePopupButton || !document.body.contains(oCharacterPaletteTonePopupButton)) {
+            return;
+        }
+        oRect = oCharacterPaletteTonePopupButton.getBoundingClientRect();
+        iWidth = oCharacterPaletteTonePopup.offsetWidth || 0;
+        iHeight = oCharacterPaletteTonePopup.offsetHeight || 0;
+        iLeft = Math.max(4, Math.min(oRect.left, document.documentElement.clientWidth - iWidth - 4));
+        iTop = oRect.bottom + 2;
+        if (iTop + iHeight > document.documentElement.clientHeight - 4) {
+            iTop = oRect.top - iHeight - 2;
+        }
+        if (iTop < 4) {
+            iTop = 4;
+        }
+        oCharacterPaletteTonePopup.style.left = iLeft + "px";
+        oCharacterPaletteTonePopup.style.top = iTop + "px";
+    }
+
+    function showCharacterPaletteTonePopup(oButton, aCharacters, aTitles) {
+        var iCharacterIndex;
+        var oToneButton;
+        closeCharacterPaletteTonePopup();
+        if (!document.body || !aCharacters || aCharacters.length < 1) {
+            return;
+        }
+        oCharacterPaletteTonePopup = document.createElement("div");
+        oCharacterPaletteTonePopup.className = "character-palette-tone-popup";
+        for (iCharacterIndex = 0; iCharacterIndex < aCharacters.length; iCharacterIndex += 1) {
+            oToneButton = document.createElement("button");
+            oToneButton.type = "button";
+            oToneButton.className = "character-palette-button";
+            oToneButton.setAttribute("data-character-tone", aCharacters[iCharacterIndex]);
+            oToneButton.title = aTitles && aTitles[iCharacterIndex] ? aTitles[iCharacterIndex] : formatUnicodeCodeTitle(aCharacters[iCharacterIndex]);
+            oToneButton.textContent = aCharacters[iCharacterIndex];
+            oCharacterPaletteTonePopup.appendChild(oToneButton);
+        }
+        oCharacterPaletteTonePopup.addEventListener("click", function(oEvent) {
+            var oClickedButton = oEvent.target.closest("[data-character-tone]");
+            if (!oClickedButton || !oCharacterPaletteTonePopup.contains(oClickedButton)) {
+                return;
+            }
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+            insertPaletteCharacter(oClickedButton.getAttribute("data-character-tone") || "");
+        });
+        oCharacterPaletteTonePopup.addEventListener("mousedown", function(oEvent) {
+            oEvent.preventDefault();
+        });
+        document.body.appendChild(oCharacterPaletteTonePopup);
+        oCharacterPaletteTonePopupButton = oButton;
+        positionCharacterPaletteTonePopup();
+    }
+
+    function insertPaletteCharacter(sCharacter) {
+        var iStart;
+        var iEnd;
+        var sText;
+        if (!oFields.text || sCharacter == "") {
+            return;
+        }
+        closeCharacterPaletteTonePopup();
+        iStart = typeof oFields.text.selectionStart == "number" ? oFields.text.selectionStart : oFields.text.value.length;
+        iEnd = typeof oFields.text.selectionEnd == "number" ? oFields.text.selectionEnd : iStart;
+        sText = oFields.text.value.substring(0, iStart) + sCharacter + oFields.text.value.substring(iEnd);
+        oFields.text.value = sText;
+        oActiveInput = oFields.text;
+        setValues(sText, null);
+        oFields.text.focus();
+        if (oFields.text.setSelectionRange) {
+            oFields.text.setSelectionRange(iStart + sCharacter.length, iStart + sCharacter.length);
+        }
     }
 
     function parseCodePoints(sValue, iRadix) {
@@ -5899,6 +6033,12 @@ function bindCharacterConverter() {
     for (iIndex = 0; iIndex < aInputs.length; iIndex += 1) {
         aInputs[iIndex].addEventListener("focus", function(oEvent) {
             oActiveInput = oEvent.target;
+            window.setTimeout(layoutCharacterConverter, 0);
+            window.setTimeout(layoutCharacterConverter, 250);
+        });
+        aInputs[iIndex].addEventListener("blur", function() {
+            window.setTimeout(layoutCharacterConverter, 0);
+            window.setTimeout(layoutCharacterConverter, 250);
         });
         aInputs[iIndex].addEventListener("input", function(oEvent) {
             if (blApplying) {
@@ -5918,6 +6058,65 @@ function bindCharacterConverter() {
         oEmojiPresentationButton.addEventListener("click", function() {
             applyEmojiPresentation(true);
         });
+    }
+    if (oResetButton) {
+        oResetButton.addEventListener("click", function() {
+            clearValues(null);
+            closeCharacterPaletteTonePopup();
+            oActiveInput = null;
+            if (oFields.text) {
+                oFields.text.focus();
+            }
+        });
+    }
+    for (iIndex = 0; iIndex < aCharacterPaletteButtons.length; iIndex += 1) {
+        aCharacterPaletteButtons[iIndex].addEventListener("click", function(oEvent) {
+            var sCharacterVariants = oEvent.currentTarget.getAttribute("data-character-variants");
+            var sCharacterVariantTitles = oEvent.currentTarget.getAttribute("data-character-variant-titles");
+            var aCharacterVariants = null;
+            var aCharacterVariantTitles = null;
+            if (sCharacterVariants) {
+                try {
+                    aCharacterVariants = JSON.parse(sCharacterVariants);
+                } catch (oException) {
+                    aCharacterVariants = null;
+                }
+                if (aCharacterVariants && aCharacterVariants.length > 0) {
+                    if (sCharacterVariantTitles) {
+                        try {
+                            aCharacterVariantTitles = JSON.parse(sCharacterVariantTitles);
+                        } catch (oException) {
+                            aCharacterVariantTitles = null;
+                        }
+                    }
+                    oEvent.preventDefault();
+                    oEvent.stopPropagation();
+                    showCharacterPaletteTonePopup(oEvent.currentTarget, aCharacterVariants, aCharacterVariantTitles);
+                    return;
+                }
+            }
+            insertPaletteCharacter(oEvent.currentTarget.getAttribute("data-character-insert"));
+        });
+    }
+    document.addEventListener("click", function(oEvent) {
+        if (oCharacterPaletteTonePopup && !oCharacterPaletteTonePopup.contains(oEvent.target) && (!oEvent.target.closest || !oEvent.target.closest("[data-character-variants]"))) {
+            closeCharacterPaletteTonePopup();
+        }
+    });
+    document.addEventListener("keydown", function(oEvent) {
+        if (oEvent.key == "Escape") {
+            closeCharacterPaletteTonePopup();
+        }
+    });
+    if (oCharacterPaletteScroll) {
+        oCharacterPaletteScroll.addEventListener("scroll", positionCharacterPaletteTonePopup);
+    }
+    window.addEventListener("resize", function() {
+        positionCharacterPaletteTonePopup();
+    });
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener("resize", positionCharacterPaletteTonePopup);
+        window.visualViewport.addEventListener("scroll", positionCharacterPaletteTonePopup);
     }
     oForm.addEventListener("submit", function(oEvent) {
         var oInput = oActiveInput;
@@ -6068,12 +6267,16 @@ document.addEventListener("DOMContentLoaded", function() {
     bindSnippetBoardTinyMce();
     layoutSnippetBoard();
     layoutMailForm();
+    layoutCharacterConverter();
     window.addEventListener("resize", layoutBusinessHours);
     window.addEventListener("resize", layoutSnippetBoard);
     window.addEventListener("resize", layoutMailForm);
+    window.addEventListener("resize", layoutCharacterConverter);
     if (window.visualViewport) {
         window.visualViewport.addEventListener("resize", layoutBusinessHours);
         window.visualViewport.addEventListener("resize", layoutSnippetBoard);
         window.visualViewport.addEventListener("resize", layoutMailForm);
+        window.visualViewport.addEventListener("resize", layoutCharacterConverter);
+        window.visualViewport.addEventListener("scroll", layoutCharacterConverter);
     }
 });
