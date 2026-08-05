@@ -66,11 +66,11 @@ foreach ($aEquipment as $aRow) {
     $sAcquiredAt = html($sAcquiredAt);
     $sRetiredAt = html($sRetiredAt);
     echo "      <tr>\n",
-        "        <td style=\"vertical-align: top;\">" . html(ucfirst($aRow["equip_type"])) . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . html($aRow["equip_name"]) . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . $sAcquiredAt . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . $sRetiredAt . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . html($aRow["disposition_note"]) . "</td>\n",
+        "        <td>" . html(ucfirst($aRow["equip_type"])) . "</td>\n",
+        "        <td>" . html($aRow["equip_name"]) . "</td>\n",
+        "        <td>" . $sAcquiredAt . "</td>\n",
+        "        <td>" . $sRetiredAt . "</td>\n",
+        "        <td>" . html($aRow["disposition_note"]) . "</td>\n",
         "      </tr>\n";
 }
 

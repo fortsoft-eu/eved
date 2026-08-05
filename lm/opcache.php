@@ -82,10 +82,10 @@ renderMenu();
 
 foreach ($aOpcache as $aRow) {
     echo "      <tr>\n",
-        "        <td style=\"vertical-align: top;\">" . html($aRow[0]) . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . html($aRow[1]) . "</td>\n",
-        "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . html($aRow[2]) . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . html($aRow[3]) . "</td>\n",
+        "        <td>" . html($aRow[0]) . "</td>\n",
+        "        <td>" . html($aRow[1]) . "</td>\n",
+        "        <td>" . html($aRow[2]) . "</td>\n",
+        "        <td>" . html($aRow[3]) . "</td>\n",
         "      </tr>\n";
 }
 

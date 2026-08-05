@@ -78,18 +78,17 @@ foreach ($aConstants as $sGroup => $aGroupConstants) {
             $sValue = (string)$mValue;
         }
         echo "      <tr>\n",
-            "        <td style=\"vertical-align: top;\">" . html($sGroup) . "</td>\n",
-            "        <td style=\"vertical-align: top;\">" . html($sName) . "</td>\n",
-            "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . html($sValue) . "</td>\n",
-            "        <td style=\"vertical-align: top;\">" . html(gettype($mValue)) . "</td>\n",
+            "        <td>" . html($sGroup) . "</td>\n",
+            "        <td>" . html($sName) . "</td>\n",
+            "        <td style=\"white-space: pre-wrap;\">" . html($sValue) . "</td>\n",
+            "        <td>" . html(gettype($mValue)) . "</td>\n",
             "      </tr>\n";
     }
 }
 
-echo "    </tbody>\n",
-    "  </table>\n";
-
 ?>
+    </tbody>
+  </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>

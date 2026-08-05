@@ -97,18 +97,18 @@ foreach ($aOrders as $aRow) {
     $sInvoice = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sInvoice));
     $sScans = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", $sScans);
     echo "      <tr>\n",
-        "        <td style=\"vertical-align: top;\">" . html($aRow["lab"]) . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . html($aRow["order_no"]) . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . html((string)$aRow["bag_no"]) . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . $sFilmRolls . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . $sFilmScanDates . "</td>\n",
-        "        <td style=\"text-align: right; vertical-align: top;\">" . html((string)$aRow["price"]) . "</td>\n",
-        "        <td style=\"text-align: right; vertical-align: top;\">" . html((string)$aRow["price_vat"]) . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . html((string)$aRow["currency"]) . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . $sOrderedAt . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . $sScans . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . $sInvoice . "</td>\n",
-        "        <td" . ($blReturnedAtError ? " class=\"error-cell\"" : "") . " style=\"vertical-align: top;\">" . $sReturnedAt . "</td>\n",
+        "        <td>" . html($aRow["lab"]) . "</td>\n",
+        "        <td>" . html($aRow["order_no"]) . "</td>\n",
+        "        <td>" . html((string)$aRow["bag_no"]) . "</td>\n",
+        "        <td>" . $sFilmRolls . "</td>\n",
+        "        <td>" . $sFilmScanDates . "</td>\n",
+        "        <td style=\"text-align: right;\">" . html((string)$aRow["price"]) . "</td>\n",
+        "        <td style=\"text-align: right;\">" . html((string)$aRow["price_vat"]) . "</td>\n",
+        "        <td>" . html((string)$aRow["currency"]) . "</td>\n",
+        "        <td>" . $sOrderedAt . "</td>\n",
+        "        <td>" . $sScans . "</td>\n",
+        "        <td>" . $sInvoice . "</td>\n",
+        "        <td" . ($blReturnedAtError ? " class=\"error-cell\"" : "") . ">" . $sReturnedAt . "</td>\n",
         "      </tr>\n";
 }
 

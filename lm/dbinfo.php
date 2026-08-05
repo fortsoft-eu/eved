@@ -68,8 +68,8 @@ renderMenu();
 
 foreach ($aDatabaseInfo as $aRow) {
     echo "      <tr>\n",
-        "        <td style=\"vertical-align: top;\">" . html($aRow[0]) . "</td>\n",
-        "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . html((string)$aRow[1]) . "</td>\n",
+        "        <td>" . html($aRow[0]) . "</td>\n",
+        "        <td>" . html($aRow[1]) . "</td>\n",
         "      </tr>\n";
 }
 

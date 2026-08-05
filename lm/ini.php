@@ -58,10 +58,10 @@ foreach ($aIniVariables as $sVariableName => $aDetails) {
     $sGlobalValue = is_string($aDetails["global_value"]) ? wordwrap($aDetails["global_value"], 50, "\n", true) : (string)$aDetails["global_value"];
     $sLocalValue = is_string($aDetails["local_value"]) ? wordwrap($aDetails["local_value"], 50, "\n", true) : (string)$aDetails["local_value"];
     echo "      <tr>\n",
-        "        <td style=\"vertical-align: top;\">" . html($sVariableName) . "</td>\n",
-        "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . html($sGlobalValue) . "</td>\n",
-        "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . html($sLocalValue) . "</td>\n",
-        "        <td style=\"vertical-align: top;\">" . html((string)$aDetails["access"]) . "</td>\n",
+        "        <td>" . html($sVariableName) . "</td>\n",
+        "        <td style=\"white-space: pre-wrap;\">" . html($sGlobalValue) . "</td>\n",
+        "        <td style=\"white-space: pre-wrap;\">" . html($sLocalValue) . "</td>\n",
+        "        <td>" . html($aDetails["access"]) . "</td>\n",
         "      </tr>\n";
 }
 

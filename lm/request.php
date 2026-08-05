@@ -75,10 +75,10 @@ foreach ($aRequestVariables as $sArrayName => $aValues) {
     foreach ($aValues as $sKey => $mValue) {
         $sValue = is_array($mValue) ? print_r($mValue, true) : (is_bool($mValue) ? ($mValue ? "true" : "false") : (string)$mValue);
         echo "      <tr>\n",
-            "        <td style=\"vertical-align: top;\">" . html($sArrayName) . "</td>\n",
-            "        <td style=\"vertical-align: top;\">" . html((string)$sKey) . "</td>\n",
-            "        <td style=\"vertical-align: top; white-space: pre-wrap;\">" . html($sValue) . "</td>\n",
-            "        <td style=\"vertical-align: top;\">" . html(gettype($mValue)) . "</td>\n",
+            "        <td>" . html($sArrayName) . "</td>\n",
+            "        <td>" . html((string)$sKey) . "</td>\n",
+            "        <td>" . html($sValue) . "</td>\n",
+            "        <td>" . html(gettype($mValue)) . "</td>\n",
             "      </tr>\n";
     }
 }

@@ -2248,7 +2248,7 @@ function countryNameToCode($sCountry) {
 }
 
 function renderCountryDatalist($sId = "country-list") {
-    $sHtml = "<datalist id=\"" . html($sId) . "\">\n";
+    $sHtml = "  <datalist id=\"" . html($sId) . "\">\n";
 
     foreach (getCountryNames() as $sCode => $sName) {
         $sHtml .= "    <option value=\"" . html($sCode) . " &#8212; " . html($sName) . "\"></option>\n";
@@ -3079,21 +3079,21 @@ function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups,
             . "</span>";
     }
     return "      <tr class=\"subject-row subject-row-type-" . html($sSubjectType) . ($blIsActive ? " subject-row-active" : " subject-row-inactive") . "\" data-subject-id=\"" . html($iSubjectId) . "\" data-subject-type=\"" . html($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
-        . "        <td class=\"subject-type-column\" style=\"vertical-align: top;\">" . html($aRow["subject_type"]) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\"><span class=\"subject-item-value\"" . $sTimestampTooltipAttribute . ">" . htmlValue($aRow["subject_name"]) . "</span>"
+        . "        <td class=\"subject-type-column\">" . html($aRow["subject_type"]) . "</td>\n"
+        . "        <td><span class=\"subject-item-value\"" . $sTimestampTooltipAttribute . ">" . htmlValue($aRow["subject_name"]) . "</span>"
         . renderCopyAction($aRow["subject_name"])
         . $sActions . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . htmlValue($aRow["first_name"]) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . htmlValue($aRow["last_name"]) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . htmlValue($aRow["birth_name"]) . "</td>\n"
-        . ($blShowBirthNumber ? "        <td" . $sBirthNumberClassAttribute . " style=\"vertical-align: top;\">" . renderBirthNumberValue($aRow["birth_number"]) . "</td>\n" : "")
-        . "        <td" . $sBirthDateClassAttribute . " style=\"vertical-align: top;\">" . renderSubjectDateValue($aRow["birth_date"], $sBirthDateAgeLabel) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . renderSubjectDateValue($aRow["death_date"], $sDeathDateAgeLabel) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . renderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true, true, true) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . renderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, true, true, true) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . renderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true, true, true) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . renderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, true) . "</td>\n"
-        . "        <td style=\"vertical-align: top;\">" . renderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true, true, true) . "</td>\n"
+        . "        <td>" . htmlValue($aRow["first_name"]) . "</td>\n"
+        . "        <td>" . htmlValue($aRow["last_name"]) . "</td>\n"
+        . "        <td>" . htmlValue($aRow["birth_name"]) . "</td>\n"
+        . ($blShowBirthNumber ? "        <td" . $sBirthNumberClassAttribute . ">" . renderBirthNumberValue($aRow["birth_number"]) . "</td>\n" : "")
+        . "        <td" . $sBirthDateClassAttribute . ">" . renderSubjectDateValue($aRow["birth_date"], $sBirthDateAgeLabel) . "</td>\n"
+        . "        <td>" . renderSubjectDateValue($aRow["death_date"], $sDeathDateAgeLabel) . "</td>\n"
+        . "        <td>" . renderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true, true, true) . "</td>\n"
+        . "        <td>" . renderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, true, true, true) . "</td>\n"
+        . "        <td>" . renderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true, true, true) . "</td>\n"
+        . "        <td>" . renderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, true) . "</td>\n"
+        . "        <td>" . renderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true, true, true) . "</td>\n"
         . "      </tr>\n";
 }
 
