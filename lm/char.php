@@ -41,6 +41,8 @@ renderMenu();
 
 ?>
     <button type="submit" form="character-converter-form" class="button-link mail-send-button">Convert</button>
+    <button type="button" id="character-text-presentation" class="button-link mail-send-button">Text Presentation</button>
+    <button type="button" id="character-emoji-presentation" class="button-link mail-send-button">Emoji Presentation</button>
   </p>
   <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="get" id="character-converter-form" class="snippet-board-form mail-form character-converter-form" autocomplete="on" novalidate>
     <div class="mail-form-fields">
