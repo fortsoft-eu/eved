@@ -74,6 +74,9 @@ $aFitzpatrickModifiers = array(
     json_decode('"\uD83C\uDFFE"'),
     json_decode('"\uD83C\uDFFF"')
 );
+$aCharacterPaletteToneVariantOverrides = array(
+    json_decode('"\uD83E\uDD1D"') => true
+);
 $sTextVariationSelector = json_decode('"\uFE0E"');
 $sEmojiVariationSelector = json_decode('"\uFE0F"');
 $sCombiningEnclosingKeycap = json_decode('"\u20E3"');
@@ -155,7 +158,7 @@ if ($sEmojiData !== false && preg_match_all("/(?:^|[,{])(\"[^\"]+\"|[A-Za-z0-9_]
             $iCharacterPaletteEntryIndex = count($aCharacterPaletteEntries) - 1;
             $aCharacterPaletteEntryIndexes[$sCharacterPaletteKey] = $iCharacterPaletteEntryIndex;
         }
-        if ($aEmojiMatch[3] == "true" && preg_match("/^(.)(.*)$/us", $sEmojiCharacter, $aEmojiParts)) {
+        if (($aEmojiMatch[3] == "true" || array_key_exists($sCharacterPaletteKey, $aCharacterPaletteToneVariantOverrides)) && preg_match("/^(.)(.*)$/us", $sEmojiCharacter, $aEmojiParts)) {
             $aCharacterToneVariants = array($aCharacterPaletteEntries[$iCharacterPaletteEntryIndex]["character"]);
             $sEmojiToneRemainder = preg_replace('/^\x{FE0F}/u', "", $aEmojiParts[2]);
             foreach ($aFitzpatrickModifiers as $sFitzpatrickModifier) {
