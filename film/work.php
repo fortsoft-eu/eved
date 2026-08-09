@@ -26,7 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Film scan was not found."), 404);
         }
-        $oStatement = $oPdo->prepare("UPDATE fs_film_scans SET work = 0 WHERE id = :film_scan_id");
+        $oStatement = $oPdo->prepare("UPDATE fs_film_scans SET `work` = 0 WHERE id = :film_scan_id");
         $oStatement->execute(array("film_scan_id" => $iFilmScanId));
         $oPdo->commit();
         sendJsonAndExit(array("success" => true, "film_scan_id" => $iFilmScanId));
@@ -41,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 
 $aRows = array();
 try {
-    $oStatement = $oPdo->prepare("SELECT f.id, f.archive_no, f.folder_name, f.film_stock, f.cartridge, f.scanned_at, f.scan_format, f.scan_width, f.scan_height FROM fs_film_scans AS f WHERE f.work = 1 AND f.archive_no <= 990 ORDER BY f.archive_no ASC");
+    $oStatement = $oPdo->prepare("SELECT f.id, f.archive_no, f.folder_name, f.film_stock, f.cartridge, f.scanned_at, f.scan_format, f.scan_width, f.scan_height FROM fs_film_scans AS f WHERE f.`work` = 1 AND f.archive_no <= 990 ORDER BY f.archive_no ASC");
     $oStatement->execute();
     $aRows = $oStatement->fetchAll();
 } catch (Exception $oException) {
