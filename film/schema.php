@@ -40,8 +40,10 @@ try {
 $aSchemaRelationRoutes = array(
     "fs_film_exposure_dates.film_scan_id>fs_film_scans.id" => array("source" => "right", "target" => "left", "curve" => "70"),
     "fs_film_photos.scan_id>fs_film_scans.id" => array("source" => "left", "target" => "right", "curve" => "70"),
-    "fs_film_scans.lab_order_id>fs_photo_lab_orders.id" => array("source" => "right", "target" => "right", "curve" => "24", "via-x-offset" => "36"),
-    "fs_photo_tags.equip_id>fs_photo_equip.id" => array("source" => "right", "target" => "left", "curve" => "70")
+    "fs_film_scans.lab_order_id>fs_photo_lab_orders.id" => array("source" => "left", "target" => "right", "curve" => "42"),
+    "fs_photo_equip_groups.equip_id>fs_photo_equip.id" => array("source" => "right", "target" => "right", "curve" => "24", "target-y" => "0", "via-x-offset" => "86"),
+    "fs_photo_equip_groups.member_equip_id>fs_photo_equip.id" => array("source" => "right", "target" => "right", "curve" => "24", "target-y" => "-24", "via-x-offset" => "42"),
+    "fs_photo_tags.equip_id>fs_photo_equip.id" => array("source" => "right", "target" => "right", "curve" => "24", "target-y" => "24", "via-x-offset" => "42")
 );
 
 $iTime = sendPageHeaders();

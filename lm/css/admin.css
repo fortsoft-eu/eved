@@ -615,7 +615,7 @@ body.mail-page .admin-controls .mail-send-button {
     word-break: normal;
 }
 
-.ua-table td, .ua-table th, .schema-relations td, .schema-relations th, .debt-movements-cell {
+.ua-table td, .ua-table th, .schema-relations td, .schema-relations th, .debt-movements-cell, .domain-result-table th, .domain-dns-table th, .ares-result-table th {
     vertical-align: top;
 }
 

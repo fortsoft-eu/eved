@@ -280,6 +280,97 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
+    var oDialog = document.getElementById("film-equipment-link-dialog");
+    var oForm = oDialog ? oDialog.querySelector("form") : null;
+    var oEquipmentId = oForm ? oForm.querySelector("input[name=\"equip_id\"]") : null;
+    var oSource = oDialog ? oDialog.querySelector(".js-equipment-link-source") : null;
+    var oMember = oDialog ? oDialog.querySelector(".js-equipment-link-member") : null;
+    var oConfirm = oDialog ? oDialog.querySelector(".js-equipment-link-confirm") : null;
+    var oCancel = oDialog ? oDialog.querySelector(".js-equipment-link-cancel") : null;
+    var oClose = oDialog ? oDialog.querySelector(".js-equipment-link-close") : null;
+    var oCurrentRow = null;
+    var closeOnEscape = function (oEvent) {
+        if (oEvent.key == "Escape") {
+            closeEquipmentLinkDialog();
+        }
+    };
+
+    function closeEquipmentLinkDialog(blSaved) {
+        document.removeEventListener("keydown", closeOnEscape);
+        if (oCurrentRow) {
+            finishAdminSubjectRowEdit(oCurrentRow, blSaved === true);
+        }
+        closeFilmDialogElement(oDialog);
+        oCurrentRow = null;
+    }
+
+    function setMemberOptions(sEquipmentId, blEquipmentLinked) {
+        var aOptions = oMember ? oMember.options : [];
+        var blHasEnabledOption = false;
+        for (var iI = 0; iI < aOptions.length; iI += 1) {
+            if (aOptions[iI].value != "") {
+                aOptions[iI].disabled = blEquipmentLinked || aOptions[iI].value == sEquipmentId || aOptions[iI].getAttribute("data-equipment-linked") == "1";
+                if (!aOptions[iI].disabled) {
+                    blHasEnabledOption = true;
+                }
+            }
+        }
+        if (oConfirm) {
+            oConfirm.disabled = !blHasEnabledOption;
+        }
+    }
+
+    function openEquipmentLinkDialog(oButton) {
+        var sEquipmentId = oButton.getAttribute("data-equipment-id") || "";
+        var sEquipmentLabel = oButton.getAttribute("data-equipment-label") || "\u2014";
+        var blEquipmentLinked = oButton.getAttribute("data-equipment-linked") == "1";
+        if (!oDialog || !oForm || !oEquipmentId || !oSource || !oMember) {
+            return;
+        }
+        closeFilmOpenDialog();
+        oCurrentRow = oButton.closest ? oButton.closest("tr") : null;
+        oEquipmentId.value = sEquipmentId;
+        oSource.textContent = sEquipmentLabel;
+        oMember.value = "";
+        setMemberOptions(sEquipmentId, blEquipmentLinked);
+        if (!openFilmDialogElement(oDialog, closeEquipmentLinkDialog)) {
+            return;
+        }
+        if (oCurrentRow) {
+            beginAdminSubjectRowEdit(oCurrentRow);
+        }
+        focusAdminElement(oMember);
+        document.addEventListener("keydown", closeOnEscape);
+    }
+
+    if (!oDialog || !oForm) {
+        return;
+    }
+    enableAdminDialogDrag(oDialog, oForm, oDialog.querySelector(".confirm-dialog-header"));
+    oForm.addEventListener("submit", function () {
+        closeEquipmentLinkDialog(true);
+    });
+    if (oCancel) {
+        oCancel.addEventListener("click", function () {
+            closeEquipmentLinkDialog();
+        });
+    }
+    if (oClose) {
+        oClose.addEventListener("click", function () {
+            closeEquipmentLinkDialog();
+        });
+    }
+    document.addEventListener("click", function (oEvent) {
+        var oButton = oEvent.target.closest ? oEvent.target.closest(".js-equipment-link") : null;
+        if (oButton) {
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+            openEquipmentLinkDialog(oButton);
+        }
+    }, true);
+});
+
+document.addEventListener("DOMContentLoaded", function () {
     var aButtons = document.querySelectorAll(".js-copy-link");
 
     function fallbackCopyLink(sText) {

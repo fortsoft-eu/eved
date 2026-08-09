@@ -432,3 +432,75 @@ function formatOrderOptionLabel($aOrder) {
     }
     return html($sLabel);
 }
+
+function formatEquipmentOptionLabel($aEquipment) {
+    return html(ucfirst((string)$aEquipment["equip_type"]) . ": " . (string)$aEquipment["equip_name"]);
+}
+
+function filmEquipmentTypeOrder($sType) {
+    $aTypeOrder = array(
+        "camera" => 10,
+        "lens" => 20,
+        "filter" => 30,
+        "hood" => 40,
+        "case" => 50,
+        "bag" => 60,
+        "tripod" => 70,
+        "level" => 80
+    );
+    return isset($aTypeOrder[$sType]) ? $aTypeOrder[$sType] : 999;
+}
+
+function filmEquipmentDateSortValue($sValue) {
+    return $sValue !== null && $sValue != "" ? substr((string)$sValue, 0, 10) : "9999-12-31";
+}
+
+function filmEquipmentMemberCompare($aFirst, $aSecond) {
+    $iResult = filmEquipmentTypeOrder($aFirst["equip_type"]) - filmEquipmentTypeOrder($aSecond["equip_type"]);
+    if ($iResult != 0) {
+        return $iResult;
+    }
+    $iResult = strcmp(filmEquipmentDateSortValue($aFirst["acquired_at"]), filmEquipmentDateSortValue($aSecond["acquired_at"]));
+    if ($iResult != 0) {
+        return $iResult;
+    }
+    $iResult = strcasecmp($aFirst["equip_name"], $aSecond["equip_name"]);
+    if ($iResult != 0) {
+        return $iResult;
+    }
+    return (int)$aFirst["id"] - (int)$aSecond["id"];
+}
+
+function filmEquipmentRowCompare($aFirst, $aSecond) {
+    $iResult = (int)$aFirst["equipment_group_order"] - (int)$aSecond["equipment_group_order"];
+    if ($iResult != 0) {
+        return $iResult;
+    }
+    if ((int)$aFirst["equipment_group_id"] == (int)$aSecond["equipment_group_id"] && (int)$aFirst["equipment_group_size"] > 1) {
+        return filmEquipmentMemberCompare($aFirst, $aSecond);
+    }
+    return (int)$aFirst["id"] - (int)$aSecond["id"];
+}
+
+function filmEquipmentGroupFind(&$aGroupParents, $iEquipmentId) {
+    if (!isset($aGroupParents[$iEquipmentId])) {
+        $aGroupParents[$iEquipmentId] = $iEquipmentId;
+    }
+    if ($aGroupParents[$iEquipmentId] != $iEquipmentId) {
+        $aGroupParents[$iEquipmentId] = filmEquipmentGroupFind($aGroupParents, $aGroupParents[$iEquipmentId]);
+    }
+    return $aGroupParents[$iEquipmentId];
+}
+
+function filmEquipmentGroupUnion(&$aGroupParents, $iFirstEquipmentId, $iSecondEquipmentId) {
+    $iFirstGroupId = filmEquipmentGroupFind($aGroupParents, $iFirstEquipmentId);
+    $iSecondGroupId = filmEquipmentGroupFind($aGroupParents, $iSecondEquipmentId);
+    if ($iFirstGroupId == $iSecondGroupId) {
+        return;
+    }
+    if ($iFirstGroupId < $iSecondGroupId) {
+        $aGroupParents[$iSecondGroupId] = $iFirstGroupId;
+    } else {
+        $aGroupParents[$iFirstGroupId] = $iSecondGroupId;
+    }
+}

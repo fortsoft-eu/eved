@@ -589,6 +589,51 @@ table {
     word-break: normal;
 }
 
+.equipment-associated-cell {
+    white-space: normal;
+}
+
+.item-action {
+    border: 0;
+    color: inherit;
+    display: inline-block;
+    font-size: inherit;
+    margin-left: 1px;
+    padding: 0;
+    text-decoration: none;
+    vertical-align: top;
+}
+
+.item-action:hover {
+    background: transparent;
+    text-decoration: none;
+}
+
+.admin-action-column {
+    box-sizing: border-box;
+    max-width: 5.5em;
+    min-width: 5.5em;
+    overflow-wrap: normal;
+    text-align: center;
+    white-space: nowrap;
+    width: 5.5em;
+    word-break: normal;
+}
+
+.equipment-link-dialog-field {
+    margin: 16px;
+}
+
+.equipment-link-dialog-field label {
+    display: block;
+    margin-top: 0;
+}
+
+.equipment-link-dialog-field select {
+    box-sizing: border-box;
+    width: 100%;
+}
+
 #extensions-table, #streams-table {
     table-layout: auto;
     width: auto;
@@ -720,7 +765,7 @@ tr:nth-child(even) {
 
 .schema-table[data-table="fs_film_scans"] {
     grid-column: 2;
-    grid-row: 1;
+    grid-row: 1 / span 2;
 }
 
 .schema-table[data-table="fs_film_photos"] {
@@ -729,23 +774,39 @@ tr:nth-child(even) {
 }
 
 .schema-table[data-table="fs_flickr_photosets"] {
-    grid-column: 1;
-    grid-row: 2 / span 2;
+    grid-column: 2;
+    grid-row: 3 / span 2;
 }
 
 .schema-table[data-table="fs_photo_lab_orders"] {
-    grid-column: 2;
+    align-self: end;
+    grid-column: 1;
     grid-row: 2;
 }
 
-.schema-table[data-table="fs_photo_tags"] {
-    grid-column: 2;
+.schema-table[data-table="fs_film_ua"] {
+    grid-column: 3;
+    grid-row: 2 / span 4;
+}
+
+.schema-table[data-table="fs_photo_equip_groups"] {
+    grid-column: 1;
     grid-row: 3;
 }
 
 .schema-table[data-table="fs_photo_equip"] {
-    grid-column: 3;
-    grid-row: 3;
+    grid-column: 1;
+    grid-row: 4;
+}
+
+.schema-table[data-table="fs_photo_tags"] {
+    grid-column: 1;
+    grid-row: 5;
+}
+
+.schema-table[data-table="fs_photo_equip"] tbody tr:first-child td {
+    height: 72px;
+    vertical-align: top;
 }
 
 .schema-table caption {
@@ -786,7 +847,7 @@ tr:nth-child(even) {
 }
 
 .schema-table[data-table="fs_flickr_photosets"] td:nth-child(2) {
-    overflow-wrap: normal;
+    overflow-wrap: anywhere;
     white-space: normal;
 }
 

@@ -5321,12 +5321,21 @@ document.addEventListener("DOMContentLoaded", function () {
     function openAddSubjectGroupDialog(oSubjectRow) {
         var oDialogData = createSubjectDialog("Assign Group", oSubjectRow);
         var sSubjectId = oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : "";
+        var attachGroupList;
         if (!oDialogData) {
             return;
         }
         var oName = appendSubjectTextField(oDialogData.form, "Name", "name", "");
         if (document.getElementById("group-list")) {
-            oName.setAttribute("list", "group-list");
+            attachGroupList = function () {
+                if (oName.getAttribute("list") != "group-list") {
+                    oName.setAttribute("list", "group-list");
+                }
+            };
+            oName.addEventListener("keydown", attachGroupList);
+            oName.addEventListener("mousedown", attachGroupList);
+            oName.addEventListener("touchstart", attachGroupList);
+            oName.addEventListener("input", attachGroupList);
         }
         oDialogData.form.addEventListener("submit", function (oEvent) {
             var oData = new FormData();

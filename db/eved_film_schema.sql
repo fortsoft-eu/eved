@@ -152,6 +152,15 @@ CREATE TABLE `fs_photo_equip` (
   KEY `retired_at` (`retired_at`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
+CREATE TABLE `fs_photo_equip_groups` (
+  `equip_id` int(10) unsigned NOT NULL,
+  `member_equip_id` int(10) unsigned NOT NULL,
+  PRIMARY KEY (`equip_id`,`member_equip_id`),
+  KEY `fk_photo_equip_groups_member` (`member_equip_id`),
+  CONSTRAINT `fk_photo_equip_groups_equip` FOREIGN KEY (`equip_id`) REFERENCES `fs_photo_equip` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_photo_equip_groups_member` FOREIGN KEY (`member_equip_id`) REFERENCES `fs_photo_equip` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+
 CREATE TABLE `fs_photo_tags` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `equip_id` int(10) unsigned NOT NULL,

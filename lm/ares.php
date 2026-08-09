@@ -131,31 +131,31 @@ renderMenu();
     <form action="<?php echo $sBaseUrl; ?>ares.php" method="get" id="ares-lookup-form" class="ares-lookup-form">
       <span class="ares-lookup-fields">
         <span class="ares-lookup-field">
-          <label for="ico">Company ID:</label>
+          <label for="ico">Company ID</label>
           <input type="text" id="ico" name="ico" class="ares-lookup-input" value="<?php echo html($sCompanyIdValue); ?>" inputmode="numeric" maxlength="8">
         </span>
         <span class="ares-lookup-field">
-          <label for="business_name">Business Name:</label>
+          <label for="business_name">Business Name</label>
           <input type="text" id="business_name" name="business_name" class="ares-lookup-input" value="<?php echo html($sBusinessNameValue); ?>" maxlength="2000">
         </span>
         <span class="ares-lookup-field">
-          <label for="registered_office">Registered Office:</label>
+          <label for="registered_office">Registered Office</label>
           <input type="text" id="registered_office" name="registered_office" class="ares-lookup-input" value="<?php echo html($sRegisteredOfficeValue); ?>" maxlength="1500">
         </span>
         <span class="ares-lookup-field">
-          <label for="legal_form">Legal Form:</label>
+          <label for="legal_form">Legal Form</label>
           <input type="text" id="legal_form" name="legal_form" class="ares-lookup-input" value="<?php echo html($sLegalFormValue); ?>" inputmode="numeric" maxlength="3">
         </span>
         <span class="ares-lookup-field">
-          <label for="legal_form_ros">Legal Form ROS:</label>
+          <label for="legal_form_ros">Legal Form ROS</label>
           <input type="text" id="legal_form_ros" name="legal_form_ros" class="ares-lookup-input" value="<?php echo html($sLegalFormRosValue); ?>" inputmode="numeric" maxlength="3">
         </span>
         <span class="ares-lookup-field">
-          <label for="tax_office">Tax Office:</label>
+          <label for="tax_office">Tax Office</label>
           <input type="text" id="tax_office" name="tax_office" class="ares-lookup-input" value="<?php echo html($sTaxOfficeValue); ?>" inputmode="numeric" maxlength="3">
         </span>
         <span class="ares-lookup-field">
-          <label for="cz_nace">CZ-NACE:</label>
+          <label for="cz_nace">CZ-NACE</label>
           <input type="text" id="cz_nace" name="cz_nace" class="ares-lookup-input" value="<?php echo html($sCzNaceValue); ?>" maxlength="5">
         </span>
       </span>
