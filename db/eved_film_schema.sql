@@ -34,6 +34,7 @@ CREATE TABLE `fs_film_scans` (
   `scan_height` int(10) unsigned NOT NULL,
   `archive_format` varchar(128) NOT NULL,
   `corrections` varchar(64) NOT NULL,
+  `work` tinyint(1) unsigned NOT NULL DEFAULT 0,
   `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   PRIMARY KEY (`id`),

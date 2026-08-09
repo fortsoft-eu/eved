@@ -176,86 +176,27 @@ function sendFilmUaFingerprintResponse($oPdo, $aAllowedIps) {
     sendUaJsonAndExit(array("status" => "ok"));
 }
 
-function getFilmPhpFileLinkGroups() {
+function printPhpFileLinks($sBaseUrl) {
     global $oPdo;
 
-    $aExcludedFiles = array("index.php", "main.php", "functions.php");
-    $aPhotoFiles = array("equip.php", "link.php", "list.php", "orders.php", "ua.php");
-    $aPhpFiles = array();
-    $aMenuNames = array();
-    $aGroups = array();
-    $oStatement = $oPdo->prepare("SELECT path, name FROM fs_menu WHERE is_active = 1 AND path LIKE '/film/%.php' AND name IS NOT NULL ORDER BY `order` ASC, id ASC");
-    $oStatement->execute();
-    while ($aMenuRow = $oStatement->fetch()) {
-        $aMenuNames[basename($aMenuRow["path"])] = $aMenuRow["name"];
+    $aItems = getMenuItems($oPdo);
+    if (!$aItems) {
+        return;
     }
-    foreach (scandir(".") as $sFileName) {
-        if (!is_file($sFileName)) {
+    foreach ($aItems as $iItemIndex => $aItem) {
+        if ($iItemIndex < 2) {
             continue;
         }
-        if (pathinfo($sFileName, PATHINFO_EXTENSION) != "php") {
-            continue;
-        }
-        if (in_array($sFileName, $aExcludedFiles, true)) {
-            continue;
-        }
-        $aPhpFiles[] = $sFileName;
-    }
-    foreach (array(true, false) as $blPhotoFiles) {
-        $aGroup = array();
-        foreach ($aPhpFiles as $sFileName) {
-            if (in_array($sFileName, $aPhotoFiles, true) !== $blPhotoFiles) {
-                continue;
-            }
-            $sName = pathinfo($sFileName, PATHINFO_FILENAME);
-            $blTitleFromPage = false;
-            if (isset($aMenuNames[$sFileName])) {
-                $sName = $aMenuNames[$sFileName];
-                $blTitleFromPage = true;
-            }
-            $sTitle = "";
-            if ($sName) {
-                if ($blTitleFromPage) {
-                    $sTitle = $sName;
-                } else {
-                    $sTitle = preg_replace("/\bphp\b/iu", "PHP", mb_strtoupper(mb_substr($sName, 0, 1, "UTF-8"), "UTF-8") . mb_strtolower(mb_substr($sName, 1, null, "UTF-8"), "UTF-8"));
-                }
-            }
-            $aGroup[] = array(
-                "file_name" => $sFileName,
-                "title" => $sTitle
-            );
-        }
-        usort($aGroup, function ($aFirst, $aSecond) use ($blPhotoFiles) {
-            if (!$blPhotoFiles) {
-                if ($aFirst["file_name"] == "db.php" && $aSecond["file_name"] != "db.php") {
-                    return -1;
-                }
-                if ($aSecond["file_name"] == "db.php" && $aFirst["file_name"] != "db.php") {
-                    return 1;
-                }
-            }
-            $iResult = strcasecmp($aFirst["title"], $aSecond["title"]);
-            if ($iResult != 0) {
-                return $iResult;
-            }
-            return strcasecmp($aFirst["file_name"], $aSecond["file_name"]);
-        });
-        $aGroups[] = $aGroup;
-    }
-    return $aGroups;
-}
-
-function printPhpFileLinks($sBaseUrl) {
-    $aGroups = getFilmPhpFileLinkGroups();
-    foreach ($aGroups as $iGroup => $aGroup) {
-        foreach ($aGroup as $aItem) {
-            $sTitle = html($aItem["title"]);
-            echo "          <p><a href=\"" . $sBaseUrl . $aItem["file_name"] . "\" target=\"_blank\" rel=\"noopener\" data-admin-link=\"1\" title=\"" . $sTitle . "\">" . $sTitle . "</a></p>\n";
-        }
-        if ($iGroup == 0) {
+        if ($aItem["separator"]) {
             echo "          <hr>\n";
+            continue;
         }
+        $sTitle = trim((string)$aItem["title"]);
+        $sTarget = trim((string)$aItem["target"]);
+        $sTitleAttribute = $sTitle != "" ? " title=\"" . html($sTitle) . "\"" : "";
+        $sTargetAttribute = $sTarget != "" && preg_match("#^(_blank|_self|_parent|_top|[A-Za-z][A-Za-z0-9_\\-]*)$#", $sTarget) ? " target=\"" . html($sTarget) . "\"" : "";
+        $sRelAttribute = $sTarget == "_blank" ? " rel=\"noopener noreferrer\"" : "";
+        echo "          <p><a href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . " data-admin-link=\"1\">" . html($aItem["name"]) . "</a></p>\n";
     }
 }
 

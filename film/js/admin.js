@@ -1550,3 +1550,77 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+    var oTable = document.getElementById("film-work-table");
+    var oMessage = document.querySelector(".js-film-work-message");
+    var oCsrf = document.querySelector("meta[name=\"csrf-token\"]");
+    var sCsrfToken = oCsrf ? oCsrf.getAttribute("content") || "" : "";
+    var iMessageTimer = 0;
+    if (!oTable) {
+        return;
+    }
+
+    function showFilmWorkMessage(sMessage, blError) {
+        if (!oMessage) {
+            return;
+        }
+        oMessage.className = "message-box " + (blError ? "message-error" : "message-success") + " js-film-work-message";
+        oMessage.textContent = sMessage;
+        oMessage.style.display = "";
+        oMessage.hidden = false;
+        if (iMessageTimer) {
+            window.clearTimeout(iMessageTimer);
+        }
+        iMessageTimer = window.setTimeout(function () {
+            oMessage.style.display = "none";
+            oMessage.hidden = true;
+            iMessageTimer = 0;
+        }, 10000);
+    }
+
+    oTable.addEventListener("click", function (oEvent) {
+        var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".js-film-scan-processed") : null;
+        var oRow;
+        var oData;
+        if (!oButton || !oTable.contains(oButton)) {
+            return;
+        }
+        oEvent.preventDefault();
+        if (oButton.disabled) {
+            return;
+        }
+        oRow = oButton.closest("tr[data-film-scan-id]");
+        if (!oRow) {
+            return;
+        }
+        oData = new FormData();
+        oData.append("action", "mark_scan_processed");
+        oData.append("film_scan_id", oButton.getAttribute("data-film-scan-id") || oRow.getAttribute("data-film-scan-id") || "");
+        oData.append("film_csrf_token", sCsrfToken);
+        oButton.disabled = true;
+        fetch(window.location.href, {
+            "method": "POST",
+            "body": oData,
+            "credentials": "same-origin",
+            "headers": getAdminAjaxHeaders()
+        }).then(function (oResponse) {
+            return oResponse.json().then(function (oJson) {
+                if (!oResponse.ok || !oJson || !oJson.success) {
+                    throw new Error(oJson && oJson.message ? oJson.message : "Film scan could not be marked processed.");
+                }
+                finishAdminSubjectRowEdit(oRow, true);
+                window.setTimeout(function () {
+                    if (oRow.parentNode) {
+                        oRow.parentNode.removeChild(oRow);
+                    }
+                }, 260);
+                showFilmWorkMessage("Film scan was marked processed.", false);
+            });
+        }).catch(function (oException) {
+            oButton.disabled = false;
+            showFilmWorkMessage(oException.message || "Film scan could not be marked processed.", true);
+            logFilmException(oException);
+        });
+    });
+});
