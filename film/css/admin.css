@@ -499,6 +499,7 @@ table {
 .menu {
     display: inline-flex;
     position: relative;
+    user-select: none;
 }
 
 .menu-button {

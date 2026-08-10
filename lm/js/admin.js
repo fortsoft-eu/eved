@@ -3474,16 +3474,81 @@ function closeAdminMenus(oExceptMenu) {
 
 function bindAdminMenus() {
     var aMenus = document.querySelectorAll("[data-menu]");
+    var blSuppressNextMenuLinkClick = false;
     var i;
+
+    function getAdminVisibleMenuLinkAtMouseEvent(oEvent) {
+        var oElement;
+        var oMenu;
+        var oPanel;
+        var oMenuLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".menu-link") : null;
+        if (oMenuLink && oMenuLink.closest) {
+            oMenu = oMenuLink.closest("[data-menu]");
+            oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+        }
+        if (oPanel && !oPanel.hidden) {
+            return oMenuLink;
+        }
+        if (!document.elementFromPoint || typeof oEvent.clientX == "undefined" || typeof oEvent.clientY == "undefined") {
+            return null;
+        }
+        oElement = document.elementFromPoint(oEvent.clientX, oEvent.clientY);
+        oMenuLink = oElement && oElement.closest ? oElement.closest(".menu-link") : null;
+        if (oMenuLink && oMenuLink.closest) {
+            oMenu = oMenuLink.closest("[data-menu]");
+            oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+        }
+        if (oPanel && !oPanel.hidden) {
+            return oMenuLink;
+        }
+        return null;
+    }
+
+    function activateAdminMenuLink(oMenuLink) {
+        var sHref = oMenuLink ? oMenuLink.href : "";
+        var sTarget = oMenuLink ? oMenuLink.getAttribute("target") || "" : "";
+        if (!sHref) {
+            return;
+        }
+        if (sTarget == "" || sTarget == "_self") {
+            window.location.href = sHref;
+        } else if (sTarget == "_parent") {
+            window.parent.location.href = sHref;
+        } else if (sTarget == "_top") {
+            window.top.location.href = sHref;
+        } else {
+            window.open(sHref, sTarget);
+        }
+    }
 
     for (i = 0; i < aMenus.length; i++) {
         (function(oMenu) {
             var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
             var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+            var blSkipButtonClick = false;
             if (!oButton || !oPanel) {
                 return;
             }
+            oButton.addEventListener("mousedown", function(oEvent) {
+                if (typeof oEvent.button != "undefined" && oEvent.button !== 0) {
+                    return;
+                }
+                if (!oPanel.hidden) {
+                    blSkipButtonClick = false;
+                    return;
+                }
+                blSkipButtonClick = true;
+                closeAdminMenus(oMenu);
+                oPanel.hidden = false;
+                oButton.setAttribute("aria-expanded", "true");
+                oEvent.preventDefault();
+            });
             oButton.addEventListener("click", function(oEvent) {
+                if (blSkipButtonClick) {
+                    blSkipButtonClick = false;
+                    oEvent.preventDefault();
+                    return;
+                }
                 var blOpen = oPanel.hidden;
                 closeAdminMenus(oMenu);
                 oPanel.hidden = !blOpen;
@@ -3493,12 +3558,48 @@ function bindAdminMenus() {
         })(aMenus[i]);
     }
 
-    document.addEventListener("click", function(oEvent) {
+    document.addEventListener("mousedown", function(oEvent) {
         var oMenu = oEvent.target.closest ? oEvent.target.closest("[data-menu]") : null;
         if (!oMenu) {
             closeAdminMenus(null);
         }
-    });
+    }, true);
+
+    document.addEventListener("mouseup", function(oEvent) {
+        var oElement;
+        var oMenu;
+        var oMenuLink;
+        oMenuLink = getAdminVisibleMenuLinkAtMouseEvent(oEvent);
+        if (oMenuLink) {
+            blSuppressNextMenuLinkClick = true;
+            window.setTimeout(function() {
+                blSuppressNextMenuLinkClick = false;
+            }, 0);
+            activateAdminMenuLink(oMenuLink);
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+            return;
+        }
+        if (document.elementFromPoint && typeof oEvent.clientX != "undefined" && typeof oEvent.clientY != "undefined") {
+            oElement = document.elementFromPoint(oEvent.clientX, oEvent.clientY);
+        }
+        if (!oElement) {
+            oElement = oEvent.target;
+        }
+        oMenu = oElement && oElement.closest ? oElement.closest("[data-menu]") : null;
+        if (!oMenu) {
+            closeAdminMenus(null);
+        }
+    }, true);
+
+    document.addEventListener("click", function(oEvent) {
+        if (blSuppressNextMenuLinkClick) {
+            blSuppressNextMenuLinkClick = false;
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+        }
+    }, true);
+
 }
 
 function bindAdminSubmitOnChange() {
@@ -5539,7 +5640,7 @@ function bindSnippetBoardTinyMce() {
                         copySnippetBoardPlainText(oEditor);
                     }
                 });
-                oEditor.on("focus click mousedown", function() {
+                oEditor.on("focus click mousedown mouseup", function() {
                     closeAdminMenus(null);
                 });
                 function syncSnippetBoardEditorChange() {

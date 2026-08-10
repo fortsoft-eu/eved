@@ -585,29 +585,146 @@
 
     function setupMenu() {
         var aMenus = document.querySelectorAll("[data-menu]");
+        var blSuppressNextMenuLinkClick = false;
+
+        function openMenu(oMenu) {
+            var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
+            var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+            var iJ;
+            if (!oButton || !oPanel) {
+                return;
+            }
+            for (iJ = 0; iJ < aMenus.length; iJ += 1) {
+                if (aMenus[iJ] !== oMenu) {
+                    closeMenu(aMenus[iJ]);
+                }
+            }
+            oPanel.hidden = false;
+            oButton.setAttribute("aria-expanded", "true");
+        }
+
+        function getVisibleMenuLinkAtMouseEvent(oEvent) {
+            var oElement;
+            var oMenu;
+            var oPanel;
+            var oMenuLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".menu-link") : null;
+            if (oMenuLink && oMenuLink.closest) {
+                oMenu = oMenuLink.closest("[data-menu]");
+                oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+            }
+            if (oPanel && !oPanel.hidden) {
+                return oMenuLink;
+            }
+            if (!document.elementFromPoint || typeof oEvent.clientX == "undefined" || typeof oEvent.clientY == "undefined") {
+                return null;
+            }
+            oElement = document.elementFromPoint(oEvent.clientX, oEvent.clientY);
+            oMenuLink = oElement && oElement.closest ? oElement.closest(".menu-link") : null;
+            if (oMenuLink && oMenuLink.closest) {
+                oMenu = oMenuLink.closest("[data-menu]");
+                oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+            }
+            if (oPanel && !oPanel.hidden) {
+                return oMenuLink;
+            }
+            return null;
+        }
+
+        function activateMenuLink(oMenuLink) {
+            var sHref = oMenuLink ? oMenuLink.href : "";
+            var sTarget = oMenuLink ? oMenuLink.getAttribute("target") || "" : "";
+            if (!sHref) {
+                return;
+            }
+            if (sTarget == "" || sTarget == "_self") {
+                window.location.href = sHref;
+            } else if (sTarget == "_parent") {
+                window.parent.location.href = sHref;
+            } else if (sTarget == "_top") {
+                window.top.location.href = sHref;
+            } else {
+                window.open(sHref, sTarget);
+            }
+        }
+
         for (var iI = 0; iI < aMenus.length; iI += 1) {
             (function (oMenu) {
                 var oButton = oMenu.querySelector("[data-menu-button]");
                 var oPanel = oMenu.querySelector("[data-menu-panel]");
+                var blSkipButtonClick = false;
                 if (!oButton || !oPanel) {
                     return;
                 }
+                oButton.addEventListener("mousedown", function (oEvent) {
+                    if (typeof oEvent.button != "undefined" && oEvent.button !== 0) {
+                        return;
+                    }
+                    if (!oPanel.hidden) {
+                        blSkipButtonClick = false;
+                        return;
+                    }
+                    blSkipButtonClick = true;
+                    openMenu(oMenu);
+                    oEvent.preventDefault();
+                });
                 oButton.addEventListener("click", function (oEvent) {
                     oEvent.preventDefault();
                     oEvent.stopPropagation();
-                    oPanel.hidden = !oPanel.hidden;
-                    oButton.setAttribute("aria-expanded", oPanel.hidden ? "false" : "true");
+                    if (blSkipButtonClick) {
+                        blSkipButtonClick = false;
+                        return;
+                    }
+                    if (oPanel.hidden) {
+                        openMenu(oMenu);
+                    } else {
+                        closeMenu(oMenu);
+                    }
                 });
             })(aMenus[iI]);
         }
-        document.addEventListener("click", function (oEvent) {
+        document.addEventListener("mousedown", function (oEvent) {
             if (oEvent.target.closest && oEvent.target.closest("[data-menu]")) {
                 return;
             }
             for (var iI = 0; iI < aMenus.length; iI += 1) {
                 closeMenu(aMenus[iI]);
             }
-        });
+        }, true);
+        document.addEventListener("mouseup", function (oEvent) {
+            var oElement;
+            var oMenu;
+            var oMenuLink;
+            oMenuLink = getVisibleMenuLinkAtMouseEvent(oEvent);
+            if (oMenuLink) {
+                blSuppressNextMenuLinkClick = true;
+                window.setTimeout(function () {
+                    blSuppressNextMenuLinkClick = false;
+                }, 0);
+                activateMenuLink(oMenuLink);
+                oEvent.preventDefault();
+                oEvent.stopPropagation();
+                return;
+            }
+            if (document.elementFromPoint && typeof oEvent.clientX != "undefined" && typeof oEvent.clientY != "undefined") {
+                oElement = document.elementFromPoint(oEvent.clientX, oEvent.clientY);
+            }
+            if (!oElement) {
+                oElement = oEvent.target;
+            }
+            oMenu = oElement && oElement.closest ? oElement.closest("[data-menu]") : null;
+            if (!oMenu) {
+                for (var iI = 0; iI < aMenus.length; iI += 1) {
+                    closeMenu(aMenus[iI]);
+                }
+            }
+        }, true);
+        document.addEventListener("click", function (oEvent) {
+            if (blSuppressNextMenuLinkClick) {
+                blSuppressNextMenuLinkClick = false;
+                oEvent.preventDefault();
+                oEvent.stopPropagation();
+            }
+        }, true);
     }
 
     function setupMessages() {

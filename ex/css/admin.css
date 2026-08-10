@@ -798,6 +798,7 @@ body.mail-page .admin-controls .mail-send-button {
 .menu {
     display: inline-flex;
     position: relative;
+    user-select: none;
 }
 
 .menu-button {

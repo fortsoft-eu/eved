@@ -446,6 +446,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
     var aMenus = document.querySelectorAll("[data-menu]");
+    var blSuppressNextMenuLinkClick = false;
 
     function closeFilmMenu(oMenu) {
         var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
@@ -480,16 +481,77 @@ document.addEventListener("DOMContentLoaded", function () {
     if (aMenus.length === 0) {
         return;
     }
+    function getFilmVisibleMenuLinkAtMouseEvent(oEvent) {
+        var oElement;
+        var oMenu;
+        var oPanel;
+        var oMenuLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".menu-link") : null;
+        if (oMenuLink && oMenuLink.closest) {
+            oMenu = oMenuLink.closest("[data-menu]");
+            oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+        }
+        if (oPanel && !oPanel.hidden) {
+            return oMenuLink;
+        }
+        if (!document.elementFromPoint || typeof oEvent.clientX == "undefined" || typeof oEvent.clientY == "undefined") {
+            return null;
+        }
+        oElement = document.elementFromPoint(oEvent.clientX, oEvent.clientY);
+        oMenuLink = oElement && oElement.closest ? oElement.closest(".menu-link") : null;
+        if (oMenuLink && oMenuLink.closest) {
+            oMenu = oMenuLink.closest("[data-menu]");
+            oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+        }
+        if (oPanel && !oPanel.hidden) {
+            return oMenuLink;
+        }
+        return null;
+    }
+
+    function activateFilmMenuLink(oMenuLink) {
+        var sHref = oMenuLink ? oMenuLink.href : "";
+        var sTarget = oMenuLink ? oMenuLink.getAttribute("target") || "" : "";
+        if (!sHref) {
+            return;
+        }
+        if (sTarget == "" || sTarget == "_self") {
+            window.location.href = sHref;
+        } else if (sTarget == "_parent") {
+            window.parent.location.href = sHref;
+        } else if (sTarget == "_top") {
+            window.top.location.href = sHref;
+        } else {
+            window.open(sHref, sTarget);
+        }
+    }
+
     for (var iI = 0; iI < aMenus.length; iI += 1) {
         (function (oMenu) {
             var oButton = oMenu.querySelector("[data-menu-button]");
             var oPanel = oMenu.querySelector("[data-menu-panel]");
+            var blSkipButtonClick = false;
             if (!oButton || !oPanel) {
                 return;
             }
+            oButton.addEventListener("mousedown", function (oEvent) {
+                if (typeof oEvent.button != "undefined" && oEvent.button !== 0) {
+                    return;
+                }
+                if (!oPanel.hidden) {
+                    blSkipButtonClick = false;
+                    return;
+                }
+                blSkipButtonClick = true;
+                openFilmMenu(oMenu);
+                oEvent.preventDefault();
+            });
             oButton.addEventListener("click", function (oEvent) {
                 oEvent.preventDefault();
                 oEvent.stopPropagation();
+                if (blSkipButtonClick) {
+                    blSkipButtonClick = false;
+                    return;
+                }
                 if (oPanel.hidden) {
                     openFilmMenu(oMenu);
                 } else {
@@ -499,12 +561,47 @@ document.addEventListener("DOMContentLoaded", function () {
         })(aMenus[iI]);
     }
 
-    document.addEventListener("click", function (oEvent) {
+    document.addEventListener("mousedown", function (oEvent) {
         var oMenu = oEvent.target.closest ? oEvent.target.closest("[data-menu]") : null;
         if (!oMenu) {
             closeFilmMenus(null);
         }
-    });
+    }, true);
+
+    document.addEventListener("mouseup", function (oEvent) {
+        var oElement;
+        var oMenu;
+        var oMenuLink;
+        oMenuLink = getFilmVisibleMenuLinkAtMouseEvent(oEvent);
+        if (oMenuLink) {
+            blSuppressNextMenuLinkClick = true;
+            window.setTimeout(function () {
+                blSuppressNextMenuLinkClick = false;
+            }, 0);
+            activateFilmMenuLink(oMenuLink);
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+            return;
+        }
+        if (document.elementFromPoint && typeof oEvent.clientX != "undefined" && typeof oEvent.clientY != "undefined") {
+            oElement = document.elementFromPoint(oEvent.clientX, oEvent.clientY);
+        }
+        if (!oElement) {
+            oElement = oEvent.target;
+        }
+        oMenu = oElement && oElement.closest ? oElement.closest("[data-menu]") : null;
+        if (!oMenu) {
+            closeFilmMenus(null);
+        }
+    }, true);
+
+    document.addEventListener("click", function (oEvent) {
+        if (blSuppressNextMenuLinkClick) {
+            blSuppressNextMenuLinkClick = false;
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+        }
+    }, true);
 
     document.addEventListener("keydown", function (oEvent) {
         if (oEvent.key == "Escape") {
