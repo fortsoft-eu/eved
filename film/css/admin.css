@@ -72,7 +72,7 @@ form {
     text-align: center;
     top: 12px;
     width: auto;
-    z-index: 1000;
+    z-index: 9;
 }
 
 .message-success {
@@ -116,7 +116,7 @@ form {
     padding-bottom: 12px;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 6;
 }
 
 .order-detail {
@@ -178,7 +178,7 @@ form {
     padding-bottom: 8px;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 6;
 }
 
 .film-link-page .admin-controls {
@@ -343,7 +343,7 @@ input[type="date"], input[type="datetime-local"], input[type="number"], input[ty
     position: fixed;
     top: 0;
     width: 100vw;
-    z-index: 2000;
+    z-index: 8;
 }
 
 .admin-controls .message-box[hidden], .confirm-dialog[hidden], .menu-panel[hidden], .schema-unavailable-message {
@@ -523,7 +523,7 @@ table {
     position: absolute;
     top: calc(100% + 5px);
     width: max-content;
-    z-index: 11;
+    z-index: 7;
 }
 
 .menu-link {
@@ -532,7 +532,7 @@ table {
     cursor: default;
     display: flex;
     gap: 10px;
-    padding: 7px 40px 7px 10px;
+    padding: 6px 40px 6px 10px;
     text-decoration: none;
     white-space: nowrap;
 }
@@ -550,7 +550,7 @@ table {
 .menu-separator {
     border-top: 1px solid #E5E5E5;
     display: block;
-    margin: 8px 0;
+    margin: 4px 0;
 }
 
 .menu-button:hover, .menu-link-active, .menu-link:hover, .filter-focus-button:hover {
@@ -574,7 +574,7 @@ table {
     white-space: nowrap;
     width: 75px;
     word-break: normal;
-    z-index: 900;
+    z-index: 5;
 }
 
 .table-filter-target {
@@ -933,7 +933,7 @@ body.film-link-page[data-pmd-like="1"] .order-detail {
     margin-bottom: 8px;
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 6;
 }
 
 body.film-link-page[data-pmd-like="1"] .order-detail-columns {
@@ -962,7 +962,7 @@ body.film-link-page[data-pmd-like="1"] .order-detail-columns {
         margin-bottom: 8px;
         position: sticky;
         top: 0;
-        z-index: 10;
+        z-index: 6;
     }
 }
 

@@ -8,7 +8,7 @@ if (!$oPdo) {
 }
 
 
-requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
+requireViewAccess($aAllowedIps, "kf", "csrf_token");
 
 
 $aRows = fetchLatestExchangeRateRows($oPdo);
@@ -29,7 +29,7 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("kf_csrf_token")); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>

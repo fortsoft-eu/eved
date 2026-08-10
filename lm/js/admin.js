@@ -49,7 +49,7 @@ function getAdminCsrfToken() {
 function appendAdminCsrfToken(oData) {
     var sToken = getAdminCsrfToken();
     if (oData && sToken) {
-        oData.append("lm_csrf_token", sToken);
+        oData.append("csrf_token", sToken);
     }
 }
 
@@ -706,19 +706,32 @@ function setupAutoRefresh() {
     var oAutoRefresh = document.querySelector(".js-auto-refresh");
     var iRefreshTimer = null;
     var oAudioContext = null;
-    var sStorageKey;
     var iLatestId;
     var iRefreshInterval;
     if (!oAutoRefresh || !window.fetch) {
         return;
     }
-    sStorageKey = "admin-auto-refresh:" + window.location.pathname;
     iLatestId = parseInt(oAutoRefresh.getAttribute("data-latest-id") || "0", 10);
     iRefreshInterval = parseInt(oAutoRefresh.getAttribute("data-refresh-interval") || "300000", 10);
-    try {
-        oAutoRefresh.checked = window.localStorage.getItem(sStorageKey) == "1";
-    } catch (oException) {
-        logAdminException(oException);
+
+    function sendAutoRefreshState() {
+        var oData;
+        if (!window.FormData) {
+            return;
+        }
+        oData = new FormData();
+        oData.append("admin_auto_refresh_action", "save");
+        oData.append("control_id", oAutoRefresh.id || "auto-refresh");
+        oData.append("enabled", oAutoRefresh.checked ? "1" : "0");
+        appendAdminCsrfToken(oData);
+        fetch(window.location.href, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: getAdminAjaxHeaders(),
+            body: oData
+        }).catch(function(oException) {
+            logAdminException(oException);
+        });
     }
 
     function prepareAudio() {
@@ -805,11 +818,7 @@ function setupAutoRefresh() {
     }
 
     oAutoRefresh.addEventListener("change", function() {
-        try {
-            window.localStorage.setItem(sStorageKey, oAutoRefresh.checked ? "1" : "0");
-        } catch (oException) {
-            logAdminException(oException);
-        }
+        sendAutoRefreshState();
         if (oAutoRefresh.checked) {
             prepareAudio();
         }
@@ -1840,6 +1849,202 @@ function bindIssueTracker() {
             });
         }
     });
+}
+
+function createEmailUsersTextarea(sId, sValue) {
+    var oTextarea = document.createElement("textarea");
+    oTextarea.id = sId;
+    oTextarea.value = sValue || "";
+    oTextarea.className = "email-users-textarea";
+    oTextarea.required = true;
+    oTextarea.rows = 8;
+    oTextarea.spellcheck = false;
+    return oTextarea;
+}
+
+function normalizeEmailAccountType(sValue) {
+    sValue = String(sValue || "");
+    if (sValue == "mailbox" || sValue == "alias" || sValue == "forwarder") {
+        return sValue;
+    }
+    return "mailbox";
+}
+
+function getEmailAccountTypeFromPage() {
+    var oMeta = document.querySelector("meta[name=\"email-account-type\"]");
+    return normalizeEmailAccountType(oMeta ? oMeta.getAttribute("content") : "");
+}
+
+function setEmailAccountTypeInPage(sValue) {
+    var oMeta = document.querySelector("meta[name=\"email-account-type\"]");
+    sValue = normalizeEmailAccountType(sValue);
+    if (oMeta) {
+        oMeta.setAttribute("content", sValue);
+    }
+}
+
+function saveEmailAccountTypeToSession(sValue) {
+    var oData;
+    sValue = normalizeEmailAccountType(sValue);
+    setEmailAccountTypeInPage(sValue);
+    if (!window.fetch || typeof FormData == "undefined") {
+        return;
+    }
+    oData = new FormData();
+    oData.append("action", "set_email_account_type");
+    oData.append("account_type", sValue);
+    submitAdminRequest(oData, null, function(sMessage) {
+        logAdminException(new Error(sMessage));
+    });
+}
+
+function createEmailAccountTypeSelect(sId, sValue) {
+    var oSelect = document.createElement("select");
+    var aOptions = [
+        {value: "mailbox", label: "Mailbox"},
+        {value: "alias", label: "Alias"},
+        {value: "forwarder", label: "Forwarder"}
+    ];
+    var oOption;
+    var i;
+    oSelect.id = sId;
+    for (i = 0; i < aOptions.length; i++) {
+        oOption = document.createElement("option");
+        oOption.value = aOptions[i].value;
+        oOption.textContent = aOptions[i].label;
+        if (aOptions[i].value == sValue) {
+            oOption.selected = true;
+        }
+        oSelect.appendChild(oOption);
+    }
+    return oSelect;
+}
+
+function replaceEmailOverviewTable(aData) {
+    var oTarget = document.getElementById("email-overview-table") || document.getElementById("email-overview-empty");
+    if (!oTarget || !aData || typeof aData.table_html == "undefined") {
+        return;
+    }
+    oTarget.outerHTML = aData.table_html;
+    refreshAdminTableFilter();
+}
+
+function openEmailDomainDialog() {
+    var oDialog = document.getElementById("admin-reusable-dialog");
+    var oForm;
+    var oBox;
+    var oHeader;
+    var oTitle;
+    var oClose;
+    var oDomain;
+    var oAccountType;
+    var oUsers;
+    var oError;
+    var oActions;
+    var oSave;
+    var oCancel;
+
+    if (!oDialog) {
+        return;
+    }
+
+    oForm = document.createElement("form");
+    oForm.className = "confirm-dialog-box subject-edit-dialog email-domain-edit-dialog";
+    oBox = oForm;
+
+    oHeader = document.createElement("div");
+    oHeader.className = "confirm-dialog-header";
+    oTitle = document.createElement("strong");
+    oTitle.className = "confirm-dialog-title";
+    oTitle.textContent = "New E-mail Domain";
+    oClose = document.createElement("button");
+    oClose.type = "button";
+    oClose.className = "confirm-dialog-close";
+    oClose.setAttribute("aria-label", "Close");
+    oClose.innerHTML = "&times;";
+    oHeader.appendChild(oTitle);
+    oHeader.appendChild(oClose);
+    oBox.appendChild(oHeader);
+
+    oDomain = createAdminInput("email-dialog-domain", "", true);
+    oDomain.name = "domain";
+    oDomain.autocomplete = "on";
+    oAccountType = createEmailAccountTypeSelect("email-dialog-account-type", getEmailAccountTypeFromPage());
+    oUsers = createEmailUsersTextarea("email-dialog-users", "");
+
+    appendMenuDialogField(oBox, "Domain", oDomain);
+    appendMenuDialogField(oBox, "Type", oAccountType);
+    appendMenuDialogField(oBox, "Users", oUsers);
+
+    oError = document.createElement("div");
+    oError.className = "subject-edit-error";
+    oError.style.display = "none";
+    oBox.appendChild(oError);
+
+    oActions = document.createElement("div");
+    oActions.className = "confirm-dialog-actions";
+    oSave = document.createElement("button");
+    oSave.type = "submit";
+    oSave.className = "confirm-dialog-button";
+    oSave.textContent = "Save";
+    oCancel = document.createElement("button");
+    oCancel.type = "button";
+    oCancel.className = "confirm-dialog-button";
+    oCancel.textContent = "Cancel";
+    oActions.appendChild(oSave);
+    oActions.appendChild(oCancel);
+    oBox.appendChild(oActions);
+
+    function closeEmailDomainDialog() {
+        closeAdminDialog();
+    }
+
+    oClose.addEventListener("click", closeEmailDomainDialog);
+    oCancel.addEventListener("click", closeEmailDomainDialog);
+    oAccountType.addEventListener("change", function() {
+        saveEmailAccountTypeToSession(oAccountType.value);
+    });
+    oForm.addEventListener("submit", function(oEvent) {
+        var oData;
+        oEvent.preventDefault();
+        oError.style.display = "none";
+        oError.textContent = "";
+        setEmailAccountTypeInPage(oAccountType.value);
+        oData = new FormData();
+        oData.append("action", "create_email_domain");
+        appendAdminEncodedValue(oData, "domain", oDomain.value);
+        oData.append("account_type", oAccountType.value);
+        appendAdminEncodedValue(oData, "users", oUsers.value);
+        submitAdminRequest(oData, function(aData) {
+            replaceEmailOverviewTable(aData);
+            closeAdminDialog();
+        }, function(sMessage) {
+            oError.textContent = sMessage;
+            oError.style.display = "";
+        });
+    });
+
+    oDialog.innerHTML = "";
+    oDialog.appendChild(oForm);
+    enableAdminDialogDrag(oDialog, oForm, oHeader);
+    if (oDialog.hidden) {
+        lockAdminModalScroll();
+    }
+    oDialog.hidden = false;
+    window.setTimeout(function() {
+        oDomain.focus();
+        oDomain.select();
+    }, 0);
+}
+
+function bindEmailOverview() {
+    var oAdd = document.querySelector(".js-add-email-domain");
+
+    if (oAdd) {
+        oAdd.addEventListener("click", function() {
+            openEmailDomainDialog();
+        });
+    }
 }
 
 function getDashboardServiceRowData(oRow) {
@@ -6253,6 +6458,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setupAutoRefresh();
     bindAdminCopyLinks();
     bindMenuAdmin();
+    bindEmailOverview();
     bindDashboardServices();
     bindBusinessHours();
     layoutBusinessHours();

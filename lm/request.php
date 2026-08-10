@@ -8,7 +8,7 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "portal", "lm_csrf_token");
+requireFullAccess($aAllowedIps, "portal", "csrf_token");
 
 
 $aRequestVariables = array(

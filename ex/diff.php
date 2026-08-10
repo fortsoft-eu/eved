@@ -7,7 +7,7 @@ if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-requireFullAccess($aAllowedIps, "ex", "ex_csrf_token");
+requireFullAccess($aAllowedIps, "ex", "csrf_token");
 
 $sUploadError = "";
 $aPersonDiff = null;
@@ -18,7 +18,7 @@ $blCompared = false;
 $blHasDifferences = false;
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("ex_csrf_token");
+    requireNamedCsrfToken("csrf_token");
     try {
         if (!isset($_FILES["database_backup"]) || !is_array($_FILES["database_backup"])) {
             $sUploadError = "No backup file was uploaded.";
@@ -103,7 +103,7 @@ renderMenu();
   </p>
   <h1>Database Difference</h1>
   <form action="<?php echo html($sScriptUrl); ?>" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
     <label for="database-backup">Database Backup</label>
     <input type="file" id="database-backup" name="database_backup" accept=".sql,application/sql,text/plain" required>
     <button type="submit">Compare Backup</button>

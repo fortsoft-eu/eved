@@ -966,6 +966,65 @@ function handleQuickTableFilterRequest() {
     sendJsonAndExit(array("success" => false, "message" => "Invalid quick filter action."), 400);
 }
 
+function getAdminAutoRefreshId($sControlId) {
+    $sControlId = trim((string)$sControlId);
+    $sControlId = preg_replace("/[^A-Za-z0-9_\\-]/", "", $sControlId);
+    if ($sControlId == "") {
+        $sControlId = "auto-refresh";
+    }
+    return $sControlId;
+}
+
+function getAdminAutoRefreshValue($sControlId = "auto-refresh") {
+    $sScriptName = getCurrentMenuPath();
+    $sControlId = getAdminAutoRefreshId($sControlId);
+    if (!isset($_SESSION["admin_auto_refresh"]) || !is_array($_SESSION["admin_auto_refresh"])) {
+        return false;
+    }
+    if (!isset($_SESSION["admin_auto_refresh"][$sScriptName]) || !is_array($_SESSION["admin_auto_refresh"][$sScriptName])) {
+        return false;
+    }
+    return isset($_SESSION["admin_auto_refresh"][$sScriptName][$sControlId]) && $_SESSION["admin_auto_refresh"][$sScriptName][$sControlId] === true;
+}
+
+function setAdminAutoRefreshValue($sControlId, $blEnabled) {
+    $sScriptName = getCurrentMenuPath();
+    $sControlId = getAdminAutoRefreshId($sControlId);
+    if ($blEnabled) {
+        if (!isset($_SESSION["admin_auto_refresh"]) || !is_array($_SESSION["admin_auto_refresh"])) {
+            $_SESSION["admin_auto_refresh"] = array();
+        }
+        if (!isset($_SESSION["admin_auto_refresh"][$sScriptName]) || !is_array($_SESSION["admin_auto_refresh"][$sScriptName])) {
+            $_SESSION["admin_auto_refresh"][$sScriptName] = array();
+        }
+        $_SESSION["admin_auto_refresh"][$sScriptName][$sControlId] = true;
+        return;
+    }
+    if (isset($_SESSION["admin_auto_refresh"][$sScriptName][$sControlId])) {
+        unset($_SESSION["admin_auto_refresh"][$sScriptName][$sControlId]);
+    }
+    if (isset($_SESSION["admin_auto_refresh"][$sScriptName]) && is_array($_SESSION["admin_auto_refresh"][$sScriptName]) && !$_SESSION["admin_auto_refresh"][$sScriptName]) {
+        unset($_SESSION["admin_auto_refresh"][$sScriptName]);
+    }
+}
+
+function handleAdminAutoRefreshRequest() {
+    if ($_SERVER["REQUEST_METHOD"] != "POST" || !isset($_POST["admin_auto_refresh_action"])) {
+        return;
+    }
+    if (!(isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest")) {
+        send403AndExit();
+    }
+    $sAction = (string)$_POST["admin_auto_refresh_action"];
+    if ($sAction == "save") {
+        $sControlId = isset($_POST["control_id"]) ? (string)$_POST["control_id"] : "auto-refresh";
+        setAdminAutoRefreshValue($sControlId, isset($_POST["enabled"]) && (string)$_POST["enabled"] == "1");
+        session_write_close();
+        sendJsonAndExit(array("success" => true));
+    }
+    sendJsonAndExit(array("success" => false, "message" => "Invalid auto-refresh action."), 400);
+}
+
 function fetchPortalLoginUser($oPdo, $sUserName) {
     $oStatement = $oPdo->prepare("SELECT u.id, u.subject_id, u.user_name, u.password_hash, u.is_active, u.session_timeout, s.subject_type, s.is_active AS subject_active FROM ex_users AS u INNER JOIN ex_subjects AS s ON s.id = u.subject_id WHERE u.user_name = :user_name LIMIT 1");
     $oStatement->execute(array("user_name" => $sUserName));

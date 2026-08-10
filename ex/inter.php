@@ -8,31 +8,31 @@ if (!$oPdo) {
 }
 
 
-requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
+requireViewAccess($aAllowedIps, "ex", "csrf_token", true);
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
 
 
-$aBirthdaySettingsDefaults = array(
+$aInteractionSettingsDefaults = array(
     "show_inactive_subjects" => 0,
     "show_inactive_nicknames" => 0,
     "show_inactive_addresses" => 0,
     "show_inactive_contacts" => 0,
     "show_inactive_notes" => 0
 );
-$aBirthdaySettings = array();
+$aInteractionSettings = array();
 if (!isset($_SESSION["ex_inter_settings"]) || !is_array($_SESSION["ex_inter_settings"])) {
     $_SESSION["ex_inter_settings"] = array();
 }
-foreach ($aBirthdaySettingsDefaults as $sBirthdaySettingName => $iBirthdaySettingDefault) {
-    if (isset($_SESSION["ex_inter_settings"][$sBirthdaySettingName])) {
-        $aBirthdaySettings[$sBirthdaySettingName] = (int)$_SESSION["ex_inter_settings"][$sBirthdaySettingName] == 1 ? 1 : 0;
+foreach ($aInteractionSettingsDefaults as $sInteractionSettingName => $iInteractionSettingDefault) {
+    if (isset($_SESSION["ex_inter_settings"][$sInteractionSettingName])) {
+        $aInteractionSettings[$sInteractionSettingName] = (int)$_SESSION["ex_inter_settings"][$sInteractionSettingName] == 1 ? 1 : 0;
     } else {
-        $aBirthdaySettings[$sBirthdaySettingName] = $iBirthdaySettingDefault;
+        $aInteractionSettings[$sInteractionSettingName] = $iInteractionSettingDefault;
     }
 }
-$aBirthdaySettings = applyCountrySettings($aBirthdaySettings);
+$aInteractionSettings = applyCountrySettings($aInteractionSettings);
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("ex_csrf_token", true);
+    requireNamedCsrfToken("csrf_token", true);
 }
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "mark_communication_served") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
@@ -84,18 +84,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
 }
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_inter_settings") {
-    foreach ($aBirthdaySettingsDefaults as $sBirthdaySettingName => $iBirthdaySettingDefault) {
-        $aBirthdaySettings[$sBirthdaySettingName] = isset($_POST[$sBirthdaySettingName]) && (string)$_POST[$sBirthdaySettingName] == "1" ? 1 : 0;
+    foreach ($aInteractionSettingsDefaults as $sInteractionSettingName => $iInteractionSettingDefault) {
+        $aInteractionSettings[$sInteractionSettingName] = isset($_POST[$sInteractionSettingName]) && (string)$_POST[$sInteractionSettingName] == "1" ? 1 : 0;
     }
-    $aBirthdaySettings = saveCountrySettings($aBirthdaySettings, $_POST);
-    $_SESSION["ex_inter_settings"] = removeCountrySettings($aBirthdaySettings);
+    $aInteractionSettings = saveCountrySettings($aInteractionSettings, $_POST);
+    $_SESSION["ex_inter_settings"] = removeCountrySettings($aInteractionSettings);
     session_write_close();
     sendSecurityHeaders();
     header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
     exit;
 }
-$sBdPostAction = $_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) ? (string)$_POST["action"] : "";
-$aBdEditActions = array(
+$sInterPostAction = $_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) ? (string)$_POST["action"] : "";
+$aInterEditActions = array(
     "get_subject",
     "get_subject_portal_user",
     "update_subject_portal_user",
@@ -117,17 +117,17 @@ $aBdEditActions = array(
     "create_contact",
     "update_contact"
 );
-$aBdCreateActions = array(
+$aInterCreateActions = array(
     "create_subject"
 );
-if (in_array($sBdPostAction, $aBdCreateActions, true)) {
+if (in_array($sInterPostAction, $aInterCreateActions, true)) {
     sendJsonAndExit(array("success" => false, "message" => "Adding records is not available here."), 403);
 }
-if (!$blCanEdit && in_array($sBdPostAction, $aBdEditActions, true)) {
+if (!$blCanEdit && in_array($sInterPostAction, $aInterEditActions, true)) {
     sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
 
-if ($sBdPostAction == "get_subject") {
+if ($sInterPostAction == "get_subject") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
@@ -143,7 +143,7 @@ if ($sBdPostAction == "get_subject") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "get_subject_portal_user") {
+if ($sInterPostAction == "get_subject_portal_user") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
@@ -159,7 +159,7 @@ if ($sBdPostAction == "get_subject_portal_user") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "update_subject_portal_user") {
+if ($sInterPostAction == "update_subject_portal_user") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $aPermissionKeys = isset($_POST["permissions"]) && is_array($_POST["permissions"]) ? $_POST["permissions"] : array();
     if ($iSubjectId < 1) {
@@ -184,7 +184,7 @@ if ($sBdPostAction == "update_subject_portal_user") {
         );
         saveSubjectPortalAccess($oPdo, $iSubjectId, (string)$aSubjectRow["subject_type"], $aPayload);
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -196,7 +196,7 @@ if ($sBdPostAction == "update_subject_portal_user") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "update_subject") {
+if ($sInterPostAction == "update_subject") {
     $sPayload = getPostedValue("subject_payload");
     $aPayload = $sPayload != "" ? json_decode($sPayload, true) : null;
     if (!is_array($aPayload)) {
@@ -278,7 +278,7 @@ if ($sBdPostAction == "update_subject") {
             }
         }
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -287,7 +287,7 @@ if ($sBdPostAction == "update_subject") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "update_subject_nickname") {
+if ($sInterPostAction == "update_subject_nickname") {
     $iNicknameId = isset($_POST["nickname_id"]) ? (int)$_POST["nickname_id"] : 0;
     $sNickname = getPostedTrimmedValue("nickname");
     $sContext = getPostedTrimmedValue("context");
@@ -319,7 +319,7 @@ if ($sBdPostAction == "update_subject_nickname") {
             "id" => $iNicknameId
         ));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -328,7 +328,7 @@ if ($sBdPostAction == "update_subject_nickname") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "create_subject_nickname") {
+if ($sInterPostAction == "create_subject_nickname") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sNickname = getPostedTrimmedValue("nickname");
     $sContext = getPostedTrimmedValue("context");
@@ -359,7 +359,7 @@ if ($sBdPostAction == "create_subject_nickname") {
             "note" => $sNote != "" ? $sNote : null
         ));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -368,7 +368,7 @@ if ($sBdPostAction == "create_subject_nickname") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "update_subject_address") {
+if ($sInterPostAction == "update_subject_address") {
     $iAddressId = isset($_POST["address_id"]) ? (int)$_POST["address_id"] : 0;
     $sAddressType = getPostedTrimmedValue("address_type");
     $sOrganizationName = getPostedTrimmedValue("organization_name");
@@ -445,7 +445,7 @@ if ($sBdPostAction == "update_subject_address") {
             "id" => $iAddressId
         ));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -454,7 +454,7 @@ if ($sBdPostAction == "update_subject_address") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "create_subject_address") {
+if ($sInterPostAction == "create_subject_address") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sAddressType = getPostedTrimmedValue("address_type");
     $sOrganizationName = getPostedTrimmedValue("organization_name");
@@ -530,7 +530,7 @@ if ($sBdPostAction == "create_subject_address") {
             "note" => $sNote != "" ? $sNote : null
         ));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -539,7 +539,7 @@ if ($sBdPostAction == "create_subject_address") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "update_subject_group") {
+if ($sInterPostAction == "update_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     $sGroupName = getPostedTrimmedValue("name");
@@ -555,7 +555,7 @@ if ($sBdPostAction == "update_subject_group") {
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         if (!$oStatement->fetch()) {
             $oPdo->rollBack();
-            sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+            sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
         }
         $oStatement = $oPdo->prepare("SELECT id FROM ex_groups WHERE id = :id FOR UPDATE");
         $oStatement->execute(array("id" => $iGroupId));
@@ -572,7 +572,7 @@ if ($sBdPostAction == "update_subject_group") {
         $oStatement = $oPdo->prepare("UPDATE ex_groups SET name = :name WHERE id = :id");
         $oStatement->execute(array("name" => $sGroupName, "id" => $iGroupId));
         $oPdo->commit();
-        $aResponse = interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
+        $aResponse = interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit);
         $aResponse["group"] = fetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
@@ -583,7 +583,7 @@ if ($sBdPostAction == "update_subject_group") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "create_subject_group") {
+if ($sInterPostAction == "create_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sGroupName = getPostedTrimmedValue("name");
     if ($iSubjectId < 1) {
@@ -617,7 +617,7 @@ if ($sBdPostAction == "create_subject_group") {
         $oStatement = $oPdo->prepare("INSERT INTO ex_subject_groups (subject_id, group_id) VALUES (:subject_id, :group_id)");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         $oPdo->commit();
-        $aResponse = interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
+        $aResponse = interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit);
         $aResponse["group"] = fetchGroupAjaxData($oPdo, $iGroupId, $sGroupName);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
@@ -631,7 +631,7 @@ if ($sBdPostAction == "create_subject_group") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "update_subject_note") {
+if ($sInterPostAction == "update_subject_note") {
     $iNoteId = isset($_POST["note_id"]) ? (int)$_POST["note_id"] : 0;
     $sNoteText = getPostedTrimmedValue("note_text");
     $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
@@ -654,7 +654,7 @@ if ($sBdPostAction == "update_subject_note") {
         $oStatement = $oPdo->prepare("UPDATE ex_subject_notes SET note_text = :note_text, is_primary = :is_primary, is_active = :is_active WHERE id = :id");
         $oStatement->execute(array("note_text" => $sNoteText, "is_primary" => $iIsPrimary, "is_active" => $iIsActive, "id" => $iNoteId));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -663,7 +663,7 @@ if ($sBdPostAction == "update_subject_note") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "create_subject_note") {
+if ($sInterPostAction == "create_subject_note") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $sNoteText = getPostedTrimmedValue("note_text");
     $iIsPrimary = isset($_POST["is_primary"]) && (string)$_POST["is_primary"] == "1" ? 1 : 0;
@@ -685,7 +685,7 @@ if ($sBdPostAction == "create_subject_note") {
         $oStatement = $oPdo->prepare("INSERT INTO ex_subject_notes (subject_id, note_text, is_primary, is_active) VALUES (:subject_id, :note_text, :is_primary, :is_active)");
         $oStatement->execute(array("subject_id" => $iSubjectId, "note_text" => $sNoteText, "is_primary" => $iIsPrimary, "is_active" => $iIsActive));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -694,7 +694,7 @@ if ($sBdPostAction == "create_subject_note") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "delete_subject") {
+if ($sInterPostAction == "delete_subject") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid subject."), 400);
@@ -719,7 +719,7 @@ if ($sBdPostAction == "delete_subject") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "delete_subject_contact") {
+if ($sInterPostAction == "delete_subject_contact") {
     $iSubjectContactId = isset($_POST["subject_contact_id"]) ? (int)$_POST["subject_contact_id"] : 0;
     if ($iSubjectContactId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid contact link."), 400);
@@ -736,7 +736,7 @@ if ($sBdPostAction == "delete_subject_contact") {
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_contacts WHERE id = :id");
         $oStatement->execute(array("id" => $iSubjectContactId));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -745,7 +745,7 @@ if ($sBdPostAction == "delete_subject_contact") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "delete_subject_nickname") {
+if ($sInterPostAction == "delete_subject_nickname") {
     $iNicknameId = isset($_POST["nickname_id"]) ? (int)$_POST["nickname_id"] : 0;
     if ($iNicknameId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid nickname."), 400);
@@ -762,7 +762,7 @@ if ($sBdPostAction == "delete_subject_nickname") {
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_nicknames WHERE id = :id");
         $oStatement->execute(array("id" => $iNicknameId));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -771,7 +771,7 @@ if ($sBdPostAction == "delete_subject_nickname") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "delete_subject_address") {
+if ($sInterPostAction == "delete_subject_address") {
     $iAddressId = isset($_POST["address_id"]) ? (int)$_POST["address_id"] : 0;
     if ($iAddressId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid address."), 400);
@@ -788,7 +788,7 @@ if ($sBdPostAction == "delete_subject_address") {
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_addresses WHERE id = :id");
         $oStatement->execute(array("id" => $iAddressId));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -797,7 +797,7 @@ if ($sBdPostAction == "delete_subject_address") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "delete_subject_group") {
+if ($sInterPostAction == "delete_subject_group") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iGroupId = isset($_POST["group_id"]) ? (int)$_POST["group_id"] : 0;
     if ($iSubjectId < 1 || $iGroupId < 1) {
@@ -809,12 +809,12 @@ if ($sBdPostAction == "delete_subject_group") {
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         if (!$oStatement->fetch()) {
             $oPdo->rollBack();
-            sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+            sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
         }
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -823,7 +823,7 @@ if ($sBdPostAction == "delete_subject_group") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "delete_subject_note") {
+if ($sInterPostAction == "delete_subject_note") {
     $iNoteId = isset($_POST["note_id"]) ? (int)$_POST["note_id"] : 0;
     if ($iNoteId < 1) {
         sendJsonAndExit(array("success" => false, "message" => "Invalid note."), 400);
@@ -840,7 +840,7 @@ if ($sBdPostAction == "delete_subject_note") {
         $oStatement = $oPdo->prepare("DELETE FROM ex_subject_notes WHERE id = :id");
         $oStatement->execute(array("id" => $iNoteId));
         $oPdo->commit();
-        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
+        sendJsonAndExit(interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -849,7 +849,7 @@ if ($sBdPostAction == "delete_subject_note") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "create_contact") {
+if ($sInterPostAction == "create_contact") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
     $sContactValue = getPostedValue("contact_value");
@@ -902,7 +902,7 @@ if ($sBdPostAction == "create_contact") {
         ));
         $oPdo->commit();
         saveNewContactDefaultTypeId($iContactTypeId);
-        $aResponse = interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
+        $aResponse = interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blCanEdit);
         session_write_close();
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
@@ -916,7 +916,7 @@ if ($sBdPostAction == "create_contact") {
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
     }
 }
-if ($sBdPostAction == "update_contact") {
+if ($sInterPostAction == "update_contact") {
     $iSubjectContactId = isset($_POST["subject_contact_id"]) ? (int)$_POST["subject_contact_id"] : 0;
     $iContactTypeId = isset($_POST["contact_type_id"]) ? (int)$_POST["contact_type_id"] : 0;
     $sContactValue = getPostedValue("contact_value");
@@ -952,7 +952,7 @@ if ($sBdPostAction == "update_contact") {
             "id" => $iSubjectContactId
         ));
         $oPdo->commit();
-        $aResponse = interGetUpdatedSubjectResponse($oPdo, (int)$aUpdatedContact["subject_id"], $aBirthdaySettings, $blCanEdit);
+        $aResponse = interGetUpdatedSubjectResponse($oPdo, (int)$aUpdatedContact["subject_id"], $aInteractionSettings, $blCanEdit);
         sendJsonAndExit($aResponse);
     } catch (Exception $oException) {
         error_log((string)$oException);
@@ -976,7 +976,7 @@ $aGroups = array();
 $aAllGroups = array();
 $aNotes = array();
 $aHiddenInactive = array();
-$aBirthdayServedRows = array();
+$aCommunicationServedRows = array();
 try {
     $oPdo->query("SET SESSION group_concat_max_len = 1048576");
     $aRows = fetchSubjectRows($oPdo);
@@ -987,7 +987,7 @@ try {
     $aGroups = fetchSubjectGroups($oPdo);
     $aAllGroups = fetchGroups($oPdo);
     $aNotes = fetchSubjectNotes($oPdo);
-    $aBirthdayServedRows = fetchPersonServedRows($oPdo, "inter_served_at");
+    $aCommunicationServedRows = fetchPersonServedRows($oPdo, "inter_served_at");
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
@@ -995,27 +995,27 @@ try {
 
 
 $iNewContactDefaultTypeId = getNewContactDefaultTypeId($aContactTypes);
-$aHiddenInactive = getHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aBirthdaySettings);
-applySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $aNotes, $aBirthdaySettings);
+$aHiddenInactive = getHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aInteractionSettings);
+applySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $aNotes, $aInteractionSettings);
 
 
-$aBirthdayRows = array();
+$aCommunicationRows = array();
 foreach ($aRows as $aRow) {
     if ((string)$aRow["subject_type"] != "person") {
         continue;
     }
-    $aBirthdayInfo = interGetBirthdayInfo(isset($aBirthdayServedRows[(int)$aRow["subject_id"]]["inter_served_at"]) ? $aBirthdayServedRows[(int)$aRow["subject_id"]]["inter_served_at"] : "");
-    if (!is_array($aBirthdayInfo)) {
+    $aCommunicationInfo = interGetCommunicationInfo(isset($aCommunicationServedRows[(int)$aRow["subject_id"]]["inter_served_at"]) ? $aCommunicationServedRows[(int)$aRow["subject_id"]]["inter_served_at"] : "");
+    if (!is_array($aCommunicationInfo)) {
         continue;
     }
-    $aRow["days_to_birthday"] = $aBirthdayInfo["days_to_birthday"];
-    $aRow["birthday_date"] = $aBirthdayInfo["birthday_date"];
-    $aBirthdayRows[] = $aRow;
+    $aRow["days_to_served"] = $aCommunicationInfo["days_to_served"];
+    $aRow["served_date"] = $aCommunicationInfo["served_date"];
+    $aCommunicationRows[] = $aRow;
 }
-usort($aBirthdayRows, "bdCompareRows");
+usort($aCommunicationRows, "servedCompareRows");
 
 
-$blRenderPageThrobber = count($aBirthdayRows) > $iRenderThrobberRowLimit;
+$blRenderPageThrobber = count($aCommunicationRows) > $iRenderThrobberRowLimit;
 $sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes($blRenderPageThrobber);
 $iTime = sendPageHeaders();
 
@@ -1032,7 +1032,7 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-date-input-format="<?php echo html($sDateInputFormat); ?>">
@@ -1052,21 +1052,21 @@ renderMenu();
   <div class="confirm-dialog index-settings-dialog" id="index-settings-dialog" hidden>
     <form class="confirm-dialog-box index-settings-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_inter_settings">
-      <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
       <div class="confirm-dialog-header">
         <strong>Interaction Settings</strong>
         <button type="button" class="confirm-dialog-close js-index-settings-close" aria-label="Close">&times;</button>
       </div>
       <div class="index-settings-options">
-        <label><input type="checkbox" name="show_inactive_subjects" value="1"<?php echo $aBirthdaySettings["show_inactive_subjects"] ? " checked" : ""; ?>> Show inactive subjects</label>
-        <label><input type="checkbox" name="show_inactive_nicknames" value="1"<?php echo $aBirthdaySettings["show_inactive_nicknames"] ? " checked" : ""; ?>> Show inactive nicknames</label>
-        <label><input type="checkbox" name="show_inactive_addresses" value="1"<?php echo $aBirthdaySettings["show_inactive_addresses"] ? " checked" : ""; ?>> Show inactive addresses</label>
-        <label><input type="checkbox" name="show_inactive_contacts" value="1"<?php echo $aBirthdaySettings["show_inactive_contacts"] ? " checked" : ""; ?>> Show inactive contacts</label>
-        <label><input type="checkbox" name="show_inactive_notes" value="1"<?php echo $aBirthdaySettings["show_inactive_notes"] ? " checked" : ""; ?>> Show inactive notes</label>
+        <label><input type="checkbox" name="show_inactive_subjects" value="1"<?php echo $aInteractionSettings["show_inactive_subjects"] ? " checked" : ""; ?>> Show inactive subjects</label>
+        <label><input type="checkbox" name="show_inactive_nicknames" value="1"<?php echo $aInteractionSettings["show_inactive_nicknames"] ? " checked" : ""; ?>> Show inactive nicknames</label>
+        <label><input type="checkbox" name="show_inactive_addresses" value="1"<?php echo $aInteractionSettings["show_inactive_addresses"] ? " checked" : ""; ?>> Show inactive addresses</label>
+        <label><input type="checkbox" name="show_inactive_contacts" value="1"<?php echo $aInteractionSettings["show_inactive_contacts"] ? " checked" : ""; ?>> Show inactive contacts</label>
+        <label><input type="checkbox" name="show_inactive_notes" value="1"<?php echo $aInteractionSettings["show_inactive_notes"] ? " checked" : ""; ?>> Show inactive notes</label>
         <hr>
-        <label><input type="checkbox" name="show_czechia_country" value="1" class="js-czechia-country-toggle"<?php echo $aBirthdaySettings["show_czechia_country"] ? " checked" : ""; ?>> Also show the country Czechia</label>
-        <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aBirthdaySettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aBirthdaySettings["show_czechia_country"] && $aBirthdaySettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aBirthdaySettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
-        <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aBirthdaySettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aBirthdaySettings["show_czechia_country"] && $aBirthdaySettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aBirthdaySettings["show_czechia_country"] ? "" : " disabled"); ?>> Show &#268;esk&aacute; republika instead of &#268;esko</label>
+        <label><input type="checkbox" name="show_czechia_country" value="1" class="js-czechia-country-toggle"<?php echo $aInteractionSettings["show_czechia_country"] ? " checked" : ""; ?>> Also show the country Czechia</label>
+        <label><input type="checkbox" name="show_czechia_country_in_czech" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aInteractionSettings["show_czechia_country_in_czech"] ? "1" : "0") . "\"" . ($aInteractionSettings["show_czechia_country"] && $aInteractionSettings["show_czechia_country_in_czech"] ? " checked" : "") . ($aInteractionSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show the country Czechia in Czech</label>
+        <label><input type="checkbox" name="show_czechia_country_as_czech_republic" value="1" class="js-czechia-country-dependent"<?php echo " data-czechia-stored=\"" . ($aInteractionSettings["show_czechia_country_as_czech_republic"] ? "1" : "0") . "\"" . ($aInteractionSettings["show_czechia_country"] && $aInteractionSettings["show_czechia_country_as_czech_republic"] ? " checked" : "") . ($aInteractionSettings["show_czechia_country"] ? "" : " disabled"); ?>> Show &#268;esk&aacute; republika instead of &#268;esko</label>
       </div>
 <?php
 
@@ -1092,7 +1092,7 @@ foreach ($aContactTypes as $aContactType) {
 }
 echo "  </select>\n";
 
-if (!$aBirthdayRows) {
+if (!$aCommunicationRows) {
     echo "  <p>No records found.</p>\n";
 } else {
     if ($blRenderPageThrobber) {
@@ -1104,7 +1104,7 @@ if (!$aBirthdayRows) {
     <thead>
       <tr>
         <th class="column-hidden">Type</th>
-        <th class="birthday-in-column">In</th>
+        <th class="served-in-column">In</th>
         <th>Name</th>
         <th class="column-hidden">First Name</th>
         <th class="column-hidden">Last Name</th>
@@ -1122,8 +1122,8 @@ if (!$aBirthdayRows) {
     <tbody>
 <?php
 
-    foreach ($aBirthdayRows as $aRow) {
-        echo interRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aBirthdaySettings);
+    foreach ($aCommunicationRows as $aRow) {
+        echo interRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aInteractionSettings);
     }
     echo "    </tbody>\n",
         "  </table>\n";

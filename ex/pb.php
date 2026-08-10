@@ -8,12 +8,12 @@ if (!$oPdo) {
 }
 
 
-requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
+requireViewAccess($aAllowedIps, "ex", "csrf_token", true);
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("ex_csrf_token", true);
+    requireNamedCsrfToken("csrf_token", true);
 }
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "remove_phone_book_contact") {
     if (!$blCanEdit) {
@@ -63,7 +63,7 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body>
@@ -151,7 +151,7 @@ if ($blCanEdit) {
     <form class="confirm-dialog-box subject-edit-dialog" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="remove_phone_book_contact">
       <input type="hidden" name="phone_book_id" value="">
-      <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
       <div class="confirm-dialog-header">
         <strong>Confirm Deletion</strong>
         <button type="button" class="confirm-dialog-close js-phone-book-remove-close" aria-label="Close">&times;</button>

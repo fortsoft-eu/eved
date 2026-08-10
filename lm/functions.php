@@ -2232,6 +2232,233 @@ function issueTrackerToggleStatus($oPdo, $iIssueId) {
     }
 }
 
+function emailOverviewNormalizeDomain($sValue) {
+    $sDomain = domainLookupNormalizeDomain($sValue);
+    if ($sDomain == "" || !domainLookupDomainShapeIsValid($sDomain)) {
+        return "";
+    }
+    return $sDomain;
+}
+
+function emailOverviewAccountTypeLabels() {
+    return array(
+        "mailbox" => "Mailbox",
+        "alias" => "Alias",
+        "forwarder" => "Forwarder"
+    );
+}
+
+function emailOverviewNormalizeAccountType($sValue) {
+    $sValue = trim((string)$sValue);
+    $aLabels = emailOverviewAccountTypeLabels();
+    return isset($aLabels[$sValue]) ? $sValue : "mailbox";
+}
+
+function emailOverviewGetSessionAccountType() {
+    return isset($_SESSION["email_overview_account_type"]) ? emailOverviewNormalizeAccountType($_SESSION["email_overview_account_type"]) : "mailbox";
+}
+
+function emailOverviewSetSessionAccountType($sValue) {
+    $sAccountType = emailOverviewNormalizeAccountType($sValue);
+    $_SESSION["email_overview_account_type"] = $sAccountType;
+    return $sAccountType;
+}
+
+function emailOverviewSaveAccountType() {
+    $sAccountType = emailOverviewSetSessionAccountType(getPostedValue("account_type"));
+    session_write_close();
+    sendJsonAndExit(array("success" => true, "account_type" => $sAccountType));
+}
+
+function emailOverviewNormalizeLocalPart($sValue) {
+    $sValue = trim((string)$sValue);
+    if ($sValue == "") {
+        return "";
+    }
+    if (strpos($sValue, "@") !== false) {
+        $sValue = substr($sValue, 0, strpos($sValue, "@"));
+    }
+    $sValue = strtolower(trim($sValue));
+    if ($sValue == "" || strlen($sValue) > 64 || substr($sValue, 0, 1) == "." || substr($sValue, -1) == "." || strpos($sValue, "..") !== false) {
+        return "";
+    }
+    if (!preg_match("/^[a-z0-9.!#$%&'*+\/=?^_`{|}~-]+$/", $sValue)) {
+        return "";
+    }
+    return $sValue;
+}
+
+function emailOverviewAppendLocalPart(&$aLocalParts, &$aSeenLocalParts, &$aInvalidTokens, $sToken) {
+    $sToken = trim((string)$sToken);
+    if ($sToken == "") {
+        return;
+    }
+    $sLocalPart = emailOverviewNormalizeLocalPart($sToken);
+    if ($sLocalPart == "") {
+        $aInvalidTokens[] = $sToken;
+        return;
+    }
+    if (!isset($aSeenLocalParts[$sLocalPart])) {
+        $aSeenLocalParts[$sLocalPart] = true;
+        $aLocalParts[] = $sLocalPart;
+    }
+}
+
+function emailOverviewParseLocalParts($sValue) {
+    $aLocalParts = array();
+    $aSeenLocalParts = array();
+    $aInvalidTokens = array();
+    $sValue = (string)$sValue;
+    $aLines = preg_split("/\r\n|\r|\n/", $sValue);
+    $aNonEmptyLines = array();
+
+    foreach ($aLines as $sLine) {
+        $sLine = trim($sLine);
+        if ($sLine != "") {
+            $aNonEmptyLines[] = $sLine;
+        }
+    }
+
+    if (count($aNonEmptyLines) > 1) {
+        foreach ($aNonEmptyLines as $sLine) {
+            $aTokens = preg_split("/[\s,;]+/", $sLine);
+            if (isset($aTokens[0])) {
+                emailOverviewAppendLocalPart($aLocalParts, $aSeenLocalParts, $aInvalidTokens, $aTokens[0]);
+            }
+        }
+    } else {
+        $aTokens = preg_split("/[\s,;]+/", $aNonEmptyLines ? $aNonEmptyLines[0] : "");
+        foreach ($aTokens as $sToken) {
+            emailOverviewAppendLocalPart($aLocalParts, $aSeenLocalParts, $aInvalidTokens, $sToken);
+        }
+    }
+
+    if ($aInvalidTokens) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid user: " . $aInvalidTokens[0]), 400);
+    }
+    return $aLocalParts;
+}
+
+function emailOverviewCompareLocalPartRows($aLeft, $aRight) {
+    if ((int)$aLeft["account_count"] !== (int)$aRight["account_count"]) {
+        return (int)$aLeft["account_count"] < (int)$aRight["account_count"] ? -1 : 1;
+    }
+    return strcmp($aLeft["local_part"], $aRight["local_part"]);
+}
+
+function emailOverviewFetchData($oPdo) {
+    $aDomains = array();
+    $aLocalParts = array();
+    $aLocalPartRows = array();
+    $aSortedLocalParts = array();
+    $aAccounts = array();
+    $oStatement = $oPdo->query("SELECT d.domain, u.local_part, u.account_type FROM fs_email_domains AS d LEFT JOIN fs_email_domain_users AS u ON u.email_domain_id = d.id ORDER BY d.domain ASC, u.local_part ASC");
+    while ($aRow = $oStatement->fetch()) {
+        $sDomain = (string)$aRow["domain"];
+        $aDomains[$sDomain] = true;
+        if ($aRow["local_part"] === null) {
+            continue;
+        }
+        $sLocalPart = (string)$aRow["local_part"];
+        $sAccountType = emailOverviewNormalizeAccountType($aRow["account_type"]);
+        $aLocalParts[$sLocalPart] = true;
+        if (!isset($aAccounts[$sLocalPart])) {
+            $aAccounts[$sLocalPart] = array();
+        }
+        $aAccounts[$sLocalPart][$sDomain] = $sAccountType;
+    }
+    ksort($aDomains, SORT_STRING);
+    ksort($aLocalParts, SORT_STRING);
+    foreach (array_keys($aLocalParts) as $sLocalPart) {
+        $aLocalPartRows[] = array(
+            "local_part" => $sLocalPart,
+            "account_count" => isset($aAccounts[$sLocalPart]) ? count($aAccounts[$sLocalPart]) : 0
+        );
+    }
+    usort($aLocalPartRows, "emailOverviewCompareLocalPartRows");
+    foreach ($aLocalPartRows as $aLocalPartRow) {
+        $aSortedLocalParts[] = $aLocalPartRow["local_part"];
+    }
+    return array(
+        "domains" => array_keys($aDomains),
+        "local_parts" => $aSortedLocalParts,
+        "accounts" => $aAccounts
+    );
+}
+
+function emailOverviewRenderTable($oPdo) {
+    $aData = emailOverviewFetchData($oPdo);
+    if (!$aData["domains"] || !$aData["local_parts"]) {
+        return "  <p id=\"email-overview-empty\">No records found.</p>\n";
+    }
+    $sHtml = "  <table id=\"email-overview-table\" class=\"table-filter-target email-overview-table" . getCondensedTableClass() . "\">\n"
+        . "    <thead>\n"
+        . "      <tr>\n"
+        . "        <th>User</th>\n";
+    foreach ($aData["domains"] as $sDomain) {
+        $sHtml .= "        <th>" . html($sDomain) . "</th>\n";
+    }
+    $sHtml .= "      </tr>\n"
+        . "    </thead>\n"
+        . "    <tbody>\n";
+    foreach ($aData["local_parts"] as $sLocalPart) {
+        $sHtml .= "      <tr>"
+            . "<td class=\"email-user-cell\">" . html($sLocalPart) . "</td>";
+        foreach ($aData["domains"] as $sDomain) {
+            if (isset($aData["accounts"][$sLocalPart][$sDomain])) {
+                $sAccountType = emailOverviewNormalizeAccountType($aData["accounts"][$sLocalPart][$sDomain]);
+                $sHtml .= "<td class=\"email-address-present email-account-" . html($sAccountType) . "\" title=\"" . html(issueTrackerLabel($sAccountType, emailOverviewAccountTypeLabels())) . "\">" . html($sLocalPart . "@" . $sDomain) . "</td>";
+            } else {
+                $sHtml .= "<td>&mdash;</td>";
+            }
+        }
+        $sHtml .= "</tr>\n";
+    }
+    $sHtml .= "    </tbody>\n"
+        . "  </table>\n";
+    return $sHtml;
+}
+
+function emailOverviewCreateDomain($oPdo) {
+    $sDomain = emailOverviewNormalizeDomain(getPostedTrimmedValue("domain"));
+    $sAccountType = emailOverviewSetSessionAccountType(getPostedValue("account_type"));
+    $aLocalParts = emailOverviewParseLocalParts(getPostedValue("users"));
+
+    if ($sDomain == "") {
+        sendJsonAndExit(array("success" => false, "message" => "Domain is invalid."), 400);
+    }
+    if (!$aLocalParts) {
+        sendJsonAndExit(array("success" => false, "message" => "Enter at least one user."), 400);
+    }
+    try {
+        $oPdo->beginTransaction();
+        $oStatement = $oPdo->prepare("INSERT IGNORE INTO fs_email_domains (domain) VALUES (:domain)");
+        $oStatement->execute(array("domain" => $sDomain));
+        $oStatement = $oPdo->prepare("SELECT id FROM fs_email_domains WHERE domain = :domain FOR UPDATE");
+        $oStatement->execute(array("domain" => $sDomain));
+        $iEmailDomainId = (int)$oStatement->fetchColumn();
+        if ($iEmailDomainId < 1) {
+            throw new RuntimeException("Email domain could not be saved.");
+        }
+        $oStatement = $oPdo->prepare("INSERT IGNORE INTO fs_email_domain_users (email_domain_id, local_part, account_type) VALUES (:email_domain_id, :local_part, :account_type)");
+        foreach ($aLocalParts as $sLocalPart) {
+            $oStatement->execute(array(
+                "email_domain_id" => $iEmailDomainId,
+                "local_part" => $sLocalPart,
+                "account_type" => $sAccountType
+            ));
+        }
+        $oPdo->commit();
+        sendJsonAndExit(array("success" => true, "table_html" => emailOverviewRenderTable($oPdo)));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
 function domainLookupNormalizeDomain($sValue) {
     $sValue = trim((string)$sValue);
     if ($sValue == "") {

@@ -72,7 +72,7 @@ function getAdminEmoji(sName) {
 function appendAdminCsrfToken(oData) {
     var sToken = getAdminCsrfToken();
     if (oData && sToken) {
-        oData.append("ex_csrf_token", sToken);
+        oData.append("csrf_token", sToken);
     }
 }
 

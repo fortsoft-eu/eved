@@ -8,7 +8,7 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "ex", "ex_csrf_token");
+requireFullAccess($aAllowedIps, "ex", "csrf_token");
 
 
 $aExternalLibraries = array();

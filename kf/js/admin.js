@@ -49,7 +49,7 @@
     function appendAdminCsrfToken(oData) {
         var sToken = getAdminCsrfToken();
         if (oData && sToken) {
-            oData.append("kf_csrf_token", sToken);
+            oData.append("csrf_token", sToken);
         }
     }
 

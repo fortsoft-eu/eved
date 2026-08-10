@@ -45,7 +45,7 @@ if (isset($_SESSION["ex_demo_full_list_complex_filter_draft"]) && is_array($_SES
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("ex_csrf_token", true);
+    requireNamedCsrfToken("csrf_token", true);
 }
 
 
@@ -576,7 +576,7 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-date-input-format="<?php echo html($sDateInputFormat); ?>" data-hide-subject-birth-number="1">
@@ -598,7 +598,7 @@ renderMenu();
   </p>
   <form id="complex-filter-reset-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded" hidden>
     <input type="hidden" name="action" value="reset_full_list_complex_filter">
-    <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
   </form>
 <?php
 
@@ -608,7 +608,7 @@ echo renderCountryDatalist();
   <div class="confirm-dialog complex-filter-dialog" id="complex-filter-dialog" hidden>
     <form class="confirm-dialog-box complex-filter-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_full_list_complex_filter">
-      <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
       <div class="confirm-dialog-header">
         <strong>Complex Filter</strong>
         <button type="button" class="confirm-dialog-close js-complex-filter-close" aria-label="Close">&times;</button>
@@ -662,7 +662,7 @@ foreach ($aFullListComplexFilterRows as $aCondition) {
   <div class="confirm-dialog index-settings-dialog" id="index-settings-dialog" hidden>
     <form class="confirm-dialog-box index-settings-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_full_list_settings">
-      <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
       <div class="confirm-dialog-header">
         <strong>Full List Settings</strong>
         <button type="button" class="confirm-dialog-close js-index-settings-close" aria-label="Close">&times;</button>

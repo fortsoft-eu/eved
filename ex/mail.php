@@ -14,7 +14,7 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "ex", "ex_csrf_token", $blJsonResponse);
+requireFullAccess($aAllowedIps, "ex", "csrf_token", $blJsonResponse);
 
 
 $iMailRichTextPaste = isset($_SESSION[$sMailRichTextPasteSessionKey]) && (string)$_SESSION[$sMailRichTextPasteSessionKey] == "1" ? 1 : 0;
@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] != "POST") {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("ex_csrf_token", $blJsonResponse);
+    requireNamedCsrfToken("csrf_token", $blJsonResponse);
     if (getPostedValue("action") == "save_mail_rich_text_paste") {
         $iMailRichTextPaste = getPostedValue("rich_text_paste") == "1" ? 1 : 0;
         $_SESSION[$sMailRichTextPasteSessionKey] = (string)$iMailRichTextPaste;
@@ -177,7 +177,7 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
@@ -197,7 +197,7 @@ renderMenu();
   </p>
   <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="mail-form" class="snippet-board-form mail-form" enctype="multipart/form-data" autocomplete="on" data-mail-allowed-sender-domains="<?php echo html(json_encode($aMailAllowedSenderDomains)); ?>" data-mail-restrict-from-to-single-address="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
     <input type="hidden" name="action" value="send_mail">
-    <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
     <input type="hidden" name="mail_rich_text_paste" class="js-mail-rich-text-paste" value="<?php echo (int)$iMailRichTextPaste; ?>">
     <div class="mail-form-fields">
       <label for="mail-to">To:</label>

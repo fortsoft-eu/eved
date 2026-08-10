@@ -8,7 +8,7 @@ if (!$oPdo) {
 }
 
 
-requireViewAccess($aAllowedIps, "portal", "lm_csrf_token");
+requireViewAccess($aAllowedIps, "portal", "csrf_token");
 
 
 $aAuthors = array();

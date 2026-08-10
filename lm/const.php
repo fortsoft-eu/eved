@@ -8,7 +8,7 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "portal", "lm_csrf_token");
+requireFullAccess($aAllowedIps, "portal", "csrf_token");
 
 
 $aConstants = get_defined_constants(true);

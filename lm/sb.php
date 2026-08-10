@@ -9,11 +9,11 @@ if (!$oPdo) {
 
 
 $blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
-requireFullAccess($aAllowedIps, "portal", "lm_csrf_token", $blJsonResponse);
+requireFullAccess($aAllowedIps, "portal", "csrf_token", $blJsonResponse);
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("lm_csrf_token", $blJsonResponse);
+    requireNamedCsrfToken("csrf_token", $blJsonResponse);
 }
 
 $sAction = $_SERVER["REQUEST_METHOD"] == "POST" ? getPostedValue("action") : "";
@@ -156,7 +156,7 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body class="snippet-board-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>" data-snippet-board-revision="<?php echo html($sBoardRevision); ?>">
@@ -179,7 +179,7 @@ for ($iSlot = 1; $iSlot <= 6; $iSlot++) {
   </p>
   <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="snippet-board-form" class="snippet-board-form">
     <input type="hidden" name="action" value="save_snippet_board">
-    <input type="hidden" name="lm_csrf_token" value="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
+    <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
     <div class="snippet-board-grid">
 <?php
 

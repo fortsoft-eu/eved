@@ -10,7 +10,7 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "portal", "lm_csrf_token", $blJsonResponse);
+requireFullAccess($aAllowedIps, "portal", "csrf_token", $blJsonResponse);
 
 
 $sAction = $_SERVER["REQUEST_METHOD"] == "POST" ? getPostedValue("action") : (isset($_GET["action"]) ? (string)$_GET["action"] : "");
@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && $blJsonResponse && $sAction == "check
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("lm_csrf_token", true);
+    requireNamedCsrfToken("csrf_token", true);
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "create_dashboard_service") {
@@ -79,7 +79,7 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("lm_csrf_token")); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>

@@ -7,10 +7,10 @@ if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-requireFullAccess($aAllowedIps, "film", "film_csrf_token");
+requireFullAccess($aAllowedIps, "film", "csrf_token");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("film_csrf_token");
+    requireNamedCsrfToken("csrf_token");
 }
 
 $sMessage = "";
@@ -154,7 +154,7 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
-$sCsrfToken = getCsrfToken("film_csrf_token");
+$sCsrfToken = getCsrfToken("csrf_token");
 session_write_close();
 $iTime = sendPageHeaders();
 
@@ -186,7 +186,7 @@ if ($sMessage) {
   </p>
   <div class="admin-top">
     <form method="post" action="<?php echo $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]); ?>" enctype="application/x-www-form-urlencoded">
-      <input type="hidden" name="film_csrf_token" value="<?php echo html($sCsrfToken); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo html($sCsrfToken); ?>">
       <label for="film_id">Film Roll</label>
       <select name="film_id" id="film_id" required>
         <option value="">– Choose film roll –</option>
@@ -293,7 +293,7 @@ foreach ($aLinks as $aLink) {
   </div>
   <div class="confirm-dialog" id="film-unassign-confirm-dialog" hidden>
     <form class="confirm-dialog-box" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
-      <input type="hidden" name="film_csrf_token" value="<?php echo html($sCsrfToken); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo html($sCsrfToken); ?>">
       <input type="hidden" name="unassign" value="">
       <div class="confirm-dialog-header">
         <strong>Confirm Unassignment</strong>

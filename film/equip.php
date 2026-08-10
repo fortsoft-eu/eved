@@ -7,8 +7,8 @@ if (!$oPdo) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireFullAccess($aAllowedIps, "film", "film_csrf_token");
-    requireNamedCsrfToken("film_csrf_token");
+    requireFullAccess($aAllowedIps, "film", "csrf_token");
+    requireNamedCsrfToken("csrf_token");
 }
 
 $sMessage = "";
@@ -176,7 +176,7 @@ foreach ($aEquipmentGroupMembers as $iGroupId => $aMemberIndexes) {
 usort($aEquipment, "filmEquipmentRowCompare");
 
 $blShowEquipmentActions = $blCanManageEquipmentGroups && $blEquipmentGroupTableExists;
-$sCsrfToken = $blShowEquipmentActions ? getCsrfToken("film_csrf_token") : "";
+$sCsrfToken = $blShowEquipmentActions ? getCsrfToken("csrf_token") : "";
 session_write_close();
 $iTime = sendPageHeaders();
 
@@ -267,7 +267,7 @@ if ($blShowEquipmentActions) {
 ?>
   <div class="confirm-dialog" id="film-equipment-link-dialog" hidden>
     <form class="confirm-dialog-box" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
-      <input type="hidden" name="film_csrf_token" value="<?php echo html($sCsrfToken); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo html($sCsrfToken); ?>">
       <input type="hidden" name="create_equipment_link" value="1">
       <input type="hidden" name="equip_id" class="js-equipment-link-id" value="">
       <div class="confirm-dialog-header">

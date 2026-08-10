@@ -3,28 +3,39 @@
 include "main.php";
 
 
+$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
 
-requireFullAccess($aAllowedIps, "portal", "csrf_token");
+requireFullAccess($aAllowedIps, "portal", "csrf_token", $blJsonResponse);
 
 
-$aDatabaseInfo = array();
+$sAction = $_SERVER["REQUEST_METHOD"] == "POST" ? getPostedValue("action") : "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    requireNamedCsrfToken("csrf_token", true);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "set_email_account_type") {
+    emailOverviewSaveAccountType();
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "create_email_domain") {
+    emailOverviewCreateDomain($oPdo);
+}
+
 try {
-    $oStatement = $oPdo->query("SELECT VERSION() AS server_version, DATABASE() AS database_name, @@version_comment AS version_comment, @@character_set_server AS character_set_server, @@collation_server AS collation_server, @@sql_mode AS sql_mode, @@time_zone AS time_zone, @@system_time_zone AS system_time_zone");
-    $aRow = $oStatement->fetch();
-    foreach ($aRow as $sName => $mValue) {
-        $aDatabaseInfo[] = array($sName, $mValue);
-    }
-    $aDatabaseInfo[] = array("pdo_server_version", $oPdo->getAttribute(PDO::ATTR_SERVER_VERSION));
-    $aDatabaseInfo[] = array("pdo_client_version", $oPdo->getAttribute(PDO::ATTR_CLIENT_VERSION));
-    $aDatabaseInfo[] = array("pdo_connection_status", $oPdo->getAttribute(PDO::ATTR_CONNECTION_STATUS));
+    $sEmailTableHtml = emailOverviewRenderTable($oPdo);
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
+
+$sFilterValue = getQuickTableFilterValue();
+$sEmailAccountType = emailOverviewGetSessionAccountType();
 
 $iTime = sendPageHeaders();
 
@@ -37,6 +48,8 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
+  <meta name="email-account-type" content="<?php echo html($sEmailAccountType); ?>">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
@@ -51,32 +64,19 @@ renderMenu();
 
 ?>
     <label for="table-filter">Filter:</label>
-    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="database-info-table" value="<?php echo html(getQuickTableFilterValue("table-filter")); ?>">
+    <input type="text" id="table-filter" class="js-table-filter" data-table-filter="email-overview-table" value="<?php echo html($sFilterValue); ?>" autocomplete="off" spellcheck="false">
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
+    <button type="button" class="button-link js-add-email-domain">New</button>
   </p>
-  <table id="database-info-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Value</th>
-      </tr>
-    </thead>
-    <tbody>
 <?php
 
-foreach ($aDatabaseInfo as $aRow) {
-    echo "      <tr>\n",
-        "        <td>" . html($aRow[0]) . "</td>\n",
-        "        <td>" . html($aRow[1]) . "</td>\n",
-        "      </tr>\n";
-}
+echo $sEmailTableHtml;
 
 ?>
-    </tbody>
-  </table>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+  <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

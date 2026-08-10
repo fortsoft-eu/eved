@@ -8,7 +8,7 @@ if (!$oPdo) {
 }
 
 
-requireViewAccess($aAllowedIps, "ex", "ex_csrf_token", true);
+requireViewAccess($aAllowedIps, "ex", "csrf_token", true);
 $blCanEdit = isFullAccessAllowed($aAllowedIps, "ex");
 
 
@@ -19,10 +19,21 @@ $aBirthdaySettingsDefaults = array(
     "show_inactive_contacts" => 0,
     "show_inactive_notes" => 0
 );
+$aBirthdayWindowSettingsDefaults = array(
+    "birthday_days_back" => abs((int)$iBirthdayDisplayMinDays),
+    "birthday_days_forward" => (int)$iBirthdayDisplayMaxDays
+);
 $aBirthdaySettings = array();
 
 if (!isset($_SESSION["ex_bd_settings"]) || !is_array($_SESSION["ex_bd_settings"])) {
     $_SESSION["ex_bd_settings"] = array();
+}
+foreach ($aBirthdayWindowSettingsDefaults as $sBirthdaySettingName => $iBirthdaySettingDefault) {
+    if (isset($_SESSION["ex_bd_settings"][$sBirthdaySettingName])) {
+        $aBirthdaySettings[$sBirthdaySettingName] = max(0, min(366, (int)$_SESSION["ex_bd_settings"][$sBirthdaySettingName]));
+    } else {
+        $aBirthdaySettings[$sBirthdaySettingName] = max(0, min(366, (int)$iBirthdaySettingDefault));
+    }
 }
 foreach ($aBirthdaySettingsDefaults as $sBirthdaySettingName => $iBirthdaySettingDefault) {
     if (isset($_SESSION["ex_bd_settings"][$sBirthdaySettingName])) {
@@ -32,8 +43,10 @@ foreach ($aBirthdaySettingsDefaults as $sBirthdaySettingName => $iBirthdaySettin
     }
 }
 $aBirthdaySettings = applyCountrySettings($aBirthdaySettings);
+$iBirthdayDisplayMinDays = -$aBirthdaySettings["birthday_days_back"];
+$iBirthdayDisplayMaxDays = $aBirthdaySettings["birthday_days_forward"];
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("ex_csrf_token", true);
+    requireNamedCsrfToken("csrf_token", true);
 }
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "mark_birthday_served") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
@@ -90,6 +103,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     }
 }
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_bd_settings") {
+    foreach ($aBirthdayWindowSettingsDefaults as $sBirthdaySettingName => $iBirthdaySettingDefault) {
+        $aBirthdaySettings[$sBirthdaySettingName] = isset($_POST[$sBirthdaySettingName]) ? max(0, min(366, (int)$_POST[$sBirthdaySettingName])) : max(0, min(366, (int)$iBirthdaySettingDefault));
+    }
     foreach ($aBirthdaySettingsDefaults as $sBirthdaySettingName => $iBirthdaySettingDefault) {
         $aBirthdaySettings[$sBirthdaySettingName] = isset($_POST[$sBirthdaySettingName]) && (string)$_POST[$sBirthdaySettingName] == "1" ? 1 : 0;
     }
@@ -1014,16 +1030,16 @@ foreach ($aRows as $aRow) {
     if (!is_array($aBirthdayInfo)) {
         continue;
     }
-    if (bdIsBirthdayServed($aBirthdayServedRows, (int)$aRow["subject_id"], $aBirthdayInfo["birthday_date"])) {
+    if (bdIsBirthdayServed($aBirthdayServedRows, (int)$aRow["subject_id"], $aBirthdayInfo["served_date"])) {
         continue;
     }
-    $aRow["days_to_birthday"] = $aBirthdayInfo["days_to_birthday"];
-    $aRow["birthday_date"] = $aBirthdayInfo["birthday_date"];
+    $aRow["days_to_served"] = $aBirthdayInfo["days_to_served"];
+    $aRow["served_date"] = $aBirthdayInfo["served_date"];
     $aBirthdayRows[] = $aRow;
 }
 
 
-usort($aBirthdayRows, "bdCompareRows");
+usort($aBirthdayRows, "servedCompareRows");
 $iTime = sendPageHeaders();
 
 ?>
@@ -1039,7 +1055,7 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="csrf-token" content="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+  <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
 <body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-date-input-format="<?php echo html($sDateInputFormat); ?>">
@@ -1059,12 +1075,16 @@ renderMenu();
   <div class="confirm-dialog index-settings-dialog" id="index-settings-dialog" hidden>
     <form class="confirm-dialog-box index-settings-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">
       <input type="hidden" name="action" value="save_bd_settings">
-      <input type="hidden" name="ex_csrf_token" value="<?php echo html(getCsrfToken("ex_csrf_token")); ?>">
+      <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
       <div class="confirm-dialog-header">
         <strong>Birthday Settings</strong>
         <button type="button" class="confirm-dialog-close js-index-settings-close" aria-label="Close">&times;</button>
       </div>
       <div class="index-settings-options">
+        <div class="index-settings-inline-options">
+          <label for="birthday-days-back">Days back <input type="number" id="birthday-days-back" name="birthday_days_back" min="0" max="366" step="1" value="<?php echo html($aBirthdaySettings["birthday_days_back"]); ?>"></label>
+          <label for="birthday-days-forward">Days forward <input type="number" id="birthday-days-forward" name="birthday_days_forward" min="0" max="366" step="1" value="<?php echo html($aBirthdaySettings["birthday_days_forward"]); ?>"></label>
+        </div>
         <label><input type="checkbox" name="show_inactive_subjects" value="1"<?php echo $aBirthdaySettings["show_inactive_subjects"] ? " checked" : ""; ?>> Show inactive subjects</label>
         <label><input type="checkbox" name="show_inactive_nicknames" value="1"<?php echo $aBirthdaySettings["show_inactive_nicknames"] ? " checked" : ""; ?>> Show inactive nicknames</label>
         <label><input type="checkbox" name="show_inactive_addresses" value="1"<?php echo $aBirthdaySettings["show_inactive_addresses"] ? " checked" : ""; ?>> Show inactive addresses</label>
@@ -1107,7 +1127,7 @@ if (!$aBirthdayRows) {
     <thead>
       <tr>
         <th class="column-hidden">Type</th>
-        <th class="birthday-in-column">In</th>
+        <th class="served-in-column">In</th>
         <th>Name</th>
         <th class="column-hidden">First Name</th>
         <th class="column-hidden">Last Name</th>

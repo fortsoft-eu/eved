@@ -3,12 +3,20 @@
 include "main.php";
 
 
+$sCsrfTokenName = "csrf_token";
+$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
+
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
 
-requireFullAccess($aAllowedIps, "portal", "lm_csrf_token");
+requireFullAccess($aAllowedIps, "portal", $sCsrfTokenName, $blJsonResponse);
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["admin_auto_refresh_action"])) {
+    requireNamedCsrfToken($sCsrfTokenName, true);
+    handleAdminAutoRefreshRequest();
+}
 
 
 $aRows = array();
@@ -22,6 +30,8 @@ try {
 }
 
 $iLatestId = count($aRows) > 0 ? (int)$aRows[0]["id"] : 0;
+$blAutoRefresh = getAdminAutoRefreshValue("auto-refresh");
+$sCsrfToken = getCsrfToken($sCsrfTokenName);
 $iTime = sendPageHeaders();
 
 ?>
@@ -33,6 +43,7 @@ $iTime = sendPageHeaders();
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="csrf-token" content="<?php echo html($sCsrfToken); ?>">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
@@ -51,7 +62,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
-    <input type="checkbox" id="auto-refresh" class="js-auto-refresh" data-latest-id="<?php echo $iLatestId; ?>" data-refresh-interval="300000">
+    <input type="checkbox" id="auto-refresh" class="js-auto-refresh" data-latest-id="<?php echo $iLatestId; ?>" data-refresh-interval="300000"<?php echo $blAutoRefresh ? " checked" : ""; ?>>
     <label for="auto-refresh">Auto-refresh every 5 minutes</label>
   </p>
 <?php

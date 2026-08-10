@@ -16,7 +16,7 @@ if (isset($_GET["download"])) {
     }
     if ($sDownload == "backup" && !isTrustedClient($aAllowedIps) && !isProjectViewAllowed("film")) {
         if ($blDatabaseBackupDownloadLogin) {
-            requireViewAccess($aAllowedIps, "film", "film_csrf_token");
+            requireViewAccess($aAllowedIps, "film", "csrf_token");
         }
         send403AndExit();
     }

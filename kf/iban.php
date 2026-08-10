@@ -8,7 +8,7 @@ if (!$oPdo) {
 }
 
 
-requireViewAccess($aAllowedIps, "kf", "kf_csrf_token");
+requireViewAccess($aAllowedIps, "kf", "csrf_token");
 
 
 $iTime = sendPageHeaders();

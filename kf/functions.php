@@ -124,7 +124,7 @@ function handleSettingsPost() {
     if ($_SERVER["REQUEST_METHOD"] != "POST" || getPostedTrimmedValue("action") != "save_settings") {
         return;
     }
-    requireNamedCsrfToken("kf_csrf_token");
+    requireNamedCsrfToken("csrf_token");
     saveSettings($_POST);
     session_write_close();
     $sScriptName = basename($_SERVER["SCRIPT_NAME"]);
@@ -148,7 +148,7 @@ function renderSettingsModal($aSettings = null) {
     return "  <div class=\"confirm-dialog index-settings-dialog\" id=\"index-settings-dialog\" hidden>\n"
         . "    <form class=\"confirm-dialog-box index-settings-form\" method=\"post\" action=\"" . html($sAction) . "\" enctype=\"application/x-www-form-urlencoded\">\n"
         . "      <input type=\"hidden\" name=\"action\" value=\"save_settings\">\n"
-        . "      <input type=\"hidden\" name=\"kf_csrf_token\" value=\"" . html(getCsrfToken("kf_csrf_token")) . "\">\n"
+        . "      <input type=\"hidden\" name=\"csrf_token\" value=\"" . html(getCsrfToken("csrf_token")) . "\">\n"
         . "      <div class=\"confirm-dialog-header\">\n"
         . "        <strong>Settings</strong>\n"
         . "        <button type=\"button\" class=\"confirm-dialog-close js-index-settings-close\" aria-label=\"Close\">&times;</button>\n"

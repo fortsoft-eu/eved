@@ -8,7 +8,7 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "film", "film_csrf_token");
+requireFullAccess($aAllowedIps, "film", "csrf_token");
 
 if (isset($_GET["select"]) && preg_match("/^(info|credits)_\d+$/", $_GET["select"])) {
     list($sType, $iSelect) = explode("_", $_GET["select"], 2);

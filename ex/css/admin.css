@@ -831,7 +831,7 @@ body.mail-page .admin-controls .mail-send-button {
     cursor: default;
     display: flex;
     gap: 10px;
-    padding: 7px 40px 7px 10px;
+    padding: 6px 40px 6px 10px;
     text-decoration: none;
     white-space: nowrap;
 }
@@ -849,7 +849,7 @@ body.mail-page .admin-controls .mail-send-button {
 .menu-separator {
     border-top: 1px solid #E5E5E5;
     display: block;
-    margin: 8px 0;
+    margin: 4px 0;
 }
 
 .index-settings-form {
@@ -865,6 +865,20 @@ body.mail-page .admin-controls .mail-send-button {
 .index-settings-options label, .complex-filter-match label {
     font-weight: normal;
     margin-top: 0;
+}
+
+.index-settings-inline-options {
+    display: flex;
+    gap: 12px;
+}
+
+.index-settings-inline-options label {
+    white-space: nowrap;
+}
+
+.index-settings-inline-options input[type="number"] {
+    box-sizing: border-box;
+    width: 56px;
 }
 
 .index-settings-options hr {
@@ -1504,7 +1518,7 @@ body.phpinfo-page .admin-controls {
     text-decoration: none;
 }
 
-.contacts-table .birthday-in-column {
+.contacts-table .served-in-column {
     overflow-wrap: normal;
     text-align: right;
     white-space: nowrap;

@@ -3561,27 +3561,47 @@ function bdGetBirthdayInfo($sBirthDate) {
     if ($iMonth < 1 || $iMonth > 12 || $iDay < 1 || $iDay > 31) {
         return null;
     }
-    $oToday = new DateTimeImmutable("today");
-    $iCurrentYear = (int)$oToday->format("Y");
+    $iTodayTimestamp = strtotime("today 12:00:00");
+    if ($iTodayTimestamp === false) {
+        return null;
+    }
+    $iWindowMinTimestamp = strtotime(sprintf("%+d days", (int)$iBirthdayDisplayMinDays), $iTodayTimestamp);
+    $iWindowMaxTimestamp = strtotime(sprintf("%+d days", (int)$iBirthdayDisplayMaxDays), $iTodayTimestamp);
+    if ($iWindowMinTimestamp === false || $iWindowMaxTimestamp === false) {
+        return null;
+    }
+    $iCurrentYear = (int)date("Y", $iTodayTimestamp);
     $aYears = array($iCurrentYear - 1, $iCurrentYear, $iCurrentYear + 1);
+    $iBirthdayTimestamp = null;
+    $iBirthdayDistance = null;
     foreach ($aYears as $iYear) {
         if (!checkdate($iMonth, $iDay, $iYear)) {
             continue;
         }
-        $oBirthday = DateTimeImmutable::createFromFormat("!Y-m-d", sprintf("%04d-%02d-%02d", $iYear, $iMonth, $iDay));
-        if (!$oBirthday) {
+        $iCurrentBirthdayTimestamp = strtotime(sprintf("%04d-%02d-%02d 12:00:00", $iYear, $iMonth, $iDay));
+        if ($iCurrentBirthdayTimestamp === false) {
             continue;
         }
-        $iDaysToBirthday = (int)$oToday->diff($oBirthday)->format("%r%a");
-        if ($iDaysToBirthday < $iBirthdayDisplayMinDays || $iDaysToBirthday > $iBirthdayDisplayMaxDays) {
+        if ($iCurrentBirthdayTimestamp < $iWindowMinTimestamp || $iCurrentBirthdayTimestamp > $iWindowMaxTimestamp) {
             continue;
         }
-        return array(
-            "days_to_birthday" => $iDaysToBirthday,
-            "birthday_date" => $oBirthday->format("Y-m-d")
-        );
+        $iCurrentBirthdayDistance = abs($iCurrentBirthdayTimestamp - $iTodayTimestamp);
+        if ($iBirthdayDistance !== null && $iCurrentBirthdayDistance > $iBirthdayDistance) {
+            continue;
+        }
+        if ($iBirthdayDistance !== null && $iCurrentBirthdayDistance == $iBirthdayDistance && $iCurrentBirthdayTimestamp < $iBirthdayTimestamp) {
+            continue;
+        }
+        $iBirthdayTimestamp = $iCurrentBirthdayTimestamp;
+        $iBirthdayDistance = $iCurrentBirthdayDistance;
     }
-    return null;
+    if ($iBirthdayTimestamp === null) {
+        return null;
+    }
+    return array(
+        "days_to_served" => (int)round(($iBirthdayTimestamp - $iTodayTimestamp) / 86400),
+        "served_date" => date("Y-m-d", $iBirthdayTimestamp)
+    );
 }
 
 function fetchPersonServedRows($oPdo, $sServedColumn) {
@@ -3616,9 +3636,9 @@ function bdIsBirthdayServed($aServedRows, $iSubjectId, $sBirthdayDate) {
     return $oServedAt >= $oBirthday->modify(sprintf("%+d days", -(int)$iBirthdayDisplayMaxDays)) && $oServedAt < $oBirthday->modify(sprintf("%+d days", 1 - (int)$iBirthdayDisplayMinDays));
 }
 
-function bdCompareRows($aFirst, $aSecond) {
-    $iFirstCountdown = isset($aFirst["days_to_birthday"]) ? (int)$aFirst["days_to_birthday"] : 0;
-    $iSecondCountdown = isset($aSecond["days_to_birthday"]) ? (int)$aSecond["days_to_birthday"] : 0;
+function servedCompareRows($aFirst, $aSecond) {
+    $iFirstCountdown = isset($aFirst["days_to_served"]) ? (int)$aFirst["days_to_served"] : 0;
+    $iSecondCountdown = isset($aSecond["days_to_served"]) ? (int)$aSecond["days_to_served"] : 0;
     if ($iFirstCountdown === $iSecondCountdown) {
         $iResult = strcmp((string)(isset($aFirst["subject_sort_name"]) ? $aFirst["subject_sort_name"] : $aFirst["subject_name"]), (string)(isset($aSecond["subject_sort_name"]) ? $aSecond["subject_sort_name"] : $aSecond["subject_name"]));
         if ($iResult !== 0) {
@@ -3631,6 +3651,10 @@ function bdCompareRows($aFirst, $aSecond) {
         return (int)$aFirst["subject_id"] - (int)$aSecond["subject_id"];
     }
     return $iFirstCountdown < $iSecondCountdown ? -1 : 1;
+}
+
+function bdCompareRows($aFirst, $aSecond) {
+    return servedCompareRows($aFirst, $aSecond);
 }
 
 function bdRenderSubjectActions($aRow, $blShowActions) {
@@ -3648,14 +3672,14 @@ function bdRenderSubjectActions($aRow, $blShowActions) {
 
 function renderServedSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aDisplaySettings, $sServedActionClass, $sServedActionLabel, $sServedActionEmoji, $aOptions = array()) {
     $iSubjectId = (int)$aRow["subject_id"];
-    $iServedDays = (int)$aRow["days_to_birthday"];
-    $sServedDays = $iServedDays < 0 ? "&#8722;" . html(abs($iServedDays)) : htmlValue($aRow["days_to_birthday"]);
-    $sServedAction = $blShowActions ? "<a class=\"item-action birthday-served-action " . html($sServedActionClass) . "\" href=\"#\" data-subject-id=\"" . html($iSubjectId) . "\" title=\"" . html($sServedActionLabel) . "\" aria-label=\"" . html($sServedActionLabel) . "\"><span class=\"copy-action-box\">" . $sServedActionEmoji . "</span></a>" : "";
+    $iServedDays = (int)$aRow["days_to_served"];
+    $sServedDays = $iServedDays < 0 ? "&#8722;" . html(abs($iServedDays)) : htmlValue($aRow["days_to_served"]);
+    $sServedAction = $blShowActions ? "<a class=\"item-action served-action " . html($sServedActionClass) . "\" href=\"#\" data-subject-id=\"" . html($iSubjectId) . "\" title=\"" . html($sServedActionLabel) . "\" aria-label=\"" . html($sServedActionLabel) . "\"><span class=\"copy-action-box\">" . $sServedActionEmoji . "</span></a>" : "";
     $sServedInCell = $sServedDays . ($sServedAction != "" ? "&#8288;" . $sServedAction : "");
     return renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aDisplaySettings, array_merge(array(
         "show_actions" => $blShowActions,
         "item_subject_id" => $iSubjectId,
-        "before_name_cells" => array(renderSubjectTableCell($sServedInCell, "birthday-in-column")),
+        "before_name_cells" => array(renderSubjectTableCell($sServedInCell, "served-in-column")),
         "name_actions" => bdRenderSubjectActions($aRow, $blShowActions)
     ), $aOptions));
 }
@@ -3687,7 +3711,7 @@ function bdGetSubjectServedInfo($oPdo, $iSubjectId, $aRow) {
     if (!is_array($aBirthdayInfo)) {
         return null;
     }
-    if (bdIsBirthdayServed(fetchPersonServedRows($oPdo, "birthday_served_at"), $iSubjectId, $aBirthdayInfo["birthday_date"])) {
+    if (bdIsBirthdayServed(fetchPersonServedRows($oPdo, "birthday_served_at"), $iSubjectId, $aBirthdayInfo["served_date"])) {
         return null;
     }
     return $aBirthdayInfo;
@@ -3708,12 +3732,12 @@ function getUpdatedServedSubjectResponse($oPdo, $iSubjectId, $aDisplaySettings, 
     if (!$aRows || (string)$aRows[0]["subject_type"] != "person") {
         return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
     }
-    $aBirthdayInfo = $sInfoFunction($oPdo, $iSubjectId, $aRows[0]);
-    if (!is_array($aBirthdayInfo)) {
+    $aServedInfo = $sInfoFunction($oPdo, $iSubjectId, $aRows[0]);
+    if (!is_array($aServedInfo)) {
         return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
     }
-    $aRows[0]["days_to_birthday"] = $aBirthdayInfo["days_to_birthday"];
-    $aRows[0]["birthday_date"] = $aBirthdayInfo["birthday_date"];
+    $aRows[0]["days_to_served"] = $aServedInfo["days_to_served"];
+    $aRows[0]["served_date"] = $aServedInfo["served_date"];
     return array(
         "success" => true,
         "subject_id" => $iSubjectId,
@@ -5758,35 +5782,45 @@ function getFullListComplexFilterPostPayload() {
     return $aPayload;
 }
 
-function interGetBirthdayInfo($sCommunicationServedAt) {
+function interGetCommunicationInfo($sCommunicationServedAt) {
     $sCommunicationServedAt = trim((string)$sCommunicationServedAt);
-    $oToday = new DateTimeImmutable("today");
-    if ($sCommunicationServedAt == "" || strpos($sCommunicationServedAt, "0000-00-00") === 0) {
-        return array(
-            "days_to_birthday" => 0,
-            "birthday_date" => $oToday->format("Y-m-d")
-        );
-    }
-    try {
-        $oCommunicationDue = (new DateTimeImmutable($sCommunicationServedAt))->modify("+2 months")->setTime(0, 0, 0);
-    } catch (Exception $oException) {
-        error_log((string)$oException);
+    $iTodayTimestamp = strtotime("today 12:00:00");
+    if ($iTodayTimestamp === false) {
         return null;
     }
-    $iDaysToCommunication = (int)$oToday->diff($oCommunicationDue)->format("%r%a");
+    if ($sCommunicationServedAt == "" || strpos($sCommunicationServedAt, "0000-00-00") === 0) {
+        return array(
+            "days_to_served" => 0,
+            "served_date" => date("Y-m-d", $iTodayTimestamp)
+        );
+    }
+    $iCommunicationServedTimestamp = strtotime($sCommunicationServedAt);
+    if ($iCommunicationServedTimestamp === false) {
+        return null;
+    }
+    $iCommunicationDueTimestamp = strtotime("+2 months", $iCommunicationServedTimestamp);
+    if ($iCommunicationDueTimestamp === false) {
+        return null;
+    }
+    $sCommunicationDueDate = date("Y-m-d", $iCommunicationDueTimestamp);
+    $iCommunicationDueDateTimestamp = strtotime($sCommunicationDueDate . " 12:00:00");
+    if ($iCommunicationDueDateTimestamp === false) {
+        return null;
+    }
+    $iDaysToCommunication = (int)round(($iCommunicationDueDateTimestamp - $iTodayTimestamp) / 86400);
     if ($iDaysToCommunication < 0 || $iDaysToCommunication > 20) {
         return null;
     }
     return array(
-        "days_to_birthday" => $iDaysToCommunication,
-        "birthday_date" => $oCommunicationDue->format("Y-m-d")
+        "days_to_served" => $iDaysToCommunication,
+        "served_date" => $sCommunicationDueDate
     );
 }
 
-function interRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings) {
+function interRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aInteractionSettings) {
     global $sCommunicationServedEmoji;
 
-    return renderServedSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aBirthdaySettings, "js-communication-served", "Mark communication served", $sCommunicationServedEmoji, array(
+    return renderServedSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions, $aHiddenInactive, $aInteractionSettings, "js-communication-served", "Mark communication served", $sCommunicationServedEmoji, array(
         "nickname_show_add_action" => true,
         "address_show_add_action" => true,
         "contact_show_add_action" => true,
@@ -5796,13 +5830,13 @@ function interRenderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGr
 }
 
 function interGetSubjectServedInfo($oPdo, $iSubjectId, $aRow) {
-    $aBirthdayServedRows = fetchPersonServedRows($oPdo, "inter_served_at");
-    $sCommunicationServedAt = isset($aBirthdayServedRows[$iSubjectId]["inter_served_at"]) ? $aBirthdayServedRows[$iSubjectId]["inter_served_at"] : "";
-    return interGetBirthdayInfo($sCommunicationServedAt);
+    $aCommunicationServedRows = fetchPersonServedRows($oPdo, "inter_served_at");
+    $sCommunicationServedAt = isset($aCommunicationServedRows[$iSubjectId]["inter_served_at"]) ? $aCommunicationServedRows[$iSubjectId]["inter_served_at"] : "";
+    return interGetCommunicationInfo($sCommunicationServedAt);
 }
 
-function interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions) {
-    return getUpdatedServedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blShowActions, "interGetSubjectServedInfo", "interRenderSubjectRow");
+function interGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blShowActions) {
+    return getUpdatedServedSubjectResponse($oPdo, $iSubjectId, $aInteractionSettings, $blShowActions, "interGetSubjectServedInfo", "interRenderSubjectRow");
 }
 
 function diffEnsureDumpTable(&$aDump, $sTableName) {

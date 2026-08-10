@@ -8,9 +8,9 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "film", "film_csrf_token", true);
+requireFullAccess($aAllowedIps, "film", "csrf_token", true);
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    requireNamedCsrfToken("film_csrf_token", true);
+    requireNamedCsrfToken("csrf_token", true);
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "mark_scan_processed") {
@@ -49,7 +49,7 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
-$sCsrfToken = getCsrfToken("film_csrf_token");
+$sCsrfToken = getCsrfToken("csrf_token");
 $iTime = sendPageHeaders();
 
 ?>

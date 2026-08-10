@@ -9,10 +9,27 @@ var sAdminBodyOverflow = "";
 var oFilmOpenDialog = null;
 
 
+function getAdminCsrfToken() {
+    var oMeta = document.querySelector("meta[name=\"csrf-token\"]");
+    return oMeta ? (oMeta.getAttribute("content") || "") : "";
+}
+
+function appendAdminCsrfToken(oData) {
+    var sToken = getAdminCsrfToken();
+    if (oData && sToken) {
+        oData.append("csrf_token", sToken);
+    }
+}
+
 function getAdminAjaxHeaders() {
-    return {
+    var aHeaders = {
         "X-Requested-With": "XMLHttpRequest"
     };
+    var sToken = getAdminCsrfToken();
+    if (sToken) {
+        aHeaders["X-CSRF-Token"] = sToken;
+    }
+    return aHeaders;
 }
 
 function lockAdminModalScroll() {
@@ -1314,20 +1331,33 @@ document.addEventListener("DOMContentLoaded", function () {
     var oAutoRefresh = document.querySelector(".js-auto-refresh");
     var iRefreshTimer = null;
     var oAudioContext = null;
-    var sStorageKey;
     var iLatestId;
     var iRefreshInterval;
     if (!oAutoRefresh || !window.fetch) {
         return;
     }
-    sStorageKey = "admin-auto-refresh:" + window.location.pathname;
     iLatestId = parseInt(oAutoRefresh.getAttribute("data-latest-id") || "0", 10);
     iRefreshInterval = parseInt(oAutoRefresh.getAttribute("data-refresh-interval") || "300000", 10);
-    try {
-        oAutoRefresh.checked = window.localStorage.getItem(sStorageKey) == "1";
-    } catch (oException) {
-        console.error(oException);
-        logFilmException(oException);
+
+    function sendAutoRefreshState() {
+        var oData;
+        if (!window.FormData) {
+            return;
+        }
+        oData = new FormData();
+        oData.append("admin_auto_refresh_action", "save");
+        oData.append("control_id", oAutoRefresh.id || "auto-refresh");
+        oData.append("enabled", oAutoRefresh.checked ? "1" : "0");
+        appendAdminCsrfToken(oData);
+        fetch(window.location.href, {
+            "method": "POST",
+            "credentials": "same-origin",
+            "headers": getAdminAjaxHeaders(),
+            "body": oData
+        }).catch(function (oException) {
+            console.error(oException);
+            logFilmException(oException);
+        });
     }
 
     function prepareAudio() {
@@ -1416,12 +1446,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     oAutoRefresh.addEventListener("change", function () {
-        try {
-            window.localStorage.setItem(sStorageKey, oAutoRefresh.checked ? "1" : "0");
-        } catch (oException) {
-            console.error(oException);
-            logFilmException(oException);
-        }
+        sendAutoRefreshState();
         if (oAutoRefresh.checked) {
             prepareAudio();
         }
@@ -1597,7 +1622,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oData = new FormData();
         oData.append("action", "mark_scan_processed");
         oData.append("film_scan_id", oButton.getAttribute("data-film-scan-id") || oRow.getAttribute("data-film-scan-id") || "");
-        oData.append("film_csrf_token", sCsrfToken);
+        oData.append("csrf_token", sCsrfToken);
         oButton.disabled = true;
         fetch(window.location.href, {
             "method": "POST",

@@ -8,7 +8,7 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "kf", "kf_csrf_token");
+requireFullAccess($aAllowedIps, "kf", "csrf_token");
 
 
 $aTables = array();
