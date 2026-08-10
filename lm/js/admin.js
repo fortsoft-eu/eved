@@ -1313,6 +1313,15 @@ function createIssueSelect(sId, sValue, aOptions) {
     return oSelect;
 }
 
+function createIssueDescriptionTextarea(sId, sValue) {
+    var oTextarea = document.createElement("textarea");
+    oTextarea.id = sId;
+    oTextarea.value = sValue || "";
+    oTextarea.className = "issue-description-textarea";
+    oTextarea.rows = 8;
+    return oTextarea;
+}
+
 function padIssueDateNumber(iValue) {
     return iValue < 10 ? "0" + iValue : "" + iValue;
 }
@@ -1708,8 +1717,7 @@ function openIssueDialog(aRow, oSourceRow) {
         {value: "high", label: "High"},
         {value: "urgent", label: "Urgent"}
     ]);
-    oDescription = createAdminInput("issue-dialog-description", aRow ? aRow.description : "", false);
-    oDescription.spellcheck = true;
+    oDescription = createIssueDescriptionTextarea("issue-dialog-description", aRow ? aRow.description : "");
 
     appendIssueDialogField(oBox, "Type", oType);
     appendIssueDialogField(oBox, "Title", oIssueTitle);
@@ -1858,7 +1866,6 @@ function createEmailUsersTextarea(sId, sValue) {
     oTextarea.className = "email-users-textarea";
     oTextarea.required = true;
     oTextarea.rows = 8;
-    oTextarea.spellcheck = false;
     return oTextarea;
 }
 

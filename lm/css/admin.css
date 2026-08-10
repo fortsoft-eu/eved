@@ -204,6 +204,10 @@ input[type="date"], input[type="datetime-local"], input[type="email"], input[typ
     padding-right: 0;
 }
 
+textarea {
+    padding: 0;
+}
+
 .button-link {
     border: 1px solid #C0C0C0;
     margin-left: 8px;
@@ -913,7 +917,7 @@ body.phpinfo-page .admin-controls {
     font-weight: normal;
 }
 
-.email-users-textarea {
+.email-users-textarea, .issue-description-textarea {
     min-height: 160px;
     resize: vertical;
 }
