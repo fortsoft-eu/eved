@@ -25,8 +25,8 @@ $aDomainRow = null;
 $aDomainDnsResult = null;
 $aDomainDnsRecords = array();
 
-if (isset($_GET["domain"])) {
-    $sDomainValue = (string)$_GET["domain"];
+if (isset($_GET["query"])) {
+    $sDomainValue = (string)$_GET["query"];
     $sLookupValue = domainLookupNormalizeValue($sDomainValue);
     if ($sLookupValue == "") {
         $sLookupMessage = "Enter a domain name or IP address.";
@@ -121,8 +121,8 @@ $iTime = sendPageHeaders();
 renderMenu();
 
 ?>
-    <label for="domain">Domain/IP:</label>
-    <input type="text" id="domain" name="domain" class="domain-lookup-input" form="domain-lookup-form" value="<?php echo html($sDomainValue); ?>" spellcheck="false" required>
+    <label for="query">Domain/IP:</label>
+    <input type="text" id="query" name="query" class="domain-lookup-input" form="domain-lookup-form" value="<?php echo html($sDomainValue); ?>" spellcheck="false" required>
     <button type="submit" form="domain-lookup-form" class="button-link domain-lookup-button">Lookup</button>
   </p>
 <?php
