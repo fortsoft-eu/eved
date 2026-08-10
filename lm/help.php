@@ -8,9 +8,6 @@ if (!$oPdo) {
 }
 
 
-requireViewAccess($aAllowedIps, "portal", "csrf_token");
-
-
 $iTime = sendPageHeaders();
 
 ?>
@@ -64,6 +61,103 @@ renderMenu();
     <dd>
       <p>Dashboard is the section entry point. It shows the maintenance request overview that used to be available from the trusted branch of the film entry point, from Navigation through the PHP <code>$_COOKIE</code> array.</p>
       <p>The page is read-only. It is meant for checking the current request, headers, session, cookies, and server values without opening several separate diagnostic pages.</p>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>req.php">Request Overview</a></dt>
+    <dd>
+      <p>Request Overview is the compact plain-text request diagnostic page. It prints the current request summary in a preformatted block so the request can be copied or compared without opening the larger table view.</p>
+      <p>The page is read-only and is intended for quick inspection of request, server, session, and cookie context.</p>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>bt.php">Issue Tracker</a></dt>
+    <dd>
+      <p>Issue Tracker lists maintenance issues with type, status, priority, title, due date, updated date, and edit actions. Full access can create, edit, and delete issues from the page dialogs.</p>
+      <p>The quick filter narrows the rendered issue table. Description fields are edited as text areas and use the browser's normal spellcheck settings.</p>
+      <ul>
+        <li><strong>Rows:</strong> One issue per row.</li>
+        <li><strong>Editing:</strong> Full access can create, update, and delete issues.</li>
+        <li><strong>Filtering:</strong> Quick filter over visible issue text.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>bh.php">Business Hours</a></dt>
+    <dd>
+      <p>Business Hours manages displayed opening-hour rows. The page uses tabbed business-hour groups, cards for individual records, and a New dialog for adding another entry.</p>
+      <p>Full access can add and maintain business-hour records. The page keeps the editing surface focused on the visible business-hour cards instead of exposing raw database tables.</p>
+      <ul>
+        <li><strong>Display:</strong> Tabs and cards for business-hour records.</li>
+        <li><strong>Editing:</strong> Full access can add and update entries.</li>
+        <li><strong>Dialogs:</strong> Uses the shared project modal dialog.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>email.php">E-mail Domains</a></dt>
+    <dd>
+      <p>E-mail Domains shows local-part users across managed domains. Domains are columns, local parts are rows, and a missing address cell is shown as an em dash so gaps are visible.</p>
+      <p>The New dialog adds a domain and a list of local users. It stores whether each added address is a mailbox, alias, or forwarder, ignores duplicates already present in the database, and colors table cells by account type.</p>
+      <ul>
+        <li><strong>Table:</strong> Domains by local-part user.</li>
+        <li><strong>Types:</strong> Mailbox, alias, and forwarder.</li>
+        <li><strong>Input:</strong> User tokens can be separated by commas, semicolons, whitespace, or lines.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>phone.php">Phone Accounts</a></dt>
+    <dd>
+      <p>Phone Accounts stores standalone phone-number records with SIM identifiers, PIN/PUK values, IMEI, note, paid date/time, paid amount, currency, and Telegram account. It has no subject, domain, or other page relation.</p>
+      <p>Phone numbers and Telegram accounts are normalized to the same canonical values used by the EX contact pages before they are stored.</p>
+      <ul>
+        <li><strong>Rows:</strong> One phone account per row.</li>
+        <li><strong>Order:</strong> New rows are appended and can be moved with arrows.</li>
+        <li><strong>Payment:</strong> Amounts accept dot or comma decimal input, currency options follow KF currencies, and new-entry amount and currency defaults are session-backed.</li>
+        <li><strong>Editing:</strong> Full access can create, update, and delete rows.</li>
+        <li><strong>Filtering:</strong> Quick filter over visible phone-account text.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>sb.php">Snippet Board</a></dt>
+    <dd>
+      <p>Snippet Board stores six rich-text snippets for quick reuse. Each slot is edited with the shared rich-text editor and saved through the page without leaving the board.</p>
+      <p>The board tracks changed, saving, and saved state in the toolbar. On compact devices the visible slot is selected through numbered tabs.</p>
+      <ul>
+        <li><strong>Slots:</strong> Six editable snippet panels.</li>
+        <li><strong>Editor:</strong> Shared TinyMCE editor setup.</li>
+        <li><strong>State:</strong> Changed and saved status is shown in the toolbar.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>char.php">Character Converter</a></dt>
+    <dd>
+      <p>Character Converter converts a Unicode character between the character itself, decimal code point, hexadecimal code point, decimal HTML entity, hexadecimal HTML entity, and named HTML entity where available.</p>
+      <p>The palette offers commonly used characters and variants. Text and Emoji buttons choose the preferred presentation for characters that support variation selectors.</p>
+      <ul>
+        <li><strong>Conversion:</strong> Character, code points, and HTML entities.</li>
+        <li><strong>Palette:</strong> Common Unicode characters with title details.</li>
+        <li><strong>Safety:</strong> Browser-side conversion without database writes.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>fancy.php">Fancy Text</a></dt>
+    <dd>
+      <p>Fancy Text converts plain or already styled Unicode text into selected Unicode mathematical alphanumeric styles. The left text area contains the source text and the right text area shows the regenerated styled output.</p>
+      <p>The style selector is in the top control row. Changing the selected style regenerates the output, and unsupported characters are left unchanged.</p>
+      <ul>
+        <li><strong>Input:</strong> Plain or styled Unicode text.</li>
+        <li><strong>Output:</strong> Unicode styled text.</li>
+        <li><strong>Layout:</strong> Text areas switch between vertical and side-by-side layout according to available space.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>ares.php">ARES Lookup</a></dt>
+    <dd>
+      <p>ARES Lookup searches Czech business-register data by company ID, business name, registered office, legal form, tax office, and CZ-NACE fields. A direct company-ID match shows a detail table; broader searches show result rows.</p>
+      <p>The form is read-only from the local database point of view. It displays returned ARES values in tables that can use the compact table style on small devices.</p>
+      <ul>
+        <li><strong>Search fields:</strong> Company ID, business name, office, legal form, tax office, and CZ-NACE.</li>
+        <li><strong>Output:</strong> Detail or search-result table.</li>
+        <li><strong>Safety:</strong> Lookup page without local data writes.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>whois.php">Domain/IP Lookup</a></dt>
+    <dd>
+      <p>Domain/IP Lookup checks a domain name or IP address and displays registration, reverse DNS, and DNS record information when available.</p>
+      <p>The top row follows the same compact control layout as other lookup pages: menu, label, input, and Lookup button. Result tables keep detail values separate from DNS rows so they can be copied or reviewed independently.</p>
+      <ul>
+        <li><strong>Input:</strong> Domain name or IP address.</li>
+        <li><strong>Output:</strong> Domain details, reverse DNS, and DNS records.</li>
+        <li><strong>Safety:</strong> Lookup page without local data writes.</li>
+      </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
     <dd>
@@ -164,6 +258,16 @@ renderMenu();
         <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>ua.php">Eved Access Log</a></dt>
+    <dd>
+      <p>Eved Access Log is a full-access diagnostic page for recent browser fingerprint records. It shows request time, IP address, geo headers, parsed user agent, GPU, fonts, screen data, timezone, language, platform, plugins, and MIME types.</p>
+      <p>The page can auto-refresh every five minutes and uses the quick filter for narrowing already rendered rows.</p>
+      <ul>
+        <li><strong>Rows:</strong> Recent access-log records.</li>
+        <li><strong>Details:</strong> Browser, device, screen, language, and plugin data.</li>
+        <li><strong>Refresh:</strong> Optional five-minute auto-refresh.</li>
+      </ul>
+    </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>request.php">PHP Request Variables</a></dt>
     <dd>
       <p>PHP Request Variables is a full-access diagnostic page for the current request. It prints <code>$_GET</code>, <code>$_POST</code>, <code>$_FILES</code>, <code>$_SERVER</code>, <code>$_SESSION</code>, and <code>$_COOKIE</code> in a filterable table.</p>
@@ -177,7 +281,7 @@ renderMenu();
     <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
     <dd>
       <p>Help is this read-only Dashboard help page. It documents Dashboard controls, access expectations, and Dashboard menu pages.</p>
-      <p>The page itself requires only portal view access and does not modify data.</p>
+      <p>The page itself is public, reads menu metadata for navigation, and does not modify data.</p>
     </dd>
   </dl>
   <h2>Česky</h2>
@@ -207,6 +311,103 @@ renderMenu();
     <dd>
       <p>Dashboard je vstupní stránka sekce. Zobrazuje údržbový přehled requestu, který byl dříve dostupný v trusted větvi filmového vstupu, od Navigation až po PHP pole <code>$_COOKIE</code>.</p>
       <p>Stránka je pouze pro čtení. Slouží ke kontrole aktuálního requestu, hlaviček, session, cookies a serverových hodnot bez otevírání několika samostatných diagnostik.</p>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>req.php">Request Overview</a></dt>
+    <dd>
+      <p>Request Overview je kompaktní plain-text diagnostika aktuálního requestu. Vypisuje souhrn požadavku do preformátovaného bloku, aby ho šlo snadno kopírovat nebo porovnat bez otevření větší tabulkové stránky.</p>
+      <p>Stránka je pouze pro čtení a slouží k rychlé kontrole requestu, serveru, session a cookies.</p>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>bt.php">Issue Tracker</a></dt>
+    <dd>
+      <p>Issue Tracker vypisuje údržbové issues s typem, stavem, prioritou, názvem, termínem, časem aktualizace a editačními akcemi. Full přístup může issues vytvářet, upravovat a mazat z dialogů stránky.</p>
+      <p>Rychlý filtr zužuje vykreslenou tabulku issues. Pole Description se upravují jako textareas a používají běžné nastavení kontroly pravopisu v prohlížeči.</p>
+      <ul>
+        <li><strong>Řádky:</strong> Jedno issue na řádek.</li>
+        <li><strong>Editace:</strong> Full přístup může issues vytvářet, upravovat a mazat.</li>
+        <li><strong>Filtrování:</strong> Rychlý filtr nad viditelným textem issues.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>bh.php">Business Hours</a></dt>
+    <dd>
+      <p>Business Hours spravuje zobrazované řádky otevírací doby. Stránka používá taby skupin business hours, karty jednotlivých záznamů a dialog New pro přidání další položky.</p>
+      <p>Full přístup může přidávat a udržovat záznamy business hours. Stránka nechává editační vrstvu zaměřenou na viditelné karty místo zobrazení surových databázových tabulek.</p>
+      <ul>
+        <li><strong>Zobrazení:</strong> Taby a karty pro záznamy business hours.</li>
+        <li><strong>Editace:</strong> Full přístup může přidávat a upravovat položky.</li>
+        <li><strong>Dialogy:</strong> Používá sdílený projektový modální dialog.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>email.php">E-mail Domains</a></dt>
+    <dd>
+      <p>E-mail Domains ukazuje uživatele před zavináčem napříč spravovanými doménami. Domény jsou sloupce, lokální části adres jsou řádky a chybějící adresa se zobrazuje jako em dash, aby byly mezery viditelné.</p>
+      <p>Dialog New přidává doménu a seznam lokálních uživatelů. Ukládá, jestli jde o mailbox, alias nebo forwarder, ignoruje duplicity, které už v databázi jsou, a buňky tabulky barevně odlišuje podle typu účtu.</p>
+      <ul>
+        <li><strong>Tabulka:</strong> Domény podle lokální části adresy.</li>
+        <li><strong>Typy:</strong> Mailbox, alias a forwarder.</li>
+        <li><strong>Vstup:</strong> Uživatelské tokeny lze oddělovat čárkami, středníky, bílými znaky nebo řádky.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>phone.php">Phone Accounts</a></dt>
+    <dd>
+      <p>Phone Accounts ukládá samostatné záznamy telefonních čísel s identifikátory SIM, PIN/PUK hodnotami, IMEI, poznámkou, datem a časem zaplacení, částkou, měnou a Telegram účtem. Nemá vazbu na subject, doménu ani jinou stránku.</p>
+      <p>Telefonní čísla a Telegram účty se před uložením normalizují do stejných kanonických hodnot, jaké používají EX kontaktní stránky.</p>
+      <ul>
+        <li><strong>Řádky:</strong> Jeden phone account na řádek.</li>
+        <li><strong>Pořadí:</strong> Nové řádky se přidávají nakonec a pořadí lze měnit šipkami.</li>
+        <li><strong>Platba:</strong> Částky přijímají desetinnou tečku i čárku, měny vycházejí z KF měn a výchozí částka i měna pro nový záznam jsou uložené v session.</li>
+        <li><strong>Editace:</strong> Full přístup může řádky vytvářet, upravovat a mazat.</li>
+        <li><strong>Filtrování:</strong> Rychlý filtr nad viditelným textem phone accounts.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>sb.php">Snippet Board</a></dt>
+    <dd>
+      <p>Snippet Board ukládá šest rich-text snippetů pro rychlé opakované použití. Každý slot se upravuje sdíleným rich-text editorem a ukládá se přímo ze stránky bez opuštění boardu.</p>
+      <p>Board ukazuje stav changed, saving a saved v horní liště. Na kompaktních zařízeních se viditelný slot vybírá očíslovanými taby.</p>
+      <ul>
+        <li><strong>Sloty:</strong> Šest editovatelných snippet panelů.</li>
+        <li><strong>Editor:</strong> Sdílené nastavení TinyMCE.</li>
+        <li><strong>Stav:</strong> Změna a uložení jsou vidět v horní liště.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>char.php">Character Converter</a></dt>
+    <dd>
+      <p>Character Converter převádí Unicode znak mezi samotným znakem, decimálním code pointem, hexadecimálním code pointem, decimální HTML entitou, hexadecimální HTML entitou a pojmenovanou HTML entitou, pokud existuje.</p>
+      <p>Paleta nabízí často používané znaky a varianty. Tlačítka Text a Emoji volí preferovanou prezentaci u znaků, které podporují variation selectors.</p>
+      <ul>
+        <li><strong>Převod:</strong> Znak, code points a HTML entity.</li>
+        <li><strong>Paleta:</strong> Běžné Unicode znaky s detaily v titulku.</li>
+        <li><strong>Bezpečnost:</strong> Převod v prohlížeči bez databázových zápisů.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>fancy.php">Fancy Text</a></dt>
+    <dd>
+      <p>Fancy Text převádí plain nebo už stylovaný Unicode text do vybraných Unicode mathematical alphanumeric stylů. Levá textarea obsahuje zdrojový text a pravá textarea ukazuje znovu vygenerovaný stylovaný výstup.</p>
+      <p>Select stylu je v horním řádku ovládacích prvků. Změna stylu přegeneruje výstup a nepodporované znaky zůstanou beze změny.</p>
+      <ul>
+        <li><strong>Vstup:</strong> Plain nebo stylovaný Unicode text.</li>
+        <li><strong>Výstup:</strong> Unicode stylovaný text.</li>
+        <li><strong>Rozložení:</strong> Textareas se přepínají mezi svislým a vedle sebe rozložením podle dostupného prostoru.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>ares.php">ARES Lookup</a></dt>
+    <dd>
+      <p>ARES Lookup hledá česká data ekonomických subjektů podle IČO, obchodního jména, sídla, právní formy, finančního úřadu a CZ-NACE. Přímá shoda podle IČO ukazuje detailní tabulku; širší hledání ukazuje výsledkové řádky.</p>
+      <p>Z pohledu lokální databáze je formulář pouze čtecí. Vrácené hodnoty ARES vypisuje v tabulkách, které mohou na malých zařízeních používat kompaktní styl tabulky.</p>
+      <ul>
+        <li><strong>Vyhledávací pole:</strong> IČO, obchodní jméno, sídlo, právní forma, finanční úřad a CZ-NACE.</li>
+        <li><strong>Výstup:</strong> Detail nebo tabulka výsledků hledání.</li>
+        <li><strong>Bezpečnost:</strong> Vyhledávací stránka bez lokálních datových zápisů.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>whois.php">Domain/IP Lookup</a></dt>
+    <dd>
+      <p>Domain/IP Lookup kontroluje doménové jméno nebo IP adresu a zobrazuje registrační, reverse DNS a DNS informace, pokud jsou dostupné.</p>
+      <p>Horní řádek používá stejné kompaktní rozložení ovládacích prvků jako ostatní lookup stránky: menu, label, vstup a tlačítko Lookup. Výsledkové tabulky oddělují detailní hodnoty od DNS řádků, aby šly samostatně kopírovat nebo kontrolovat.</p>
+      <ul>
+        <li><strong>Vstup:</strong> Doménové jméno nebo IP adresa.</li>
+        <li><strong>Výstup:</strong> Detail domény, reverse DNS a DNS záznamy.</li>
+        <li><strong>Bezpečnost:</strong> Vyhledávací stránka bez lokálních datových zápisů.</li>
+      </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
     <dd>
@@ -307,6 +508,16 @@ renderMenu();
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>ua.php">Eved Access Log</a></dt>
+    <dd>
+      <p>Eved Access Log je diagnostická stránka s full přístupem pro poslední browser fingerprint záznamy. Ukazuje čas requestu, IP adresu, geo hlavičky, parsovaný user agent, GPU, fonty, display, časové pásmo, jazyk, platformu, pluginy a MIME typy.</p>
+      <p>Stránka může provádět auto-refresh každých pět minut a používá rychlý filtr pro zúžení už vykreslených řádků.</p>
+      <ul>
+        <li><strong>Řádky:</strong> Poslední záznamy access logu.</li>
+        <li><strong>Detaily:</strong> Prohlížeč, zařízení, display, jazyk a data pluginů.</li>
+        <li><strong>Refresh:</strong> Volitelný pětiminutový auto-refresh.</li>
+      </ul>
+    </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>request.php">PHP Request Variables</a></dt>
     <dd>
       <p>PHP Request Variables je diagnostická stránka aktuálního požadavku s full přístupem. Vypisuje <code>$_GET</code>, <code>$_POST</code>, <code>$_FILES</code>, <code>$_SERVER</code>, <code>$_SESSION</code> a <code>$_COOKIE</code> ve filtrovatelné tabulce.</p>
@@ -320,7 +531,7 @@ renderMenu();
     <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
     <dd>
       <p>Help je tato pouze čtecí nápověda Dashboardu. Dokumentuje ovládání Dashboardu, očekávaný přístup a stránky v menu Dashboardu.</p>
-      <p>Samotná stránka vyžaduje jen portálový view přístup a neupravuje data.</p>
+      <p>Samotná stránka je veřejná, čte metadata menu kvůli navigaci a neupravuje data.</p>
     </dd>
   </dl>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>

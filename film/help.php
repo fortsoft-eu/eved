@@ -196,6 +196,17 @@ renderMenu();
         <li><strong>Filtering:</strong> Quick filter over the film scan table.</li>
       </ul>
     </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>work.php">Film Work</a></dt>
+    <dd>
+      <p>Film Work is the full-access work queue for scanned film rolls that still need manual processing. It shows unprocessed scan rows with archive number, archive folder name, film stock, cartridge, scan date and time, format, and resolution.</p>
+      <p>Marking a row as processed stores the processed state for that film scan and removes it from the current work list. If there is nothing waiting, the page shows a short nothing-to-do message instead of an empty table.</p>
+      <ul>
+        <li><strong>Rows:</strong> Film scans waiting for processing.</li>
+        <li><strong>Action:</strong> Full access can mark a scan as processed.</li>
+        <li><strong>Filtering:</strong> Quick filter over the work table.</li>
+        <li><strong>Empty state:</strong> Shows <code>Nothing to do.</code> when the queue is clear.</li>
+      </ul>
+    </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>orders.php">Photo Lab Orders</a></dt>
     <dd>
       <p>Photo Lab Orders is a read-only overview of lab orders from <code>fs_photo_lab_orders</code>. It joins linked film scan rows and shows which film rolls belong to each lab order, along with scan dates and order-level financial and date fields.</p>
@@ -425,6 +436,17 @@ renderMenu();
         <li><strong>Kontroly:</strong> Archivní číslo, film a cartridge z názvu složky se porovnávají s uloženými hodnotami.</li>
         <li><strong>Zobrazení:</strong> Chybějící exposure index se ukáže jako unknown; nulová data scanu jsou označená.</li>
         <li><strong>Filtrování:</strong> Rychlý filtr nad tabulkou filmových scanů.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>work.php">Film Work</a></dt>
+    <dd>
+      <p>Film Work je pracovní fronta naskenovaných filmů čekajících na ruční zpracování a vyžaduje full přístup. Zobrazuje nezpracované scany s archivním číslem, názvem archivní složky, filmem, cartridge, datem a časem scanu, formátem a rozlišením.</p>
+      <p>Označení řádku jako processed uloží stav zpracování pro daný filmový scan a odebere ho z aktuálního pracovního seznamu. Pokud nic nečeká, stránka místo prázdné tabulky ukáže krátkou zprávu Nothing to do.</p>
+      <ul>
+        <li><strong>Řádky:</strong> Filmové scany čekající na zpracování.</li>
+        <li><strong>Akce:</strong> Full přístup může označit scan jako zpracovaný.</li>
+        <li><strong>Filtrování:</strong> Rychlý filtr nad pracovní tabulkou.</li>
+        <li><strong>Prázdný stav:</strong> Při prázdné frontě ukazuje <code>Nothing to do.</code></li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>orders.php">Photo Lab Orders</a></dt>

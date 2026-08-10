@@ -144,6 +144,28 @@ renderMenu();
         <li><strong>Validation:</strong> Contact values are normalized and checked by contact type.</li>
       </ul>
     </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>pb.php">Phone Book</a></dt>
+    <dd>
+      <p>Phone Book is a compact read-only contact list grouped by subject. It shows each subject once and lists the subject's active contact values underneath, including contact type, formatted value, primary marker, and note where available.</p>
+      <p>The page is optimized for quickly finding a phone number, e-mail address, or other contact without opening the full subject editor. The quick filter searches both the subject name and the rendered contact values.</p>
+      <ul>
+        <li><strong>Data:</strong> Active subjects and their active contact rows.</li>
+        <li><strong>Display:</strong> Contacts are grouped under each subject.</li>
+        <li><strong>Filtering:</strong> Quick filter over subject names, contact types, contact values, and notes.</li>
+        <li><strong>Safety:</strong> Read-only page.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>mail.php">Mail</a></dt>
+    <dd>
+      <p>Mail is the full-access message composition page. It provides To, Carbon Copy, Blind Carbon Copy, From, optional Sender, Reply-To, Subject, attachment, and message fields, and it can send either HTML or plain text.</p>
+      <p>Recipient fields use the portal recipient suggestion behavior. Sender fields can be restricted to configured sender domains, and the form keeps entered values in the session when a send attempt needs to be corrected.</p>
+      <ul>
+        <li><strong>Fields:</strong> Recipients, sender, reply address, subject, attachments, and message body.</li>
+        <li><strong>Editor:</strong> Message body uses the shared rich-text editor.</li>
+        <li><strong>Sending:</strong> Full access can send HTML or plain text.</li>
+        <li><strong>Safety:</strong> CSRF-protected POST with validation before sending.</li>
+      </ul>
+    </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>list.php">Subjects</a></dt>
     <dd>
       <p>Subjects is the full portal editor and the main place for maintaining subject data. It shows person, organization, service, and other subject types in one table and exposes the editors for the subject itself and for the subject's dependent records.</p>
@@ -413,6 +435,28 @@ renderMenu();
         <li><strong>Sdílené akce:</strong> Akce v buňce Contact působí na sdílený kontakt a jeho vazby.</li>
         <li><strong>Akce subjektu:</strong> Akce v buňce Subject působí jen na jednu vazbu subjekt-kontakt.</li>
         <li><strong>Validace:</strong> Kontaktní hodnoty se normalizují a kontrolují podle typu kontaktu.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>pb.php">Phone Book</a></dt>
+    <dd>
+      <p>Phone Book je kompaktní pouze čtecí seznam kontaktů seskupený podle subjektu. Každý subjekt ukazuje jednou a pod ním vypisuje aktivní kontaktní hodnoty včetně typu kontaktu, formátované hodnoty, příznaku primary a poznámky, pokud jsou dostupné.</p>
+      <p>Stránka je určená k rychlému nalezení telefonního čísla, e-mailové adresy nebo jiného kontaktu bez otevření úplného editoru subjektu. Rychlý filtr hledá ve jménu subjektu i ve vykreslených kontaktních hodnotách.</p>
+      <ul>
+        <li><strong>Data:</strong> Aktivní subjekty a jejich aktivní kontaktní řádky.</li>
+        <li><strong>Zobrazení:</strong> Kontakty jsou seskupené pod jednotlivými subjekty.</li>
+        <li><strong>Filtrování:</strong> Rychlý filtr přes jména subjektů, typy kontaktů, kontaktní hodnoty a poznámky.</li>
+        <li><strong>Bezpečnost:</strong> Pouze čtecí stránka.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>mail.php">Mail</a></dt>
+    <dd>
+      <p>Mail je stránka pro psaní zpráv s full přístupem. Obsahuje pole To, Carbon Copy, Blind Carbon Copy, From, volitelný Sender, Reply-To, Subject, přílohy a zprávu a umí odeslat HTML i prostý text.</p>
+      <p>Pole příjemců používají portálové našeptávání adres. Pole odesílatele mohou být omezená na nastavené domény odesílatelů a formulář uchovává zadané hodnoty v session, pokud je potřeba pokus o odeslání opravit.</p>
+      <ul>
+        <li><strong>Pole:</strong> Příjemci, odesílatel, adresa pro odpověď, předmět, přílohy a tělo zprávy.</li>
+        <li><strong>Editor:</strong> Tělo zprávy používá sdílený rich-text editor.</li>
+        <li><strong>Odeslání:</strong> Full přístup může odeslat HTML nebo prostý text.</li>
+        <li><strong>Bezpečnost:</strong> CSRF chráněný POST s validací před odesláním.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>list.php">Subjects</a></dt>

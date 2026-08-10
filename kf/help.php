@@ -164,6 +164,16 @@ renderMenu();
         <li><strong>Rate:</strong> CZK value for the displayed source amount.</li>
       </ul>
     </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>iban.php">IBAN Calculator</a></dt>
+    <dd>
+      <p>IBAN Calculator converts a Czech national account number into IBAN values in electronic and written form. It also displays the normalized Czech national account format and the bank SWIFT code when the entered bank code is known.</p>
+      <p>The calculation runs in the browser and does not write finance data. Reset clears the form and calculated output.</p>
+      <ul>
+        <li><strong>Input:</strong> Czech account number in national format.</li>
+        <li><strong>Output:</strong> Normalized account number, IBAN electronic format, IBAN written representation, and SWIFT code.</li>
+        <li><strong>Safety:</strong> Client-side calculation without database writes.</li>
+      </ul>
+    </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
     <dd>
       <p>Database Structure is a full-access diagnostic and export page. It lists <code>kf_*</code> tables in dependency-aware order and shows normalized <code>SHOW CREATE TABLE</code> output.</p>
@@ -319,6 +329,16 @@ renderMenu();
         <li><strong>Řádky:</strong> Jen poslední uložené datum <code>valid_for</code>.</li>
         <li><strong>Amount:</strong> Zdrojové množství a kód zdrojové měny.</li>
         <li><strong>Rate:</strong> Hodnota v CZK pro zobrazené zdrojové množství.</li>
+      </ul>
+    </dd>
+    <dt><a href="<?php echo $sBaseUrl; ?>iban.php">IBAN Calculator</a></dt>
+    <dd>
+      <p>IBAN Calculator převádí české národní číslo účtu na IBAN v elektronickém i písemném tvaru. Zobrazuje také normalizovaný český formát čísla účtu a SWIFT kód banky, pokud je zadaný kód banky známý.</p>
+      <p>Výpočet běží v prohlížeči a nezapisuje finanční data. Reset vyčistí formulář i vypočtený výstup.</p>
+      <ul>
+        <li><strong>Vstup:</strong> České číslo účtu v národním formátu.</li>
+        <li><strong>Výstup:</strong> Normalizované číslo účtu, IBAN v elektronickém tvaru, IBAN v písemném tvaru a SWIFT kód.</li>
+        <li><strong>Bezpečnost:</strong> Výpočet v prohlížeči bez databázových zápisů.</li>
       </ul>
     </dd>
     <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>

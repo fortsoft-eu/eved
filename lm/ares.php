@@ -8,8 +8,6 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "portal", "csrf_token");
-
 if (session_status() == PHP_SESSION_ACTIVE) {
     session_write_close();
 }

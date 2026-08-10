@@ -2232,6 +2232,433 @@ function issueTrackerToggleStatus($oPdo, $iIssueId) {
     }
 }
 
+function phoneAccountsGetPostedPaidAt() {
+    $sPaidAt = getPostedTrimmedValue("paid_at");
+    $mPaidAt = normalizeInputDateTimeForDatabase($sPaidAt);
+    if ($mPaidAt == "") {
+        return null;
+    }
+    if ($mPaidAt === false) {
+        sendJsonAndExit(array("success" => false, "message" => "Paid date is invalid."), 400);
+    }
+    return $mPaidAt;
+}
+
+function phoneAccountsGetDefaultCurrency() {
+    return "USD";
+}
+
+function phoneAccountsNormalizeCurrency($sCurrency) {
+    $sCurrency = strtoupper(trim((string)$sCurrency));
+    return preg_match("/^[A-Z]{3}$/", $sCurrency) ? $sCurrency : "";
+}
+
+function phoneAccountsNormalizeStoredCurrency($sCurrency) {
+    $sCurrency = phoneAccountsNormalizeCurrency($sCurrency);
+    return $sCurrency != "" ? $sCurrency : phoneAccountsGetDefaultCurrency();
+}
+
+function phoneAccountsGetCurrencyOptions($oPdo, $sSelectedCurrency = "") {
+    $sCurrencySeparator = " " . html_entity_decode("&#8212;", ENT_QUOTES, "UTF-8") . " ";
+    $aCurrencies = array(
+        "CZK" => array("currency" => "CZK", "label" => "CZK" . $sCurrencySeparator . "Czech koruna")
+    );
+    try {
+        $oStatement = $oPdo->query("SELECT currency_code, MIN(currency) AS currency_name FROM kf_exchange_rates GROUP BY currency_code ORDER BY currency_code ASC");
+        while ($aRow = $oStatement->fetch()) {
+            $sCurrency = phoneAccountsNormalizeCurrency($aRow["currency_code"]);
+            if ($sCurrency == "") {
+                continue;
+            }
+            $sCurrencyName = trim((string)$aRow["currency_name"]);
+            $aCurrencies[$sCurrency] = array(
+                "currency" => $sCurrency,
+                "label" => $sCurrencyName != "" ? $sCurrency . $sCurrencySeparator . $sCurrencyName : $sCurrency
+            );
+        }
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+    }
+    $sSelectedCurrency = phoneAccountsNormalizeCurrency($sSelectedCurrency);
+    if ($sSelectedCurrency != "" && !isset($aCurrencies[$sSelectedCurrency])) {
+        $aCurrencies[$sSelectedCurrency] = array("currency" => $sSelectedCurrency, "label" => $sSelectedCurrency);
+    }
+    ksort($aCurrencies);
+    return array_values($aCurrencies);
+}
+
+function phoneAccountsIsCurrencyAvailable($oPdo, $sCurrency) {
+    $sCurrency = phoneAccountsNormalizeCurrency($sCurrency);
+    if ($sCurrency == "") {
+        return false;
+    }
+    if ($sCurrency == "CZK") {
+        return true;
+    }
+    try {
+        $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_exchange_rates WHERE currency_code = :currency_code");
+        $oStatement->execute(array("currency_code" => $sCurrency));
+        return (int)$oStatement->fetchColumn() > 0;
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        return false;
+    }
+}
+
+function phoneAccountsParseAmount($sValue) {
+    $sMinus = html_entity_decode("&#8722;", ENT_QUOTES, "UTF-8");
+    $sValue = str_replace(array(" ", "\xc2\xa0", $sMinus), array("", "", "-"), trim((string)$sValue));
+    $iCommaPosition = strrpos($sValue, ",");
+    $iDotPosition = strrpos($sValue, ".");
+    if ($iCommaPosition !== false && $iDotPosition !== false) {
+        if ($iCommaPosition > $iDotPosition) {
+            $sValue = str_replace(".", "", $sValue);
+            $sValue = str_replace(",", ".", $sValue);
+        } else {
+            $sValue = str_replace(",", "", $sValue);
+        }
+    } elseif ($iCommaPosition !== false) {
+        $sValue = str_replace(",", ".", $sValue);
+    }
+    return is_numeric($sValue) ? (float)$sValue : null;
+}
+
+function phoneAccountsFormatAmount($mAmount) {
+    $fAmount = round((float)$mAmount, 2);
+    $sAmount = number_format(abs($fAmount), 2, ".", ",");
+    return $fAmount < 0 ? html_entity_decode("&#8722;", ENT_QUOTES, "UTF-8") . $sAmount : $sAmount;
+}
+
+function phoneAccountsGetPostedPaidAmount() {
+    $sPaidAmount = getPostedTrimmedValue("paid_amount");
+    if ($sPaidAmount == "") {
+        return null;
+    }
+    $mPaidAmount = phoneAccountsParseAmount($sPaidAmount);
+    if ($mPaidAmount === null) {
+        sendJsonAndExit(array("success" => false, "message" => "Paid amount is invalid."), 400);
+    }
+    if ($mPaidAmount < 0) {
+        sendJsonAndExit(array("success" => false, "message" => "Paid amount must not be negative."), 400);
+    }
+    if ($mPaidAmount >= 10000000000000) {
+        sendJsonAndExit(array("success" => false, "message" => "Paid amount is too large."), 400);
+    }
+    return $mPaidAmount;
+}
+
+function phoneAccountsGetPostedPaidCurrency($oPdo) {
+    $sPaidCurrency = phoneAccountsNormalizeStoredCurrency(getPostedTrimmedValue("paid_currency", phoneAccountsGetDefaultCurrency()));
+    if (!phoneAccountsIsCurrencyAvailable($oPdo, $sPaidCurrency)) {
+        sendJsonAndExit(array("success" => false, "message" => "Paid currency is not available."), 400);
+    }
+    return $sPaidCurrency;
+}
+
+function phoneAccountsGetNewDefaults($oPdo) {
+    $aDefaults = array(
+        "paid_amount" => "",
+        "paid_currency" => phoneAccountsGetDefaultCurrency()
+    );
+    if (!isset($_SESSION["lm_new_phone_account_defaults"]) || !is_array($_SESSION["lm_new_phone_account_defaults"])) {
+        return $aDefaults;
+    }
+    $sPaidCurrency = isset($_SESSION["lm_new_phone_account_defaults"]["paid_currency"]) ? phoneAccountsNormalizeCurrency($_SESSION["lm_new_phone_account_defaults"]["paid_currency"]) : "";
+    if ($sPaidCurrency != "" && phoneAccountsIsCurrencyAvailable($oPdo, $sPaidCurrency)) {
+        $aDefaults["paid_currency"] = $sPaidCurrency;
+    }
+    $sPaidAmount = isset($_SESSION["lm_new_phone_account_defaults"]["paid_amount"]) ? trim((string)$_SESSION["lm_new_phone_account_defaults"]["paid_amount"]) : "";
+    $mPaidAmount = $sPaidAmount != "" ? phoneAccountsParseAmount($sPaidAmount) : null;
+    if ($mPaidAmount !== null && $mPaidAmount >= 0 && $mPaidAmount < 10000000000000) {
+        $aDefaults["paid_amount"] = phoneAccountsFormatAmount($mPaidAmount);
+    }
+    return $aDefaults;
+}
+
+function phoneAccountsSaveNewDefaults($mPaidAmount, $sPaidCurrency) {
+    if (!isset($_SESSION["lm_new_phone_account_defaults"]) || !is_array($_SESSION["lm_new_phone_account_defaults"])) {
+        $_SESSION["lm_new_phone_account_defaults"] = array();
+    }
+    $_SESSION["lm_new_phone_account_defaults"]["paid_currency"] = phoneAccountsNormalizeStoredCurrency($sPaidCurrency);
+    $_SESSION["lm_new_phone_account_defaults"]["paid_amount"] = $mPaidAmount === null ? "" : phoneAccountsFormatAmount($mPaidAmount);
+}
+
+function phoneAccountsFetchRows($oPdo) {
+    $aRows = array();
+    $oStatement = $oPdo->query("SELECT id, `order` AS phone_order, `number`, account, pin, puk, puk2, sim_id, imei, note, paid_amount, paid_currency, DATE_FORMAT(paid_at, '%Y-%m-%d %H:%i') AS paid_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text FROM fs_phone ORDER BY `order` ASC, id ASC");
+    while ($aRow = $oStatement->fetch()) {
+        $aRows[] = array(
+            "id" => (int)$aRow["id"],
+            "order" => (int)$aRow["phone_order"],
+            "number" => (string)$aRow["number"],
+            "account" => (string)$aRow["account"],
+            "pin" => (string)$aRow["pin"],
+            "puk" => (string)$aRow["puk"],
+            "puk2" => (string)$aRow["puk2"],
+            "sim_id" => (string)$aRow["sim_id"],
+            "imei" => (string)$aRow["imei"],
+            "note" => (string)$aRow["note"],
+            "paid_amount" => $aRow["paid_amount"] === null ? null : (string)$aRow["paid_amount"],
+            "paid_currency" => phoneAccountsNormalizeStoredCurrency($aRow["paid_currency"]),
+            "paid_at" => (string)$aRow["paid_at_text"],
+            "created_at" => (string)$aRow["created_at_text"],
+            "updated_at" => (string)$aRow["updated_at_text"]
+        );
+    }
+    return $aRows;
+}
+
+function phoneAccountsRenderPhoneNumber($sValue) {
+    $sDisplayValue = phoneContactDisplayValue($sValue);
+    $sHref = phoneContactHref($sValue);
+    $sHtml = "<span class=\"phone-account-value\">" . html($sDisplayValue) . "</span>";
+    if ($sHref == "") {
+        return $sHtml;
+    }
+    return $sHtml . " <a class=\"phone-account-link\" href=\"" . html($sHref) . "\" title=\"Call cell phone\" aria-label=\"Call cell phone\">&#128241;</a>";
+}
+
+function phoneAccountsRenderTelegramAccount($sValue) {
+    $sValue = trim((string)$sValue);
+    $sHref = normalizeTelegramContactValue($sValue);
+    $sHtml = "";
+    if ($sValue == "") {
+        return "&mdash;";
+    }
+    $sHtml = "<span class=\"phone-account-value\">" . html($sValue) . "</span>";
+    if ($sHref === false || $sHref == "") {
+        return $sHtml;
+    }
+    return $sHtml . " <a class=\"phone-account-link\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\" title=\"Open Telegram\" aria-label=\"Open Telegram\">&#9992;&#65039;</a>";
+}
+
+function phoneAccountsRenderTextValue($sValue) {
+    $sValue = trim((string)$sValue);
+    return $sValue != "" ? html($sValue) : "&mdash;";
+}
+
+function phoneAccountsRenderPaidAmount($mAmount, $sCurrency) {
+    if ($mAmount === null || (string)$mAmount == "") {
+        return "&mdash;";
+    }
+    return html(phoneAccountsFormatAmount($mAmount) . " " . phoneAccountsNormalizeStoredCurrency($sCurrency));
+}
+
+function phoneAccountsRenderRow($aRow) {
+    global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
+
+    $sNote = trim((string)$aRow["note"]);
+    $sPhoneDisplayValue = phoneContactDisplayValue($aRow["number"]);
+    $sPaidAmount = $aRow["paid_amount"] === null ? "" : phoneAccountsFormatAmount($aRow["paid_amount"]);
+    return "      <tr data-phone-account-id=\"" . (int)$aRow["id"] . "\""
+        . " data-phone-account-order=\"" . html($aRow["order"]) . "\""
+        . " data-phone-account-number=\"" . html($sPhoneDisplayValue) . "\""
+        . " data-phone-account-account=\"" . html($aRow["account"]) . "\""
+        . " data-phone-account-pin=\"" . html($aRow["pin"]) . "\""
+        . " data-phone-account-puk=\"" . html($aRow["puk"]) . "\""
+        . " data-phone-account-puk2=\"" . html($aRow["puk2"]) . "\""
+        . " data-phone-account-sim-id=\"" . html($aRow["sim_id"]) . "\""
+        . " data-phone-account-imei=\"" . html($aRow["imei"]) . "\""
+        . " data-phone-account-paid-at=\"" . html($aRow["paid_at"]) . "\""
+        . " data-phone-account-paid-amount=\"" . html($sPaidAmount) . "\""
+        . " data-phone-account-paid-currency=\"" . html($aRow["paid_currency"]) . "\""
+        . " data-phone-account-note=\"" . html($aRow["note"]) . "\""
+        . ">"
+        . "<td class=\"phone-account-number\">" . phoneAccountsRenderPhoneNumber($aRow["number"]) . "</td>"
+        . "<td class=\"phone-account-account\">" . phoneAccountsRenderTelegramAccount($aRow["account"]) . "</td>"
+        . "<td class=\"phone-account-token\">" . phoneAccountsRenderTextValue($aRow["pin"]) . "</td>"
+        . "<td class=\"phone-account-token\">" . phoneAccountsRenderTextValue($aRow["puk"]) . "</td>"
+        . "<td class=\"phone-account-token\">" . phoneAccountsRenderTextValue($aRow["puk2"]) . "</td>"
+        . "<td class=\"phone-account-sim-id\">" . phoneAccountsRenderTextValue($aRow["sim_id"]) . "</td>"
+        . "<td class=\"phone-account-imei\">" . phoneAccountsRenderTextValue($aRow["imei"]) . "</td>"
+        . "<td class=\"phone-account-date\">" . ($aRow["paid_at"] != "" ? renderDateTimeWithNbspIndent($aRow["paid_at"]) : "&mdash;") . "</td>"
+        . "<td class=\"phone-account-amount numeric\">" . phoneAccountsRenderPaidAmount($aRow["paid_amount"], $aRow["paid_currency"]) . "</td>"
+        . "<td class=\"phone-account-note issue-title-cell\">" . ($sNote != "" ? html($sNote) : "&mdash;") . "</td>"
+        . "<td class=\"phone-account-date\">" . renderDateTimeWithNbspIndent($aRow["updated_at"]) . "</td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-phone-account-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-phone-account-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-edit-phone-account\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-phone-account phone-account-delete-action\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
+        . "</tr>\n";
+}
+
+function phoneAccountsRenderRows($oPdo) {
+    $aRows = phoneAccountsFetchRows($oPdo);
+    if (!$aRows) {
+        return "";
+    }
+    $sHtml = "";
+    foreach ($aRows as $aRow) {
+        $sHtml .= phoneAccountsRenderRow($aRow);
+    }
+    return $sHtml;
+}
+
+function phoneAccountsPhoneNumberExists($oPdo, $sPhoneNumber, $iPhoneAccountId) {
+    $oStatement = $oPdo->prepare("SELECT id FROM fs_phone WHERE `number` = :number AND id <> :id LIMIT 1 FOR UPDATE");
+    $oStatement->execute(array(
+        "number" => $sPhoneNumber,
+        "id" => $iPhoneAccountId
+    ));
+    return $oStatement->fetch() ? true : false;
+}
+
+function phoneAccountsNormalizeOrder($oPdo) {
+    $oStatement = $oPdo->query("SELECT id FROM fs_phone ORDER BY `order` ASC, id ASC FOR UPDATE");
+    $aIds = $oStatement->fetchAll(PDO::FETCH_COLUMN, 0);
+    $iOrder = 10;
+    $oUpdateStatement = $oPdo->prepare("UPDATE fs_phone SET `order` = :order WHERE id = :id");
+    foreach ($aIds as $iPhoneAccountId) {
+        $oUpdateStatement->execute(array("order" => $iOrder, "id" => (int)$iPhoneAccountId));
+        $iOrder += 10;
+    }
+}
+
+function phoneAccountsGetNextOrder($oPdo) {
+    return (int)$oPdo->query("SELECT COALESCE(MAX(`order`), 0) + 10 FROM fs_phone")->fetchColumn();
+}
+
+function phoneAccountsMove($oPdo, $iPhoneAccountId, $sDirection) {
+    phoneAccountsNormalizeOrder($oPdo);
+    $oStatement = $oPdo->prepare("SELECT id, `order` FROM fs_phone WHERE id = :id FOR UPDATE");
+    $oStatement->execute(array("id" => $iPhoneAccountId));
+    $aCurrent = $oStatement->fetch();
+    if (!$aCurrent) {
+        throw new Exception("Phone account was not found.");
+    }
+    if ($sDirection == "up") {
+        $oStatement = $oPdo->prepare("SELECT id, `order` FROM fs_phone WHERE `order` < :order ORDER BY `order` DESC, id DESC LIMIT 1 FOR UPDATE");
+    } else {
+        $oStatement = $oPdo->prepare("SELECT id, `order` FROM fs_phone WHERE `order` > :order ORDER BY `order` ASC, id ASC LIMIT 1 FOR UPDATE");
+    }
+    $oStatement->execute(array("order" => (int)$aCurrent["order"]));
+    $aOther = $oStatement->fetch();
+    if (!$aOther) {
+        return;
+    }
+    $oStatement = $oPdo->prepare("UPDATE fs_phone SET `order` = :order WHERE id = :id");
+    $oStatement->execute(array("order" => (int)$aOther["order"], "id" => (int)$aCurrent["id"]));
+    $oStatement->execute(array("order" => (int)$aCurrent["order"], "id" => (int)$aOther["id"]));
+}
+
+function phoneAccountsCreateOrUpdate($oPdo, $iPhoneAccountId) {
+    $sPhoneInput = getPostedTrimmedValue("number");
+    $mPhoneNumber = normalizePhoneContactValue($sPhoneInput);
+    $mTelegramAccount = normalizeTelegramContactValue(getPostedValue("account"));
+    $sPin = getPostedTrimmedValue("pin");
+    $sPuk = getPostedTrimmedValue("puk");
+    $sPuk2 = getPostedTrimmedValue("puk2");
+    $sSimId = getPostedTrimmedValue("sim_id");
+    $sImei = getPostedTrimmedValue("imei");
+    $mPaidAt = phoneAccountsGetPostedPaidAt();
+    $mPaidAmount = phoneAccountsGetPostedPaidAmount();
+    $sPaidCurrency = phoneAccountsGetPostedPaidCurrency($oPdo);
+    $sNote = getPostedValue("note");
+    $blNewPhoneAccount = $iPhoneAccountId < 1;
+    if ($sPhoneInput == "") {
+        sendJsonAndExit(array("success" => false, "message" => "Phone number is required."), 400);
+    }
+    if ($mPhoneNumber === false || $mPhoneNumber == "") {
+        sendJsonAndExit(array("success" => false, "message" => "Phone number must be a valid international number."), 400);
+    }
+    if (strlen((string)$mPhoneNumber) > 32) {
+        sendJsonAndExit(array("success" => false, "message" => "Phone number is too long."), 400);
+    }
+    if ($mTelegramAccount === false) {
+        sendJsonAndExit(array("success" => false, "message" => "Telegram contact must be a valid Telegram link, handle, invite link, sticker set or language link."), 400);
+    }
+    if (strlen((string)$mTelegramAccount) > 255) {
+        sendJsonAndExit(array("success" => false, "message" => "Telegram account is too long."), 400);
+    }
+    if (strlen($sPin) > 16 || strlen($sPuk) > 16 || strlen($sPuk2) > 16) {
+        sendJsonAndExit(array("success" => false, "message" => "PIN and PUK values must be 16 characters or shorter."), 400);
+    }
+    if (strlen($sSimId) > 64) {
+        sendJsonAndExit(array("success" => false, "message" => "SIM ID is too long."), 400);
+    }
+    if (strlen($sImei) > 32) {
+        sendJsonAndExit(array("success" => false, "message" => "IMEI is too long."), 400);
+    }
+    try {
+        $oPdo->beginTransaction();
+        if ($iPhoneAccountId > 0) {
+            $oStatement = $oPdo->prepare("SELECT id FROM fs_phone WHERE id = :id FOR UPDATE");
+            $oStatement->execute(array("id" => $iPhoneAccountId));
+            if (!$oStatement->fetch()) {
+                $oPdo->rollBack();
+                sendJsonAndExit(array("success" => false, "message" => "Phone account was not found."), 404);
+            }
+            if (phoneAccountsPhoneNumberExists($oPdo, (string)$mPhoneNumber, $iPhoneAccountId)) {
+                $oPdo->rollBack();
+                sendJsonAndExit(array("success" => false, "message" => "Phone number already exists."), 400);
+            }
+            $oStatement = $oPdo->prepare("UPDATE fs_phone SET `number` = :number, account = :account, pin = :pin, puk = :puk, puk2 = :puk2, sim_id = :sim_id, imei = :imei, note = :note, paid_amount = :paid_amount, paid_currency = :paid_currency, paid_at = :paid_at WHERE id = :id");
+            $oStatement->execute(array(
+                "number" => (string)$mPhoneNumber,
+                "account" => (string)$mTelegramAccount,
+                "pin" => $sPin,
+                "puk" => $sPuk,
+                "puk2" => $sPuk2,
+                "sim_id" => $sSimId,
+                "imei" => $sImei,
+                "note" => $sNote,
+                "paid_amount" => $mPaidAmount,
+                "paid_currency" => $sPaidCurrency,
+                "paid_at" => $mPaidAt,
+                "id" => $iPhoneAccountId
+            ));
+        } else {
+            if (phoneAccountsPhoneNumberExists($oPdo, (string)$mPhoneNumber, 0)) {
+                $oPdo->rollBack();
+                sendJsonAndExit(array("success" => false, "message" => "Phone number already exists."), 400);
+            }
+            $iOrder = phoneAccountsGetNextOrder($oPdo);
+            $oStatement = $oPdo->prepare("INSERT INTO fs_phone (`order`, `number`, account, pin, puk, puk2, sim_id, imei, note, paid_amount, paid_currency, paid_at) VALUES (:order, :number, :account, :pin, :puk, :puk2, :sim_id, :imei, :note, :paid_amount, :paid_currency, :paid_at)");
+            $oStatement->execute(array(
+                "order" => $iOrder,
+                "number" => (string)$mPhoneNumber,
+                "account" => (string)$mTelegramAccount,
+                "pin" => $sPin,
+                "puk" => $sPuk,
+                "puk2" => $sPuk2,
+                "sim_id" => $sSimId,
+                "imei" => $sImei,
+                "note" => $sNote,
+                "paid_amount" => $mPaidAmount,
+                "paid_currency" => $sPaidCurrency,
+                "paid_at" => $mPaidAt
+            ));
+            $iPhoneAccountId = (int)$oPdo->lastInsertId();
+        }
+        $oPdo->commit();
+        if ($blNewPhoneAccount) {
+            phoneAccountsSaveNewDefaults($mPaidAmount, $sPaidCurrency);
+        }
+        sendJsonAndExit(array("success" => true, "phone_account_id" => $iPhoneAccountId, "phone_accounts_html" => phoneAccountsRenderRows($oPdo), "phone_account_defaults" => phoneAccountsGetNewDefaults($oPdo)));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
+function phoneAccountsDelete($oPdo, $iPhoneAccountId) {
+    if ($iPhoneAccountId < 1) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid phone account."), 400);
+    }
+    try {
+        $oStatement = $oPdo->prepare("DELETE FROM fs_phone WHERE id = :id");
+        $oStatement->execute(array("id" => $iPhoneAccountId));
+        if ($oStatement->rowCount() < 1) {
+            sendJsonAndExit(array("success" => false, "message" => "Phone account was not found."), 404);
+        }
+        sendJsonAndExit(array("success" => true, "phone_account_id" => $iPhoneAccountId, "phone_accounts_html" => phoneAccountsRenderRows($oPdo)));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
 function emailOverviewNormalizeDomain($sValue) {
     $sDomain = domainLookupNormalizeDomain($sValue);
     if ($sDomain == "" || !domainLookupDomainShapeIsValid($sDomain)) {

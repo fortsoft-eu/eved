@@ -367,13 +367,17 @@ body.mail-page .admin-controls .mail-send-button {
     width: 38px;
 }
 
-.admin-controls .js-table-filter, .admin-controls .domain-lookup-input {
+.admin-controls .js-table-filter, .admin-controls .domain-lookup-input, .admin-controls .fancy-text-style {
     box-sizing: border-box;
     min-width: 0;
     width: 154px;
 }
 
-.admin-controls .js-filter-operator, .admin-controls .js-filter-reset, .admin-controls .js-index-settings-open, .admin-controls .js-add-menu-item, .admin-controls .js-add-email-domain, .admin-controls .js-add-issue, .admin-controls .js-add-business-hours {
+.admin-controls .fancy-text-style {
+    height: 27px;
+}
+
+.admin-controls .js-filter-operator, .admin-controls .js-filter-reset, .admin-controls .js-index-settings-open, .admin-controls .js-add-menu-item, .admin-controls .js-add-email-domain, .admin-controls .js-add-issue, .admin-controls .js-add-phone-account, .admin-controls .js-add-business-hours, .admin-controls .js-fancy-text-convert {
     width: 75px;
 }
 
@@ -385,7 +389,7 @@ body.mail-page .admin-controls .mail-send-button {
     flex: 0 0 75px;
 }
 
-.admin-controls input, .admin-controls label, #phpinfo-select-form button, #phpinfo-select-form label, #phpinfo-select-form select, .kf-help-list dt:first-child, .lm-help-list dt:first-child {
+.admin-controls input, .admin-controls select, .admin-controls label, #phpinfo-select-form button, #phpinfo-select-form label, #phpinfo-select-form select, .kf-help-list dt:first-child, .lm-help-list dt:first-child {
     margin-top: 0;
 }
 
@@ -771,7 +775,7 @@ tr:nth-child(even) {
     cursor: help;
 }
 
-body.phpinfo-page {
+body.phpinfo-page, body.character-converter-page, body.fancy-text-page {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -908,6 +912,10 @@ body.phpinfo-page .admin-controls {
     overflow: auto;
 }
 
+.phone-account-edit-dialog {
+    max-width: 640px;
+}
+
 .subject-edit-dialog input[type="checkbox"] {
     margin: 0 6px 0 16px;
     width: auto;
@@ -917,9 +925,34 @@ body.phpinfo-page .admin-controls {
     font-weight: normal;
 }
 
-.email-users-textarea, .issue-description-textarea {
+.email-users-textarea, .issue-description-textarea, .phone-account-note-textarea {
     min-height: 160px;
     resize: vertical;
+}
+
+.phone-account-field-grid {
+    display: grid;
+    gap: 0 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: 0 16px;
+}
+
+.phone-account-field label {
+    margin: 10px 0 4px;
+}
+
+.phone-account-field-wide {
+    grid-column: 1 / -1;
+}
+
+.subject-edit-dialog .phone-account-field input[type="text"], .subject-edit-dialog .phone-account-field select, .subject-edit-dialog .phone-account-field textarea {
+    margin: 0;
+    width: 100%;
+}
+
+.subject-edit-dialog .phone-account-field .subject-date-field {
+    margin: 0;
+    width: 100%;
 }
 
 .email-account-mailbox {
@@ -1461,11 +1494,49 @@ td.numeric, th.numeric, .email-overview-table th, .email-overview-table td, .bus
     text-decoration: line-through;
 }
 
+.phone-accounts-table {
+    table-layout: auto;
+    width: 100%;
+}
+
+.phone-accounts-table th:not(.admin-action-column), .phone-account-number, .phone-account-account, .phone-account-token, .phone-account-sim-id, .phone-account-imei, .phone-account-date, .phone-account-amount {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}
+
+.phone-accounts-table .phone-account-note {
+    min-width: 24em;
+}
+
+.phone-accounts-table .phone-account-col-actions {
+    width: 5.5em;
+}
+
 .issue-title-cell {
     line-height: 1.3;
     overflow-wrap: normal;
     white-space: normal;
     word-break: normal;
+}
+
+.phone-account-link {
+    color: inherit;
+    display: inline-block;
+    font-size: inherit;
+    margin-left: 1px;
+    text-decoration: none;
+    vertical-align: top;
+}
+
+.phone-account-link:hover {
+    text-decoration: none;
+}
+
+@media screen and (max-width: 560px) {
+    .phone-account-field-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .issue-description {
@@ -1499,17 +1570,57 @@ body.business-hours-page {
     overflow: hidden;
 }
 
-body.character-converter-page {
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 12px);
-    height: calc(100dvh - 12px);
-    overflow: hidden;
+body.character-converter-page .admin-controls, body.character-converter-page .character-converter-form, body.fancy-text-page .admin-controls {
+    flex: 0 0 auto;
 }
 
-body.character-converter-page .admin-controls, body.character-converter-page .character-converter-form {
+body.fancy-text-page .admin-controls {
+    flex-wrap: nowrap;
+}
+
+.fancy-text-form {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.fancy-text-grid {
+    display: grid;
+    flex: 1 1 auto;
+    gap: 5px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    min-height: 0;
+    width: 100%;
+}
+
+.fancy-text-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+
+.fancy-text-panel label {
     flex: 0 0 auto;
+    margin: 0 0 4px;
+}
+
+.fancy-textarea {
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    font-family: "Segoe UI Symbol", "Noto Sans Math", "Cambria Math", Arial, sans-serif;
+    margin: 0;
+    min-height: 0;
+    resize: none;
+    width: 100%;
+}
+
+@media (min-width: 760px) and (orientation: landscape) {
+    .fancy-text-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: minmax(0, 1fr);
+    }
 }
 
 .business-hours-tabs, .snippet-board-tabs {

@@ -1859,6 +1859,412 @@ function bindIssueTracker() {
     });
 }
 
+function createPhoneAccountDeleteMessage(aRow) {
+    var oFragment = document.createDocumentFragment();
+    var oStrong = document.createElement("strong");
+    oStrong.textContent = aRow.number;
+    oFragment.appendChild(document.createTextNode("Delete "));
+    oFragment.appendChild(oStrong);
+    oFragment.appendChild(document.createTextNode("?"));
+    return oFragment;
+}
+
+function createPhoneAccountTextInput(sId, sValue, blRequired, sAutocomplete) {
+    var oInput = document.createElement("input");
+    oInput.type = "text";
+    oInput.id = sId;
+    oInput.value = sValue || "";
+    if (sAutocomplete) {
+        oInput.autocomplete = sAutocomplete;
+    }
+    if (blRequired) {
+        oInput.required = true;
+    }
+    return oInput;
+}
+
+function createPhoneAccountCurrencySelect(sId, sValue) {
+    var aCurrencies = getPhoneAccountCurrencyOptions(sValue);
+    var oSelect = document.createElement("select");
+    var oOption;
+    var sCurrency = sValue || getPhoneAccountDefaultPaidCurrency();
+    var i;
+    oSelect.id = sId;
+    oSelect.required = true;
+    for (i = 0; i < aCurrencies.length; i++) {
+        oOption = document.createElement("option");
+        oOption.value = aCurrencies[i].currency || "";
+        oOption.textContent = aCurrencies[i].label || aCurrencies[i].currency || "";
+        if (String(oOption.value) == String(sCurrency)) {
+            oOption.selected = true;
+        }
+        oSelect.appendChild(oOption);
+    }
+    return oSelect;
+}
+
+function createPhoneAccountNoteTextarea(sId, sValue) {
+    var oTextarea = document.createElement("textarea");
+    oTextarea.id = sId;
+    oTextarea.value = sValue || "";
+    oTextarea.className = "phone-account-note-textarea";
+    oTextarea.rows = 8;
+    return oTextarea;
+}
+
+function appendPhoneAccountFieldContainer(oParent) {
+    var oField = document.createElement("div");
+    oField.className = "phone-account-field";
+    oParent.appendChild(oField);
+    return oField;
+}
+
+function appendPhoneAccountField(oParent, sLabel, oInput, sClassName) {
+    var oField = appendPhoneAccountFieldContainer(oParent);
+    if (sClassName) {
+        oField.className += " " + sClassName;
+    }
+    appendIssueDialogField(oField, sLabel, oInput);
+}
+
+function appendPhoneAccountDateField(oParent, sLabel, sName, sValue, blDateTime) {
+    return appendIssueDateField(appendPhoneAccountFieldContainer(oParent), sLabel, sName, sValue, blDateTime);
+}
+
+function getPhoneAccountsData() {
+    return document.getElementById("phone-accounts-data");
+}
+
+function getPhoneAccountDefaultPaidAmount() {
+    var oData = getPhoneAccountsData();
+    return oData ? (oData.getAttribute("data-default-paid-amount") || "") : "";
+}
+
+function getPhoneAccountDefaultPaidCurrency() {
+    var oData = getPhoneAccountsData();
+    return oData ? (oData.getAttribute("data-default-paid-currency") || "USD") : "USD";
+}
+
+function getPhoneAccountCurrencyOptions(sSelectedValue) {
+    var oData = getPhoneAccountsData();
+    var aCurrencies = [];
+    var blSelectedFound = false;
+    var sCurrency = sSelectedValue || getPhoneAccountDefaultPaidCurrency();
+    var i;
+    if (oData) {
+        try {
+            aCurrencies = JSON.parse(oData.getAttribute("data-currencies") || "[]");
+        } catch (oException) {
+            logAdminException(oException);
+            aCurrencies = [];
+        }
+    }
+    for (i = 0; i < aCurrencies.length; i++) {
+        if (String(aCurrencies[i].currency || "") == String(sCurrency)) {
+            blSelectedFound = true;
+        }
+    }
+    if (sCurrency && !blSelectedFound) {
+        aCurrencies.push({
+            "currency": sCurrency,
+            "label": sCurrency
+        });
+    }
+    return aCurrencies;
+}
+
+function setPhoneAccountDefaults(aData) {
+    var oData = getPhoneAccountsData();
+    var aDefaults = aData && aData.phone_account_defaults ? aData.phone_account_defaults : null;
+    if (!oData || !aDefaults) {
+        return;
+    }
+    oData.setAttribute("data-default-paid-amount", aDefaults.paid_amount || "");
+    oData.setAttribute("data-default-paid-currency", aDefaults.paid_currency || "USD");
+}
+
+function getPhoneAccountRowData(oRow) {
+    if (!oRow) {
+        return null;
+    }
+    return {
+        id: parseInt(oRow.getAttribute("data-phone-account-id") || "0", 10),
+        number: oRow.getAttribute("data-phone-account-number") || "",
+        account: oRow.getAttribute("data-phone-account-account") || "",
+        pin: oRow.getAttribute("data-phone-account-pin") || "",
+        puk: oRow.getAttribute("data-phone-account-puk") || "",
+        puk2: oRow.getAttribute("data-phone-account-puk2") || "",
+        simId: oRow.getAttribute("data-phone-account-sim-id") || "",
+        imei: oRow.getAttribute("data-phone-account-imei") || "",
+        paidAt: oRow.getAttribute("data-phone-account-paid-at") || "",
+        paidAmount: oRow.getAttribute("data-phone-account-paid-amount") || "",
+        paidCurrency: oRow.getAttribute("data-phone-account-paid-currency") || "",
+        note: oRow.getAttribute("data-phone-account-note") || ""
+    };
+}
+
+function findPhoneAccountRowById(iPhoneAccountId) {
+    return document.querySelector("tr[data-phone-account-id=\"" + String(iPhoneAccountId) + "\"]");
+}
+
+function replacePhoneAccountRows(aData) {
+    var oTable = document.getElementById("phone-accounts-table");
+    var oBody = oTable && oTable.tBodies.length ? oTable.tBodies[0] : null;
+    var aRows = {};
+    var aOldRows;
+    var aNewRows;
+    var sPhoneAccountId;
+    var i;
+    if (!aData || typeof aData.phone_accounts_html == "undefined") {
+        return;
+    }
+    setPhoneAccountDefaults(aData);
+    if (!oBody || aData.phone_accounts_html == "") {
+        window.location.reload();
+        return;
+    }
+    aOldRows = oBody.querySelectorAll("tr[data-phone-account-id]");
+    for (i = 0; i < aOldRows.length; i++) {
+        sPhoneAccountId = aOldRows[i].getAttribute("data-phone-account-id") || "";
+        if (sPhoneAccountId) {
+            aRows[sPhoneAccountId] = aOldRows[i];
+        }
+    }
+    oBody.innerHTML = aData.phone_accounts_html;
+    if (window.copyAdminTableRowState && window.bindAdminTableRow) {
+        aNewRows = oBody.querySelectorAll("tr[data-phone-account-id]");
+        for (i = 0; i < aNewRows.length; i++) {
+            sPhoneAccountId = aNewRows[i].getAttribute("data-phone-account-id") || "";
+            if (sPhoneAccountId && aRows[sPhoneAccountId]) {
+                window.copyAdminTableRowState(aRows[sPhoneAccountId], aNewRows[i]);
+            }
+            window.bindAdminTableRow(aNewRows[i]);
+        }
+    }
+    refreshAdminTableFilter();
+}
+
+function openPhoneAccountDialog(aRow, oSourceRow) {
+    var oDialog = document.getElementById("admin-reusable-dialog");
+    var oForm;
+    var oBox;
+    var oHeader;
+    var oTitle;
+    var oClose;
+    var oFields;
+    var oNumber;
+    var oAccount;
+    var oPin;
+    var oPuk;
+    var oPuk2;
+    var oSimId;
+    var oImei;
+    var oPaidAt;
+    var oPaidAmount;
+    var oPaidCurrency;
+    var oNote;
+    var oError;
+    var oActions;
+    var oSave;
+    var oCancel;
+    var iPhoneAccountId = aRow ? aRow.id : 0;
+    var blSaved = false;
+
+    if (!oDialog) {
+        return;
+    }
+
+    oForm = document.createElement("form");
+    oForm.className = "confirm-dialog-box subject-edit-dialog phone-account-edit-dialog";
+    oBox = oForm;
+
+    oHeader = document.createElement("div");
+    oHeader.className = "confirm-dialog-header";
+    oTitle = document.createElement("strong");
+    oTitle.className = "confirm-dialog-title";
+    oTitle.textContent = iPhoneAccountId > 0 ? "Edit Phone Account" : "New Phone Account";
+    oClose = document.createElement("button");
+    oClose.type = "button";
+    oClose.className = "confirm-dialog-close";
+    oClose.setAttribute("aria-label", "Close");
+    oClose.innerHTML = "&times;";
+    oHeader.appendChild(oTitle);
+    oHeader.appendChild(oClose);
+    oBox.appendChild(oHeader);
+
+    oFields = document.createElement("div");
+    oFields.className = "phone-account-field-grid";
+    oBox.appendChild(oFields);
+
+    oNumber = createPhoneAccountTextInput("phone-account-dialog-number", aRow ? aRow.number : "", true, "tel");
+    oAccount = createPhoneAccountTextInput("phone-account-dialog-account", aRow ? aRow.account : "", false, "");
+    oPin = createPhoneAccountTextInput("phone-account-dialog-pin", aRow ? aRow.pin : "", false, "");
+    oPuk = createPhoneAccountTextInput("phone-account-dialog-puk", aRow ? aRow.puk : "", false, "");
+    oPuk2 = createPhoneAccountTextInput("phone-account-dialog-puk2", aRow ? aRow.puk2 : "", false, "");
+    oSimId = createPhoneAccountTextInput("phone-account-dialog-sim-id", aRow ? aRow.simId : "", false, "");
+    oImei = createPhoneAccountTextInput("phone-account-dialog-imei", aRow ? aRow.imei : "", false, "");
+    oPaidAmount = createPhoneAccountTextInput("phone-account-dialog-paid-amount", aRow ? aRow.paidAmount : getPhoneAccountDefaultPaidAmount(), false, "");
+    oPaidCurrency = createPhoneAccountCurrencySelect("phone-account-dialog-paid-currency", aRow ? aRow.paidCurrency : getPhoneAccountDefaultPaidCurrency());
+    oNote = createPhoneAccountNoteTextarea("phone-account-dialog-note", aRow ? aRow.note : "");
+    oPin.maxLength = 16;
+    oPuk.maxLength = 16;
+    oPuk2.maxLength = 16;
+    oSimId.maxLength = 64;
+    oImei.maxLength = 32;
+    oPaidAmount.maxLength = 24;
+    oPaidAmount.inputMode = "decimal";
+
+    appendPhoneAccountField(oFields, "Number", oNumber);
+    appendPhoneAccountField(oFields, "Telegram Account", oAccount);
+    appendPhoneAccountField(oFields, "PIN", oPin);
+    appendPhoneAccountField(oFields, "PUK", oPuk);
+    appendPhoneAccountField(oFields, "PUK2", oPuk2);
+    appendPhoneAccountField(oFields, "SIM ID", oSimId);
+    appendPhoneAccountField(oFields, "IMEI", oImei);
+    oPaidAt = appendPhoneAccountDateField(oFields, "Paid", "phone-account-dialog-paid-at", aRow ? aRow.paidAt : "", true);
+    appendPhoneAccountField(oFields, "Amount", oPaidAmount);
+    appendPhoneAccountField(oFields, "Currency", oPaidCurrency);
+    appendPhoneAccountField(oFields, "Note", oNote, "phone-account-field-wide");
+
+    oError = document.createElement("div");
+    oError.className = "subject-edit-error";
+    oError.style.display = "none";
+    oBox.appendChild(oError);
+
+    oActions = document.createElement("div");
+    oActions.className = "confirm-dialog-actions";
+    oSave = document.createElement("button");
+    oSave.type = "submit";
+    oSave.className = "confirm-dialog-button";
+    oSave.textContent = "Save";
+    oCancel = document.createElement("button");
+    oCancel.type = "button";
+    oCancel.className = "confirm-dialog-button";
+    oCancel.textContent = "Cancel";
+    oActions.appendChild(oSave);
+    oActions.appendChild(oCancel);
+    oBox.appendChild(oActions);
+
+    function closePhoneAccountDialog() {
+        removeIssueDateCalendars();
+        finishAdminSubjectRowEdit(oSourceRow, blSaved);
+        closeAdminDialog();
+    }
+
+    beginAdminSubjectRowEdit(oSourceRow);
+    oClose.addEventListener("click", closePhoneAccountDialog);
+    oCancel.addEventListener("click", closePhoneAccountDialog);
+    oForm.addEventListener("submit", function(oEvent) {
+        var oData;
+        var iSavedPhoneAccountId;
+        var oSavedRow;
+        oEvent.preventDefault();
+        normalizeIssueDateInput(oPaidAt);
+        oError.style.display = "none";
+        oError.textContent = "";
+        oData = new FormData();
+        oData.append("action", iPhoneAccountId > 0 ? "update_phone_account" : "create_phone_account");
+        if (iPhoneAccountId > 0) {
+            oData.append("phone_account_id", String(iPhoneAccountId));
+        }
+        appendAdminEncodedValue(oData, "number", oNumber.value);
+        appendAdminEncodedValue(oData, "account", oAccount.value);
+        appendAdminEncodedValue(oData, "pin", oPin.value);
+        appendAdminEncodedValue(oData, "puk", oPuk.value);
+        appendAdminEncodedValue(oData, "puk2", oPuk2.value);
+        appendAdminEncodedValue(oData, "sim_id", oSimId.value);
+        appendAdminEncodedValue(oData, "imei", oImei.value);
+        oData.append("paid_at", oPaidAt.value);
+        appendAdminEncodedValue(oData, "paid_amount", oPaidAmount.value);
+        oData.append("paid_currency", oPaidCurrency.value);
+        appendAdminEncodedValue(oData, "note", oNote.value);
+        submitAdminRequest(oData, function(aData) {
+            iSavedPhoneAccountId = aData && aData.phone_account_id ? parseInt(aData.phone_account_id, 10) : iPhoneAccountId;
+            replacePhoneAccountRows(aData);
+            oSavedRow = iSavedPhoneAccountId ? findPhoneAccountRowById(iSavedPhoneAccountId) : null;
+            finishAdminSubjectRowEdit(oSavedRow || oSourceRow, true);
+            blSaved = true;
+            removeIssueDateCalendars();
+            closeAdminDialog();
+        }, function(sMessage) {
+            oError.textContent = sMessage;
+            oError.style.display = "";
+        });
+    });
+
+    oDialog.innerHTML = "";
+    oDialog.appendChild(oForm);
+    enableAdminDialogDrag(oDialog, oForm, oHeader);
+    if (oDialog.hidden) {
+        lockAdminModalScroll();
+    }
+    oDialog.hidden = false;
+    window.setTimeout(function() {
+        oNumber.focus();
+        oNumber.select();
+    }, 0);
+}
+
+function bindPhoneAccounts() {
+    var oAdd = document.querySelector(".js-add-phone-account");
+    var oTable = document.getElementById("phone-accounts-table");
+
+    if (oAdd) {
+        oAdd.addEventListener("click", function() {
+            openPhoneAccountDialog(null);
+        });
+    }
+
+    if (!oTable) {
+        return;
+    }
+
+    oTable.addEventListener("click", function(oEvent) {
+        var oButton = oEvent.target.closest(".js-edit-phone-account, .js-delete-phone-account, .js-move-phone-account-up, .js-move-phone-account-down");
+        var oRow = oButton ? oButton.closest("tr[data-phone-account-id]") : null;
+        var aRow = getPhoneAccountRowData(oRow);
+        var oData;
+        if (!oButton || !aRow) {
+            return;
+        }
+        oEvent.preventDefault();
+        if (oButton.classList.contains("js-edit-phone-account")) {
+            openPhoneAccountDialog(aRow, oRow);
+        } else if (oButton.classList.contains("js-delete-phone-account")) {
+            beginAdminSubjectRowEdit(oRow);
+            openAdminConfirmDialog("Confirm Deletion", createPhoneAccountDeleteMessage(aRow), "Yes", function() {
+                oData = new FormData();
+                oData.append("action", "delete_phone_account");
+                oData.append("phone_account_id", String(aRow.id));
+                submitAdminRequest(oData, function(aData) {
+                    replacePhoneAccountRows(aData);
+                }, function(sMessage) {
+                    finishAdminSubjectRowEdit(oRow, false);
+                    openAdminConfirmDialog("Request Failed", sMessage, "OK", null, null, "Close");
+                });
+            }, function() {
+                finishAdminSubjectRowEdit(oRow, false);
+            }, "No");
+        } else if (oButton.classList.contains("js-move-phone-account-up") || oButton.classList.contains("js-move-phone-account-down")) {
+            oData = new FormData();
+            oData.append("action", "move_phone_account");
+            oData.append("phone_account_id", String(aRow.id));
+            oData.append("direction", oButton.classList.contains("js-move-phone-account-up") ? "up" : "down");
+            beginAdminSubjectRowEdit(oRow);
+            submitAdminRequest(oData, function(aData) {
+                var iSavedPhoneAccountId = aData && aData.phone_account_id ? parseInt(aData.phone_account_id, 10) : aRow.id;
+                var oSavedRow;
+                replacePhoneAccountRows(aData);
+                oSavedRow = iSavedPhoneAccountId ? findPhoneAccountRowById(iSavedPhoneAccountId) : null;
+                finishAdminSubjectRowEdit(oSavedRow || oRow, true);
+            }, function(sMessage) {
+                finishAdminSubjectRowEdit(oRow, false);
+                openAdminConfirmDialog("Request Failed", sMessage, "OK", null, null, "Close");
+            });
+        }
+    });
+}
+
 function createEmailUsersTextarea(sId, sValue) {
     var oTextarea = document.createElement("textarea");
     oTextarea.id = sId;
@@ -6451,6 +6857,211 @@ function bindCharacterConverter() {
     });
 }
 
+function bindFancyTextConverter() {
+    var oInput = document.getElementById("fancy-text-input");
+    var oOutput = document.getElementById("fancy-text-output");
+    var oStyle = document.getElementById("fancy-text-style");
+    var oConvert = document.querySelector(".js-fancy-text-convert");
+    var sLatinUpper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    var sLatinLower = "abcdefghijklmnopqrstuvwxyz";
+    var sDigits = "0123456789";
+    var sGreekUpper = "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡϴΣΤΥΦΧΨΩ∇";
+    var sGreekLower = "αβγδεζηθικλμνξοπρςστυφχψω∂ϵϑϰϕϱϖ";
+    var oScriptUpperExceptions = {
+        B: 0x212C,
+        E: 0x2130,
+        F: 0x2131,
+        H: 0x210B,
+        I: 0x2110,
+        L: 0x2112,
+        M: 0x2133,
+        R: 0x211B
+    };
+    var oScriptLowerExceptions = {
+        e: 0x212F,
+        g: 0x210A,
+        o: 0x2134
+    };
+    var oFrakturUpperExceptions = {
+        C: 0x212D,
+        H: 0x210C,
+        I: 0x2111,
+        R: 0x211C,
+        Z: 0x2128
+    };
+    var oDoubleStruckUpperExceptions = {
+        C: 0x2102,
+        H: 0x210D,
+        N: 0x2115,
+        P: 0x2119,
+        Q: 0x211A,
+        R: 0x211D,
+        Z: 0x2124
+    };
+    var oStyles = {
+        "plain": {},
+        "bold": {upper: 0x1D400, lower: 0x1D41A, digit: 0x1D7CE, greekUpper: 0x1D6A8, greekLower: 0x1D6C2},
+        "italic": {upper: 0x1D434, lower: 0x1D44E, lowerExceptions: {h: 0x210E}, greekUpper: 0x1D6E2, greekLower: 0x1D6FC},
+        "bold-italic": {upper: 0x1D468, lower: 0x1D482, greekUpper: 0x1D71C, greekLower: 0x1D736},
+        "script": {upper: 0x1D49C, lower: 0x1D4B6, upperExceptions: oScriptUpperExceptions, lowerExceptions: oScriptLowerExceptions},
+        "script-chancery": {upper: 0x1D49C, lower: 0x1D4B6, upperExceptions: oScriptUpperExceptions, lowerExceptions: oScriptLowerExceptions, upperVariationSelector: 0xFE00},
+        "script-roundhand": {upper: 0x1D49C, lower: 0x1D4B6, upperExceptions: oScriptUpperExceptions, lowerExceptions: oScriptLowerExceptions, upperVariationSelector: 0xFE01},
+        "bold-script": {upper: 0x1D4D0, lower: 0x1D4EA},
+        "fraktur": {upper: 0x1D504, lower: 0x1D51E, upperExceptions: oFrakturUpperExceptions},
+        "double-struck": {upper: 0x1D538, lower: 0x1D552, digit: 0x1D7D8, upperExceptions: oDoubleStruckUpperExceptions},
+        "bold-fraktur": {upper: 0x1D56C, lower: 0x1D586},
+        "sans-serif": {upper: 0x1D5A0, lower: 0x1D5BA, digit: 0x1D7E2},
+        "sans-serif-bold": {upper: 0x1D5D4, lower: 0x1D5EE, digit: 0x1D7EC, greekUpper: 0x1D756, greekLower: 0x1D770},
+        "sans-serif-italic": {upper: 0x1D608, lower: 0x1D622},
+        "sans-serif-bold-italic": {upper: 0x1D63C, lower: 0x1D656, greekUpper: 0x1D790, greekLower: 0x1D7AA},
+        "monospace": {upper: 0x1D670, lower: 0x1D68A, digit: 0x1D7F6}
+    };
+    var oReverseCharacters = null;
+
+    function fromFancyTextCodePoint(iCodePoint) {
+        var iValue = Number(iCodePoint);
+        if (!isFinite(iValue) || iValue < 0 || iValue > 0x10FFFF || (iValue >= 0xD800 && iValue <= 0xDFFF)) {
+            return "";
+        }
+        if (iValue <= 0xFFFF) {
+            return String.fromCharCode(iValue);
+        }
+        iValue -= 0x10000;
+        return String.fromCharCode(0xD800 + Math.floor(iValue / 0x400), 0xDC00 + (iValue % 0x400));
+    }
+
+    function addFancyTextReverseCharacter(oMap, sStyled, sPlain) {
+        if (sStyled != "" && typeof oMap[sStyled] == "undefined") {
+            oMap[sStyled] = sPlain;
+        }
+    }
+
+    function addFancyTextReverseRange(oMap, sPlainCharacters, iBaseCodePoint, oExceptions, iVariationSelector) {
+        var i;
+        var sPlain;
+        var sStyled;
+        if (!iBaseCodePoint) {
+            return;
+        }
+        for (i = 0; i < sPlainCharacters.length; i++) {
+            sPlain = sPlainCharacters.charAt(i);
+            sStyled = fromFancyTextCodePoint(oExceptions && oExceptions[sPlain] ? oExceptions[sPlain] : iBaseCodePoint + i);
+            addFancyTextReverseCharacter(oMap, sStyled, sPlain);
+            if (sStyled != "" && iVariationSelector) {
+                addFancyTextReverseCharacter(oMap, sStyled + fromFancyTextCodePoint(iVariationSelector), sPlain);
+            }
+        }
+    }
+
+    function buildFancyTextReverseCharacters() {
+        var oMap = {};
+        var sStyle;
+        var oStyleData;
+        for (sStyle in oStyles) {
+            if (Object.prototype.hasOwnProperty.call(oStyles, sStyle)) {
+                oStyleData = oStyles[sStyle];
+                addFancyTextReverseRange(oMap, sLatinUpper, oStyleData.upper, oStyleData.upperExceptions, oStyleData.upperVariationSelector);
+                addFancyTextReverseRange(oMap, sLatinLower, oStyleData.lower, oStyleData.lowerExceptions, 0);
+                addFancyTextReverseRange(oMap, sDigits, oStyleData.digit, null, 0);
+                addFancyTextReverseRange(oMap, sGreekUpper, oStyleData.greekUpper, null, 0);
+                addFancyTextReverseRange(oMap, sGreekLower, oStyleData.greekLower, null, 0);
+            }
+        }
+        return oMap;
+    }
+
+    function getFancyTextCharacter(sCharacter, oStyleData) {
+        var iIndex;
+        var sMapped;
+        if (!oStyleData) {
+            return sCharacter;
+        }
+        iIndex = sLatinUpper.indexOf(sCharacter);
+        if (iIndex >= 0 && oStyleData.upper) {
+            sMapped = fromFancyTextCodePoint(oStyleData.upperExceptions && oStyleData.upperExceptions[sCharacter] ? oStyleData.upperExceptions[sCharacter] : oStyleData.upper + iIndex);
+            if (sMapped != "" && oStyleData.upperVariationSelector) {
+                sMapped += fromFancyTextCodePoint(oStyleData.upperVariationSelector);
+            }
+            return sMapped || sCharacter;
+        }
+        iIndex = sLatinLower.indexOf(sCharacter);
+        if (iIndex >= 0 && oStyleData.lower) {
+            return fromFancyTextCodePoint(oStyleData.lowerExceptions && oStyleData.lowerExceptions[sCharacter] ? oStyleData.lowerExceptions[sCharacter] : oStyleData.lower + iIndex) || sCharacter;
+        }
+        iIndex = sDigits.indexOf(sCharacter);
+        if (iIndex >= 0 && oStyleData.digit) {
+            return fromFancyTextCodePoint(oStyleData.digit + iIndex) || sCharacter;
+        }
+        iIndex = sGreekUpper.indexOf(sCharacter);
+        if (iIndex >= 0 && oStyleData.greekUpper) {
+            return fromFancyTextCodePoint(oStyleData.greekUpper + iIndex) || sCharacter;
+        }
+        iIndex = sGreekLower.indexOf(sCharacter);
+        if (iIndex >= 0 && oStyleData.greekLower) {
+            return fromFancyTextCodePoint(oStyleData.greekLower + iIndex) || sCharacter;
+        }
+        return sCharacter;
+    }
+
+    function transformFancyText(sText, sStyle) {
+        var oStyleData = oStyles[sStyle] || oStyles.plain;
+        var sResult = "";
+        var iPosition;
+        var iNextPosition;
+        var iNextCodePoint;
+        var iCodePoint;
+        var sCharacter;
+        var sNextCharacter;
+        if (!oReverseCharacters) {
+            oReverseCharacters = buildFancyTextReverseCharacters();
+        }
+        for (iPosition = 0; iPosition < sText.length; iPosition += 1) {
+            iCodePoint = sText.charCodeAt(iPosition);
+            if (iCodePoint >= 0xD800 && iCodePoint <= 0xDBFF && iPosition + 1 < sText.length) {
+                iCodePoint = sText.charCodeAt(iPosition + 1);
+                if (iCodePoint >= 0xDC00 && iCodePoint <= 0xDFFF) {
+                    sCharacter = sText.substring(iPosition, iPosition + 2);
+                    iPosition += 1;
+                } else {
+                    sCharacter = sText.charAt(iPosition);
+                }
+            } else {
+                sCharacter = sText.charAt(iPosition);
+            }
+            iNextPosition = iPosition + 1;
+            sNextCharacter = "";
+            if (iNextPosition < sText.length) {
+                iNextCodePoint = sText.charCodeAt(iNextPosition);
+                if (iNextCodePoint >= 0xFE00 && iNextCodePoint <= 0xFE0F) {
+                    sNextCharacter = sText.charAt(iNextPosition);
+                }
+            }
+            if (sNextCharacter != "" && typeof oReverseCharacters[sCharacter + sNextCharacter] != "undefined") {
+                sCharacter = oReverseCharacters[sCharacter + sNextCharacter];
+                iPosition = iNextPosition;
+            } else if (typeof oReverseCharacters[sCharacter] != "undefined") {
+                sCharacter = oReverseCharacters[sCharacter];
+            }
+            sResult += getFancyTextCharacter(sCharacter, oStyleData);
+        }
+        return sResult;
+    }
+
+    function refreshFancyTextOutput() {
+        oOutput.value = transformFancyText(oInput.value, oStyle.value);
+    }
+
+    if (!oInput || !oOutput || !oStyle) {
+        return;
+    }
+    oInput.addEventListener("input", refreshFancyTextOutput);
+    oStyle.addEventListener("change", refreshFancyTextOutput);
+    if (oConvert) {
+        oConvert.addEventListener("click", refreshFancyTextOutput);
+    }
+    refreshFancyTextOutput();
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     var aUserAgents = document.querySelectorAll(".js-user-agent");
     var iUserAgentIndex = 0;
@@ -6571,8 +7182,10 @@ document.addEventListener("DOMContentLoaded", function() {
     bindBusinessHours();
     layoutBusinessHours();
     bindIssueTracker();
+    bindPhoneAccounts();
     bindAdminSubmitOnChange();
     bindCharacterConverter();
+    bindFancyTextConverter();
     bindMailForm();
     bindSnippetBoardPageScrollLock();
     bindSbPmdHoverTimeout();
