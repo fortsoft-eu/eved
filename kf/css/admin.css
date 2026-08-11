@@ -364,6 +364,23 @@ table {
     background: #DCDCE4;
 }
 
+.menu-activating .menu-link:not(.menu-link-active):not(.menu-link-activating):hover {
+    background: transparent;
+}
+
+.menu-link-activating {
+    animation: adminMenuLinkBlink 0.2s linear 5;
+}
+
+@keyframes adminMenuLinkBlink {
+    0%, 100% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: #DCDCE4;
+    }
+}
+
 .admin-controls .quick-filter-active, .menu-link-active, .filter-focus-button.filter-focus-active {
     font-weight: bold;
 }

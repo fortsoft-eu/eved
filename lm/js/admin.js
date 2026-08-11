@@ -3865,84 +3865,171 @@ function bindBusinessHours() {
     }
 }
 
-function closeAdminMenus(oExceptMenu) {
+function resetMenuActivation(oMenu) {
+    var aLinks;
+    var iI;
+    if (!oMenu) {
+        return;
+    }
+    if (oMenu._menuActivationTimer) {
+        window.clearTimeout(oMenu._menuActivationTimer);
+        oMenu._menuActivationTimer = 0;
+    }
+    oMenu.classList.remove("menu-activating");
+    aLinks = oMenu.querySelectorAll(".menu-link-activating");
+    for (iI = 0; iI < aLinks.length; iI += 1) {
+        aLinks[iI].classList.remove("menu-link-activating");
+    }
+}
+
+function closeMenu(oMenu) {
+    var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
+    var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+    resetMenuActivation(oMenu);
+    if (oPanel) {
+        oPanel.hidden = true;
+    }
+    if (oButton) {
+        oButton.setAttribute("aria-expanded", "false");
+    }
+}
+
+function closeMenus(oExcept) {
     var aMenus = document.querySelectorAll("[data-menu]");
-    var i;
-    var oButton;
-    var oPanel;
-    for (i = 0; i < aMenus.length; i++) {
-        if (aMenus[i] === oExceptMenu) {
-            continue;
-        }
-        oButton = aMenus[i].querySelector("[data-menu-button]");
-        oPanel = aMenus[i].querySelector("[data-menu-panel]");
-        if (oPanel) {
-            oPanel.hidden = true;
-        }
-        if (oButton) {
-            oButton.setAttribute("aria-expanded", "false");
+    for (var iI = 0; iI < aMenus.length; iI += 1) {
+        if (aMenus[iI] !== oExcept) {
+            closeMenu(aMenus[iI]);
         }
     }
 }
 
-function bindAdminMenus() {
-    var aMenus = document.querySelectorAll("[data-menu]");
-    var blSuppressNextMenuLinkClick = false;
-    var i;
+function openMenu(oMenu) {
+    var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
+    var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+    if (!oButton || !oPanel) {
+        return;
+    }
+    closeMenus(oMenu);
+    oPanel.hidden = false;
+    oButton.setAttribute("aria-expanded", "true");
+}
 
-    function getAdminVisibleMenuLinkAtMouseEvent(oEvent) {
-        var oElement;
-        var oMenu;
-        var oPanel;
-        var oMenuLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".menu-link") : null;
-        if (oMenuLink && oMenuLink.closest) {
-            oMenu = oMenuLink.closest("[data-menu]");
-            oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
-        }
-        if (oPanel && !oPanel.hidden) {
-            return oMenuLink;
-        }
-        if (!document.elementFromPoint || typeof oEvent.clientX == "undefined" || typeof oEvent.clientY == "undefined") {
-            return null;
-        }
-        oElement = document.elementFromPoint(oEvent.clientX, oEvent.clientY);
-        oMenuLink = oElement && oElement.closest ? oElement.closest(".menu-link") : null;
-        if (oMenuLink && oMenuLink.closest) {
-            oMenu = oMenuLink.closest("[data-menu]");
-            oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
-        }
-        if (oPanel && !oPanel.hidden) {
-            return oMenuLink;
-        }
+function getVisibleMenuLinkAtMouseEvent(oEvent) {
+    var oElement;
+    var oMenu;
+    var oPanel;
+    var oMenuLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".menu-link") : null;
+    if (oMenuLink && oMenuLink.closest) {
+        oMenu = oMenuLink.closest("[data-menu]");
+        oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+    }
+    if (oPanel && !oPanel.hidden) {
+        return oMenuLink;
+    }
+    if (!document.elementFromPoint || typeof oEvent.clientX == "undefined" || typeof oEvent.clientY == "undefined") {
         return null;
     }
+    oElement = document.elementFromPoint(oEvent.clientX, oEvent.clientY);
+    oMenuLink = oElement && oElement.closest ? oElement.closest(".menu-link") : null;
+    if (oMenuLink && oMenuLink.closest) {
+        oMenu = oMenuLink.closest("[data-menu]");
+        oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+    }
+    if (oPanel && !oPanel.hidden) {
+        return oMenuLink;
+    }
+    return null;
+}
 
-    function activateAdminMenuLink(oMenuLink) {
-        var sHref = oMenuLink ? oMenuLink.href : "";
-        var sTarget = oMenuLink ? oMenuLink.getAttribute("target") || "" : "";
-        if (!sHref) {
-            return;
-        }
-        if (sTarget == "" || sTarget == "_self") {
-            window.location.href = sHref;
-        } else if (sTarget == "_parent") {
-            window.parent.location.href = sHref;
-        } else if (sTarget == "_top") {
-            window.top.location.href = sHref;
-        } else {
-            window.open(sHref, sTarget);
+function getVisibleMenuAtMouseEvent(oEvent) {
+    var oElement = oEvent.target;
+    var oMenu = oElement && oElement.closest ? oElement.closest("[data-menu]") : null;
+    var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+    if (oPanel && !oPanel.hidden) {
+        return oMenu;
+    }
+    if (!document.elementFromPoint || typeof oEvent.clientX == "undefined" || typeof oEvent.clientY == "undefined") {
+        return null;
+    }
+    oElement = document.elementFromPoint(oEvent.clientX, oEvent.clientY);
+    oMenu = oElement && oElement.closest ? oElement.closest("[data-menu]") : null;
+    oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+    return oPanel && !oPanel.hidden ? oMenu : null;
+}
+
+function flashMenuLink(oMenuLink) {
+    var oMenu = oMenuLink && oMenuLink.closest ? oMenuLink.closest("[data-menu]") : null;
+    var iTimer;
+    if (!oMenuLink) {
+        return;
+    }
+    if (oMenu) {
+        oMenu.classList.add("menu-activating");
+        if (oMenu._menuActivationTimer) {
+            window.clearTimeout(oMenu._menuActivationTimer);
+            oMenu._menuActivationTimer = 0;
         }
     }
+    oMenuLink.classList.remove("menu-link-activating");
+    oMenuLink.offsetWidth;
+    oMenuLink.classList.add("menu-link-activating");
+    iTimer = window.setTimeout(function () {
+        if (oMenu) {
+            oMenu._menuActivationTimer = 0;
+        }
+        oMenuLink.classList.remove("menu-link-activating");
+        if (oMenu) {
+            oMenu.classList.remove("menu-activating");
+        }
+        closeMenu(oMenu);
+    }, 1000);
+    if (oMenu) {
+        oMenu._menuActivationTimer = iTimer;
+    }
+}
 
-    for (i = 0; i < aMenus.length; i++) {
-        (function(oMenu) {
-            var oButton = oMenu ? oMenu.querySelector("[data-menu-button]") : null;
-            var oPanel = oMenu ? oMenu.querySelector("[data-menu-panel]") : null;
+function isMenuActivating(oMenu) {
+    return oMenu && oMenu.classList && oMenu.classList.contains("menu-activating");
+}
+
+function isMenuButtonEvent(oEvent) {
+    return !!(oEvent.target && oEvent.target.closest && oEvent.target.closest("[data-menu-button]"));
+}
+
+function activateMenuLink(oMenuLink, sTargetOverride) {
+    var sHref = oMenuLink ? oMenuLink.href : "";
+    var sTarget = sTargetOverride || (oMenuLink ? oMenuLink.getAttribute("target") || "" : "");
+    if (!sHref) {
+        return;
+    }
+    if (sTarget == "" || sTarget == "_self") {
+        window.location.href = sHref;
+    } else if (sTarget == "_parent") {
+        window.parent.location.href = sHref;
+    } else if (sTarget == "_top") {
+        window.top.location.href = sHref;
+    } else {
+        window.open(sHref, sTarget);
+    }
+}
+
+function setupMenu() {
+    var aMenus = document.querySelectorAll("[data-menu]");
+    var blSuppressNextMenuLinkClick = false;
+
+    if (aMenus.length === 0) {
+        return;
+    }
+
+    for (var iI = 0; iI < aMenus.length; iI += 1) {
+        (function (oMenu) {
+            var oButton = oMenu.querySelector("[data-menu-button]");
+            var oPanel = oMenu.querySelector("[data-menu-panel]");
             var blSkipButtonClick = false;
             if (!oButton || !oPanel) {
                 return;
             }
-            oButton.addEventListener("mousedown", function(oEvent) {
+            oButton.addEventListener("mousedown", function (oEvent) {
                 if (typeof oEvent.button != "undefined" && oEvent.button !== 0) {
                     return;
                 }
@@ -3951,44 +4038,57 @@ function bindAdminMenus() {
                     return;
                 }
                 blSkipButtonClick = true;
-                closeAdminMenus(oMenu);
-                oPanel.hidden = false;
-                oButton.setAttribute("aria-expanded", "true");
+                openMenu(oMenu);
                 oEvent.preventDefault();
             });
-            oButton.addEventListener("click", function(oEvent) {
+            oButton.addEventListener("click", function (oEvent) {
+                oEvent.preventDefault();
+                oEvent.stopPropagation();
                 if (blSkipButtonClick) {
                     blSkipButtonClick = false;
-                    oEvent.preventDefault();
                     return;
                 }
-                var blOpen = oPanel.hidden;
-                closeAdminMenus(oMenu);
-                oPanel.hidden = !blOpen;
-                oButton.setAttribute("aria-expanded", blOpen ? "true" : "false");
-                oEvent.preventDefault();
+                if (oPanel.hidden) {
+                    openMenu(oMenu);
+                } else {
+                    closeMenu(oMenu);
+                }
             });
-        })(aMenus[i]);
+        })(aMenus[iI]);
     }
 
-    document.addEventListener("mousedown", function(oEvent) {
+    document.addEventListener("mousedown", function (oEvent) {
         var oMenu = oEvent.target.closest ? oEvent.target.closest("[data-menu]") : null;
         if (!oMenu) {
-            closeAdminMenus(null);
+            closeMenus(null);
         }
     }, true);
 
-    document.addEventListener("mouseup", function(oEvent) {
+    document.addEventListener("mouseup", function (oEvent) {
         var oElement;
+        var iButton = typeof oEvent.button == "undefined" ? 0 : oEvent.button;
         var oMenu;
         var oMenuLink;
-        oMenuLink = getAdminVisibleMenuLinkAtMouseEvent(oEvent);
+        oMenuLink = getVisibleMenuLinkAtMouseEvent(oEvent);
         if (oMenuLink) {
+            oMenu = oMenuLink.closest ? oMenuLink.closest("[data-menu]") : null;
+            if (isMenuActivating(oMenu)) {
+                if (iButton === 0) {
+                    blSuppressNextMenuLinkClick = true;
+                }
+                oEvent.preventDefault();
+                oEvent.stopPropagation();
+                return;
+            }
+            if (iButton !== 0) {
+                return;
+            }
             blSuppressNextMenuLinkClick = true;
-            window.setTimeout(function() {
+            window.setTimeout(function () {
                 blSuppressNextMenuLinkClick = false;
             }, 0);
-            activateAdminMenuLink(oMenuLink);
+            flashMenuLink(oMenuLink);
+            activateMenuLink(oMenuLink, (oEvent.ctrlKey || oEvent.shiftKey) ? "_blank" : "");
             oEvent.preventDefault();
             oEvent.stopPropagation();
             return;
@@ -4001,11 +4101,44 @@ function bindAdminMenus() {
         }
         oMenu = oElement && oElement.closest ? oElement.closest("[data-menu]") : null;
         if (!oMenu) {
-            closeAdminMenus(null);
+            closeMenus(null);
         }
     }, true);
 
-    document.addEventListener("click", function(oEvent) {
+    document.addEventListener("auxclick", function (oEvent) {
+        var iButton = typeof oEvent.button == "undefined" ? 0 : oEvent.button;
+        var oMenu;
+        var oMenuLink = getVisibleMenuLinkAtMouseEvent(oEvent);
+        if (oMenuLink) {
+            oMenu = oMenuLink.closest ? oMenuLink.closest("[data-menu]") : null;
+            if (isMenuActivating(oMenu)) {
+                oEvent.preventDefault();
+                oEvent.stopPropagation();
+                return;
+            }
+        }
+        if (iButton == 1 && oMenuLink) {
+            flashMenuLink(oMenuLink);
+        }
+    }, true);
+
+    document.addEventListener("contextmenu", function (oEvent) {
+        if (getVisibleMenuAtMouseEvent(oEvent)) {
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+        }
+    }, true);
+
+    document.addEventListener("click", function (oEvent) {
+        var oMenu = getVisibleMenuAtMouseEvent(oEvent);
+        if (isMenuActivating(oMenu)) {
+            if (isMenuButtonEvent(oEvent)) {
+                return;
+            }
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+            return;
+        }
         if (blSuppressNextMenuLinkClick) {
             blSuppressNextMenuLinkClick = false;
             oEvent.preventDefault();
@@ -4013,6 +4146,11 @@ function bindAdminMenus() {
         }
     }, true);
 
+    document.addEventListener("keydown", function (oEvent) {
+        if (oEvent.key == "Escape") {
+            closeMenus(null);
+        }
+    });
 }
 
 function bindAdminSubmitOnChange() {
@@ -6054,7 +6192,7 @@ function bindSnippetBoardTinyMce() {
                     }
                 });
                 oEditor.on("focus click mousedown mouseup", function() {
-                    closeAdminMenus(null);
+                    closeMenus(null);
                 });
                 function syncSnippetBoardEditorChange() {
                     var oElement = oEditor.getElement();
@@ -7164,13 +7302,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("keydown", function(oEvent) {
     if (oEvent.key == "Escape") {
-        closeAdminMenus(null);
+        closeMenus(null);
         closeAdminDialog();
     }
 });
 
 document.addEventListener("DOMContentLoaded", function() {
-    bindAdminMenus();
+    setupMenu();
     setupTableRows();
     setupFilterFocusButton();
     setupTableFilter();

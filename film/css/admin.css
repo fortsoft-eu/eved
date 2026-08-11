@@ -558,6 +558,23 @@ table {
     background: #DCDCE4;
 }
 
+.menu-activating .menu-link:not(.menu-link-active):not(.menu-link-activating):hover {
+    background: transparent;
+}
+
+.menu-link-activating {
+    animation: adminMenuLinkBlink 0.2s linear 5;
+}
+
+@keyframes adminMenuLinkBlink {
+    0%, 100% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: #DCDCE4;
+    }
+}
+
 .filter-focus-button {
     align-items: center;
     background: #F0F0F0;
@@ -707,15 +724,13 @@ tr:nth-child(even) {
 }
 
 .admin-row-saved > td {
-    animation: nxAdminRowSavedBlink 0.22s linear 6;
+    animation: adminRowSavedBlink 0.22s linear 6;
 }
 
-@keyframes nxAdminRowSavedBlink {
-    0%,
-    100% {
+@keyframes adminRowSavedBlink {
+    0%, 100% {
         background-color: transparent;
     }
-
     50% {
         background-color: #DFF0D8;
     }

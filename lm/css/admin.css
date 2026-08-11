@@ -23,10 +23,6 @@ form {
     min-height: calc(100vh - 24px);
 }
 
-.login-dialog, .business-hours-table tbody, .business-hours-table tr {
-    background: transparent;
-}
-
 .login-panel {
     background: #FFF;
     border: 1px solid #C0C0C0;
@@ -186,6 +182,23 @@ form {
 
 .mail-recipient-suggest-option:hover, .mail-recipient-suggest-active, .menu-button:hover, .character-palette-button:hover, .menu-link-active, .menu-link:hover, .filter-focus-button:hover {
     background: #DCDCE4;
+}
+
+.menu-activating .menu-link:not(.menu-link-active):not(.menu-link-activating):hover {
+    background: transparent;
+}
+
+.menu-link-activating {
+    animation: adminMenuLinkBlink 0.2s linear 5;
+}
+
+@keyframes adminMenuLinkBlink {
+    0%, 100% {
+        background-color: transparent;
+    }
+    50% {
+        background-color: #DCDCE4;
+    }
 }
 
 button, select {
@@ -648,6 +661,10 @@ th {
 
 tr:nth-child(even) {
     background: #F9F9F9;
+}
+
+.login-dialog, .business-hours-table tbody, .business-hours-table tr {
+    background: transparent;
 }
 
 .error-cell, .issue-due-overdue {
