@@ -131,12 +131,33 @@ function getAdminElementText(oElement) {
 }
 
 function getAdminContactItemText(oItem) {
-    var sType = oItem ? (oItem.getAttribute("data-contact-type-name") || "") : "";
-    var sValue = oItem ? (oItem.getAttribute("data-contact-value") || "") : "";
+    var sType = getAdminContactTypeName(oItem);
+    var sValue = getAdminContactValue(oItem);
     if (sType != "" && sValue != "") {
         return sType + ": " + sValue;
     }
     return sValue || sType;
+}
+
+function getAdminContactTypeName(oItem) {
+    var oType = oItem ? oItem.querySelector(".contact-type") : null;
+    var sType = oType ? (oType.textContent || "") : "";
+    return sType != "" ? sType : (oItem ? (oItem.getAttribute("data-contact-type-name") || "") : "");
+}
+
+function getAdminContactValue(oItem) {
+    var oValue = oItem ? oItem.querySelector(".contact-value") : null;
+    var sValue = oValue ? (oValue.textContent || "") : "";
+    return sValue != "" ? sValue : (oItem ? (oItem.getAttribute("data-contact-value") || "") : "");
+}
+
+function getAdminContactNote(oItem) {
+    var oNote = oItem ? oItem.querySelector(".contact-note") : null;
+    var sNote = oNote ? (oNote.textContent || "") : "";
+    if (sNote.length >= 2 && sNote.charAt(0) == "(" && sNote.charAt(sNote.length - 1) == ")") {
+        return sNote.substring(1, sNote.length - 1);
+    }
+    return sNote != "" ? sNote : (oItem ? (oItem.getAttribute("data-contact-note") || "") : "");
 }
 
 function appendAdminConfirmDetail(oParent, sDetail) {
@@ -5755,7 +5776,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function copyContactValue(oButton) {
         var oItem = oButton.closest ? oButton.closest(".contact-item") : null;
-        var sValue = oItem ? (oItem.getAttribute("data-contact-value") || "") : "";
+        var sValue = getAdminContactValue(oItem);
         oButton.setAttribute("data-copy-text", oButton.getAttribute("data-copy-text") || oButton.textContent);
         if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(sValue).then(function () {
@@ -5949,8 +5970,8 @@ document.addEventListener("DOMContentLoaded", function () {
         oSharedNote.textContent = "Shared contact values used by other subjects are preserved.";
         oForm.appendChild(oSharedNote);
         var oType = appendContactTypeSelect(oForm, blNewContact ? sNewContactTypeId : (oItem.getAttribute("data-contact-type-id") || ""), blNewContact && !sNewContactTypeId ? "cell" : (blNewContact ? "" : (oItem.getAttribute("data-contact-type") || "")));
-        var oValue = appendTextField(oForm, "Value", "contact_value", blNewContact ? "" : (oItem.getAttribute("data-contact-value") || ""));
-        var oNote = appendTextField(oForm, "Note", "note", blNewContact ? "" : (oItem.getAttribute("data-contact-note") || ""));
+        var oValue = appendTextField(oForm, "Value", "contact_value", blNewContact ? "" : getAdminContactValue(oItem));
+        var oNote = appendTextField(oForm, "Note", "note", blNewContact ? "" : getAdminContactNote(oItem));
         var oPrimary = appendCheckbox(oForm, "Primary", "is_primary", blNewContact ? false : oItem.getAttribute("data-contact-primary") == "1");
         var oActive = appendCheckbox(oForm, "Active", "is_active", blNewContact ? true : oItem.getAttribute("data-contact-active") == "1");
         oForm.appendChild(oError);
