@@ -116,7 +116,7 @@ form {
     white-space: nowrap;
 }
 
-.mail-form-status:empty, .mail-recipient-suggest-box[hidden], .snippet-board-form .tox .tox-statusbar__resize-handle, .confirm-dialog[hidden], .render-throbber[hidden], .menu-panel[hidden], .schema-unavailable-message, .contacts-table .column-hidden, .contacts-table .column-step-one, .contacts-table .column-step-three, .contacts-table .column-step-two, .subject-note-source, .subject-type-column {
+.mail-form-status:empty, .mail-recipient-suggest-box[hidden], .snippet-board-form .tox .tox-statusbar__resize-handle, .confirm-dialog[hidden], .render-throbber[hidden], .menu-panel[hidden], .schema-unavailable-message, .contacts-table .column-hidden, .contacts-table .column-step-one, .contacts-table .column-step-three, .contacts-table .column-step-two, .subject-type-column {
     display: none;
 }
 

@@ -1887,7 +1887,6 @@ function renderNoteList($aNotes, $blShowActions = true, $iSubjectId = 0, $blHasH
             . "<span class=\"subject-item-value\"" . $sTimestampTooltipAttribute . ">" . htmlMultiline($aNote["note_text"]) . "</span>"
             . renderCopyAction($aNote["note_text"])
             . "<span class=\"subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
-            . "<span class=\"subject-note-source\">" . html($aNote["note_text"]) . "</span>"
             . $sActions
             . "</div>";
     }

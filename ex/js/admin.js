@@ -4229,14 +4229,14 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-    var aSubjectButtons = document.querySelectorAll(".js-add-subject, .js-add-subject-nickname, .js-add-subject-address, .js-add-subject-group, .js-add-subject-note, .js-edit-subject, .js-edit-subject-portal, .js-edit-subject-nickname, .js-edit-subject-address, .js-edit-subject-group, .js-edit-subject-note, .js-delete-subject, .js-delete-subject-contact, .js-delete-subject-nickname, .js-delete-subject-address, .js-delete-subject-group, .js-delete-subject-note");
+    var aSubjectButtons = document.querySelector(".js-add-subject, .js-add-subject-nickname, .js-add-subject-address, .js-add-subject-group, .js-add-subject-note, .js-edit-subject, .js-edit-subject-portal, .js-edit-subject-nickname, .js-edit-subject-address, .js-edit-subject-group, .js-edit-subject-note, .js-delete-subject, .js-delete-subject-contact, .js-delete-subject-nickname, .js-delete-subject-address, .js-delete-subject-group, .js-delete-subject-note");
     var iSubjectCalendarFirstDay = 1;
     var sSubjectDateInputFormat = "YYYY-MM-DD";
     var blHideSubjectBirthNumber = false;
     var blShowComputedSubjectName = false;
     var aSubjectCountryCodes = ("AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CS CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW").split(" ");
     var aSubjectCountryOptions = null;
-    if (aSubjectButtons.length === 0 || !window.fetch || !window.FormData || !window.JSON) {
+    if (!aSubjectButtons || !window.fetch || !window.FormData || !window.JSON) {
         return;
     }
     if (document.body) {
@@ -4286,8 +4286,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function getSubjectNoteText(oItem) {
-        var oSource = oItem ? oItem.querySelector(".subject-note-source") : null;
-        return oSource ? oSource.textContent : getSubjectItemValue(oItem, "data-note-text");
+        var oValue = oItem ? oItem.querySelector(".subject-item-value") : null;
+        return oValue ? (oValue.textContent || "") : "";
     }
 
     function getSubjectItemText(oItem) {
@@ -5732,8 +5732,8 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-    var aContactButtons = document.querySelectorAll(".js-add-subject-contact, .js-edit-subject-contact");
-    var blCanEditContacts = aContactButtons.length > 0 && window.fetch && window.FormData;
+    var aContactButtons = document.querySelector(".js-add-subject-contact, .js-edit-subject-contact");
+    var blCanEditContacts = !!aContactButtons && window.fetch && window.FormData;
 
     function showContactCopyResult(oButton, blSuccess) {
         var oBox = oButton.querySelector ? oButton.querySelector(".copy-action-box") : null;
