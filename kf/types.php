@@ -130,7 +130,7 @@ renderMenu();
 <?php
 
 echo $sToolbarHtml,
-    . "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"types-table\" aria-live=\"polite\">" . count($aRows) . "</span>\n";
+    "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"types-table\" aria-live=\"polite\">" . count($aRows) . "</span>\n";
 
 ?>
   </p>

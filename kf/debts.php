@@ -263,7 +263,7 @@ $iTime = sendPageHeaders();
 <?php
 
 echo $sToolbarHtml,
-    . "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"debts-table\" aria-live=\"polite\">" . count($aRows) . "</span>\n";
+    "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"debts-table\" aria-live=\"polite\">" . count($aRows) . "</span>\n";
 
 ?>
   </p>
