@@ -684,7 +684,7 @@ tr:nth-child(even) {
     background: #F9F9F9;
 }
 
-.login-dialog, .business-hours-table tbody, .business-hours-table tr {
+.business-hours-table tbody, .business-hours-table tr {
     background: transparent;
 }
 

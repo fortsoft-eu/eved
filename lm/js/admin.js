@@ -214,6 +214,17 @@ function enableAdminDialogDrag(oDialog, oBox, oHeader) {
     });
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    var aDialogs = document.querySelectorAll(".confirm-dialog");
+    var oBox;
+    var oHeader;
+    for (var iI = 0; iI < aDialogs.length; iI += 1) {
+        oBox = aDialogs[iI].querySelector(".confirm-dialog-box");
+        oHeader = aDialogs[iI].querySelector(".confirm-dialog-header");
+        enableAdminDialogDrag(aDialogs[iI], oBox, oHeader);
+    }
+});
+
 function setupTableRows() {
     var sHoverColor = "#fff3cd";
     var sSelectedColor = "#cfe2ff";
