@@ -13,6 +13,7 @@ $iNextYear = $iYear < 9999 ? $iYear + 1 : $iYear;
 $iCurrentYear = (int)date("Y");
 $sPageTitle = getPageTitleText($aAllowedIps);
 $aHolidays = exCalendarGetHolidays($iYear);
+exCalendarAddExternalCalendarDatabaseEvents($aHolidays, $oPdo, $iYear, exCalendarGetExternalCalendarUrl());
 $iTime = sendPageHeaders();
 
 ?>
@@ -58,6 +59,7 @@ renderMenu();
     <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-state"></span>Státní svátek</span>
     <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-other"></span>Ostatní svátek</span>
     <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-moving"></span>Pohyblivý svátek</span>
+    <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-external"></span>Externí kalendář</span>
   </p>
   <div class="holiday-calendar-grid">
 <?php

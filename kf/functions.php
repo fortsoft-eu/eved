@@ -985,15 +985,6 @@ function renderExchangeRateRows($aRows) {
     return $sHtml;
 }
 
-function sendProcResultAndExit($sResult, $iStatusCode = 200) {
-    sendSecurityHeaders();
-    http_response_code($iStatusCode);
-    header("Content-Type: text/plain; charset=utf-8", true);
-    header("Cache-Control: no-store", true);
-    echo $sResult . "\n";
-    exit;
-}
-
 function getExchangeRateRequestedFor() {
     $oTimeZone = new DateTimeZone("Europe/Prague");
     $oNow = new DateTimeImmutable("now", $oTimeZone);

@@ -717,6 +717,15 @@ function sendJsonAndExit($aData, $iStatusCode = 200) {
     exit;
 }
 
+function sendProcResultAndExit($sResult, $iStatusCode = 200) {
+    sendSecurityHeaders();
+    http_response_code($iStatusCode);
+    header("Content-Type: text/plain; charset=utf-8", true);
+    header("Cache-Control: no-store", true);
+    echo $sResult . "\n";
+    exit;
+}
+
 function send403AndExit() {
     $sDate = gmdate("D, d M Y H:i:s", time());
     $sHtml = "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n"
@@ -1982,6 +1991,52 @@ function runKfExchangeRateProcess($oPdo, $sError = "") {
         if ($sRequestedFor != "") {
             try {
                 recordExchangeRateFetchError($oPdo, $sRequestedFor, 0, $oException->getMessage());
+            } catch (Exception $oIgnoredException) {
+                error_log((string)$oIgnoredException);
+            }
+        }
+    }
+    return array("result" => "ERR", "status_code" => 500);
+}
+
+function runExCalendarProcess($oPdo, $sError = "") {
+    $sExFunctionsPath = __DIR__ . "/ex/functions.php";
+    $sCalendarUrl = "";
+    if (!$oPdo) {
+        error_log("ex/proc.php database error: " . $sError);
+        return array("result" => "ERR", "status_code" => 500);
+    }
+    if (!is_file($sExFunctionsPath)) {
+        error_log("ex/proc.php path error: " . $sExFunctionsPath);
+        return array("result" => "ERR", "status_code" => 500);
+    }
+    include_once $sExFunctionsPath;
+    try {
+        $sCalendarUrl = exCalendarGetExternalCalendarUrl();
+        if (!reserveExternalCalendarFetchAttempt($oPdo, $sCalendarUrl)) {
+            return array("result" => "OK", "status_code" => 200);
+        }
+        $aResponse = exCalendarFetchExternalCalendarResponse($sCalendarUrl);
+        if (!$aResponse["success"]) {
+            $sErrorMessage = trim((string)$aResponse["error"]) != "" ? (string)$aResponse["error"] : "ICS calendar returned HTTP " . (int)$aResponse["status_code"] . ".";
+            recordExternalCalendarFetchError($oPdo, $sCalendarUrl, (int)$aResponse["status_code"], $sErrorMessage);
+            error_log("ex/proc.php calendar fetch failed: " . $sErrorMessage);
+            return array("result" => "ERR", "status_code" => 502);
+        }
+        $sParseError = "";
+        $aRows = exCalendarBuildExternalCalendarEventRows($aResponse["body"], $sParseError);
+        if ($aRows === false) {
+            recordExternalCalendarFetchError($oPdo, $sCalendarUrl, (int)$aResponse["status_code"], $sParseError);
+            error_log("ex/proc.php calendar parse failed: " . $sParseError);
+            return array("result" => "ERR", "status_code" => 502);
+        }
+        saveExternalCalendarEvents($oPdo, $sCalendarUrl, $aRows, $aResponse["body"], (int)$aResponse["status_code"]);
+        return array("result" => "OK", "status_code" => 200);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($sCalendarUrl != "") {
+            try {
+                recordExternalCalendarFetchError($oPdo, $sCalendarUrl, 0, $oException->getMessage());
             } catch (Exception $oIgnoredException) {
                 error_log((string)$oIgnoredException);
             }

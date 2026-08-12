@@ -8,6 +8,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET["fingerprint"]) && (stri
 }
 
 runKfExchangeRateProcess($oPdo, $sError);
+runExCalendarProcess($oPdo, $sError);
 
 $sStyleNonce = base64_encode(random_bytes(16));
 

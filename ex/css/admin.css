@@ -867,6 +867,11 @@ body.mail-page .admin-controls .mail-send-button {
     border-color: #74A8B6;
 }
 
+.holiday-legend-external {
+    background: #DDE8FF;
+    border-color: #7C95C8;
+}
+
 .holiday-calendar-grid {
     align-items: start;
     display: grid;
@@ -950,6 +955,11 @@ body.mail-page .admin-controls .mail-send-button {
 .holiday-day-moving {
     background: #D6EEF5;
     border-color: #74A8B6;
+}
+
+.holiday-day-external {
+    background: #DDE8FF;
+    border-color: #7C95C8;
 }
 
 .holiday-day-number {

@@ -2388,13 +2388,15 @@ function exCalendarGetEasterSunday($iYear) {
     return exCalendarDate($iYear, $iMonth, $iDay);
 }
 
-function exCalendarAddHoliday(&$aHolidays, $sDate, $sType, $sName) {
+function exCalendarAddHoliday(&$aHolidays, $sDate, $sType, $sName, $sTime = "", $sLocation = "") {
     if (!isset($aHolidays[$sDate])) {
         $aHolidays[$sDate] = array();
     }
     $aHolidays[$sDate][] = array(
         "type" => $sType,
-        "name" => $sName
+        "name" => $sName,
+        "time" => $sTime,
+        "location" => $sLocation
     );
 }
 
@@ -2429,6 +2431,388 @@ function exCalendarGetHolidays($iYear) {
     return $aHolidays;
 }
 
+function exCalendarGetExternalCalendarUrl() {
+    global $sExCalendarUrl;
+
+    return $sExCalendarUrl;
+}
+
+function exCalendarGetExternalCalendarUrlHash($sUrl) {
+    return hash("sha256", (string)$sUrl);
+}
+
+function exCalendarGetExternalCalendarHttpStatusCode($aHeaders) {
+    $iStatusCode = 0;
+    if ($aHeaders) {
+        foreach ($aHeaders as $sHeader) {
+            if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", (string)$sHeader, $aMatches)) {
+                $iStatusCode = (int)$aMatches[1];
+            }
+        }
+    }
+    return $iStatusCode;
+}
+
+function exCalendarFetchExternalCalendarResponse($sUrl) {
+    if (function_exists("curl_init")) {
+        $oCurl = curl_init($sUrl);
+        if (!$oCurl) {
+            return array(
+                "success" => false,
+                "status_code" => 0,
+                "body" => "",
+                "error" => "Cannot initialize cURL."
+            );
+        }
+        curl_setopt($oCurl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($oCurl, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($oCurl, CURLOPT_TIMEOUT, 20);
+        curl_setopt($oCurl, CURLOPT_HTTPHEADER, array("Accept: text/calendar,text/plain,*/*"));
+        curl_setopt($oCurl, CURLOPT_USERAGENT, "eved-ex-calendar");
+        @curl_setopt($oCurl, CURLOPT_FOLLOWLOCATION, true);
+        @curl_setopt($oCurl, CURLOPT_MAXREDIRS, 5);
+        $sBody = curl_exec($oCurl);
+        $iStatusCode = (int)curl_getinfo($oCurl, CURLINFO_HTTP_CODE);
+        $sError = curl_errno($oCurl) ? curl_error($oCurl) : "";
+        return array(
+            "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
+            "status_code" => $iStatusCode,
+            "body" => $sBody !== false ? (string)$sBody : "",
+            "error" => $sError
+        );
+    }
+    $aContext = array(
+        "http" => array(
+            "method" => "GET",
+            "header" => "Accept: text/calendar,text/plain,*/*\r\nUser-Agent: eved-ex-calendar\r\n",
+            "timeout" => 20,
+            "ignore_errors" => true
+        )
+    );
+    $sBody = @file_get_contents($sUrl, false, stream_context_create($aContext));
+    $aResponseHeaders = http_get_last_response_headers();
+    if (!$aResponseHeaders) {
+        $aResponseHeaders = array();
+    }
+    $iStatusCode = exCalendarGetExternalCalendarHttpStatusCode($aResponseHeaders);
+    $aError = error_get_last();
+    return array(
+        "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
+        "status_code" => $iStatusCode,
+        "body" => $sBody !== false ? (string)$sBody : "",
+        "error" => $sBody !== false ? "" : (isset($aError["message"]) ? (string)$aError["message"] : "HTTP request failed.")
+    );
+}
+
+function exCalendarUnfoldICalContent($sContent) {
+    $aLines = array();
+    $aRawLines = explode("\n", str_replace(array("\r\n", "\r"), "\n", (string)$sContent));
+    foreach ($aRawLines as $sLine) {
+        if ($sLine != "" && preg_match("/^[ \t]/", $sLine) && $aLines) {
+            $aLines[count($aLines) - 1] .= substr($sLine, 1);
+        } else {
+            $aLines[] = $sLine;
+        }
+    }
+    return $aLines;
+}
+
+function exCalendarParseICalLine($sLine) {
+    $iSeparatorPosition = strpos($sLine, ":");
+    if ($iSeparatorPosition === false) {
+        return null;
+    }
+    $aNameParts = explode(";", substr($sLine, 0, $iSeparatorPosition));
+    $sName = strtoupper(array_shift($aNameParts));
+    $aParams = array();
+    foreach ($aNameParts as $sNamePart) {
+        $iParamSeparatorPosition = strpos($sNamePart, "=");
+        if ($iParamSeparatorPosition !== false) {
+            $aParams[strtoupper(substr($sNamePart, 0, $iParamSeparatorPosition))] = trim(substr($sNamePart, $iParamSeparatorPosition + 1), "\"");
+        }
+    }
+    return array(
+        "name" => $sName,
+        "params" => $aParams,
+        "value" => substr($sLine, $iSeparatorPosition + 1)
+    );
+}
+
+function exCalendarDecodeICalText($sValue) {
+    $sValue = str_replace(array('\n', '\N'), "\n", (string)$sValue);
+    $sValue = str_replace(array('\,', '\;'), array(",", ";"), $sValue);
+    return str_replace('\\\\', '\\', $sValue);
+}
+
+function exCalendarParseICalDateTimeValue($sValue, $aParams) {
+    $sValue = trim((string)$sValue);
+    if ($sValue == "") {
+        return null;
+    }
+    $oPragueTimeZone = new DateTimeZone("Europe/Prague");
+    if ((isset($aParams["VALUE"]) && strtoupper($aParams["VALUE"]) == "DATE") || preg_match("/^[0-9]{8}$/", $sValue)) {
+        $oDate = DateTimeImmutable::createFromFormat("!Ymd", $sValue, $oPragueTimeZone);
+        if (!$oDate || $oDate->format("Ymd") != $sValue) {
+            return null;
+        }
+        return array(
+            "date" => $oDate->format("Y-m-d"),
+            "time" => ""
+        );
+    }
+    $oSourceTimeZone = $oPragueTimeZone;
+    if (substr($sValue, -1) == "Z") {
+        $oSourceTimeZone = new DateTimeZone("UTC");
+        $sValue = substr($sValue, 0, -1);
+    } elseif (isset($aParams["TZID"]) && trim((string)$aParams["TZID"]) != "") {
+        try {
+            $oSourceTimeZone = new DateTimeZone($aParams["TZID"]);
+        } catch (Exception $oException) {
+            return null;
+        }
+    }
+    if (preg_match("/^[0-9]{8}T[0-9]{6}$/", $sValue)) {
+        $oDateTime = DateTimeImmutable::createFromFormat("!Ymd\\THis", $sValue, $oSourceTimeZone);
+    } elseif (preg_match("/^[0-9]{8}T[0-9]{4}$/", $sValue)) {
+        $oDateTime = DateTimeImmutable::createFromFormat("!Ymd\\THi", $sValue, $oSourceTimeZone);
+    } else {
+        return null;
+    }
+    if (!$oDateTime) {
+        return null;
+    }
+    $oPragueDateTime = $oDateTime->setTimezone($oPragueTimeZone);
+    return array(
+        "date" => $oPragueDateTime->format("Y-m-d"),
+        "time" => $oPragueDateTime->format("H:i")
+    );
+}
+
+function exCalendarParseICalEvents($sContent) {
+    $aEvents = array();
+    $aEvent = null;
+    foreach (exCalendarUnfoldICalContent($sContent) as $sLine) {
+        $aLine = exCalendarParseICalLine($sLine);
+        if ($aLine && $aLine["name"] == "BEGIN" && strtoupper($aLine["value"]) == "VEVENT") {
+            $aEvent = array(
+                "_raw_lines" => array($sLine)
+            );
+            continue;
+        }
+        if ($aEvent !== null) {
+            $aEvent["_raw_lines"][] = $sLine;
+        }
+        if (!$aLine) {
+            continue;
+        }
+        if ($aLine["name"] == "END" && strtoupper($aLine["value"]) == "VEVENT") {
+            if ($aEvent !== null) {
+                $aEvent["_raw_event"] = implode("\r\n", $aEvent["_raw_lines"]) . "\r\n";
+                $aEvents[] = $aEvent;
+            }
+            $aEvent = null;
+            continue;
+        }
+        if ($aEvent !== null && in_array($aLine["name"], array("CREATED", "DESCRIPTION", "DTEND", "DTSTAMP", "DTSTART", "LAST-MODIFIED", "LOCATION", "RECURRENCE-ID", "SEQUENCE", "STATUS", "SUMMARY", "TRANSP", "UID"), true)) {
+            $aEvent[$aLine["name"]] = array(
+                "params" => $aLine["params"],
+                "value" => $aLine["value"]
+            );
+        }
+    }
+    return $aEvents;
+}
+
+function exCalendarGetICalEventText($aEvent, $sName) {
+    return isset($aEvent[$sName]) ? trim(exCalendarDecodeICalText($aEvent[$sName]["value"])) : "";
+}
+
+function exCalendarGetICalEventValue($aEvent, $sName) {
+    return isset($aEvent[$sName]) ? trim((string)$aEvent[$sName]["value"]) : "";
+}
+
+function exCalendarGetICalEventTimezone($aEvent, $sName) {
+    return isset($aEvent[$sName]) && isset($aEvent[$sName]["params"]["TZID"]) ? trim((string)$aEvent[$sName]["params"]["TZID"]) : "";
+}
+
+function exCalendarBuildExternalCalendarEventRows($sContent, &$sError) {
+    $aRows = array();
+    $iEventOrder = 0;
+    if ($sContent == "") {
+        $sError = "ICS response is empty.";
+        return false;
+    }
+    foreach (exCalendarParseICalEvents($sContent) as $aEvent) {
+        $iEventOrder += 1;
+        $aStart = isset($aEvent["DTSTART"]) ? exCalendarParseICalDateTimeValue($aEvent["DTSTART"]["value"], $aEvent["DTSTART"]["params"]) : null;
+        $aEnd = isset($aEvent["DTEND"]) ? exCalendarParseICalDateTimeValue($aEvent["DTEND"]["value"], $aEvent["DTEND"]["params"]) : null;
+        $aRows[] = array(
+            "event_order" => $iEventOrder,
+            "uid" => exCalendarGetICalEventValue($aEvent, "UID"),
+            "recurrence_id_raw" => exCalendarGetICalEventValue($aEvent, "RECURRENCE-ID"),
+            "status" => exCalendarGetICalEventValue($aEvent, "STATUS"),
+            "summary" => exCalendarGetICalEventText($aEvent, "SUMMARY"),
+            "description" => exCalendarGetICalEventText($aEvent, "DESCRIPTION"),
+            "location" => exCalendarGetICalEventText($aEvent, "LOCATION"),
+            "start_date" => $aStart ? $aStart["date"] : null,
+            "start_time" => $aStart && $aStart["time"] != "" ? $aStart["time"] : null,
+            "start_raw" => exCalendarGetICalEventValue($aEvent, "DTSTART"),
+            "start_timezone" => exCalendarGetICalEventTimezone($aEvent, "DTSTART"),
+            "end_date" => $aEnd ? $aEnd["date"] : null,
+            "end_time" => $aEnd && $aEnd["time"] != "" ? $aEnd["time"] : null,
+            "end_raw" => exCalendarGetICalEventValue($aEvent, "DTEND"),
+            "end_timezone" => exCalendarGetICalEventTimezone($aEvent, "DTEND"),
+            "dtstamp_raw" => exCalendarGetICalEventValue($aEvent, "DTSTAMP"),
+            "created_raw" => exCalendarGetICalEventValue($aEvent, "CREATED"),
+            "last_modified_raw" => exCalendarGetICalEventValue($aEvent, "LAST-MODIFIED"),
+            "sequence_no" => exCalendarGetICalEventValue($aEvent, "SEQUENCE") != "" ? (int)exCalendarGetICalEventValue($aEvent, "SEQUENCE") : null,
+            "transp" => exCalendarGetICalEventValue($aEvent, "TRANSP"),
+            "raw_event" => isset($aEvent["_raw_event"]) ? $aEvent["_raw_event"] : ""
+        );
+    }
+    if (!$aRows) {
+        $sError = "ICS response does not contain events.";
+        return false;
+    }
+    return $aRows;
+}
+
+function exCalendarGetExternalCalendarEventSourceKey($aRow) {
+    $sUid = trim((string)$aRow["uid"]);
+    if ($sUid != "") {
+        return hash("sha256", "uid\n" . $sUid . "\n" . trim((string)$aRow["recurrence_id_raw"]));
+    }
+    return hash("sha256", "raw\n" . (string)$aRow["raw_event"]);
+}
+
+function reserveExternalCalendarFetchAttempt($oPdo, $sCalendarUrl) {
+    $sCalendarUrlHash = exCalendarGetExternalCalendarUrlHash($sCalendarUrl);
+    $oPdo->beginTransaction();
+    try {
+        $oStatement = $oPdo->prepare("INSERT INTO ex_calendar_fetches (calendar_url_hash, calendar_url, status) VALUES (:calendar_url_hash, :calendar_url, 'pending') ON DUPLICATE KEY UPDATE calendar_url = VALUES(calendar_url)");
+        $oStatement->execute(array(
+            "calendar_url_hash" => $sCalendarUrlHash,
+            "calendar_url" => $sCalendarUrl
+        ));
+        $oStatement = $oPdo->prepare("SELECT status, last_attempt_at FROM ex_calendar_fetches WHERE calendar_url_hash = :calendar_url_hash FOR UPDATE");
+        $oStatement->execute(array("calendar_url_hash" => $sCalendarUrlHash));
+        $aFetch = $oStatement->fetch();
+        if ($aFetch && trim((string)$aFetch["last_attempt_at"]) != "") {
+            $iLastAttempt = strtotime((string)$aFetch["last_attempt_at"]);
+            if ($iLastAttempt !== false && $iLastAttempt > time() - 14400) {
+                $oPdo->commit();
+                return false;
+            }
+        }
+        $oStatement = $oPdo->prepare("UPDATE ex_calendar_fetches SET status = 'running', last_attempt_at = current_timestamp(6), attempt_count = attempt_count + 1, http_status_code = NULL, error_message = NULL WHERE calendar_url_hash = :calendar_url_hash");
+        $oStatement->execute(array("calendar_url_hash" => $sCalendarUrlHash));
+        $oPdo->commit();
+        return true;
+    } catch (Exception $oException) {
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        throw $oException;
+    }
+}
+
+function recordExternalCalendarFetchError($oPdo, $sCalendarUrl, $iHttpStatusCode, $sErrorMessage) {
+    $sErrorMessage = substr((string)$sErrorMessage, 0, 1000);
+    $oStatement = $oPdo->prepare("UPDATE ex_calendar_fetches SET status = 'error', http_status_code = :http_status_code, error_message = :error_message WHERE calendar_url_hash = :calendar_url_hash");
+    $oStatement->execute(array(
+        "http_status_code" => $iHttpStatusCode > 0 ? $iHttpStatusCode : null,
+        "error_message" => $sErrorMessage,
+        "calendar_url_hash" => exCalendarGetExternalCalendarUrlHash($sCalendarUrl)
+    ));
+}
+
+function saveExternalCalendarEvents($oPdo, $sCalendarUrl, $aRows, $sRawContent, $iHttpStatusCode) {
+    $sCalendarUrlHash = exCalendarGetExternalCalendarUrlHash($sCalendarUrl);
+    $oPdo->beginTransaction();
+    try {
+        $oStatement = $oPdo->prepare("SELECT id FROM ex_calendar_fetches WHERE calendar_url_hash = :calendar_url_hash FOR UPDATE");
+        $oStatement->execute(array("calendar_url_hash" => $sCalendarUrlHash));
+        $iFetchId = (int)$oStatement->fetchColumn();
+        $oStatement = $oPdo->prepare("UPDATE ex_calendar_events SET is_active = 0 WHERE calendar_url_hash = :calendar_url_hash");
+        $oStatement->execute(array("calendar_url_hash" => $sCalendarUrlHash));
+        $oStatement = $oPdo->prepare("INSERT INTO ex_calendar_events (calendar_url_hash, source_event_key, first_fetch_id, last_fetch_id, event_order, uid, recurrence_id_raw, status, summary, description, location, start_date, start_time, start_raw, start_timezone, end_date, end_time, end_raw, end_timezone, dtstamp_raw, created_raw, last_modified_raw, sequence_no, transp, raw_event, is_active, seen_count, first_seen_at, last_seen_at) VALUES (:calendar_url_hash, :source_event_key, :first_fetch_id, :last_fetch_id, :event_order, :uid, :recurrence_id_raw, :status, :summary, :description, :location, :start_date, :start_time, :start_raw, :start_timezone, :end_date, :end_time, :end_raw, :end_timezone, :dtstamp_raw, :created_raw, :last_modified_raw, :sequence_no, :transp, :raw_event, 1, 1, current_timestamp(6), current_timestamp(6)) ON DUPLICATE KEY UPDATE last_fetch_id = VALUES(last_fetch_id), event_order = VALUES(event_order), uid = VALUES(uid), recurrence_id_raw = VALUES(recurrence_id_raw), status = VALUES(status), summary = VALUES(summary), description = VALUES(description), location = VALUES(location), start_date = VALUES(start_date), start_time = VALUES(start_time), start_raw = VALUES(start_raw), start_timezone = VALUES(start_timezone), end_date = VALUES(end_date), end_time = VALUES(end_time), end_raw = VALUES(end_raw), end_timezone = VALUES(end_timezone), dtstamp_raw = VALUES(dtstamp_raw), created_raw = VALUES(created_raw), last_modified_raw = VALUES(last_modified_raw), sequence_no = VALUES(sequence_no), transp = VALUES(transp), raw_event = VALUES(raw_event), is_active = 1, seen_count = seen_count + 1, last_seen_at = current_timestamp(6)");
+        foreach ($aRows as $aRow) {
+            $oStatement->execute(array(
+                "calendar_url_hash" => $sCalendarUrlHash,
+                "source_event_key" => exCalendarGetExternalCalendarEventSourceKey($aRow),
+                "first_fetch_id" => $iFetchId,
+                "last_fetch_id" => $iFetchId,
+                "event_order" => (int)$aRow["event_order"],
+                "uid" => $aRow["uid"] != "" ? $aRow["uid"] : null,
+                "recurrence_id_raw" => $aRow["recurrence_id_raw"] != "" ? $aRow["recurrence_id_raw"] : null,
+                "status" => $aRow["status"] != "" ? $aRow["status"] : null,
+                "summary" => $aRow["summary"] != "" ? $aRow["summary"] : null,
+                "description" => $aRow["description"] != "" ? $aRow["description"] : null,
+                "location" => $aRow["location"] != "" ? $aRow["location"] : null,
+                "start_date" => $aRow["start_date"],
+                "start_time" => $aRow["start_time"],
+                "start_raw" => $aRow["start_raw"] != "" ? $aRow["start_raw"] : null,
+                "start_timezone" => $aRow["start_timezone"] != "" ? $aRow["start_timezone"] : null,
+                "end_date" => $aRow["end_date"],
+                "end_time" => $aRow["end_time"],
+                "end_raw" => $aRow["end_raw"] != "" ? $aRow["end_raw"] : null,
+                "end_timezone" => $aRow["end_timezone"] != "" ? $aRow["end_timezone"] : null,
+                "dtstamp_raw" => $aRow["dtstamp_raw"] != "" ? $aRow["dtstamp_raw"] : null,
+                "created_raw" => $aRow["created_raw"] != "" ? $aRow["created_raw"] : null,
+                "last_modified_raw" => $aRow["last_modified_raw"] != "" ? $aRow["last_modified_raw"] : null,
+                "sequence_no" => $aRow["sequence_no"],
+                "transp" => $aRow["transp"] != "" ? $aRow["transp"] : null,
+                "raw_event" => $aRow["raw_event"]
+            ));
+        }
+        $oStatement = $oPdo->prepare("UPDATE ex_calendar_fetches SET status = 'success', succeeded_at = current_timestamp(6), http_status_code = :http_status_code, events_count = :events_count, raw_content = :raw_content, error_message = NULL WHERE id = :id");
+        $oStatement->execute(array(
+            "http_status_code" => $iHttpStatusCode > 0 ? $iHttpStatusCode : null,
+            "events_count" => count($aRows),
+            "raw_content" => $sRawContent,
+            "id" => $iFetchId
+        ));
+        $oPdo->commit();
+    } catch (Exception $oException) {
+        if ($oPdo->inTransaction()) {
+            $oPdo->rollBack();
+        }
+        throw $oException;
+    }
+}
+
+function exCalendarAddExternalCalendarDatabaseEvents(&$aHolidays, $oPdo, $iYear, $sCalendarUrl) {
+    $aSeenEvents = array();
+    $sFromDate = sprintf("%04d-01-01", (int)$iYear);
+    $sToDate = sprintf("%04d-12-31", (int)$iYear);
+    $sCalendarUrlHash = exCalendarGetExternalCalendarUrlHash($sCalendarUrl);
+    $oStatement = $oPdo->prepare("SELECT start_date, start_time, summary, location, status FROM ex_calendar_events WHERE calendar_url_hash = :calendar_url_hash AND is_active = 1 AND start_date BETWEEN :from_date AND :to_date ORDER BY start_date ASC, start_time ASC, event_order ASC, id ASC");
+    $oStatement->execute(array(
+        "calendar_url_hash" => $sCalendarUrlHash,
+        "from_date" => $sFromDate,
+        "to_date" => $sToDate
+    ));
+    while ($aRow = $oStatement->fetch()) {
+        if (strtoupper(trim((string)$aRow["status"])) == "CANCELLED") {
+            continue;
+        }
+        $sDate = trim((string)$aRow["start_date"]);
+        $sName = trim((string)$aRow["summary"]);
+        if ($sDate == "" || $sName == "") {
+            continue;
+        }
+        $sTime = substr(trim((string)$aRow["start_time"]), 0, 5);
+        $sLocation = trim((string)$aRow["location"]);
+        $sEventKey = $sDate . "\n" . $sTime . "\n" . $sName;
+        if (isset($aSeenEvents[$sEventKey])) {
+            continue;
+        }
+        $aSeenEvents[$sEventKey] = true;
+        exCalendarAddHoliday($aHolidays, $sDate, "external", $sName, $sTime, $sLocation);
+    }
+    ksort($aHolidays);
+}
+
 function exCalendarGetMonthNames() {
     return array(
         1 => "leden",
@@ -2451,7 +2835,7 @@ function exCalendarGetDayNames() {
 }
 
 function exCalendarGetHolidayClass($aHolidayItems) {
-    $aTypes = array("state", "moving", "other");
+    $aTypes = array("state", "moving", "other", "external");
     foreach ($aTypes as $sType) {
         foreach ($aHolidayItems as $aHolidayItem) {
             if ($aHolidayItem["type"] == $sType) {
@@ -2479,7 +2863,11 @@ function exCalendarRenderHolidayLabels($aHolidayItems, $sDate) {
 function exCalendarGetHolidayTooltip($aHolidayItems) {
     $aLines = array();
     foreach ($aHolidayItems as $aHolidayItem) {
-        $aLines[] = $aHolidayItem["name"];
+        $sLine = isset($aHolidayItem["time"]) && $aHolidayItem["time"] != "" ? $aHolidayItem["time"] . " " . $aHolidayItem["name"] : $aHolidayItem["name"];
+        if (isset($aHolidayItem["location"]) && $aHolidayItem["location"] != "") {
+            $sLine .= " (" . $aHolidayItem["location"] . ")";
+        }
+        $aLines[] = $sLine;
     }
     return implode("\n", $aLines);
 }
