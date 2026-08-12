@@ -446,18 +446,19 @@ function sendSecurityHeaders($sStyleNonce = "") {
     header("Content-Security-Policy: " . $sContentSecurityPolicy, true);
 }
 
-function sendPageHeaders($sStyleNonce = "") {
+function sendPageHeaders($sStyleNonce = "", $sContentLanguage = "en-US") {
     $iTime = time();
     if (isset($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
         if (strtotime($_SERVER["HTTP_IF_MODIFIED_SINCE"]) >= $iTime) {
             sendSecurityHeaders($sStyleNonce);
+            header("Content-Language: " . $sContentLanguage, true);
             header("HTTP/1.1 304 Not Modified", true);
             exit;
         }
     }
     $sDate = gmdate("D, d M Y H:i:s", $iTime);
     header("Content-Type: text/html; charset=utf-8", true);
-    header("Content-Language: en-US", true);
+    header("Content-Language: " . $sContentLanguage, true);
     header("Last-Modified: " . $sDate . " GMT", true);
     header("Expires: " . $sDate . " GMT", true);
     header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0", true);
@@ -1468,6 +1469,69 @@ function requireFullAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse
 
 function html($mValue) {
     return htmlspecialchars((string)$mValue, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
+}
+
+function isShortNoBreakWord($sWord, $iMaxLength = 3) {
+    $sLetters = preg_replace('/[^\p{L}\p{N}]+/u', '', (string)$sWord);
+    return $sLetters != "" && preg_match('/^[\p{L}\p{N}]{1,' . (int)$iMaxLength . '}$/u', $sLetters);
+}
+
+function htmlNoShortWordBreaks($sText, $iMaxLength = 3) {
+    $aLines = preg_split('/(\r\n|\r|\n)/', (string)$sText, -1, PREG_SPLIT_DELIM_CAPTURE);
+    $sHtml = "";
+    $iLine;
+    $iLineCount = is_array($aLines) ? count($aLines) : 0;
+    $i;
+
+    if (!is_array($aLines)) {
+        return html($sText);
+    }
+    for ($iLine = 0; $iLine < $iLineCount; $iLine++) {
+        if ($aLines[$iLine] == "\r\n" || $aLines[$iLine] == "\r" || $aLines[$iLine] == "\n") {
+            $sHtml .= html($aLines[$iLine]);
+            continue;
+        }
+        $aParts = preg_split('/([^\S\r\n]+)/u', $aLines[$iLine], -1, PREG_SPLIT_DELIM_CAPTURE);
+        $iCount = is_array($aParts) ? count($aParts) : 0;
+        if (!is_array($aParts)) {
+            $sHtml .= html($aLines[$iLine]);
+            continue;
+        }
+        for ($i = 0; $i < $iCount; $i++) {
+            if ($i % 2 == 1 && isShortNoBreakWord($aParts[$i - 1], $iMaxLength)) {
+                $sHtml .= "&nbsp;";
+            } else {
+                $sHtml .= html($aParts[$i]);
+            }
+        }
+    }
+    return $sHtml;
+}
+
+function htmlTooltip($sText) {
+    $sText = str_replace(array(" - ", " \xe2\x80\x93 "), " \xe2\x80\x94 ", (string)$sText);
+    $sText = preg_replace_callback('/(^|\r\n|\r|\n)([ \t]*(?:[0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?[ \t]+)?)(\p{L})/u', function ($aMatches) {
+        $sFirst = strtoupper($aMatches[3]);
+        $sFirst = strtr($sFirst, array(
+            "\xc3\xa1" => "\xc3\x81",
+            "\xc4\x8d" => "\xc4\x8c",
+            "\xc4\x8f" => "\xc4\x8e",
+            "\xc3\xa9" => "\xc3\x89",
+            "\xc4\x9b" => "\xc4\x9a",
+            "\xc3\xad" => "\xc3\x8d",
+            "\xc5\x88" => "\xc5\x87",
+            "\xc3\xb3" => "\xc3\x93",
+            "\xc5\x99" => "\xc5\x98",
+            "\xc5\xa1" => "\xc5\xa0",
+            "\xc5\xa5" => "\xc5\xa4",
+            "\xc3\xba" => "\xc3\x9a",
+            "\xc5\xaf" => "\xc5\xae",
+            "\xc3\xbd" => "\xc3\x9d",
+            "\xc5\xbe" => "\xc5\xbd"
+        ));
+        return $aMatches[1] . $aMatches[2] . $sFirst;
+    }, $sText);
+    return htmlNoShortWordBreaks($sText);
 }
 
 function htmlValue($mValue, $sEmptyValue = "&#10134;") {

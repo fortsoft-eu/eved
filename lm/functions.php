@@ -1155,30 +1155,6 @@ function businessHoursRenderHours($aHours) {
     return $sHtml . "</tbody></table>";
 }
 
-function businessHoursIsShortNoBreakWord($sWord) {
-    $sLetters = preg_replace('/[^\p{L}\p{N}]+/u', '', (string)$sWord);
-    return $sLetters != "" && preg_match('/^[\p{L}\p{N}]{1,3}$/u', $sLetters);
-}
-
-function businessHoursHtmlNoShortWordBreaks($sText) {
-    $aParts = preg_split('/(\s+)/u', (string)$sText, -1, PREG_SPLIT_DELIM_CAPTURE);
-    $sHtml = "";
-    $iCount = is_array($aParts) ? count($aParts) : 0;
-    $i;
-
-    if (!is_array($aParts)) {
-        return html($sText);
-    }
-    for ($i = 0; $i < $iCount; $i++) {
-        if ($i % 2 == 1 && businessHoursIsShortNoBreakWord($aParts[$i - 1])) {
-            $sHtml .= "&nbsp;";
-        } else {
-            $sHtml .= html($aParts[$i]);
-        }
-    }
-    return $sHtml;
-}
-
 function businessHoursRenderCard($aRow, $blActiveCard = false) {
     global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
 
@@ -1189,9 +1165,9 @@ function businessHoursRenderCard($aRow, $blActiveCard = false) {
     $sOrganizationName = trim((string)$aRow["organization_name"]);
     $sAddressText = isset($aRow["address_display_text"]) ? (string)$aRow["address_display_text"] : (string)$aRow["address_text"];
     if ($sOrganizationName != "") {
-        $sTitleHtml = "<span class=\"business-hours-card-title\"><strong>" . businessHoursHtmlNoShortWordBreaks($sOrganizationName) . "</strong><br class=\"business-hours-linear-break\"><span>" . businessHoursHtmlNoShortWordBreaks($aRow["subject_name"]) . "</span></span>";
+        $sTitleHtml = "<span class=\"business-hours-card-title\"><strong>" . htmlNoShortWordBreaks($sOrganizationName) . "</strong><br class=\"business-hours-linear-break\"><span>" . htmlNoShortWordBreaks($aRow["subject_name"]) . "</span></span>";
     } else {
-        $sTitleHtml = "<span class=\"business-hours-card-title\"><strong>" . businessHoursHtmlNoShortWordBreaks($aRow["subject_name"]) . "</strong><br class=\"business-hours-linear-break\"><span>&nbsp;</span></span>";
+        $sTitleHtml = "<span class=\"business-hours-card-title\"><strong>" . htmlNoShortWordBreaks($aRow["subject_name"]) . "</strong><br class=\"business-hours-linear-break\"><span>&nbsp;</span></span>";
     }
     return "    <section class=\"" . $sCardClass . "\" data-business-hours-id=\"" . (int)$aRow["id"] . "\""
         . " data-business-hours-subject-id=\"" . (int)$aRow["subject_id"] . "\""
