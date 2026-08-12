@@ -1137,6 +1137,58 @@ function enableAdminDialogDrag(oDialog, oBox, oHeader) {
     });
 }
 
+function setupLoginDialogEscape() {
+    var oDialog = document.querySelector(".login-dialog");
+    var oLogin = oDialog ? oDialog.querySelector("button[type=\"submit\"][name=\"action\"][value=\"login\"]") : null;
+    var oCancel = oDialog ? oDialog.querySelector("button[type=\"submit\"][name=\"action\"][value=\"cancel\"]") : null;
+    var aCancelTriggers = oDialog ? oDialog.querySelectorAll(".js-login-cancel") : [];
+    var aLoginInputs = oDialog ? oDialog.querySelectorAll(".login-fields input") : [];
+    var iI;
+    if (!oDialog || !oLogin || !oCancel) {
+        return;
+    }
+    function submitLogin(oEvent) {
+        if (oEvent) {
+            oEvent.preventDefault();
+        }
+        oLogin.click();
+    }
+    function cancelLogin(oEvent) {
+        if (oEvent) {
+            oEvent.preventDefault();
+        }
+        oCancel.click();
+    }
+    for (iI = 0; iI < aLoginInputs.length; iI += 1) {
+        aLoginInputs[iI].addEventListener("keydown", function (oEvent) {
+            if (oEvent.key == "Enter") {
+                submitLogin(oEvent);
+            }
+        });
+    }
+    for (iI = 0; iI < aCancelTriggers.length; iI += 1) {
+        aCancelTriggers[iI].addEventListener("click", cancelLogin);
+    }
+    document.addEventListener("keydown", function (oEvent) {
+        if (oEvent.key == "Escape") {
+            cancelLogin(oEvent);
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    var aDialogs = document.querySelectorAll(".confirm-dialog");
+    var oBox;
+    var oHeader;
+    for (var iI = 0; iI < aDialogs.length; iI += 1) {
+        oBox = aDialogs[iI].querySelector(".confirm-dialog-box");
+        oHeader = aDialogs[iI].querySelector(".confirm-dialog-header");
+        enableAdminDialogDrag(aDialogs[iI], oBox, oHeader);
+    }
+    setupLoginDialogEscape();
+    focusLoginUser();
+});
+
 function buildFilterExpression(sFilter) {
     var aOrParts = String(sFilter || "").trim().split(/\s+OR\s+/i);
     var aExpression = [];
@@ -1923,7 +1975,6 @@ function setupMonthlyOverviewColumns() {
 
 function setupModals() {
     var aOpeners = document.querySelectorAll("[data-modal-target]");
-    var aModals = document.querySelectorAll(".confirm-dialog");
     var oDebtsTable = document.getElementById("debts-table");
     var oDebtsData = oDebtsTable || document.getElementById("debts-data");
     var oAddDebt = document.querySelector(".js-add-debt");
@@ -1936,8 +1987,6 @@ function setupModals() {
     var oTypesTable = document.getElementById("types-table");
     var oTypesData = oTypesTable || document.getElementById("types-data");
     var oAddType = document.querySelector(".js-add-type");
-    var oBox;
-    var oHeader;
 
     function getAdminCurrencyOptions(oTable, sSelectedValue) {
         var aCurrencies = [];
@@ -3676,11 +3725,6 @@ function setupModals() {
             }
         });
     }
-    for (var iN = 0; iN < aModals.length; iN += 1) {
-        oBox = aModals[iN].querySelector(".confirm-dialog-box");
-        oHeader = aModals[iN].querySelector(".confirm-dialog-header");
-        enableAdminDialogDrag(aModals[iN], oBox, oHeader);
-    }
     var aCloses = document.querySelectorAll("[data-modal-close]");
     for (var iJ = 0; iJ < aCloses.length; iJ += 1) {
         aCloses[iJ].addEventListener("click", function () {
@@ -4228,7 +4272,6 @@ document.addEventListener("DOMContentLoaded", function () {
     setupSubjectSuggest();
     setupSettingsDialog();
     setupModals();
-    focusLoginUser();
     setupCopyLinks();
     setupCopyActions();
     setupTableRows();

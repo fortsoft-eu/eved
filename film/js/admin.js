@@ -252,6 +252,45 @@ function enableAdminDialogDrag(oDialog, oBox, oHeader) {
     });
 }
 
+function setupLoginDialogEscape() {
+    var oDialog = document.querySelector(".login-dialog");
+    var oLogin = oDialog ? oDialog.querySelector("button[type=\"submit\"][name=\"action\"][value=\"login\"]") : null;
+    var oCancel = oDialog ? oDialog.querySelector("button[type=\"submit\"][name=\"action\"][value=\"cancel\"]") : null;
+    var aCancelTriggers = oDialog ? oDialog.querySelectorAll(".js-login-cancel") : [];
+    var aLoginInputs = oDialog ? oDialog.querySelectorAll(".login-fields input") : [];
+    var iI;
+    if (!oDialog || !oLogin || !oCancel) {
+        return;
+    }
+    function submitLogin(oEvent) {
+        if (oEvent) {
+            oEvent.preventDefault();
+        }
+        oLogin.click();
+    }
+    function cancelLogin(oEvent) {
+        if (oEvent) {
+            oEvent.preventDefault();
+        }
+        oCancel.click();
+    }
+    for (iI = 0; iI < aLoginInputs.length; iI += 1) {
+        aLoginInputs[iI].addEventListener("keydown", function (oEvent) {
+            if (oEvent.key == "Enter") {
+                submitLogin(oEvent);
+            }
+        });
+    }
+    for (iI = 0; iI < aCancelTriggers.length; iI += 1) {
+        aCancelTriggers[iI].addEventListener("click", cancelLogin);
+    }
+    document.addEventListener("keydown", function (oEvent) {
+        if (oEvent.key == "Escape") {
+            cancelLogin(oEvent);
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     var aDialogs = document.querySelectorAll(".confirm-dialog");
     var oBox;
@@ -261,6 +300,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oHeader = aDialogs[iI].querySelector(".confirm-dialog-header");
         enableAdminDialogDrag(aDialogs[iI], oBox, oHeader);
     }
+    setupLoginDialogEscape();
     focusAdminElement(document.getElementById("login-user"), true);
 });
 

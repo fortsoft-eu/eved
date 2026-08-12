@@ -1255,6 +1255,7 @@ function resetLoginToken() {
 }
 
 function redirectLoginForm($sTokenName, $sMessage = "") {
+    unset($_SESSION["login_cancel_forbidden"]);
     if ($sMessage != "") {
         $_SESSION["login_message"] = $sMessage;
     }
@@ -1316,7 +1317,7 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "      <input type=\"hidden\" name=\"login_token\" value=\"" . $sToken . "\">\n",
         "      <div class=\"confirm-dialog-header\">\n",
         "        <strong>Sign In</strong>\n",
-        "        <button type=\"submit\" name=\"action\" value=\"cancel\" class=\"confirm-dialog-close\" aria-label=\"Close\" formnovalidate>&times;</button>\n",
+        "        <button type=\"button\" class=\"confirm-dialog-close js-login-cancel\" aria-label=\"Close\">&times;</button>\n",
         "      </div>\n",
         "      <div class=\"login-fields\">\n",
         "        <label for=\"login-user\">User Name</label>\n",
