@@ -2882,6 +2882,7 @@ function exCalendarRenderMonth($iYear, $iMonth, $aHolidays) {
     $oFirstDay = exCalendarDate($iYear, $iMonth, 1);
     $iFirstWeekday = (int)$oFirstDay->format("N");
     $iDaysInMonth = (int)$oFirstDay->modify("last day of this month")->format("j");
+    $sToday = date("Y-m-d");
     echo "    <section class=\"holiday-month\">\n",
         "      <h2>" . html($aMonthNames[$iMonth]) . "</h2>\n",
         "      <div class=\"holiday-month-grid\">\n";
@@ -2898,6 +2899,9 @@ function exCalendarRenderMonth($iYear, $iMonth, $aHolidays) {
         $sClass = "holiday-day";
         if ((int)$oDate->format("N") >= 6) {
             $sClass .= " holiday-day-weekend";
+        }
+        if ($sDate == $sToday) {
+            $sClass .= " holiday-day-today";
         }
         $sHolidayClass = exCalendarGetHolidayClass($aHolidayItems);
         if ($sHolidayClass != "") {
