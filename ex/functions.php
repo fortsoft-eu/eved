@@ -2834,21 +2834,64 @@ function exCalendarGetDayNames() {
     return array("Po", "Út", "St", "Čt", "Pá", "So", "Ne");
 }
 
-function exCalendarGetHolidayClass($aHolidayItems) {
+function exCalendarGetHolidayTypes($aHolidayItems) {
+    $aDayTypes = array();
     $aTypes = array("state", "moving", "other", "external");
     foreach ($aTypes as $sType) {
         foreach ($aHolidayItems as $aHolidayItem) {
             if ($aHolidayItem["type"] == $sType) {
-                return "holiday-day-" . $sType;
+                $aDayTypes[] = $sType;
+                break;
             }
         }
+    }
+    return $aDayTypes;
+}
+
+function exCalendarGetHolidayClass($aHolidayItems) {
+    $aDayTypes = exCalendarGetHolidayTypes($aHolidayItems);
+    if ($aDayTypes) {
+        return "holiday-day-" . $aDayTypes[0];
     }
     return "";
 }
 
+function exCalendarGetHolidayTypeBackgroundColors() {
+    return array(
+        "state" => "#F8D4CC",
+        "moving" => "#D6EEF5",
+        "other" => "#FFF1BF",
+        "external" => "#DDE8FF"
+    );
+}
+
+function exCalendarGetHolidayBackgroundImage($aHolidayItems) {
+    $aDayTypes = exCalendarGetHolidayTypes($aHolidayItems);
+    if (count($aDayTypes) < 2) {
+        return "";
+    }
+    $aColors = exCalendarGetHolidayTypeBackgroundColors();
+    $aStops = array();
+    $iStopSize = 8;
+    $iStopPosition = 0;
+    foreach ($aDayTypes as $sType) {
+        if (!isset($aColors[$sType])) {
+            continue;
+        }
+        $iNextStopPosition = $iStopPosition + $iStopSize;
+        $aStops[] = $aColors[$sType] . " " . $iStopPosition . "px";
+        $aStops[] = $aColors[$sType] . " " . $iNextStopPosition . "px";
+        $iStopPosition = $iNextStopPosition;
+    }
+    if (count($aStops) < 4) {
+        return "";
+    }
+    return "repeating-linear-gradient(135deg, " . implode(", ", $aStops) . ")";
+}
+
 function exCalendarRenderHolidayLabels($aHolidayItems, $sDate) {
     $sHtml = "";
-    if (substr((string)$sDate, 5) == "01-01") {
+    if (count($aHolidayItems) > 1) {
         foreach ($aHolidayItems as $aHolidayItem) {
             $sHtml .= "<span class=\"holiday-day-label holiday-day-label-single\">" . html($aHolidayItem["name"]) . "</span>";
         }
@@ -2907,11 +2950,13 @@ function exCalendarRenderMonth($iYear, $iMonth, $aHolidays) {
         if ($sHolidayClass != "") {
             $sClass .= " " . $sHolidayClass;
         }
+        $sBackgroundImage = exCalendarGetHolidayBackgroundImage($aHolidayItems);
+        $sBackgroundAttribute = $sBackgroundImage != "" ? " style=\"background-image: " . html($sBackgroundImage) . ";\" data-calendar-background-image=\"" . html($sBackgroundImage) . "\"" : "";
         $sTooltipAttribute = " data-calendar-tooltip-title=\"" . html(exCalendarGetHolidayTooltipTitle($iDay, $aMonthNames[$iMonth], $iYear, $aHolidayItems)) . "\"";
         if ($aHolidayItems) {
             $sTooltipAttribute .= " data-calendar-tooltip=\"" . str_replace("\n", "&#10;", html(exCalendarGetHolidayTooltip($aHolidayItems))) . "\"";
         }
-        echo "        <div class=\"" . html($sClass) . "\"" . $sTooltipAttribute . ">",
+        echo "        <div class=\"" . html($sClass) . "\"" . $sBackgroundAttribute . $sTooltipAttribute . ">",
             "<span class=\"holiday-day-number\">" . $iDay . "</span>",
             exCalendarRenderHolidayLabels($aHolidayItems, $sDate),
             "</div>\n";

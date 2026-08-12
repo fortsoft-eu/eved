@@ -2732,10 +2732,17 @@ function setupHolidayCalendarDaySelection() {
     }
 
     function applyDayColor(oDay) {
+        var sBackgroundImage;
+        var sColor;
         if (!oDay) {
             return;
         }
-        oDay.style.backgroundColor = getCurrentDayColor(oDay);
+        sColor = getCurrentDayColor(oDay);
+        oDay.style.backgroundColor = sColor;
+        sBackgroundImage = oDay.getAttribute("data-calendar-background-image");
+        if (sBackgroundImage) {
+            oDay.style.backgroundImage = sColor != "" ? "none" : sBackgroundImage;
+        }
     }
 
     function setDaySelected(oDay, blSelected) {
