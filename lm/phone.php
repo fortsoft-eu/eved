@@ -19,6 +19,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $sAction = $_SERVER["REQUEST_METHOD"] == "POST" ? getPostedValue("action") : "";
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "unlock_lm_encryption") {
+    try {
+        unlockLmEncryptionFromPostedHash($oPdo);
+        session_write_close();
+        if ($blJsonResponse) {
+            sendJsonAndExit(array("success" => true));
+        }
+        sendSecurityHeaders();
+        header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
+        exit;
+    } catch (PDOException $oException) {
+        error_log((string)$oException);
+        if ($blJsonResponse) {
+            sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+        }
+        send500AndExit("Database error: " . $oException->getMessage());
+    } catch (RuntimeException $oException) {
+        error_log((string)$oException);
+        if ($blJsonResponse) {
+            sendJsonAndExit(array("success" => false, "message" => $oException->getMessage()), 403);
+        }
+        send500AndExit($oException->getMessage());
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        if ($blJsonResponse) {
+            sendJsonAndExit(array("success" => false, "message" => "Encryption could not be unlocked."), 500);
+        }
+        send500AndExit("Encryption could not be unlocked.");
+    }
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "create_phone_account") {
     phoneAccountsCreateOrUpdate($oPdo, 0);
 }
@@ -45,7 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "move_phone_account") {
         $oPdo->beginTransaction();
         phoneAccountsMove($oPdo, $iPhoneAccountId, $sDirection);
         $oPdo->commit();
-        sendJsonAndExit(array("success" => true, "phone_account_id" => $iPhoneAccountId, "phone_accounts_html" => phoneAccountsRenderRows($oPdo)));
+        sendJsonAndExit(array("success" => true, "phone_account_id" => $iPhoneAccountId, "phone_accounts_html" => phoneAccountsRenderRows($oPdo, getVerifiedLmEncryptionSessionKey($oPdo))));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -56,7 +87,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "move_phone_account") {
 }
 
 try {
-    $sPhoneAccountsHtml = phoneAccountsRenderRows($oPdo);
+    $blLmEncryptionConfigured = getLmEncryptionVerifier($oPdo) != "";
+    $sLmEncryptionKey = getVerifiedLmEncryptionSessionKey($oPdo);
+    $blPhoneAccountsUnlocked = $sLmEncryptionKey != "";
+    $sPhoneAccountsHtml = phoneAccountsRenderRows($oPdo, $sLmEncryptionKey);
     $aPhoneAccountDefaults = phoneAccountsGetNewDefaults($oPdo);
     $aPhoneAccountCurrencies = phoneAccountsGetCurrencyOptions($oPdo, $aPhoneAccountDefaults["paid_currency"]);
 } catch (Exception $oException) {
@@ -96,7 +130,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
-    <button type="button" class="button-link js-add-phone-account">New</button>
+    <button type="button" class="button-link js-add-phone-account"<?php echo $blPhoneAccountsUnlocked ? "" : " disabled aria-disabled=\"true\" title=\"Unlock encrypted data to add\""; ?>>New</button>
   </p>
   <div id="phone-accounts-data" data-default-paid-amount="<?php echo html($aPhoneAccountDefaults["paid_amount"]); ?>" data-default-paid-currency="<?php echo html($aPhoneAccountDefaults["paid_currency"]); ?>" data-currencies="<?php echo html(json_encode($aPhoneAccountCurrencies)); ?>" hidden></div>
 <?php
@@ -136,9 +170,49 @@ if ($sPhoneAccountsHtml == "") {
 <?php
 
 }
+echo renderEmojiData();
 
 ?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
+<?php
+
+if (!$blPhoneAccountsUnlocked) {
+
+?>
+  <div class="confirm-dialog lm-encryption-unlock-dialog js-lm-encryption-unlock-dialog" id="lm-encryption-unlock-dialog" role="dialog" aria-modal="true">
+    <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" class="confirm-dialog-box login-form lm-encryption-unlock-form js-lm-encryption-unlock-form">
+      <input type="hidden" name="action" value="unlock_lm_encryption">
+      <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
+      <div class="confirm-dialog-header">
+        <strong><?php echo $blLmEncryptionConfigured ? "Unlock Encrypted Data" : "Set Encryption Hash"; ?></strong>
+      </div>
+      <div class="login-fields">
+        <label for="lm-encryption-hash">Hash</label>
+        <input type="password" id="lm-encryption-hash" name="lm_encryption_hash" autocomplete="current-password" required>
+<?php
+
+    if (!$blLmEncryptionConfigured) {
+
+?>
+        <label for="lm-encryption-hash-confirm">Confirm Hash</label>
+        <input type="password" id="lm-encryption-hash-confirm" name="lm_encryption_hash_confirm" autocomplete="new-password" required>
+<?php
+
+    }
+
+?>
+      </div>
+      <p class="login-message message-error js-lm-encryption-unlock-error" hidden></p>
+      <div class="confirm-dialog-actions">
+        <button type="submit" class="confirm-dialog-button"><?php echo $blLmEncryptionConfigured ? "Unlock" : "Set"; ?></button>
+      </div>
+    </form>
+  </div>
+<?php
+
+}
+
+?>
   <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>

@@ -16,6 +16,21 @@ function renderDateTimeWithNbspIndent($mValue) {
     return html($sValue);
 }
 
+function renderEmojiData() {
+    global $sCopyEmoji, $sCopySuccessEmoji, $sCopyFailureEmoji;
+
+    $aValues = array(
+        "copy" => $sCopyEmoji,
+        "copy-success" => $sCopySuccessEmoji,
+        "copy-failure" => $sCopyFailureEmoji
+    );
+    $sHtml = "  <span id=\"emoji-data\" hidden";
+    foreach ($aValues as $sKey => $sValue) {
+        $sHtml .= " data-" . $sKey . "=\"" . html(html_entity_decode((string)$sValue, ENT_QUOTES | ENT_HTML5, "UTF-8")) . "\"";
+    }
+    return $sHtml . "></span>\n";
+}
+
 function getPhpGeneratedSelectedFlags($sName, $aTypes, $iDefaultValue) {
     $iSelected = 0;
     $aValues = array();
@@ -127,6 +142,157 @@ function decryptTextMessage($sText, $sPassword) {
         throw new RuntimeException("Message hash is invalid.");
     }
     return $sMessage;
+}
+
+function deriveLmEncryptionKey($sHash) {
+    $sHash = trim((string)$sHash);
+    if ($sHash == "") {
+        throw new RuntimeException("Encryption hash is required.");
+    }
+    return hash_pbkdf2("sha256", $sHash, "eved-lm-encryption-v1", 200000, 32, true);
+}
+
+function setLmEncryptionSessionKey($sKey) {
+    if (strlen((string)$sKey) != 32) {
+        throw new RuntimeException("Encryption key is invalid.");
+    }
+    $_SESSION["lm_encryption_key"] = base64_encode((string)$sKey);
+}
+
+function getLmEncryptionSessionKey() {
+    if (!isset($_SESSION["lm_encryption_key"])) {
+        return "";
+    }
+    $sKey = base64_decode((string)$_SESSION["lm_encryption_key"], true);
+    if ($sKey === false || strlen($sKey) != 32) {
+        unset($_SESSION["lm_encryption_key"]);
+        return "";
+    }
+    return $sKey;
+}
+
+function clearLmEncryptionSessionKey() {
+    unset($_SESSION["lm_encryption_key"]);
+}
+
+function encryptLmSecretText($sText, $sKey) {
+    $sText = (string)$sText;
+    $sKey = (string)$sKey;
+    if (strlen($sKey) != 32) {
+        throw new RuntimeException("Encryption key is invalid.");
+    }
+    if (function_exists("sodium_crypto_secretbox")) {
+        $sNonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        return base64_encode($sNonce . sodium_crypto_secretbox($sText, $sNonce, $sKey));
+    }
+    throw new RuntimeException("Sodium extension is required.");
+}
+
+function decryptLmSecretText($sText, $sKey) {
+    $sText = (string)$sText;
+    $sKey = (string)$sKey;
+    if ($sText == "") {
+        return "";
+    }
+    if (strlen($sKey) != 32) {
+        throw new RuntimeException("Encryption key is invalid.");
+    }
+    if (!function_exists("sodium_crypto_secretbox_open")) {
+        throw new RuntimeException("Sodium extension is required.");
+    }
+    $sBytes = base64_decode($sText, true);
+    if ($sBytes === false || strlen($sBytes) < SODIUM_CRYPTO_SECRETBOX_NONCEBYTES + SODIUM_CRYPTO_SECRETBOX_MACBYTES) {
+        throw new RuntimeException("Encrypted text is invalid.");
+    }
+    $sNonce = substr($sBytes, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+    $sEncrypted = substr($sBytes, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+    $sDecrypted = sodium_crypto_secretbox_open($sEncrypted, $sNonce, $sKey);
+    if ($sDecrypted === false) {
+        throw new RuntimeException("Encryption hash is invalid.");
+    }
+    return $sDecrypted;
+}
+
+function getLmEncryptionVerifierText() {
+    return "eved-lm-encryption-v1";
+}
+
+function getLmEncryptionVerifier($oPdo) {
+    $oStatement = $oPdo->prepare("SELECT verifier FROM fs_encryption WHERE scope = :scope LIMIT 1");
+    $oStatement->execute(array("scope" => "lm"));
+    $aRow = $oStatement->fetch();
+    if (!$aRow) {
+        return "";
+    }
+    return (string)$aRow["verifier"];
+}
+
+function saveLmEncryptionVerifier($oPdo, $sKey) {
+    $sVerifier = encryptLmSecretText(getLmEncryptionVerifierText(), $sKey);
+    $oStatement = $oPdo->prepare("SELECT scope FROM fs_encryption WHERE scope = :scope LIMIT 1");
+    $oStatement->execute(array("scope" => "lm"));
+    if ($oStatement->fetch()) {
+        $oStatement = $oPdo->prepare("UPDATE fs_encryption SET verifier = :verifier WHERE scope = :scope");
+    } else {
+        $oStatement = $oPdo->prepare("INSERT INTO fs_encryption (scope, verifier) VALUES (:scope, :verifier)");
+    }
+    $oStatement->execute(array(
+        "scope" => "lm",
+        "verifier" => $sVerifier
+    ));
+}
+
+function verifyLmEncryptionKey($oPdo, $sKey) {
+    $sVerifier = getLmEncryptionVerifier($oPdo);
+    if ($sVerifier == "") {
+        return false;
+    }
+    try {
+        $sDecrypted = decryptLmSecretText($sVerifier, $sKey);
+    } catch (RuntimeException $oException) {
+        if ($oException->getMessage() == "Encryption hash is invalid.") {
+            return false;
+        }
+        throw $oException;
+    }
+    return hash_equals(getLmEncryptionVerifierText(), $sDecrypted);
+}
+
+function getVerifiedLmEncryptionSessionKey($oPdo) {
+    $sKey = getLmEncryptionSessionKey();
+    if ($sKey != "" && verifyLmEncryptionKey($oPdo, $sKey)) {
+        return $sKey;
+    }
+    clearLmEncryptionSessionKey();
+    return "";
+}
+
+function requireLmEncryptionSessionKey($oPdo, $blJsonResponse) {
+    $sKey = getVerifiedLmEncryptionSessionKey($oPdo);
+    if ($sKey != "") {
+        return $sKey;
+    }
+    if ($blJsonResponse && (isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest")) {
+        sendJsonAndExit(array("success" => false, "message" => "Encrypted data is locked."), 403);
+    }
+    send403AndExit();
+}
+
+function unlockLmEncryptionFromPostedHash($oPdo) {
+    $sLmEncryptionHash = trim((string)getPostedValue("lm_encryption_hash"));
+    $sLmEncryptionKey = deriveLmEncryptionKey($sLmEncryptionHash);
+    if (getLmEncryptionVerifier($oPdo) != "") {
+        if (!verifyLmEncryptionKey($oPdo, $sLmEncryptionKey)) {
+            throw new RuntimeException("Encryption hash is invalid.");
+        }
+    } else {
+        if (!hash_equals($sLmEncryptionHash, trim((string)getPostedValue("lm_encryption_hash_confirm")))) {
+            throw new RuntimeException("Hash confirmation does not match.");
+        }
+        saveLmEncryptionVerifier($oPdo, $sLmEncryptionKey);
+    }
+    setLmEncryptionSessionKey($sLmEncryptionKey);
+    return $sLmEncryptionKey;
 }
 
 function menuAdminPathIsValid($sPath) {
@@ -2232,6 +2398,39 @@ function issueTrackerToggleStatus($oPdo, $iIssueId) {
     }
 }
 
+function getSnippetBoardRevision($oPdo) {
+    $oStatement = $oPdo->query("SELECT COALESCE(DATE_FORMAT(MAX(updated_at), '%Y-%m-%d %H:%i:%s.%f'), '') AS board_revision FROM fs_snippet_board WHERE id BETWEEN 1 AND 6");
+    $aRow = $oStatement->fetch();
+    return (string)$aRow["board_revision"];
+}
+
+function loadSnippetBoardData($oPdo, $sKey) {
+    $aSnippets = array();
+    $aRichTextPasteModes = array();
+    $sBoardRevision = "";
+    for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
+        $aSnippets[$iSnippetId] = "";
+        $aRichTextPasteModes[$iSnippetId] = 0;
+    }
+    $oStatement = $oPdo->query("SELECT id, note_text, rich_text_paste, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
+    while ($aRow = $oStatement->fetch()) {
+        $iSnippetId = (int)$aRow["id"];
+        if ($iSnippetId >= 1 && $iSnippetId <= 6) {
+            $sNoteText = (string)$aRow["note_text"];
+            $aSnippets[$iSnippetId] = $sNoteText == "" ? "" : decryptLmSecretText($sNoteText, $sKey);
+            $aRichTextPasteModes[$iSnippetId] = (int)$aRow["rich_text_paste"] ? 1 : 0;
+            if ((string)$aRow["updated_at_text"] > $sBoardRevision) {
+                $sBoardRevision = (string)$aRow["updated_at_text"];
+            }
+        }
+    }
+    return array(
+        "revision" => $sBoardRevision,
+        "snippets" => $aSnippets,
+        "richTextPasteModes" => $aRichTextPasteModes
+    );
+}
+
 function phoneAccountsGetPostedPaidAt() {
     $sPaidAt = getPostedTrimmedValue("paid_at");
     $mPaidAt = normalizeInputDateTimeForDatabase($sPaidAt);
@@ -2383,11 +2582,13 @@ function phoneAccountsSaveNewDefaults($mPaidAmount, $sPaidCurrency) {
     $_SESSION["lm_new_phone_account_defaults"]["paid_amount"] = $mPaidAmount === null ? "" : phoneAccountsFormatAmount($mPaidAmount);
 }
 
-function phoneAccountsFetchRows($oPdo) {
+function phoneAccountsFetchRows($oPdo, $sKey = "") {
     $aRows = array();
+    $aSecretColumns = array("pin", "puk", "puk2", "sim_id", "imei", "note");
+    $blSecretsUnlocked = $sKey != "";
     $oStatement = $oPdo->query("SELECT id, `order` AS phone_order, `number`, account, pin, puk, puk2, sim_id, imei, note, paid_amount, paid_currency, DATE_FORMAT(paid_at, '%Y-%m-%d %H:%i') AS paid_at_text, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS created_at_text, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i') AS updated_at_text FROM fs_phone ORDER BY `order` ASC, id ASC");
     while ($aRow = $oStatement->fetch()) {
-        $aRows[] = array(
+        $aPhoneAccountRow = array(
             "id" => (int)$aRow["id"],
             "order" => (int)$aRow["phone_order"],
             "number" => (string)$aRow["number"],
@@ -2404,90 +2605,142 @@ function phoneAccountsFetchRows($oPdo) {
             "created_at" => (string)$aRow["created_at_text"],
             "updated_at" => (string)$aRow["updated_at_text"]
         );
+        if ($blSecretsUnlocked) {
+            foreach ($aSecretColumns as $sSecretColumn) {
+                if ($aPhoneAccountRow[$sSecretColumn] != "") {
+                    try {
+                        $aPhoneAccountRow[$sSecretColumn] = decryptLmSecretText($aPhoneAccountRow[$sSecretColumn], $sKey);
+                    } catch (RuntimeException $oException) {
+                        if ($oException->getMessage() != "Encrypted text is invalid." && $oException->getMessage() != "Encryption hash is invalid.") {
+                            throw $oException;
+                        }
+                    }
+                }
+            }
+        } else {
+            foreach ($aSecretColumns as $sSecretColumn) {
+                $aPhoneAccountRow[$sSecretColumn] = "";
+            }
+        }
+        $aRows[] = $aPhoneAccountRow;
     }
     return $aRows;
 }
 
 function phoneAccountsRenderPhoneNumber($sValue) {
+    global $sCopyEmoji;
+
     $sDisplayValue = phoneContactDisplayValue($sValue);
     $sHref = phoneContactHref($sValue);
-    $sHtml = "<span class=\"phone-account-value\">" . html($sDisplayValue) . "</span>";
+    $sHtml = "<span class=\"contact-value\">" . html($sDisplayValue) . "</span>";
+    $blHasIcon = false;
+    if ($sDisplayValue != "") {
+        $sHtml .= "<a class=\"contact-copy\" href=\"#\" title=\"Copy\" aria-label=\"Copy\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
+        $blHasIcon = true;
+    }
     if ($sHref == "") {
         return $sHtml;
     }
-    return $sHtml . " <a class=\"phone-account-link\" href=\"" . html($sHref) . "\" title=\"Call cell phone\" aria-label=\"Call cell phone\">&#128241;</a>";
+    return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"contact-link\" href=\"" . html($sHref) . "\" title=\"Call cell phone\" aria-label=\"Call cell phone\">&#128241;</a>";
 }
 
 function phoneAccountsRenderTelegramAccount($sValue) {
+    global $sEmptyValueEmoji;
+
     $sValue = trim((string)$sValue);
     $sHref = normalizeTelegramContactValue($sValue);
     $sHtml = "";
     if ($sValue == "") {
-        return "&mdash;";
+        return "<span class=\"contact-value\">" . $sEmptyValueEmoji . "</span>";
     }
-    $sHtml = "<span class=\"phone-account-value\">" . html($sValue) . "</span>";
+    $sHtml = "<span class=\"contact-value\">" . html($sValue) . "</span>";
     if ($sHref === false || $sHref == "") {
         return $sHtml;
     }
-    return $sHtml . " <a class=\"phone-account-link\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\" title=\"Open Telegram\" aria-label=\"Open Telegram\">&#9992;&#65039;</a>";
+    return $sHtml . " <a class=\"contact-link\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\" title=\"Open Telegram\" aria-label=\"Open Telegram\">&#9992;&#65039;</a>";
 }
 
 function phoneAccountsRenderTextValue($sValue) {
+    global $sEmptyValueEmoji;
+
     $sValue = trim((string)$sValue);
-    return $sValue != "" ? html($sValue) : "&mdash;";
+    return $sValue != "" ? html($sValue) : $sEmptyValueEmoji;
 }
 
 function phoneAccountsRenderPaidAmount($mAmount, $sCurrency) {
+    global $sEmptyValueEmoji;
+
     if ($mAmount === null || (string)$mAmount == "") {
-        return "&mdash;";
+        return $sEmptyValueEmoji;
     }
     return html(phoneAccountsFormatAmount($mAmount) . " " . phoneAccountsNormalizeStoredCurrency($sCurrency));
 }
 
-function phoneAccountsRenderRow($aRow) {
-    global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
+function phoneAccountsRenderRow($aRow, $blSecretsUnlocked) {
+    global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji, $sEmptyValueEmoji;
 
     $sNote = trim((string)$aRow["note"]);
     $sPhoneDisplayValue = phoneContactDisplayValue($aRow["number"]);
     $sPaidAmount = $aRow["paid_amount"] === null ? "" : phoneAccountsFormatAmount($aRow["paid_amount"]);
-    return "      <tr data-phone-account-id=\"" . (int)$aRow["id"] . "\""
+    $sHtml = "      <tr data-phone-account-id=\"" . (int)$aRow["id"] . "\""
         . " data-phone-account-order=\"" . html($aRow["order"]) . "\""
         . " data-phone-account-number=\"" . html($sPhoneDisplayValue) . "\""
-        . " data-phone-account-account=\"" . html($aRow["account"]) . "\""
-        . " data-phone-account-pin=\"" . html($aRow["pin"]) . "\""
-        . " data-phone-account-puk=\"" . html($aRow["puk"]) . "\""
-        . " data-phone-account-puk2=\"" . html($aRow["puk2"]) . "\""
-        . " data-phone-account-sim-id=\"" . html($aRow["sim_id"]) . "\""
-        . " data-phone-account-imei=\"" . html($aRow["imei"]) . "\""
-        . " data-phone-account-paid-at=\"" . html($aRow["paid_at"]) . "\""
+        . " data-phone-account-account=\"" . html($aRow["account"]) . "\"";
+    if ($blSecretsUnlocked) {
+        $sHtml .= " data-phone-account-pin=\"" . html($aRow["pin"]) . "\""
+            . " data-phone-account-puk=\"" . html($aRow["puk"]) . "\""
+            . " data-phone-account-puk2=\"" . html($aRow["puk2"]) . "\""
+            . " data-phone-account-sim-id=\"" . html($aRow["sim_id"]) . "\""
+            . " data-phone-account-imei=\"" . html($aRow["imei"]) . "\""
+            . " data-phone-account-note=\"" . html($aRow["note"]) . "\"";
+    }
+    $sHtml .= " data-phone-account-paid-at=\"" . html($aRow["paid_at"]) . "\""
         . " data-phone-account-paid-amount=\"" . html($sPaidAmount) . "\""
         . " data-phone-account-paid-currency=\"" . html($aRow["paid_currency"]) . "\""
-        . " data-phone-account-note=\"" . html($aRow["note"]) . "\""
         . ">"
-        . "<td class=\"phone-account-number\">" . phoneAccountsRenderPhoneNumber($aRow["number"]) . "</td>"
-        . "<td class=\"phone-account-account\">" . phoneAccountsRenderTelegramAccount($aRow["account"]) . "</td>"
-        . "<td class=\"phone-account-token\">" . phoneAccountsRenderTextValue($aRow["pin"]) . "</td>"
-        . "<td class=\"phone-account-token\">" . phoneAccountsRenderTextValue($aRow["puk"]) . "</td>"
-        . "<td class=\"phone-account-token\">" . phoneAccountsRenderTextValue($aRow["puk2"]) . "</td>"
-        . "<td class=\"phone-account-sim-id\">" . phoneAccountsRenderTextValue($aRow["sim_id"]) . "</td>"
-        . "<td class=\"phone-account-imei\">" . phoneAccountsRenderTextValue($aRow["imei"]) . "</td>"
-        . "<td class=\"phone-account-date\">" . ($aRow["paid_at"] != "" ? renderDateTimeWithNbspIndent($aRow["paid_at"]) : "&mdash;") . "</td>"
-        . "<td class=\"phone-account-amount numeric\">" . phoneAccountsRenderPaidAmount($aRow["paid_amount"], $aRow["paid_currency"]) . "</td>"
-        . "<td class=\"phone-account-note issue-title-cell\">" . ($sNote != "" ? html($sNote) : "&mdash;") . "</td>"
-        . "<td class=\"phone-account-date\">" . renderDateTimeWithNbspIndent($aRow["updated_at"]) . "</td>"
+        . "<td class=\"phone-account-number contact-item\">" . phoneAccountsRenderPhoneNumber($aRow["number"]) . "</td>"
+        . "<td class=\"phone-account-account\">" . phoneAccountsRenderTelegramAccount($aRow["account"]) . "</td>";
+    if ($blSecretsUnlocked) {
+        $sHtml .= "<td class=\"phone-account-token\">" . phoneAccountsRenderTextValue($aRow["pin"]) . "</td>"
+            . "<td class=\"phone-account-token\">" . phoneAccountsRenderTextValue($aRow["puk"]) . "</td>"
+            . "<td class=\"phone-account-token\">" . phoneAccountsRenderTextValue($aRow["puk2"]) . "</td>"
+            . "<td class=\"phone-account-sim-id\">" . phoneAccountsRenderTextValue($aRow["sim_id"]) . "</td>"
+            . "<td class=\"phone-account-imei\">" . phoneAccountsRenderTextValue($aRow["imei"]) . "</td>";
+    } else {
+        $sHtml .= "<td class=\"phone-account-token\">&#128274;</td>"
+            . "<td class=\"phone-account-token\">&#128274;</td>"
+            . "<td class=\"phone-account-token\">&#128274;</td>"
+            . "<td class=\"phone-account-sim-id\">&#128274;</td>"
+            . "<td class=\"phone-account-imei\">&#128274;</td>";
+    }
+    $sHtml .= "<td class=\"phone-account-date\">" . ($aRow["paid_at"] != "" ? renderDateTimeWithNbspIndent($aRow["paid_at"]) : $sEmptyValueEmoji) . "</td>"
+        . "<td class=\"phone-account-amount numeric\">" . phoneAccountsRenderPaidAmount($aRow["paid_amount"], $aRow["paid_currency"]) . "</td>";
+    if ($blSecretsUnlocked) {
+        $sHtml .= "<td class=\"phone-account-note\">" . ($sNote != "" ? html($sNote) : $sEmptyValueEmoji) . "</td>";
+    } else {
+        $sHtml .= "<td class=\"phone-account-note\">&#128274;</td>";
+    }
+    $sHtml .= "<td class=\"phone-account-date\">" . renderDateTimeWithNbspIndent($aRow["updated_at"]) . "</td>"
         . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-phone-account-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-phone-account-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
-        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-edit-phone-account\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-phone-account phone-account-delete-action\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\">";
+    if ($blSecretsUnlocked) {
+        $sHtml .= "<a href=\"#\" class=\"item-action js-edit-phone-account\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>";
+    } else {
+        $sHtml .= "<span class=\"item-action\" title=\"Unlock encrypted data to edit\" aria-label=\"Edit\">" . $sEditEmoji . "</span>";
+    }
+    return $sHtml . "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-phone-account phone-account-delete-action\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
         . "</tr>\n";
 }
 
-function phoneAccountsRenderRows($oPdo) {
-    $aRows = phoneAccountsFetchRows($oPdo);
+function phoneAccountsRenderRows($oPdo, $sKey = "") {
+    $aRows = phoneAccountsFetchRows($oPdo, $sKey);
+    $blSecretsUnlocked = $sKey != "";
     if (!$aRows) {
         return "";
     }
     $sHtml = "";
     foreach ($aRows as $aRow) {
-        $sHtml .= phoneAccountsRenderRow($aRow);
+        $sHtml .= phoneAccountsRenderRow($aRow, $blSecretsUnlocked);
     }
     return $sHtml;
 }
@@ -2552,6 +2805,7 @@ function phoneAccountsCreateOrUpdate($oPdo, $iPhoneAccountId) {
     $mPaidAmount = phoneAccountsGetPostedPaidAmount();
     $sPaidCurrency = phoneAccountsGetPostedPaidCurrency($oPdo);
     $sNote = getPostedValue("note");
+    $sLmEncryptionKey = requireLmEncryptionSessionKey($oPdo, true);
     $blNewPhoneAccount = $iPhoneAccountId < 1;
     if ($sPhoneInput == "") {
         sendJsonAndExit(array("success" => false, "message" => "Phone number is required."), 400);
@@ -2594,12 +2848,12 @@ function phoneAccountsCreateOrUpdate($oPdo, $iPhoneAccountId) {
             $oStatement->execute(array(
                 "number" => (string)$mPhoneNumber,
                 "account" => (string)$mTelegramAccount,
-                "pin" => $sPin,
-                "puk" => $sPuk,
-                "puk2" => $sPuk2,
-                "sim_id" => $sSimId,
-                "imei" => $sImei,
-                "note" => $sNote,
+                "pin" => encryptLmSecretText($sPin, $sLmEncryptionKey),
+                "puk" => encryptLmSecretText($sPuk, $sLmEncryptionKey),
+                "puk2" => encryptLmSecretText($sPuk2, $sLmEncryptionKey),
+                "sim_id" => encryptLmSecretText($sSimId, $sLmEncryptionKey),
+                "imei" => encryptLmSecretText($sImei, $sLmEncryptionKey),
+                "note" => encryptLmSecretText($sNote, $sLmEncryptionKey),
                 "paid_amount" => $mPaidAmount,
                 "paid_currency" => $sPaidCurrency,
                 "paid_at" => $mPaidAt,
@@ -2616,12 +2870,12 @@ function phoneAccountsCreateOrUpdate($oPdo, $iPhoneAccountId) {
                 "order" => $iOrder,
                 "number" => (string)$mPhoneNumber,
                 "account" => (string)$mTelegramAccount,
-                "pin" => $sPin,
-                "puk" => $sPuk,
-                "puk2" => $sPuk2,
-                "sim_id" => $sSimId,
-                "imei" => $sImei,
-                "note" => $sNote,
+                "pin" => encryptLmSecretText($sPin, $sLmEncryptionKey),
+                "puk" => encryptLmSecretText($sPuk, $sLmEncryptionKey),
+                "puk2" => encryptLmSecretText($sPuk2, $sLmEncryptionKey),
+                "sim_id" => encryptLmSecretText($sSimId, $sLmEncryptionKey),
+                "imei" => encryptLmSecretText($sImei, $sLmEncryptionKey),
+                "note" => encryptLmSecretText($sNote, $sLmEncryptionKey),
                 "paid_amount" => $mPaidAmount,
                 "paid_currency" => $sPaidCurrency,
                 "paid_at" => $mPaidAt
@@ -2632,7 +2886,7 @@ function phoneAccountsCreateOrUpdate($oPdo, $iPhoneAccountId) {
         if ($blNewPhoneAccount) {
             phoneAccountsSaveNewDefaults($mPaidAmount, $sPaidCurrency);
         }
-        sendJsonAndExit(array("success" => true, "phone_account_id" => $iPhoneAccountId, "phone_accounts_html" => phoneAccountsRenderRows($oPdo), "phone_account_defaults" => phoneAccountsGetNewDefaults($oPdo)));
+        sendJsonAndExit(array("success" => true, "phone_account_id" => $iPhoneAccountId, "phone_accounts_html" => phoneAccountsRenderRows($oPdo, $sLmEncryptionKey), "phone_account_defaults" => phoneAccountsGetNewDefaults($oPdo)));
     } catch (Exception $oException) {
         error_log((string)$oException);
         if ($oPdo->inTransaction()) {
@@ -2652,7 +2906,7 @@ function phoneAccountsDelete($oPdo, $iPhoneAccountId) {
         if ($oStatement->rowCount() < 1) {
             sendJsonAndExit(array("success" => false, "message" => "Phone account was not found."), 404);
         }
-        sendJsonAndExit(array("success" => true, "phone_account_id" => $iPhoneAccountId, "phone_accounts_html" => phoneAccountsRenderRows($oPdo)));
+        sendJsonAndExit(array("success" => true, "phone_account_id" => $iPhoneAccountId, "phone_accounts_html" => phoneAccountsRenderRows($oPdo, getVerifiedLmEncryptionSessionKey($oPdo))));
     } catch (Exception $oException) {
         error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);

@@ -18,11 +18,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 $sAction = $_SERVER["REQUEST_METHOD"] == "POST" ? getPostedValue("action") : "";
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "unlock_lm_encryption") {
+    try {
+        $sLmEncryptionHash = trim((string)getPostedValue("lm_encryption_hash"));
+        $sLmEncryptionKey = deriveLmEncryptionKey($sLmEncryptionHash);
+        if (getLmEncryptionVerifier($oPdo) != "") {
+            if (!verifyLmEncryptionKey($oPdo, $sLmEncryptionKey)) {
+                throw new RuntimeException("Encryption hash is invalid.");
+            }
+        } else {
+            if (!hash_equals($sLmEncryptionHash, trim((string)getPostedValue("lm_encryption_hash_confirm")))) {
+                throw new RuntimeException("Hash confirmation does not match.");
+            }
+            saveLmEncryptionVerifier($oPdo, $sLmEncryptionKey);
+        }
+        setLmEncryptionSessionKey($sLmEncryptionKey);
+        session_write_close();
+        sendJsonAndExit(array("success" => true));
+    } catch (PDOException $oException) {
+        error_log((string)$oException);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    } catch (RuntimeException $oException) {
+        error_log((string)$oException);
+        sendJsonAndExit(array("success" => false, "message" => $oException->getMessage()), 403);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        sendJsonAndExit(array("success" => false, "message" => "Encryption could not be unlocked."), 500);
+    }
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "check_snippet_board_revision") {
     try {
-        $oStatement = $oPdo->query("SELECT COALESCE(DATE_FORMAT(MAX(updated_at), '%Y-%m-%d %H:%i:%s.%f'), '') AS board_revision FROM fs_snippet_board WHERE id BETWEEN 1 AND 6");
-        $aRow = $oStatement->fetch();
-        sendJsonAndExit(array("success" => true, "revision" => (string)$aRow["board_revision"]));
+        requireLmEncryptionSessionKey($oPdo, $blJsonResponse);
+        sendJsonAndExit(array("success" => true, "revision" => getSnippetBoardRevision($oPdo)));
     } catch (Exception $oException) {
         error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -30,33 +58,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "check_snippet_board_rev
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "load_snippet_board") {
-    $aSnippets = array();
-    $aRichTextPasteModes = array();
-    $sBoardRevision = "";
-    for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
-        $aSnippets[$iSnippetId] = "";
-        $aRichTextPasteModes[$iSnippetId] = 0;
-    }
     try {
-        $oStatement = $oPdo->query("SELECT id, note_text, `hash`, rich_text_paste, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
-        while ($aRow = $oStatement->fetch()) {
-            $iSnippetId = (int)$aRow["id"];
-            if ($iSnippetId >= 1 && $iSnippetId <= 6) {
-                $sNoteText = (string)$aRow["note_text"];
-                if ($sNoteText != "") {
-                    if ((string)$aRow["hash"] == "") {
-                        throw new RuntimeException("Snippet Board hash is missing for slot " . $iSnippetId . ".");
-                    }
-                    $sNoteText = decryptTextMessage($sNoteText, (string)$aRow["hash"]);
-                }
-                $aSnippets[$iSnippetId] = $sNoteText;
-                $aRichTextPasteModes[$iSnippetId] = (int)$aRow["rich_text_paste"] ? 1 : 0;
-                if ((string)$aRow["updated_at_text"] > $sBoardRevision) {
-                    $sBoardRevision = (string)$aRow["updated_at_text"];
-                }
-            }
-        }
-        sendJsonAndExit(array("success" => true, "revision" => $sBoardRevision, "snippets" => $aSnippets, "richTextPasteModes" => $aRichTextPasteModes));
+        $aSnippetBoardData = loadSnippetBoardData($oPdo, requireLmEncryptionSessionKey($oPdo, $blJsonResponse));
+        sendJsonAndExit(array("success" => true, "revision" => $aSnippetBoardData["revision"], "snippets" => $aSnippetBoardData["snippets"], "richTextPasteModes" => $aSnippetBoardData["richTextPasteModes"]));
     } catch (Exception $oException) {
         error_log((string)$oException);
         sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
@@ -64,34 +68,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "load_snippet_board") {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "save_snippet_board") {
-    $aSnippetHashes = array();
     try {
-        $oStatement = $oPdo->query("SELECT id, `hash` FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
-        while ($aRow = $oStatement->fetch()) {
-            $iSnippetId = (int)$aRow["id"];
-            if ($iSnippetId >= 1 && $iSnippetId <= 6 && (string)$aRow["hash"] != "") {
-                $aSnippetHashes[$iSnippetId] = (string)$aRow["hash"];
-            }
-        }
-        for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
-            if (!isset($aSnippetHashes[$iSnippetId])) {
-                throw new RuntimeException("Snippet Board hash is missing for slot " . $iSnippetId . ".");
-            }
-        }
+        $sLmEncryptionKey = requireLmEncryptionSessionKey($oPdo, $blJsonResponse);
         $oPdo->beginTransaction();
         $oStatement = $oPdo->prepare("UPDATE fs_snippet_board SET note_text = :note_text, rich_text_paste = :rich_text_paste WHERE id = :id");
         for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
             $oStatement->execute(array(
                 "id" => $iSnippetId,
-                "note_text" => encryptTextMessage(getPostedValue("snippet_" . $iSnippetId), $aSnippetHashes[$iSnippetId]),
+                "note_text" => encryptLmSecretText(getPostedValue("snippet_" . $iSnippetId), $sLmEncryptionKey),
                 "rich_text_paste" => getPostedValue("rich_text_paste_" . $iSnippetId) == "1" ? 1 : 0
             ));
         }
         $oPdo->commit();
         if ($blJsonResponse) {
-            $oStatement = $oPdo->query("SELECT COALESCE(DATE_FORMAT(MAX(updated_at), '%Y-%m-%d %H:%i:%s.%f'), '') AS board_revision FROM fs_snippet_board WHERE id BETWEEN 1 AND 6");
-            $aRow = $oStatement->fetch();
-            sendJsonAndExit(array("success" => true, "revision" => (string)$aRow["board_revision"]));
+            sendJsonAndExit(array("success" => true, "revision" => getSnippetBoardRevision($oPdo)));
         }
         sendSecurityHeaders();
         header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
@@ -115,29 +105,62 @@ for ($iSnippetId = 1; $iSnippetId <= 6; $iSnippetId++) {
     $aSnippets[$iSnippetId] = "";
     $aRichTextPasteModes[$iSnippetId] = 0;
 }
-
+$blLmEncryptionConfigured = false;
 try {
-    $oStatement = $oPdo->query("SELECT id, note_text, `hash`, rich_text_paste, DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s.%f') AS updated_at_text FROM fs_snippet_board WHERE id BETWEEN 1 AND 6 ORDER BY id");
-    while ($aRow = $oStatement->fetch()) {
-        $iSnippetId = (int)$aRow["id"];
-        if ($iSnippetId >= 1 && $iSnippetId <= 6) {
-            $sNoteText = (string)$aRow["note_text"];
-            if ($sNoteText != "") {
-                if ((string)$aRow["hash"] == "") {
-                    throw new RuntimeException("Snippet Board hash is missing for slot " . $iSnippetId . ".");
-                }
-                $sNoteText = decryptTextMessage($sNoteText, (string)$aRow["hash"]);
-            }
-            $aSnippets[$iSnippetId] = $sNoteText;
-            $aRichTextPasteModes[$iSnippetId] = (int)$aRow["rich_text_paste"] ? 1 : 0;
-            if ((string)$aRow["updated_at_text"] > $sBoardRevision) {
-                $sBoardRevision = (string)$aRow["updated_at_text"];
-            }
-        }
-    }
+    $blLmEncryptionConfigured = getLmEncryptionVerifier($oPdo) != "";
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
+}
+$sLmEncryptionKey = getLmEncryptionSessionKey();
+$blLmEncryptionUnlocked = false;
+
+if ($sLmEncryptionKey != "") {
+    try {
+        if ($blLmEncryptionConfigured && verifyLmEncryptionKey($oPdo, $sLmEncryptionKey)) {
+            $blLmEncryptionUnlocked = true;
+        } else {
+            clearLmEncryptionSessionKey();
+            $sLmEncryptionKey = "";
+        }
+    } catch (PDOException $oException) {
+        error_log((string)$oException);
+        send500AndExit("Database error: " . $oException->getMessage());
+    } catch (RuntimeException $oException) {
+        error_log((string)$oException);
+        clearLmEncryptionSessionKey();
+        $sLmEncryptionKey = "";
+    }
+}
+
+if ($blLmEncryptionUnlocked) {
+    try {
+        $aSnippetBoardData = loadSnippetBoardData($oPdo, $sLmEncryptionKey);
+        $aSnippets = $aSnippetBoardData["snippets"];
+        $aRichTextPasteModes = $aSnippetBoardData["richTextPasteModes"];
+        $sBoardRevision = $aSnippetBoardData["revision"];
+    } catch (PDOException $oException) {
+        error_log((string)$oException);
+        send500AndExit("Database error: " . $oException->getMessage());
+    } catch (RuntimeException $oException) {
+        error_log((string)$oException);
+        try {
+            $sBoardRevision = getSnippetBoardRevision($oPdo);
+        } catch (Exception $oRevisionException) {
+            error_log((string)$oRevisionException);
+            send500AndExit("Database error: " . $oRevisionException->getMessage());
+        }
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        send500AndExit("Database error: " . $oException->getMessage());
+    }
+} else {
+    try {
+        $sBoardRevision = getSnippetBoardRevision($oPdo);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        send500AndExit("Database error: " . $oException->getMessage());
+    }
 }
 
 $iTime = sendPageHeaders();
@@ -159,7 +182,7 @@ $iTime = sendPageHeaders();
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
-<body class="snippet-board-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>" data-snippet-board-revision="<?php echo html($sBoardRevision); ?>">
+<body class="snippet-board-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>" data-snippet-board-revision="<?php echo html($sBoardRevision); ?>" data-snippet-board-locked="<?php echo $blLmEncryptionUnlocked ? "0" : "1"; ?>" data-lm-encryption-configured="<?php echo $blLmEncryptionConfigured ? "1" : "0"; ?>">
   <p class="admin-controls">
 <?php
 
@@ -188,7 +211,7 @@ for ($iSlot = 1; $iSlot <= 6; $iSlot++) {
 ?>
       <section id="snippet-panel-<?php echo $iSlot; ?>" class="snippet-board-panel<?php echo $iSlot == 1 ? " snippet-board-panel-active" : ""; ?>" data-snippet-panel="<?php echo $iSlot; ?>" role="tabpanel">
         <input type="hidden" name="rich_text_paste_<?php echo $iSlot; ?>" class="js-snippet-board-rich-text-paste" data-snippet-rich-text-paste="<?php echo $iSlot; ?>" value="<?php echo (int)$aRichTextPasteModes[$iSlot]; ?>">
-        <textarea id="snippet-<?php echo $iSlot; ?>" name="snippet_<?php echo $iSlot; ?>" class="snippet-board-textarea js-snippet-board-textarea" rows="18" autocomplete="off" spellcheck="true" aria-label="Snippet <?php echo $iSlot; ?>"><?php echo html($aSnippets[$iSlot]); ?></textarea>
+        <textarea id="snippet-<?php echo $iSlot; ?>" name="snippet_<?php echo $iSlot; ?>" class="snippet-board-textarea js-snippet-board-textarea" rows="18" autocomplete="off" spellcheck="true" aria-label="Snippet <?php echo $iSlot; ?>"<?php echo $blLmEncryptionUnlocked ? "" : " disabled"; ?>><?php echo html($aSnippets[$iSlot]); ?></textarea>
       </section>
 <?php
 
@@ -197,6 +220,45 @@ for ($iSlot = 1; $iSlot <= 6; $iSlot++) {
 ?>
     </div>
   </form>
+<?php
+
+if (!$blLmEncryptionUnlocked) {
+
+?>
+  <div class="confirm-dialog lm-encryption-unlock-dialog js-lm-encryption-unlock-dialog" id="lm-encryption-unlock-dialog" role="dialog" aria-modal="true">
+    <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" class="confirm-dialog-box login-form lm-encryption-unlock-form js-lm-encryption-unlock-form">
+      <input type="hidden" name="action" value="unlock_lm_encryption">
+      <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
+      <div class="confirm-dialog-header">
+        <strong><?php echo $blLmEncryptionConfigured ? "Unlock Encrypted Data" : "Set Encryption Hash"; ?></strong>
+      </div>
+      <div class="login-fields">
+        <label for="lm-encryption-hash">Hash</label>
+        <input type="password" id="lm-encryption-hash" name="lm_encryption_hash" autocomplete="current-password" required>
+<?php
+
+    if (!$blLmEncryptionConfigured) {
+
+?>
+        <label for="lm-encryption-hash-confirm">Confirm Hash</label>
+        <input type="password" id="lm-encryption-hash-confirm" name="lm_encryption_hash_confirm" autocomplete="new-password" required>
+<?php
+
+    }
+
+?>
+      </div>
+      <p class="login-message message-error js-lm-encryption-unlock-error" hidden></p>
+      <div class="confirm-dialog-actions">
+        <button type="submit" class="confirm-dialog-button"><?php echo $blLmEncryptionConfigured ? "Unlock" : "Set"; ?></button>
+      </div>
+    </form>
+  </div>
+<?php
+
+}
+
+?>
   <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
   <script type="text/javascript" src="/vendors/tinymce-8.8.1/tinymce.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>

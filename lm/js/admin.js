@@ -46,6 +46,17 @@ function getAdminCsrfToken() {
     return oMeta ? (oMeta.getAttribute("content") || "") : "";
 }
 
+function getAdminEmoji(sName) {
+    var oData = document.getElementById("emoji-data");
+    return oData ? (oData.getAttribute("data-" + sName) || "") : "";
+}
+
+function getAdminContactValue(oItem) {
+    var oValue = oItem ? oItem.querySelector(".contact-value") : null;
+    var sValue = oValue ? (oValue.textContent || "") : "";
+    return sValue != "" ? sValue : (oItem ? (oItem.getAttribute("data-contact-value") || "") : "");
+}
+
 function appendAdminCsrfToken(oData) {
     var sToken = getAdminCsrfToken();
     if (oData && sToken) {
@@ -1226,6 +1237,57 @@ function bindAdminCopyLinks() {
             copyLink(this);
         });
     }
+}
+
+function bindAdminContactCopy() {
+    function showContactCopyResult(oButton, blSuccess) {
+        var oBox = oButton.querySelector ? oButton.querySelector(".copy-action-box") : null;
+        var sText = oButton.getAttribute("data-copy-text") || (oBox ? oBox.textContent : oButton.textContent);
+        var sResultText = blSuccess ? getAdminEmoji("copy-success") : getAdminEmoji("copy-failure");
+        if (oBox) {
+            oBox.textContent = sResultText;
+        } else {
+            oButton.textContent = sResultText;
+        }
+        window.setTimeout(function() {
+            if (oBox) {
+                oBox.textContent = sText;
+            } else {
+                oButton.textContent = sText;
+            }
+        }, 1000);
+    }
+
+    function copyContactValue(oButton) {
+        var oItem = oButton.closest ? oButton.closest(".contact-item") : null;
+        var sValue = getAdminContactValue(oItem);
+        oButton.setAttribute("data-copy-text", oButton.getAttribute("data-copy-text") || oButton.textContent);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(sValue).then(function() {
+                showContactCopyResult(oButton, true);
+            }).catch(function(oException) {
+                logAdminException(oException);
+                showContactCopyResult(oButton, copyAdminTextWithInput(sValue));
+            });
+            return;
+        }
+        showContactCopyResult(oButton, copyAdminTextWithInput(sValue));
+    }
+
+    document.addEventListener("click", function(oEvent) {
+        var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".contact-copy") : null;
+        var oLink;
+        if (oButton) {
+            oEvent.preventDefault();
+            oEvent.stopPropagation();
+            copyContactValue(oButton);
+            return;
+        }
+        oLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".contact-link") : null;
+        if (oLink) {
+            oEvent.stopPropagation();
+        }
+    });
 }
 
 function bindMenuAdmin() {
@@ -4999,6 +5061,10 @@ function isSnippetBoardPmdLike() {
     return document.body && document.body.getAttribute("data-pmd-like") == "1";
 }
 
+function isSnippetBoardLocked() {
+    return document.body && document.body.getAttribute("data-snippet-board-locked") == "1";
+}
+
 function isSnippetBoardScrollLockPage() {
     var sClass;
     if (!document.body) {
@@ -5885,6 +5951,9 @@ function bindSnippetBoardForm() {
     if (!oForm) {
         return;
     }
+    if (isSnippetBoardLocked()) {
+        return;
+    }
     oForm.addEventListener("submit", function(oEvent) {
         oEvent.preventDefault();
         saveSnippetBoardNow();
@@ -5912,6 +5981,65 @@ function bindSnippetBoardForm() {
     bindTextareaChanges();
     openSnippetBoardChannel();
     scheduleSnippetBoardRevisionCheck(iRevisionPollMs);
+}
+
+function bindLmEncryptionUnlock() {
+    var oForm = document.querySelector(".js-lm-encryption-unlock-form");
+    var oDialog = oForm && oForm.closest ? oForm.closest(".js-lm-encryption-unlock-dialog") : document.querySelector(".js-lm-encryption-unlock-dialog");
+    var oInput = oForm ? oForm.querySelector("[name=\"lm_encryption_hash\"]") : null;
+    var oConfirmInput = oForm ? oForm.querySelector("[name=\"lm_encryption_hash_confirm\"]") : null;
+    var oError = oForm ? oForm.querySelector(".js-lm-encryption-unlock-error") : null;
+    var oSubmit = oForm ? oForm.querySelector("button[type=\"submit\"]") : null;
+    var oHeader = oForm ? oForm.querySelector(".confirm-dialog-header") : null;
+    var blSubmitting = false;
+    if (!oDialog || !oForm || !oInput) {
+        return;
+    }
+    enableAdminDialogDrag(oDialog, oForm, oHeader);
+    lockAdminModalScroll();
+    focusAdminElement(oInput, true);
+    oForm.addEventListener("submit", function(oEvent) {
+        var oData;
+        oEvent.preventDefault();
+        if (blSubmitting) {
+            return;
+        }
+        if (oError) {
+            oError.hidden = true;
+            oError.textContent = "";
+        }
+        if (oConfirmInput && (oInput.value || "") != (oConfirmInput.value || "")) {
+            if (oError) {
+                oError.textContent = "Hash confirmation does not match.";
+                oError.hidden = false;
+            }
+            focusAdminElement(oConfirmInput, true);
+            return;
+        }
+        blSubmitting = true;
+        if (oSubmit) {
+            oSubmit.disabled = true;
+        }
+        oData = new FormData();
+        oData.append("action", "unlock_lm_encryption");
+        oData.append("lm_encryption_hash", oInput.value || "");
+        if (oConfirmInput) {
+            oData.append("lm_encryption_hash_confirm", oConfirmInput.value || "");
+        }
+        submitAdminRequest(oData, function() {
+            window.location.reload();
+        }, function(sMessage) {
+            blSubmitting = false;
+            if (oSubmit) {
+                oSubmit.disabled = false;
+            }
+            if (oError) {
+                oError.textContent = sMessage || "Encrypted data could not be unlocked.";
+                oError.hidden = false;
+            }
+            focusAdminElement(oInput, true);
+        });
+    });
 }
 
 function getSnippetBoardPlainTextContent(oEditor) {
@@ -6086,6 +6214,9 @@ function scheduleSnippetBoardToolbarLines(oEditor, iAttempt) {
 }
 
 function bindSnippetBoardTinyMce() {
+    if (isSnippetBoardLocked()) {
+        return;
+    }
     if (!window.tinymce || typeof window.tinymce.init != "function") {
         return;
     }
@@ -7314,6 +7445,7 @@ document.addEventListener("DOMContentLoaded", function() {
     setupTableFilter();
     setupAutoRefresh();
     bindAdminCopyLinks();
+    bindAdminContactCopy();
     bindMenuAdmin();
     bindEmailOverview();
     bindDashboardServices();
@@ -7328,6 +7460,7 @@ document.addEventListener("DOMContentLoaded", function() {
     bindSnippetBoardPageScrollLock();
     bindSbPmdHoverTimeout();
     bindSnippetBoardTabs();
+    bindLmEncryptionUnlock();
     bindSnippetBoardForm();
     bindSnippetBoardTinyMce();
     layoutSnippetBoard();

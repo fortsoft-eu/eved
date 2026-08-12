@@ -78,6 +78,9 @@ $sMoveUpEmoji      = "&#9650;";
 $sMoveDownEmoji    = "&#9660;";
 $sEmptyValueEmoji  = "&#10134;";
 $sThrobberEmoji    = "&#8987;";
+$sCopyEmoji        = "&#128203;";
+$sCopySuccessEmoji = "&#10004;&#65039;";
+$sCopyFailureEmoji = "&#10060;&#65039;";
 
 
 $sError = "";
