@@ -2722,7 +2722,7 @@ function phoneAccountsRenderRow($aRow, $blSecretsUnlocked) {
     $sHtml .= "<td class=\"phone-account-date\">" . ($aRow["paid_at"] != "" ? renderDateTimeWithNbspIndent($aRow["paid_at"]) : $sEmptyValueEmoji) . "</td>"
         . "<td class=\"phone-account-amount numeric\">" . phoneAccountsRenderPaidAmount($aRow["paid_amount"], $aRow["paid_currency"]) . "</td>";
     if ($blSecretsUnlocked) {
-        $sHtml .= "<td class=\"phone-account-note\">" . ($sNote != "" ? html($sNote) : $sEmptyValueEmoji) . "</td>";
+        $sHtml .= "<td class=\"phone-account-note\">" . ($sNote != "" ? nl2br(html($sNote), false) : $sEmptyValueEmoji) . "</td>";
     } else {
         $sHtml .= "<td class=\"phone-account-note\">&#128274;</td>";
     }

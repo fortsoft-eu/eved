@@ -2520,6 +2520,354 @@ document.addEventListener("DOMContentLoaded", function () {
     setupMenu();
 });
 
+function setupHolidayCalendarTooltip() {
+    var oTooltip = null;
+    var oActiveTarget = null;
+    var iTooltipMouseX = null;
+    var iTooltipMouseY = null;
+
+    function getTooltipTarget(oTarget) {
+        if (oTarget && oTarget.nodeType == 3) {
+            oTarget = oTarget.parentNode;
+        }
+        return oTarget && oTarget.closest ? oTarget.closest("[data-calendar-tooltip-title]") : null;
+    }
+
+    function getTooltip() {
+        if (!oTooltip) {
+            oTooltip = document.createElement("div");
+            oTooltip.className = "calendar-tooltip";
+            oTooltip.hidden = true;
+            document.body.appendChild(oTooltip);
+        }
+        return oTooltip;
+    }
+
+    function setTooltipMousePosition(oEvent) {
+        if (oEvent && typeof oEvent.clientX != "undefined" && typeof oEvent.clientY != "undefined") {
+            iTooltipMouseX = oEvent.clientX;
+            iTooltipMouseY = oEvent.clientY;
+        }
+    }
+
+    function positionTooltip(oEvent) {
+        var iGap = 8;
+        var iHeight;
+        var iLeft;
+        var iTop;
+        var iWidth;
+        var oRect;
+        var oTip = getTooltip();
+        setTooltipMousePosition(oEvent);
+        if (!oActiveTarget || oTip.hidden) {
+            return;
+        }
+        iWidth = oTip.offsetWidth || 0;
+        iHeight = oTip.offsetHeight || 0;
+        if (iTooltipMouseX !== null && iTooltipMouseY !== null) {
+            iLeft = iTooltipMouseX + iGap;
+            iTop = iTooltipMouseY + iGap;
+            if (iLeft + iWidth > window.innerWidth - iGap) {
+                iLeft = iTooltipMouseX - iWidth - iGap;
+            }
+            if (iTop + iHeight > window.innerHeight - iGap) {
+                iTop = iTooltipMouseY - iHeight - iGap;
+            }
+        } else {
+            oRect = oActiveTarget.getBoundingClientRect();
+            iLeft = oRect.left + (oRect.width / 2) - (iWidth / 2);
+            iTop = oRect.bottom + iGap;
+            if (iTop + iHeight > window.innerHeight - iGap) {
+                iTop = oRect.top - iHeight - iGap;
+            }
+        }
+        if (iTop < iGap) {
+            iTop = iGap;
+        }
+        if (iLeft + iWidth > window.innerWidth - iGap) {
+            iLeft = window.innerWidth - iWidth - iGap;
+        }
+        if (iLeft < iGap) {
+            iLeft = iGap;
+        }
+        oTip.style.left = Math.round(iLeft) + "px";
+        oTip.style.top = Math.round(iTop) + "px";
+    }
+
+    function showTooltip(oTarget, oEvent) {
+        var oBody;
+        var oTitle;
+        var oTip = getTooltip();
+        var sTitle = oTarget ? (oTarget.getAttribute("data-calendar-tooltip-title") || "") : "";
+        var sText = oTarget ? (oTarget.getAttribute("data-calendar-tooltip") || "") : "";
+        if (!oTarget || (!sTitle && !sText)) {
+            return;
+        }
+        oActiveTarget = oTarget;
+        setTooltipMousePosition(oEvent);
+        oTip.textContent = "";
+        if (sTitle) {
+            oTitle = document.createElement("strong");
+            oTitle.className = "calendar-tooltip-title";
+            oTitle.textContent = sTitle;
+            oTip.appendChild(oTitle);
+        }
+        if (sText) {
+            oBody = document.createElement("div");
+            oBody.className = "calendar-tooltip-body";
+            oBody.textContent = sText;
+            oTip.appendChild(oBody);
+        }
+        oTip.hidden = false;
+        positionTooltip();
+    }
+
+    function hideTooltip() {
+        if (oTooltip) {
+            oTooltip.hidden = true;
+        }
+        oActiveTarget = null;
+        iTooltipMouseX = null;
+        iTooltipMouseY = null;
+    }
+
+    function isInsideTarget(oTarget, oRelatedTarget) {
+        if (oRelatedTarget && oRelatedTarget.nodeType == 3) {
+            oRelatedTarget = oRelatedTarget.parentNode;
+        }
+        return !!(oTarget && oRelatedTarget && oTarget.contains(oRelatedTarget));
+    }
+
+    if (!document.querySelector("[data-calendar-tooltip-title]")) {
+        return;
+    }
+
+    document.addEventListener("mouseover", function (oEvent) {
+        var oTarget;
+        oTarget = getTooltipTarget(oEvent.target);
+        if (!oTarget || isInsideTarget(oTarget, oEvent.relatedTarget)) {
+            return;
+        }
+        showTooltip(oTarget, oEvent);
+    });
+
+    document.addEventListener("mousemove", function (oEvent) {
+        var oTarget;
+        if (!oActiveTarget) {
+            return;
+        }
+        oTarget = getTooltipTarget(oEvent.target);
+        if (!oTarget) {
+            hideTooltip();
+            return;
+        }
+        positionTooltip(oEvent);
+    });
+
+    document.addEventListener("mouseout", function (oEvent) {
+        var oTarget = getTooltipTarget(oEvent.target);
+        if (!oTarget || oTarget !== oActiveTarget || isInsideTarget(oTarget, oEvent.relatedTarget)) {
+            return;
+        }
+        hideTooltip();
+    });
+
+    document.addEventListener("focusin", function (oEvent) {
+        var oTarget;
+        oTarget = getTooltipTarget(oEvent.target);
+        if (oTarget) {
+            iTooltipMouseX = null;
+            iTooltipMouseY = null;
+            showTooltip(oTarget);
+        }
+    });
+
+    document.addEventListener("focusout", function (oEvent) {
+        var oTarget = getTooltipTarget(oEvent.target);
+        if (!oTarget || oTarget !== oActiveTarget) {
+            return;
+        }
+        hideTooltip();
+    });
+
+    document.addEventListener("keydown", function (oEvent) {
+        if (oEvent.key == "Escape") {
+            hideTooltip();
+        }
+    });
+
+    document.addEventListener("mouseleave", hideTooltip);
+    window.addEventListener("blur", hideTooltip);
+    window.addEventListener("resize", positionTooltip);
+    window.addEventListener("scroll", positionTooltip, true);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    setupHolidayCalendarTooltip();
+});
+
+function setupHolidayCalendarDaySelection() {
+    var blDragSelectValue = true;
+    var blDragging = false;
+    var oDragStartDay = null;
+    var oIgnoreClickDay = null;
+    var sHoverColor = "#fff3cd";
+    var sSelectedColor = "#cfe2ff";
+
+    function getCalendarDay(oTarget) {
+        if (oTarget && oTarget.nodeType == 3) {
+            oTarget = oTarget.parentNode;
+        }
+        return oTarget && oTarget.closest ? oTarget.closest(".holiday-day") : null;
+    }
+
+    function getCurrentDayColor(oDay) {
+        if (oDay.getAttribute("data-selected") == "1") {
+            return sSelectedColor;
+        }
+        if (oDay.getAttribute("data-hover") == "1") {
+            return sHoverColor;
+        }
+        return "";
+    }
+
+    function applyDayColor(oDay) {
+        if (!oDay) {
+            return;
+        }
+        oDay.style.backgroundColor = getCurrentDayColor(oDay);
+    }
+
+    function setDaySelected(oDay, blSelected) {
+        if (!oDay) {
+            return;
+        }
+        oDay.setAttribute("data-selected", blSelected ? "1" : "0");
+        applyDayColor(oDay);
+    }
+
+    function selectDragDay(oDay) {
+        if (!oDay) {
+            return;
+        }
+        setDaySelected(oDay, blDragSelectValue);
+    }
+
+    function resetDragSelection() {
+        blDragSelectValue = true;
+        blDragging = false;
+        oDragStartDay = null;
+    }
+
+    function ignoreNextClick(oDay) {
+        oIgnoreClickDay = oDay;
+        window.setTimeout(function () {
+            oIgnoreClickDay = null;
+        }, 0);
+    }
+
+    function isInsideCalendarDay(oDay, oTarget) {
+        if (!oDay || !oTarget) {
+            return false;
+        }
+        if (oTarget.nodeType == 3) {
+            oTarget = oTarget.parentNode;
+        }
+        return oTarget && oTarget.closest && oTarget.closest(".holiday-day") == oDay;
+    }
+
+    if (!document.querySelector(".holiday-day")) {
+        return;
+    }
+
+    document.addEventListener("mousedown", function (oEvent) {
+        var oDay = getCalendarDay(oEvent.target);
+        if (!oDay || oEvent.button != 0) {
+            return;
+        }
+        blDragging = true;
+        blDragSelectValue = oDay.getAttribute("data-selected") != "1";
+        oDragStartDay = oDay;
+        selectDragDay(oDay);
+        oEvent.preventDefault();
+    });
+
+    document.addEventListener("mouseover", function (oEvent) {
+        var aDays;
+        var iI;
+        var oDay = getCalendarDay(oEvent.target);
+        if (!oDay || isInsideCalendarDay(oDay, oEvent.relatedTarget)) {
+            return;
+        }
+        aDays = document.querySelectorAll(".holiday-day[data-hover=\"1\"]");
+        for (iI = 0; iI < aDays.length; iI += 1) {
+            if (aDays[iI] !== oDay) {
+                aDays[iI].setAttribute("data-hover", "0");
+                applyDayColor(aDays[iI]);
+            }
+        }
+        oDay.setAttribute("data-hover", "1");
+        applyDayColor(oDay);
+        if (blDragging) {
+            selectDragDay(oDay);
+        }
+    });
+
+    document.addEventListener("mousemove", function (oEvent) {
+        var oDay;
+        if (!blDragging) {
+            return;
+        }
+        oDay = getCalendarDay(oEvent.target);
+        if (oDay) {
+            selectDragDay(oDay);
+        }
+        oEvent.preventDefault();
+    });
+
+    document.addEventListener("mouseout", function (oEvent) {
+        var oDay = getCalendarDay(oEvent.target);
+        if (!oDay || isInsideCalendarDay(oDay, oEvent.relatedTarget)) {
+            return;
+        }
+        oDay.setAttribute("data-hover", "0");
+        applyDayColor(oDay);
+    });
+
+    document.addEventListener("mouseup", function () {
+        if (!blDragging) {
+            return;
+        }
+        ignoreNextClick(oDragStartDay);
+        resetDragSelection();
+    });
+
+    document.addEventListener("selectstart", function (oEvent) {
+        if (blDragging && getCalendarDay(oEvent.target)) {
+            oEvent.preventDefault();
+        }
+    });
+
+    window.addEventListener("blur", resetDragSelection);
+
+    document.addEventListener("click", function (oEvent) {
+        var oDay = getCalendarDay(oEvent.target);
+        if (!oDay) {
+            return;
+        }
+        if (oIgnoreClickDay && oDay === oIgnoreClickDay) {
+            oIgnoreClickDay = null;
+            oEvent.preventDefault();
+            return;
+        }
+        setDaySelected(oDay, oDay.getAttribute("data-selected") != "1");
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    setupHolidayCalendarDaySelection();
+});
+
 document.addEventListener("DOMContentLoaded", function () {
     var aButtons = document.querySelectorAll(".js-copy-link");
 

@@ -15,7 +15,7 @@ $blPortalIndexAllowed = isAllowedIp($aAllowedIps) || isProjectViewAllowed("porta
 if ($blPortalIndexAllowed) {
     $iTime = sendPageHeaders($sStyleNonce);
     $aProjects = array(
-        array("href" => "lm/", "icon" => "&#128736;&#65039;", "name" => "Dashboard", "title" => "Monitoring and management"),
+        array("href" => "lm/", "icon" => "&#128736;&#65039;", "name" => "Technical", "title" => "Monitoring and management"),
         array("href" => "ex/", "icon" => "&#128214;", "name" => "Portal", "title" => "Subjects and contacts directory"),
         array("href" => "kf/", "icon" => "&#128182;", "name" => "Kesef", "title" => "Income and expenses"),
         array("href" => "film/", "icon" => "&#127902;&#65039;", "name" => "Film", "title" => "Film scans gallery")

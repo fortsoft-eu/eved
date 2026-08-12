@@ -2345,6 +2345,189 @@ function dateFromIsoDate($mValue) {
     return $oDate;
 }
 
+function exCalendarGetRequestYear() {
+    $iCurrentYear = (int)date("Y");
+    $sYear = isset($_GET["year"]) ? trim((string)$_GET["year"]) : "";
+    if ($sYear == "") {
+        return $iCurrentYear;
+    }
+    if (!preg_match("/^[0-9]{1,4}$/", $sYear)) {
+        send404AndExit();
+    }
+    $iYear = (int)$sYear;
+    if ($iYear < 1583 || $iYear > 9999) {
+        send404AndExit();
+    }
+    return $iYear;
+}
+
+function exCalendarDateKey($iYear, $iMonth, $iDay) {
+    return sprintf("%04d-%02d-%02d", (int)$iYear, (int)$iMonth, (int)$iDay);
+}
+
+function exCalendarDate($iYear, $iMonth, $iDay) {
+    return DateTimeImmutable::createFromFormat("!Y-m-d", exCalendarDateKey($iYear, $iMonth, $iDay));
+}
+
+function exCalendarGetEasterSunday($iYear) {
+    $iA = $iYear % 19;
+    $iB = (int)($iYear / 100);
+    $iC = $iYear % 100;
+    $iD = (int)($iB / 4);
+    $iE = $iB % 4;
+    $iF = (int)(($iB + 8) / 25);
+    $iG = (int)(($iB - $iF + 1) / 3);
+    $iH = (19 * $iA + $iB - $iD - $iG + 15) % 30;
+    $iI = (int)($iC / 4);
+    $iK = $iC % 4;
+    $iL = (32 + 2 * $iE + 2 * $iI - $iH - $iK) % 7;
+    $iM = (int)(($iA + 11 * $iH + 22 * $iL) / 451);
+    $iN = $iH + $iL - 7 * $iM + 114;
+    $iMonth = (int)($iN / 31);
+    $iDay = $iN % 31 + 1;
+    return exCalendarDate($iYear, $iMonth, $iDay);
+}
+
+function exCalendarAddHoliday(&$aHolidays, $sDate, $sType, $sName) {
+    if (!isset($aHolidays[$sDate])) {
+        $aHolidays[$sDate] = array();
+    }
+    $aHolidays[$sDate][] = array(
+        "type" => $sType,
+        "name" => $sName
+    );
+}
+
+function exCalendarGetHolidays($iYear) {
+    $aHolidays = array();
+    $aStateHolidays = array(
+        "01-01" => "Den obnovy samostatného českého státu",
+        "05-08" => "Den vítězství",
+        "07-05" => "Den slovanských věrozvěstů Cyrila a Metoděje",
+        "07-06" => "Den upálení mistra Jana Husa",
+        "09-28" => "Den české státnosti",
+        "10-28" => "Den vzniku samostatného československého státu",
+        "11-17" => "Den boje za svobodu a demokracii a Mezinárodní den studentstva"
+    );
+    $aOtherHolidays = array(
+        "01-01" => "Nový rok",
+        "05-01" => "Svátek práce",
+        "12-24" => "Štědrý den",
+        "12-25" => "1. svátek vánoční",
+        "12-26" => "2. svátek vánoční"
+    );
+    $oEasterSunday = exCalendarGetEasterSunday($iYear);
+    foreach ($aStateHolidays as $sDay => $sName) {
+        exCalendarAddHoliday($aHolidays, sprintf("%04d-%s", $iYear, $sDay), "state", $sName);
+    }
+    foreach ($aOtherHolidays as $sDay => $sName) {
+        exCalendarAddHoliday($aHolidays, sprintf("%04d-%s", $iYear, $sDay), "other", $sName);
+    }
+    exCalendarAddHoliday($aHolidays, $oEasterSunday->modify("-2 days")->format("Y-m-d"), "moving", "Velký pátek");
+    exCalendarAddHoliday($aHolidays, $oEasterSunday->modify("+1 day")->format("Y-m-d"), "moving", "Velikonoční pondělí");
+    ksort($aHolidays);
+    return $aHolidays;
+}
+
+function exCalendarGetMonthNames() {
+    return array(
+        1 => "leden",
+        2 => "únor",
+        3 => "březen",
+        4 => "duben",
+        5 => "květen",
+        6 => "červen",
+        7 => "červenec",
+        8 => "srpen",
+        9 => "září",
+        10 => "říjen",
+        11 => "listopad",
+        12 => "prosinec"
+    );
+}
+
+function exCalendarGetDayNames() {
+    return array("Po", "Út", "St", "Čt", "Pá", "So", "Ne");
+}
+
+function exCalendarGetHolidayClass($aHolidayItems) {
+    $aTypes = array("state", "moving", "other");
+    foreach ($aTypes as $sType) {
+        foreach ($aHolidayItems as $aHolidayItem) {
+            if ($aHolidayItem["type"] == $sType) {
+                return "holiday-day-" . $sType;
+            }
+        }
+    }
+    return "";
+}
+
+function exCalendarRenderHolidayLabels($aHolidayItems, $sDate) {
+    $sHtml = "";
+    if (substr((string)$sDate, 5) == "01-01") {
+        foreach ($aHolidayItems as $aHolidayItem) {
+            $sHtml .= "<span class=\"holiday-day-label holiday-day-label-single\">" . html($aHolidayItem["name"]) . "</span>";
+        }
+        return $sHtml;
+    }
+    foreach ($aHolidayItems as $aHolidayItem) {
+        $sHtml .= "<span class=\"holiday-day-label\">" . html($aHolidayItem["name"]) . "</span>";
+    }
+    return $sHtml;
+}
+
+function exCalendarGetHolidayTooltip($aHolidayItems) {
+    $aLines = array();
+    foreach ($aHolidayItems as $aHolidayItem) {
+        $aLines[] = $aHolidayItem["name"];
+    }
+    return implode("\n", $aLines);
+}
+
+function exCalendarGetHolidayTooltipTitle($iDay, $sMonthName, $iYear, $aHolidayItems) {
+    return (int)$iDay . ". " . $sMonthName . " " . (int)$iYear;
+}
+
+function exCalendarRenderMonth($iYear, $iMonth, $aHolidays) {
+    $aMonthNames = exCalendarGetMonthNames();
+    $aDayNames = exCalendarGetDayNames();
+    $oFirstDay = exCalendarDate($iYear, $iMonth, 1);
+    $iFirstWeekday = (int)$oFirstDay->format("N");
+    $iDaysInMonth = (int)$oFirstDay->modify("last day of this month")->format("j");
+    echo "    <section class=\"holiday-month\">\n",
+        "      <h2>" . html($aMonthNames[$iMonth]) . "</h2>\n",
+        "      <div class=\"holiday-month-grid\">\n";
+    foreach ($aDayNames as $sDayName) {
+        echo "        <div class=\"holiday-weekday\">" . html($sDayName) . "</div>\n";
+    }
+    for ($iBlank = 1; $iBlank < $iFirstWeekday; $iBlank += 1) {
+        echo "        <div class=\"holiday-empty\"></div>\n";
+    }
+    for ($iDay = 1; $iDay <= $iDaysInMonth; $iDay += 1) {
+        $sDate = exCalendarDateKey($iYear, $iMonth, $iDay);
+        $aHolidayItems = isset($aHolidays[$sDate]) ? $aHolidays[$sDate] : array();
+        $oDate = exCalendarDate($iYear, $iMonth, $iDay);
+        $sClass = "holiday-day";
+        if ((int)$oDate->format("N") >= 6) {
+            $sClass .= " holiday-day-weekend";
+        }
+        $sHolidayClass = exCalendarGetHolidayClass($aHolidayItems);
+        if ($sHolidayClass != "") {
+            $sClass .= " " . $sHolidayClass;
+        }
+        $sTooltipAttribute = " data-calendar-tooltip-title=\"" . html(exCalendarGetHolidayTooltipTitle($iDay, $aMonthNames[$iMonth], $iYear, $aHolidayItems)) . "\"";
+        if ($aHolidayItems) {
+            $sTooltipAttribute .= " data-calendar-tooltip=\"" . str_replace("\n", "&#10;", html(exCalendarGetHolidayTooltip($aHolidayItems))) . "\"";
+        }
+        echo "        <div class=\"" . html($sClass) . "\"" . $sTooltipAttribute . ">",
+            "<span class=\"holiday-day-number\">" . $iDay . "</span>",
+            exCalendarRenderHolidayLabels($aHolidayItems, $sDate),
+            "</div>\n";
+    }
+    echo "      </div>\n",
+        "    </section>\n";
+}
+
 function ageInYears($mStartDate, $mEndDate = null) {
     $oStartDate = dateFromIsoDate($mStartDate);
     $oEndDate = $mEndDate === null ? new DateTimeImmutable("today") : dateFromIsoDate($mEndDate);
