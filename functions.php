@@ -1988,3 +1988,12 @@ function runKfExchangeRateProcess($oPdo, $sError = "") {
     }
     return array("result" => "ERR", "status_code" => 500);
 }
+
+function arrayReadNext(&$aArray) {
+    if ($mKey = key($aArray)) {
+        $mValue = current($aArray);
+        next($aArray);
+        return array($mKey, $mValue);
+    }
+    return null;
+}

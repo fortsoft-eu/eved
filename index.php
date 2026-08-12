@@ -20,17 +20,19 @@ if ($blPortalIndexAllowed) {
         array("href" => "kf/", "icon" => "&#128182;", "name" => "Kesef", "title" => "Income and expenses"),
         array("href" => "film/", "icon" => "&#127902;&#65039;", "name" => "Film", "title" => "Film scans gallery")
     );
-    $aSecurityLinks = array(
-        array("href" => "https://admin.aerohosting.cz/", "icon" => "&#128452;&#65039;", "name" => "AeroHosting", "title" => "Hosting administration"),
-        array("href" => "https://" . rawurlencode($sAWStatsName) . ":" . rawurlencode($sAWStatsPass) . "@stats.aerohosting.cz/", "icon" => "&#128202;", "name" => "AWStats", "title" => "Hosting statistics"),
-        array("href" => "https://securityheaders.com/", "icon" => "&#128737;&#65039;", "name" => "Security Headers", "title" => "HTTP security header scanner"),
-        array("href" => "https://developer.mozilla.org/en-US/observatory", "icon" => "&#128301;", "name" => "MDN Observatory", "title" => "Mozilla site security scanner"),
-        array("href" => "https://github.com/fortsoft-eu", "icon" => "&#128008;", "name" => "GitHub", "title" => "Source code hosting"),
-        array("href" => "https://unicode.org/emoji/charts/full-emoji-list.html", "icon" => "&#9786;&#65039;", "name" => "Emoji List", "title" => "Unicode full emoji list"),
-        array("href" => "https://www.profisms.cz/", "icon" => "&#128241;", "name" => "ProfiSMS", "title" => "SMS administration"),
-        array("href" => "https://marketplace.apilayer.com/whois-api", "icon" => "&#128268;", "name" => "APILayer WHOIS", "title" => "APILayer WHOIS API dashboard"),
-        array("href" => "https://app.abstractapi.com/dashboard", "icon" => "&#129513;", "name" => "Abstract API", "title" => "Abstract API dashboard")
-    );
+    $aSecurityLinks = array();
+    $aSecurityLinks[] = array("href" => "https://admin.aerohosting.cz/", "icon" => "&#128452;&#65039;", "name" => "AeroHosting", "title" => "Hosting administration");
+    list($user, $pass) = arrayReadNext($aAWStatsAccounts);
+    $aSecurityLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats.aerohosting.cz/", "icon" => "&#128202;", "name" => "AWStats", "title" => html($user) . " site statistics");
+    list($user, $pass) = arrayReadNext($aAWStatsAccounts);
+    $aSecurityLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats.aerohosting.cz/", "icon" => "&#128200;", "name" => "AWStats", "title" => html($user) . " site statistics");
+    $aSecurityLinks[] = array("href" => "https://securityheaders.com/", "icon" => "&#128737;&#65039;", "name" => "Security Headers", "title" => "HTTP security header scanner");
+    $aSecurityLinks[] = array("href" => "https://developer.mozilla.org/en-US/observatory", "icon" => "&#128301;", "name" => "MDN Observatory", "title" => "Mozilla site security scanner");
+    $aSecurityLinks[] = array("href" => "https://github.com/fortsoft-eu", "icon" => "&#128008;", "name" => "GitHub", "title" => "Source code hosting");
+    $aSecurityLinks[] = array("href" => "https://unicode.org/emoji/charts/full-emoji-list.html", "icon" => "&#9786;&#65039;", "name" => "Emoji List", "title" => "Unicode full emoji list");
+    $aSecurityLinks[] = array("href" => "https://www.profisms.cz/", "icon" => "&#128241;", "name" => "ProfiSMS", "title" => "SMS administration");
+    $aSecurityLinks[] = array("href" => "https://marketplace.apilayer.com/whois-api", "icon" => "&#128268;", "name" => "APILayer WHOIS", "title" => "APILayer WHOIS API dashboard");
+    $aSecurityLinks[] = array("href" => "https://app.abstractapi.com/dashboard", "icon" => "&#129513;", "name" => "Abstract API", "title" => "Abstract API dashboard");
 
 ?>
 <!DOCTYPE html>
