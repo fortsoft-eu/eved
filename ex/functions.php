@@ -2889,16 +2889,29 @@ function exCalendarGetHolidayBackgroundImage($aHolidayItems) {
     return "repeating-linear-gradient(135deg, " . implode(", ", $aStops) . ")";
 }
 
+function exCalendarGetHolidayLabelLength($sName) {
+    preg_match_all("/./u", (string)$sName, $aMatches);
+    return count($aMatches[0]);
+}
+
 function exCalendarRenderHolidayLabels($aHolidayItems, $sDate) {
     $sHtml = "";
-    if (count($aHolidayItems) > 1) {
+    if (count($aHolidayItems) == 2) {
+        $iLongLabelIndex = exCalendarGetHolidayLabelLength($aHolidayItems[1]["name"]) > exCalendarGetHolidayLabelLength($aHolidayItems[0]["name"]) ? 1 : 0;
+        foreach ($aHolidayItems as $iIndex => $aHolidayItem) {
+            $sClass = $iIndex == $iLongLabelIndex ? "holiday-day-label" : "holiday-day-label holiday-day-label-single";
+            $sHtml .= "<span class=\"" . $sClass . "\">" . html($aHolidayItem["name"]) . "</span>";
+        }
+        return $sHtml;
+    }
+    if (count($aHolidayItems) > 2) {
         foreach ($aHolidayItems as $aHolidayItem) {
             $sHtml .= "<span class=\"holiday-day-label holiday-day-label-single\">" . html($aHolidayItem["name"]) . "</span>";
         }
         return $sHtml;
     }
     foreach ($aHolidayItems as $aHolidayItem) {
-        $sHtml .= "<span class=\"holiday-day-label\">" . html($aHolidayItem["name"]) . "</span>";
+        $sHtml .= "<span class=\"holiday-day-label holiday-day-label-triple\">" . html($aHolidayItem["name"]) . "</span>";
     }
     return $sHtml;
 }

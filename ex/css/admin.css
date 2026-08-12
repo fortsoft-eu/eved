@@ -978,6 +978,7 @@ body.mail-page .admin-controls .mail-send-button {
     -webkit-line-clamp: 2;
     display: -webkit-box;
     font-size: 10px;
+    hyphens: auto;
     line-clamp: 2;
     line-height: 1;
     margin-top: 0;
@@ -996,6 +997,11 @@ body.mail-page .admin-controls .mail-send-button {
     overflow-wrap: normal;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.holiday-day-label-triple {
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
 }
 
 .calendar-tooltip {
