@@ -2706,6 +2706,149 @@ document.addEventListener("DOMContentLoaded", function () {
     setupHolidayCalendarTooltip();
 });
 
+function setupHolidayCalendarLabelOverflow() {
+    var iResizeTimer = 0;
+
+    function labelOverflows(oLabel) {
+        return oLabel.scrollHeight > oLabel.clientHeight + 1 || oLabel.scrollWidth > oLabel.clientWidth + 1;
+    }
+
+    function getLabelCodePoint(sText, iOffset) {
+        var iFirst = sText.charCodeAt(iOffset);
+        var iSecond;
+        if (iFirst >= 0xD800 && iFirst <= 0xDBFF && iOffset + 1 < sText.length) {
+            iSecond = sText.charCodeAt(iOffset + 1);
+            if (iSecond >= 0xDC00 && iSecond <= 0xDFFF) {
+                return ((iFirst - 0xD800) * 0x400) + (iSecond - 0xDC00) + 0x10000;
+            }
+        }
+        return iFirst;
+    }
+
+    function getLabelCodePointLength(sText, iOffset) {
+        var iFirst = sText.charCodeAt(iOffset);
+        var iSecond;
+        if (iFirst >= 0xD800 && iFirst <= 0xDBFF && iOffset + 1 < sText.length) {
+            iSecond = sText.charCodeAt(iOffset + 1);
+            if (iSecond >= 0xDC00 && iSecond <= 0xDFFF) {
+                return 2;
+            }
+        }
+        return 1;
+    }
+
+    function isLabelRegionalIndicator(iCodePoint) {
+        return iCodePoint >= 0x1F1E6 && iCodePoint <= 0x1F1FF;
+    }
+
+    function isLabelSuffixCodePoint(iCodePoint) {
+        return iCodePoint == 0x200D
+            || iCodePoint == 0x20E3
+            || (iCodePoint >= 0x0300 && iCodePoint <= 0x036F)
+            || (iCodePoint >= 0x1AB0 && iCodePoint <= 0x1AFF)
+            || (iCodePoint >= 0x1DC0 && iCodePoint <= 0x1DFF)
+            || (iCodePoint >= 0x20D0 && iCodePoint <= 0x20FF)
+            || (iCodePoint >= 0xFE00 && iCodePoint <= 0xFE0F)
+            || (iCodePoint >= 0x1F3FB && iCodePoint <= 0x1F3FF)
+            || (iCodePoint >= 0xE0100 && iCodePoint <= 0xE01EF);
+    }
+
+    function getLabelSegments(sText) {
+        var aSegments = [];
+        var blJoinNext = false;
+        var iCodePoint;
+        var iLength;
+        var iOffset = 0;
+        var iRegionalIndicatorCount = 0;
+        var sPart;
+        var sSegment = "";
+        while (iOffset < sText.length) {
+            iCodePoint = getLabelCodePoint(sText, iOffset);
+            iLength = getLabelCodePointLength(sText, iOffset);
+            sPart = sText.substr(iOffset, iLength);
+            if (sSegment == "" || blJoinNext || isLabelSuffixCodePoint(iCodePoint) || (isLabelRegionalIndicator(iCodePoint) && iRegionalIndicatorCount % 2 == 1)) {
+                sSegment += sPart;
+            } else {
+                aSegments.push(sSegment);
+                sSegment = sPart;
+            }
+            if (isLabelRegionalIndicator(iCodePoint)) {
+                iRegionalIndicatorCount += 1;
+            } else {
+                iRegionalIndicatorCount = 0;
+            }
+            blJoinNext = iCodePoint == 0x200D;
+            iOffset += iLength;
+        }
+        if (sSegment != "") {
+            aSegments.push(sSegment);
+        }
+        return aSegments;
+    }
+
+    function getTrimmedLabel(aSegments, iLength) {
+        return aSegments.slice(0, iLength).join("").replace(/\s+$/g, "");
+    }
+
+    function fitLabel(oLabel) {
+        var aSegments;
+        var iBest;
+        var iHigh;
+        var iLow;
+        var iMiddle;
+        var sOriginal = oLabel.getAttribute("data-calendar-label-text");
+        var sText;
+        if (sOriginal === null) {
+            sOriginal = oLabel.textContent || "";
+            oLabel.setAttribute("data-calendar-label-text", sOriginal);
+        }
+        oLabel.textContent = sOriginal;
+        if (!labelOverflows(oLabel)) {
+            return;
+        }
+        aSegments = getLabelSegments(sOriginal);
+        iBest = 0;
+        iLow = 0;
+        iHigh = aSegments.length;
+        while (iLow <= iHigh) {
+            iMiddle = Math.floor((iLow + iHigh) / 2);
+            sText = getTrimmedLabel(aSegments, iMiddle);
+            oLabel.textContent = sText + "...";
+            if (labelOverflows(oLabel)) {
+                iHigh = iMiddle - 1;
+            } else {
+                iBest = iMiddle;
+                iLow = iMiddle + 1;
+            }
+        }
+        oLabel.textContent = getTrimmedLabel(aSegments, iBest) + "...";
+    }
+
+    function refreshLabels() {
+        var aLabels = document.querySelectorAll(".holiday-day-label:not(.holiday-day-label-single)");
+        var iI;
+        for (iI = 0; iI < aLabels.length; iI += 1) {
+            fitLabel(aLabels[iI]);
+        }
+    }
+
+    if (!document.querySelector(".holiday-day-label")) {
+        return;
+    }
+
+    refreshLabels();
+
+    window.addEventListener("load", refreshLabels);
+    window.addEventListener("resize", function () {
+        window.clearTimeout(iResizeTimer);
+        iResizeTimer = window.setTimeout(refreshLabels, 100);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    setupHolidayCalendarLabelOverflow();
+});
+
 function setupHolidayCalendarDaySelection() {
     var blDragSelectValue = true;
     var blDragging = false;

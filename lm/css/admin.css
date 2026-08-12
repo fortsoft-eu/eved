@@ -354,7 +354,6 @@ table {
 }
 
 .condensed-table, .condensed-table .database-table-name, .condensed-table .database-structure-cell, .condensed-table .database-structure-cell pre, body[data-pmd-like="1"].mail-page .mail-form-fields label, body[data-pmd-like="1"].mail-page .mail-form-fields input[type="file"], body[data-pmd-like="1"].mail-page .mail-form-fields input[type="text"], body[data-pmd-like="1"].mail-page .mail-message-label, body[data-pmd-like="1"] .email-overview-table {
-    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
     font-stretch: condensed;
 }
 
@@ -1863,13 +1862,11 @@ body.fancy-text-page .admin-controls {
 
 @media (max-width: 600px) {
     .business-hours-day-row {
-        font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
         font-stretch: condensed;
         gap: 4px;
         grid-template-columns: 30px 62px repeat(4, minmax(0, 1fr));
     }
     .subject-edit-dialog label.business-hours-closed-label, .subject-edit-dialog .business-hours-day-row input[type="text"] {
-        font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
         font-stretch: condensed;
     }
     .subject-edit-dialog .business-hours-day-row input[type="text"] {

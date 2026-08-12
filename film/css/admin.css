@@ -447,7 +447,6 @@ table {
 }
 
 .condensed-table, .condensed-table .database-table-name, .condensed-table .database-structure-cell, .condensed-table .database-structure-cell pre {
-    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
     font-stretch: condensed;
 }
 

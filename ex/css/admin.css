@@ -485,7 +485,6 @@ body[data-pmd-like="1"].mail-page .mail-form-fields {
 }
 
 body[data-pmd-like="1"].mail-page .mail-form-fields label, body[data-pmd-like="1"].mail-page .mail-form-fields input[type="file"], body[data-pmd-like="1"].mail-page .mail-form-fields input[type="text"], body[data-pmd-like="1"].mail-page .mail-message-label, .condensed-table, .condensed-table .database-table-name, .condensed-table .database-structure-cell, .condensed-table .database-structure-cell pre {
-    font-family: "Arial Narrow", "Aptos Narrow", sans-serif;
     font-stretch: condensed;
 }
 
@@ -875,7 +874,7 @@ body.mail-page .admin-controls .mail-send-button {
 .holiday-calendar-grid {
     align-items: start;
     display: grid;
-    gap: 12px;
+    gap: 5px;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     user-select: none;
 }
@@ -974,25 +973,20 @@ body.mail-page .admin-controls .mail-send-button {
 }
 
 .holiday-day-label {
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    display: -webkit-box;
+    display: block;
     font-size: 10px;
     hyphens: auto;
-    line-clamp: 2;
-    line-height: 1;
+    line-height: 10px;
     margin-top: 0;
+    max-height: 20px;
+    min-width: 0;
     overflow: hidden;
     overflow-wrap: normal;
-    text-overflow: ellipsis;
     word-break: normal;
 }
 
 .holiday-day-label-single {
-    -webkit-line-clamp: 1;
-    display: block;
-    line-clamp: 1;
-    min-width: 0;
+    max-height: 10px;
     overflow: hidden;
     overflow-wrap: normal;
     text-overflow: ellipsis;
@@ -1000,8 +994,7 @@ body.mail-page .admin-controls .mail-send-button {
 }
 
 .holiday-day-label-triple {
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    max-height: 30px;
 }
 
 .calendar-tooltip {
