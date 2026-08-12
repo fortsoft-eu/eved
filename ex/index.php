@@ -257,6 +257,7 @@ renderMenu();
     <button type="button" class="button-link js-complex-filter-open<?php echo $blFullListComplexFilterActive ? " complex-filter-active" : ""; ?>" aria-pressed="<?php echo $blFullListComplexFilterActive ? "true" : "false"; ?>">Complex</button>
     <button type="submit" class="button-link js-complex-filter-page-reset<?php echo $blFullListComplexFilterActive ? " complex-filter-active" : ""; ?>" form="complex-filter-reset-form" title="Reset complex filter">Reset</button>
     <button type="button" class="button-link js-index-settings-open">Settings</button>
+    <span class="table-record-count js-table-record-count" data-table-count="contacts-table" aria-live="polite"><?php echo count($aRows); ?></span>
   </p>
   <form id="complex-filter-reset-form" method="post" action="<?php echo $sBaseUrl; ?>" enctype="application/x-www-form-urlencoded" hidden>
     <input type="hidden" name="action" value="reset_full_list_complex_filter">

@@ -262,7 +262,8 @@ $iTime = sendPageHeaders();
     <button type="button" class="button-link js-index-settings-open">Settings</button>
 <?php
 
-echo $sToolbarHtml;
+echo $sToolbarHtml,
+    . "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"debts-table\" aria-live=\"polite\">" . count($aRows) . "</span>\n";
 
 ?>
   </p>

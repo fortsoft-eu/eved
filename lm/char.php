@@ -192,6 +192,10 @@ if ($aCharacterPaletteEmojiEntries) {
     array_multisort($aCharacterPaletteEmojiGroupSort, SORT_ASC, SORT_NUMERIC, $aCharacterPaletteEmojiSort, SORT_ASC, SORT_NUMERIC, $aCharacterPaletteEmojiFallbackSort, SORT_ASC, SORT_STRING, $aCharacterPaletteEmojiEntries);
 }
 $aCharacterPaletteEntries = array_merge($aCharacterPaletteNonEmojiEntries, $aCharacterPaletteEmojiEntries);
+$iCharacterPaletteButtonCount = 0;
+foreach ($aCharacterPaletteEntries as $aCharacterPaletteEntry) {
+    $iCharacterPaletteButtonCount += count($aCharacterPaletteEntry["variants"]) > 0 ? count($aCharacterPaletteEntry["variants"]) : 1;
+}
 $iTime = sendPageHeaders();
 
 ?>
@@ -220,6 +224,7 @@ renderMenu();
     <button type="button" id="character-text-presentation" class="button-link">Text</button>
     <button type="button" id="character-emoji-presentation" class="button-link">Emoji</button>
     <button type="button" id="character-reset" class="button-link">Reset</button>
+    <span class="table-record-count" aria-live="polite"><?php echo $iCharacterPaletteButtonCount; ?></span>
   </p>
   <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="get" id="character-converter-form" class="snippet-board-form mail-form character-converter-form" autocomplete="on" novalidate>
     <div class="mail-form-fields">

@@ -178,6 +178,7 @@ $iTime = sendPageHeaders();
 
 echo "  <p class=\"admin-controls\">\n";
 renderMenu();
+echo "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"film-link-table\" aria-live=\"polite\">" . count($aLinks) . "</span>\n";
 if ($sMessage) {
     echo "    <span class=\"message-box message-" . html($sMessageType) . "\" id=\"message-box\">" . $sMessage . "</span>\n";
 }
@@ -237,7 +238,7 @@ foreach ($aOrders as $aOrder) {
     </div>
   </div>
   <div class="film-link-table-scroll js-film-link-table-scroll">
-  <table class="<?php echo trim(getCondensedTableClass() . " film-link-table"); ?>">
+  <table id="film-link-table" class="<?php echo trim(getCondensedTableClass() . " film-link-table"); ?>">
     <thead>
       <tr>
         <th style="text-align: right; width: 1px;">#</th>

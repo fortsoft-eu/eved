@@ -303,6 +303,7 @@ renderMenu();
 if ($blCanEdit) {
     echo "    <button type=\"button\" class=\"button-link js-add-group\">New</button>\n";
 }
+echo "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"groups-table\" aria-live=\"polite\">" . count($aGroups) . "</span>\n";
 
 ?>
   </p>

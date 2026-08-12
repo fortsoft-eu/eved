@@ -1241,6 +1241,88 @@ function setupFilterFocusButton() {
 function setupTableFilter() {
     var aFilters = document.querySelectorAll(".js-table-filter");
 
+    function getTableRecordRows(oTable) {
+        if (!oTable) {
+            return [];
+        }
+        if (oTable.tBodies && oTable.tBodies.length == 1) {
+            return oTable.tBodies[0].rows;
+        }
+        return oTable.querySelectorAll("tbody tr");
+    }
+
+    function isTableRecordCountRow(oRow) {
+        if ((" " + oRow.className + " ").indexOf(" quick-filter-static-row ") !== -1 || (" " + oRow.className + " ").indexOf(" table-record-count-ignore ") !== -1 || oRow.hidden || oRow.style.display == "none") {
+            return false;
+        }
+        return typeof oRow.getClientRects != "function" || oRow.getClientRects().length > 0;
+    }
+
+    function refreshTableRecordCount(oTable, aRows) {
+        var aCounts = oTable && oTable.id ? document.querySelectorAll(".js-table-record-count[data-table-count=\"" + oTable.id + "\"]") : [];
+        var iCount = 0;
+        if (aCounts.length < 1) {
+            return;
+        }
+        if (!aRows) {
+            aRows = getTableRecordRows(oTable);
+        }
+        for (var iI = 0; iI < aRows.length; iI += 1) {
+            if (isTableRecordCountRow(aRows[iI])) {
+                iCount += 1;
+            }
+        }
+        for (var iJ = 0; iJ < aCounts.length; iJ += 1) {
+            aCounts[iJ].textContent = iCount;
+        }
+    }
+
+    function scheduleTableRecordCount(oTable) {
+        if (!oTable) {
+            return;
+        }
+        if (!window.setTimeout || !window.clearTimeout) {
+            refreshTableRecordCount(oTable);
+            return;
+        }
+        if (oTable._tableRecordCountTimer) {
+            window.clearTimeout(oTable._tableRecordCountTimer);
+        }
+        oTable._tableRecordCountTimer = window.setTimeout(function () {
+            oTable._tableRecordCountTimer = null;
+            refreshTableRecordCount(oTable);
+        }, 0);
+    }
+
+    function watchTableRecordCount(oTable) {
+        if (!window.MutationObserver || !oTable || oTable._tableRecordCountObserver) {
+            return;
+        }
+        oTable._tableRecordCountObserver = new MutationObserver(function () {
+            scheduleTableRecordCount(oTable);
+        });
+        oTable._tableRecordCountObserver.observe(oTable, {
+            "attributes": true,
+            "attributeFilter": ["class", "hidden", "style"],
+            "childList": true,
+            "subtree": true
+        });
+    }
+
+    function refreshTableRecordCounts() {
+        var aCounts = document.querySelectorAll(".js-table-record-count[data-table-count]");
+        var oTable;
+        for (var iI = 0; iI < aCounts.length; iI += 1) {
+            oTable = document.getElementById(aCounts[iI].getAttribute("data-table-count") || "");
+            if (oTable) {
+                refreshTableRecordCount(oTable);
+                watchTableRecordCount(oTable);
+            } else {
+                aCounts[iI].textContent = 0;
+            }
+        }
+    }
+
     function sendQuickTableFilterValue(oFilter, sAction) {
         var oData;
         if (!window.fetch || !window.FormData || !oFilter || !oFilter.id) {
@@ -1314,6 +1396,7 @@ function setupTableFilter() {
                     aRows[iJ].style.display = sDisplay;
                 }
             }
+            refreshTableRecordCount(oTable, aRows);
         };
 
         function scheduleFilterTable() {
@@ -1380,13 +1463,16 @@ function setupTableFilter() {
         }, 0);
         window.addEventListener("pageshow", function () {
             refreshFilterFocusButton(oFilter);
+            refreshTableRecordCount(document.getElementById(oFilter.getAttribute("data-table-filter")));
         });
+        refreshTableRecordCount(document.getElementById(oFilter.getAttribute("data-table-filter")));
         focusElement(oFilter, true);
     }
 
     for (var iI = 0; iI < aFilters.length; iI += 1) {
         initializeTableFilter(aFilters[iI]);
     }
+    refreshTableRecordCounts();
 }
 
 function setFieldValue(oForm, sName, sValue) {

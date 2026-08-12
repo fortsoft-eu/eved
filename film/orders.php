@@ -48,6 +48,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
+    <span class="table-record-count js-table-record-count" data-table-count="orders-table" aria-live="polite"><?php echo count($aOrders); ?></span>
   </p>
   <table id="orders-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>

@@ -164,6 +164,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="button" class="button-link js-index-settings-open">Settings</button>
+    <span class="table-record-count js-table-record-count" data-table-count="monthly-overview-tables" aria-live="polite"><?php echo count($aMonths) * count($aOverviewColumnGroups); ?></span>
   </p>
 <?php
 

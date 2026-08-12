@@ -209,6 +209,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php
 
+echo "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"equipment-table\" aria-live=\"polite\">" . count($aEquipment) . "</span>\n";
 if ($sMessage) {
     echo "    <span class=\"message-box message-" . html($sMessageType) . "\" id=\"message-box\">" . $sMessage . "</span>\n";
 }

@@ -651,8 +651,10 @@ function menuAdminRenderSectionGap() {
     return "          <tr class=\"menu-admin-section-gap admin-static-row quick-filter-static-row\"><td colspan=\"10\"></td></tr>\n";
 }
 
-function menuAdminRenderTables($oPdo) {
-    $aRows = menuAdminFetchRows($oPdo);
+function menuAdminRenderTables($oPdo, $aRows = null) {
+    if ($aRows === null) {
+        $aRows = menuAdminFetchRows($oPdo);
+    }
     if (!$aRows) {
         return "  <p>No records found.</p>\n";
     }
@@ -1619,8 +1621,10 @@ function dashboardServiceRenderRow($aRow) {
         . "</tr>\n";
 }
 
-function dashboardServiceRenderRows($oPdo) {
-    $aRows = dashboardServiceFetchRows($oPdo);
+function dashboardServiceRenderRows($oPdo, $aRows = null) {
+    if ($aRows === null) {
+        $aRows = dashboardServiceFetchRows($oPdo);
+    }
     if (!$aRows) {
         return "";
     }
@@ -2280,8 +2284,10 @@ function issueTrackerRenderRow($aRow) {
         . "</tr>\n";
 }
 
-function issueTrackerRenderRows($oPdo) {
-    $aRows = issueTrackerFetchRows($oPdo);
+function issueTrackerRenderRows($oPdo, $aRows = null) {
+    if ($aRows === null) {
+        $aRows = issueTrackerFetchRows($oPdo);
+    }
     if (!$aRows) {
         return "";
     }
@@ -2732,8 +2738,10 @@ function phoneAccountsRenderRow($aRow, $blSecretsUnlocked) {
         . "</tr>\n";
 }
 
-function phoneAccountsRenderRows($oPdo, $sKey = "") {
-    $aRows = phoneAccountsFetchRows($oPdo, $sKey);
+function phoneAccountsRenderRows($oPdo, $sKey = "", $aRows = null) {
+    if ($aRows === null) {
+        $aRows = phoneAccountsFetchRows($oPdo, $sKey);
+    }
     $blSecretsUnlocked = $sKey != "";
     if (!$aRows) {
         return "";
@@ -3067,8 +3075,10 @@ function emailOverviewFetchData($oPdo) {
     );
 }
 
-function emailOverviewRenderTable($oPdo) {
-    $aData = emailOverviewFetchData($oPdo);
+function emailOverviewRenderTable($oPdo, $aData = null) {
+    if ($aData === null) {
+        $aData = emailOverviewFetchData($oPdo);
+    }
     if (!$aData["domains"] || !$aData["local_parts"]) {
         return "  <p id=\"email-overview-empty\">No records found.</p>\n";
     }

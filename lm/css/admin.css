@@ -247,6 +247,14 @@ textarea {
     pointer-events: none;
 }
 
+.table-record-count {
+    align-items: center;
+    background: #F0F0F0;
+    border: 1px solid #C0C0C0;
+    display: inline-flex;
+    justify-content: center;
+}
+
 .confirm-dialog {
     background: rgba(0, 0, 0, 0.25);
     box-sizing: border-box;
@@ -372,7 +380,7 @@ table {
     width: 27px;
 }
 
-.admin-controls .button-link {
+.admin-controls .button-link, .admin-controls .table-record-count {
     box-sizing: border-box;
     flex: 0 0 73px;
     height: 27px;
@@ -403,7 +411,7 @@ body.mail-page .admin-controls .mail-send-button {
     height: 27px;
 }
 
-.admin-controls .js-filter-operator, .admin-controls .js-filter-reset, .admin-controls .js-index-settings-open, .admin-controls .js-add-menu-item, .admin-controls .js-add-email-domain, .admin-controls .js-add-issue, .admin-controls .js-add-phone-account, .admin-controls .js-add-business-hours, .admin-controls .js-fancy-text-convert {
+.admin-controls .js-filter-operator, .admin-controls .js-filter-reset, .admin-controls .js-index-settings-open, .admin-controls .js-add-menu-item, .admin-controls .js-add-email-domain, .admin-controls .js-add-issue, .admin-controls .js-add-phone-account, .admin-controls .js-add-business-hours, .admin-controls .js-fancy-text-convert, .admin-controls .table-record-count {
     width: 75px;
 }
 

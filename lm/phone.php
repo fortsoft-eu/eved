@@ -90,7 +90,8 @@ try {
     $blLmEncryptionConfigured = getLmEncryptionVerifier($oPdo) != "";
     $sLmEncryptionKey = getVerifiedLmEncryptionSessionKey($oPdo);
     $blPhoneAccountsUnlocked = $sLmEncryptionKey != "";
-    $sPhoneAccountsHtml = phoneAccountsRenderRows($oPdo, $sLmEncryptionKey);
+    $aPhoneAccountRows = phoneAccountsFetchRows($oPdo, $sLmEncryptionKey);
+    $sPhoneAccountsHtml = phoneAccountsRenderRows($oPdo, $sLmEncryptionKey, $aPhoneAccountRows);
     $aPhoneAccountDefaults = phoneAccountsGetNewDefaults($oPdo);
     $aPhoneAccountCurrencies = phoneAccountsGetCurrencyOptions($oPdo, $aPhoneAccountDefaults["paid_currency"]);
 } catch (Exception $oException) {
@@ -131,6 +132,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="button" class="button-link js-add-phone-account"<?php echo $blPhoneAccountsUnlocked ? "" : " disabled aria-disabled=\"true\" title=\"Unlock encrypted data to add\""; ?>>New</button>
+    <span class="table-record-count js-table-record-count" data-table-count="phone-accounts-table" aria-live="polite"><?php echo count($aPhoneAccountRows); ?></span>
   </p>
   <div id="phone-accounts-data" data-default-paid-amount="<?php echo html($aPhoneAccountDefaults["paid_amount"]); ?>" data-default-paid-currency="<?php echo html($aPhoneAccountDefaults["paid_currency"]); ?>" data-currencies="<?php echo html(json_encode($aPhoneAccountCurrencies)); ?>" hidden></div>
 <?php

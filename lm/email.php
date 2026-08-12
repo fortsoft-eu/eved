@@ -28,7 +28,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "create_email_domain") {
 }
 
 try {
-    $sEmailTableHtml = emailOverviewRenderTable($oPdo);
+    $aEmailOverviewData = emailOverviewFetchData($oPdo);
+    $sEmailTableHtml = emailOverviewRenderTable($oPdo, $aEmailOverviewData);
+    $iEmailOverviewRecordCount = (!$aEmailOverviewData["domains"] || !$aEmailOverviewData["local_parts"]) ? 0 : count($aEmailOverviewData["local_parts"]);
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
@@ -69,6 +71,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="button" class="button-link js-add-email-domain">New</button>
+    <span class="table-record-count js-table-record-count" data-table-count="email-overview-table" aria-live="polite"><?php echo $iEmailOverviewRecordCount; ?></span>
   </p>
 <?php
 

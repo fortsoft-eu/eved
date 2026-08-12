@@ -129,7 +129,8 @@ renderMenu();
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
 <?php
 
-echo $sToolbarHtml;
+echo $sToolbarHtml,
+    . "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"types-table\" aria-live=\"polite\">" . count($aRows) . "</span>\n";
 
 ?>
   </p>

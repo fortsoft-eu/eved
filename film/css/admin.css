@@ -331,6 +331,14 @@ input[type="date"], input[type="datetime-local"], input[type="number"], input[ty
     pointer-events: none;
 }
 
+.table-record-count {
+    align-items: center;
+    background: #F0F0F0;
+    border: 1px solid #C0C0C0;
+    display: inline-flex;
+    justify-content: center;
+}
+
 .confirm-dialog {
     background: rgba(0, 0, 0, 0.25);
     box-sizing: border-box;
@@ -465,7 +473,7 @@ table {
     width: 27px;
 }
 
-.admin-controls .button-link {
+.admin-controls .button-link, .admin-controls .table-record-count {
     box-sizing: border-box;
     flex: 0 0 73px;
     height: 27px;
@@ -484,7 +492,7 @@ table {
     width: 154px;
 }
 
-.admin-controls .js-filter-operator, .admin-controls .js-filter-reset {
+.admin-controls .js-filter-operator, .admin-controls .js-filter-reset, .admin-controls .table-record-count {
     width: 75px;
 }
 

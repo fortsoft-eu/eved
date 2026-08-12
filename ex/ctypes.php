@@ -267,6 +267,7 @@ renderMenu();
 if ($blCanEdit) {
     echo "    <button type=\"button\" class=\"button-link js-add-contact-type\">New</button>\n";
 }
+echo "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"contact-types-table\" aria-live=\"polite\">" . count($aContactTypes) . "</span>\n";
 
 ?>
   </p>

@@ -40,7 +40,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "toggle_issue_status") {
 }
 
 try {
-    $sIssuesHtml = issueTrackerRenderRows($oPdo);
+    $aIssueRows = issueTrackerFetchRows($oPdo);
+    $sIssuesHtml = issueTrackerRenderRows($oPdo, $aIssueRows);
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
@@ -79,6 +80,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="button" class="button-link js-add-issue">New</button>
+    <span class="table-record-count js-table-record-count" data-table-count="issues-table" aria-live="polite"><?php echo count($aIssueRows); ?></span>
   </p>
 <?php
 

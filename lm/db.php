@@ -135,6 +135,7 @@ renderMenu();
     <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo html($sSchemaDownloadUrl); ?>">Copy schema link</button>
     <button type="submit" form="database-backup-download-form" class="button-link database-action-button">Download backup</button>
     <button type="button" class="button-link database-action-button js-copy-link" data-copy-link="<?php echo html($sBackupDownloadUrl); ?>">Copy backup link</button>
+    <span class="table-record-count js-table-record-count" data-table-count="database-table" aria-live="polite"><?php echo count($aTables); ?></span>
   </p>
   <table id="database-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>

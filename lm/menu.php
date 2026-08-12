@@ -79,6 +79,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
 }
 
 $sFilterValue = getQuickTableFilterValue();
+$aMenuRows = menuAdminFetchRows($oPdo);
+$sMenuTablesHtml = menuAdminRenderTables($oPdo, $aMenuRows);
 
 $iTime = sendPageHeaders();
 
@@ -112,9 +114,14 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="button" class="button-link js-add-menu-item">New</button>
+    <span class="table-record-count js-table-record-count" data-table-count="menu-admin-tables" aria-live="polite"><?php echo count($aMenuRows); ?></span>
   </p>
   <div id="menu-admin-tables" class="admin-table-groups">
-<?php echo menuAdminRenderTables($oPdo); ?>
+<?php
+
+echo $sMenuTablesHtml;
+
+?>
   </div>
   <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>

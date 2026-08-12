@@ -1048,6 +1048,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <button type="button" class="button-link js-index-settings-open">Settings</button>
+    <span class="table-record-count js-table-record-count" data-table-count="interactions-table" aria-live="polite"><?php echo count($aCommunicationRows); ?></span>
   </p>
   <div class="confirm-dialog index-settings-dialog" id="index-settings-dialog" hidden>
     <form class="confirm-dialog-box index-settings-form" method="post" action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" enctype="application/x-www-form-urlencoded">

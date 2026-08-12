@@ -1103,6 +1103,7 @@ renderMenu();
 if ($blCanEdit) {
     echo "    <button type=\"button\" class=\"button-link js-add-subject\">New</button>\n";
 }
+echo "    <span class=\"table-record-count js-table-record-count\" data-table-count=\"subjects-table\" aria-live=\"polite\">" . count($aRows) . "</span>\n";
 
 ?>
   </p>

@@ -621,7 +621,7 @@ function renderDebtAdminRows($aRows, $blShowActions = true, $blUseEuropeanAmount
     }
     if ($aRows) {
         $sFormattedTotal = formatAmount($fTotal, $blUseEuropeanAmountFormat) . ($blTotalConversionFailed ? "" : " " . $sTotalCurrency);
-        $sHtml .= "      <tr><td class=\"debt-total\">Total</td><td class=\"numeric debt-total\">" . html($sFormattedTotal) . renderCopyAction($sFormattedTotal) . "</td><td colspan=\"" . ($blShowActions ? 6 : 5) . "\"></td></tr>\n";
+        $sHtml .= "      <tr class=\"table-record-count-ignore\"><td class=\"debt-total\">Total</td><td class=\"numeric debt-total\">" . html($sFormattedTotal) . renderCopyAction($sFormattedTotal) . "</td><td colspan=\"" . ($blShowActions ? 6 : 5) . "\"></td></tr>\n";
     }
     return $sHtml;
 }

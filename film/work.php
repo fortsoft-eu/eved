@@ -80,6 +80,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="AND">AND</button>
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
+    <span class="table-record-count js-table-record-count" data-table-count="film-work-table" aria-live="polite"><?php echo count($aRows); ?></span>
     <span class="message-box message-success js-film-work-message" style="display: none;" hidden></span>
   </p>
 <?php
