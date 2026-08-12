@@ -20,19 +20,20 @@ if ($blPortalIndexAllowed) {
         array("href" => "kf/", "icon" => "&#128182;", "name" => "Kesef", "title" => "Income and expenses"),
         array("href" => "film/", "icon" => "&#127902;&#65039;", "name" => "Film", "title" => "Film scans gallery")
     );
-    $aSecurityLinks = array();
-    $aSecurityLinks[] = array("href" => "https://admin.aerohosting.cz/", "icon" => "&#128452;&#65039;", "name" => "AeroHosting", "title" => "Hosting administration");
+    $aLinks = array();
+    $aLinks[] = array("href" => "https://admin.aerohosting.cz/", "icon" => "&#128745;&#65039;", "name" => "AeroHosting", "title" => "Hosting administration");
+    $aLinks[] = array("href" => "https://myadmin.aerohosting.cz/", "icon" => "&#128452;&#65039;", "name" => "MyAdmin", "title" => "Database administration");
     list($user, $pass) = arrayReadNext($aAWStatsAccounts);
-    $aSecurityLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats.aerohosting.cz/", "icon" => "&#128202;", "name" => "AWStats", "title" => html($user) . " site statistics");
+    $aLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats.aerohosting.cz/", "icon" => "&#128202;", "name" => "AWStats", "title" => html($user) . " site statistics");
     list($user, $pass) = arrayReadNext($aAWStatsAccounts);
-    $aSecurityLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats.aerohosting.cz/", "icon" => "&#128200;", "name" => "AWStats", "title" => html($user) . " site statistics");
-    $aSecurityLinks[] = array("href" => "https://securityheaders.com/", "icon" => "&#128737;&#65039;", "name" => "Security Headers", "title" => "HTTP security header scanner");
-    $aSecurityLinks[] = array("href" => "https://developer.mozilla.org/en-US/observatory", "icon" => "&#128301;", "name" => "MDN Observatory", "title" => "Mozilla site security scanner");
-    $aSecurityLinks[] = array("href" => "https://github.com/fortsoft-eu", "icon" => "&#128008;", "name" => "GitHub", "title" => "Source code hosting");
-    $aSecurityLinks[] = array("href" => "https://unicode.org/emoji/charts/full-emoji-list.html", "icon" => "&#9786;&#65039;", "name" => "Emoji List", "title" => "Unicode full emoji list");
-    $aSecurityLinks[] = array("href" => "https://www.profisms.cz/", "icon" => "&#128241;", "name" => "ProfiSMS", "title" => "SMS administration");
-    $aSecurityLinks[] = array("href" => "https://marketplace.apilayer.com/whois-api", "icon" => "&#128268;", "name" => "APILayer WHOIS", "title" => "APILayer WHOIS API dashboard");
-    $aSecurityLinks[] = array("href" => "https://app.abstractapi.com/dashboard", "icon" => "&#129513;", "name" => "Abstract API", "title" => "Abstract API dashboard");
+    $aLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats.aerohosting.cz/", "icon" => "&#128200;", "name" => "AWStats", "title" => html($user) . " site statistics");
+    $aLinks[] = array("href" => "https://securityheaders.com/", "icon" => "&#128737;&#65039;", "name" => "Security Headers", "title" => "HTTP security header scanner");
+    $aLinks[] = array("href" => "https://developer.mozilla.org/en-US/observatory", "icon" => "&#128301;", "name" => "MDN Observatory", "title" => "Mozilla site security scanner");
+    $aLinks[] = array("href" => "https://github.com/fortsoft-eu", "icon" => "&#128008;", "name" => "GitHub", "title" => "Source code hosting");
+    $aLinks[] = array("href" => "https://unicode.org/emoji/charts/full-emoji-list.html", "icon" => "&#9786;&#65039;", "name" => "Emoji List", "title" => "Unicode full emoji list");
+    $aLinks[] = array("href" => "https://www.profisms.cz/", "icon" => "&#128241;", "name" => "ProfiSMS", "title" => "SMS administration");
+    $aLinks[] = array("href" => "https://marketplace.apilayer.com/whois-api", "icon" => "&#128268;", "name" => "APILayer WHOIS", "title" => "APILayer WHOIS API dashboard");
+    $aLinks[] = array("href" => "https://app.abstractapi.com/dashboard", "icon" => "&#129513;", "name" => "Abstract API", "title" => "Abstract API dashboard");
 
 ?>
 <!DOCTYPE html>
@@ -104,9 +105,10 @@ if ($blPortalIndexAllowed) {
         outline-offset: 0;
     }
     .project-icon {
-        align-self: center;
+        align-self: start;
         font-size: 36px;
         line-height: 1;
+        margin-top: 14px;
         text-align: center;
     }
     .project-name {
@@ -166,12 +168,12 @@ if ($blPortalIndexAllowed) {
     <ul class="project-list">
 <?php
 
-    foreach ($aSecurityLinks as $aSecurityLink) {
-        $sHref = (string)$aSecurityLink["href"];
+    foreach ($aLinks as $aLink) {
+        $sHref = (string)$aLink["href"];
         if (!preg_match("/^[a-z][a-z0-9+.-]*:/i", $sHref) && substr($sHref, 0, 1) != "/") {
             $sHref = $sBaseUrl . $sHref;
         }
-        echo "      <li><a class=\"project-link\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"project-icon\" aria-hidden=\"true\">" . $aSecurityLink["icon"] . "</span><span><span class=\"project-name\">" . html($aSecurityLink["name"]) . "</span><span class=\"project-title\">" . html($aSecurityLink["title"]) . "</span></span></a></li>\n";
+        echo "      <li><a class=\"project-link\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"project-icon\" aria-hidden=\"true\">" . $aLink["icon"] . "</span><span><span class=\"project-name\">" . html($aLink["name"]) . "</span><span class=\"project-title\">" . html($aLink["title"]) . "</span></span></a></li>\n";
     }
 
 ?>
