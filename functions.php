@@ -10,6 +10,9 @@ function isTrustedClient($aAllowedIps) {
     if (!isAllowedIp($aAllowedIps) || $sTrustedUserAgent == "" || $sTrustedAcceptLanguage == "") {
         return false;
     }
+    if (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) || isset($_SERVER["HTTP_CF_WORKER"]) || isset($_SERVER["HTTP_CF_CONNECTING_IP"]) || isset($_SERVER["HTTP_CF_VISITOR"]) || isset($_SERVER["HTTP_CF_RAY"]) || isset($_SERVER["HTTP_CDN_LOOP"]) || isset($_SERVER["HTTP_CF_EW_VIA"])) {
+        return false;
+    }
     if (!isset($_SERVER["HTTP_USER_AGENT"], $_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
         return false;
     }
@@ -1237,6 +1240,8 @@ function requireNamedCsrfToken($sTokenName, $blJsonResponse = false) {
 }
 
 function getCurrentUrlWithoutAuthActionForToken($sTokenName) {
+    global $sScheme, $sHost;
+
     $sPath = isset($_SERVER["REQUEST_URI"]) ? (string)$_SERVER["REQUEST_URI"] : "";
     $aParts = parse_url($sPath);
     $sResult = isset($aParts["path"]) ? $aParts["path"] : "";
@@ -1249,7 +1254,7 @@ function getCurrentUrlWithoutAuthActionForToken($sTokenName) {
     if (count($aQuery) > 0) {
         $sResult .= "?" . http_build_query($aQuery, "", "&");
     }
-    return $sResult == "" ? "/" : $sResult;
+    return $sScheme . "://" . $sHost . ($sResult == "" ? "/" : $sResult);
 }
 
 function getLoginToken() {
@@ -1334,8 +1339,8 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "        <input type=\"text\" id=\"login-user\" name=\"user_name\" autocomplete=\"username\" required autofocus>\n",
         "        <label for=\"login-password\">Password</label>\n",
         "        <input type=\"password\" id=\"login-password\" name=\"password\" autocomplete=\"current-password\" required>\n",
-        $sMessageHtml
-        . "      </div>\n",
+        $sMessageHtml,
+        "      </div>\n",
         "      <div class=\"confirm-dialog-actions\">\n",
         "        <button type=\"submit\" name=\"action\" value=\"login\" class=\"confirm-dialog-button\">Login</button>\n",
         "        <button type=\"submit\" name=\"action\" value=\"cancel\" class=\"confirm-dialog-button\" formnovalidate>Cancel</button>\n",
