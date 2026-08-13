@@ -573,7 +573,7 @@ if ($sBdPostAction == "update_subject_group") {
     }
     try {
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_group_subject WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         if (!$oStatement->fetch()) {
             $oPdo->rollBack();
@@ -630,13 +630,13 @@ if ($sBdPostAction == "create_subject_group") {
             $oStatement->execute(array("name" => $sGroupName));
             $iGroupId = (int)$oPdo->lastInsertId();
         }
-        $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_group_subject WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         if ($oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Subject is already assigned to this group."), 409);
         }
-        $oStatement = $oPdo->prepare("INSERT INTO ex_subject_groups (subject_id, group_id) VALUES (:subject_id, :group_id)");
+        $oStatement = $oPdo->prepare("INSERT INTO ex_group_subject (subject_id, group_id) VALUES (:subject_id, :group_id)");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         $oPdo->commit();
         $aResponse = bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit);
@@ -827,13 +827,13 @@ if ($sBdPostAction == "delete_subject_group") {
     }
     try {
         $oPdo->beginTransaction();
-        $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_group_subject WHERE subject_id = :subject_id AND group_id = :group_id FOR UPDATE");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         if (!$oStatement->fetch()) {
             $oPdo->rollBack();
             sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));
         }
-        $oStatement = $oPdo->prepare("DELETE FROM ex_subject_groups WHERE subject_id = :subject_id AND group_id = :group_id");
+        $oStatement = $oPdo->prepare("DELETE FROM ex_group_subject WHERE subject_id = :subject_id AND group_id = :group_id");
         $oStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iGroupId));
         $oPdo->commit();
         sendJsonAndExit(bdGetUpdatedSubjectResponse($oPdo, $iSubjectId, $aBirthdaySettings, $blCanEdit));

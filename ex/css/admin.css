@@ -824,10 +824,19 @@ body.mail-page .admin-controls .mail-send-button {
     width: 38px;
 }
 
+.admin-controls .calendar-type {
+    box-sizing: border-box;
+    height: 27px;
+    margin-top: 0;
+    min-width: 0;
+    padding: 3px 4px 5px 4px;
+    width: 154px;
+}
+
 .admin-controls .calendar-year-input {
     box-sizing: border-box;
     min-width: 0;
-    width: 154px;
+    width: 73px;
 }
 
 .holiday-legend {
@@ -1414,41 +1423,6 @@ tr:nth-child(even), #addresses-table tr:nth-child(even) > .address-cell, #contac
     border-collapse: collapse;
 }
 
-.schema-table[data-table="fs_film_exposure_dates"], .schema-table[data-table="ex_subject_names"] {
-    grid-column: 1;
-    grid-row: 1;
-}
-
-.schema-table[data-table="fs_film_scans"], .schema-table[data-table="ex_subjects"] {
-    grid-column: 2;
-    grid-row: 1;
-}
-
-.schema-table[data-table="fs_film_photos"], .schema-table[data-table="ex_persons"] {
-    grid-column: 3;
-    grid-row: 1;
-}
-
-.schema-table[data-table="fs_flickr_photosets"] {
-    grid-column: 1;
-    grid-row: 2 / span 2;
-}
-
-.schema-table[data-table="fs_photo_lab_orders"], .schema-table[data-table="ex_subject_contacts"] {
-    grid-column: 2;
-    grid-row: 2;
-}
-
-.schema-table[data-table="fs_photo_tags"], .schema-table[data-table="ex_subject_groups"] {
-    grid-column: 2;
-    grid-row: 3;
-}
-
-.schema-table[data-table="fs_photo_equip"], .schema-table[data-table="ex_subject_notes"] {
-    grid-column: 3;
-    grid-row: 3;
-}
-
 .schema-table caption {
     padding: 8px;
     background: #DDD;
@@ -1515,7 +1489,7 @@ tr:nth-child(even), #addresses-table tr:nth-child(even) > .address-cell, #contac
 }
 
 .schema-relations {
-    margin-top: 24px;
+    margin-top: 0;
 }
 
 body.phpinfo-page {
@@ -1651,9 +1625,10 @@ body.phpinfo-page .admin-controls {
 
 .schema-grid {
     grid-template-columns: repeat(3, minmax(340px, 1fr));
+    grid-template-rows: minmax(400px, auto);
     column-gap: 126px;
-    padding-bottom: 55px;
-    row-gap: 92px;
+    padding-bottom: 60px;
+    row-gap: 60px;
 }
 
 .schema-lines {
@@ -1664,64 +1639,129 @@ body.phpinfo-page .admin-controls {
     cursor: help;
 }
 
-.schema-table[data-table="ex_contacts"] {
+.schema-table[data-table="ex_subject_names"] {
     grid-column: 1;
     grid-row: 2;
 }
 
-.schema-table[data-table="ex_phone_book"] {
-    align-self: end;
+.schema-table[data-table="ex_subjects"] {
     grid-column: 2;
     grid-row: 2;
 }
 
-.schema-table[data-table="ex_subject_addresses"] {
+.schema-table[data-table="ex_persons"] {
     grid-column: 3;
     grid-row: 2;
 }
 
-.schema-table[data-table="ex_contact_types"] {
+.schema-table[data-table="ex_subject_contacts"] {
+    align-self: start;
     grid-column: 1;
     grid-row: 3;
 }
 
-.schema-table[data-table="ex_group_permissions"] {
+.schema-table[data-table="ex_contacts"] {
+    align-self: center;
+    grid-column: 1;
+    grid-row: 3;
+}
+
+.schema-table[data-table="ex_phone_book"] {
+    align-self: end;
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.schema-table[data-table="ex_calendar_fetches"] {
+    align-self: end;
     grid-column: 1;
     grid-row: 4;
+}
+
+.schema-table[data-table="ex_name_days"] {
+    align-self: start;
+    grid-column: 1;
+    grid-row: 4;
+}
+
+.schema-table[data-table="ex_name_day_groups"] {
+    align-self: start;
+    grid-column: 1;
+    grid-row: 4;
+    margin-top: 181px;
+}
+
+.schema-table[data-table="ex_subject_addresses"] {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.schema-table[data-table="ex_contact_types"] {
+    align-self: end;
+    grid-column: 1;
+    grid-row: 3;
+}
+
+.schema-table[data-table="ex_group_subject"] {
+    align-self: end;
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.schema-table[data-table="ex_group_permissions"] {
+    align-self: end;
+    grid-column: 3;
+    grid-row: 1;
 }
 
 .schema-table[data-table="ex_groups"] {
-    grid-column: 2;
-    grid-row: 4;
+    align-self: start;
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.schema-table[data-table="ex_subject_notes"] {
+    align-self: start;
+    grid-column: 3;
+    grid-row: 3;
 }
 
 .schema-table[data-table="ex_subject_nicknames"] {
+    align-self: end;
     grid-column: 3;
-    grid-row: 4;
+    grid-row: 3;
 }
 
 .schema-table[data-table="ex_permissions"] {
+    align-self: end;
     grid-column: 1;
-    grid-row: 5;
+    grid-row: 1;
 }
 
 .schema-table[data-table="ex_users"] {
+    align-self: start;
     grid-column: 2;
-    grid-row: 5;
+    grid-row: 1;
 }
 
 .schema-table[data-table="ex_user_permissions"] {
-    grid-column: 3;
-    grid-row: 5;
+    align-self: start;
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.schema-table[data-table="ex_groups"] tbody tr:first-child td {
+    height: 38px;
+    vertical-align: top;
 }
 
 .schema-table[data-table="ex_subjects"] tbody tr:first-child td {
-    height: 124px;
+    height: 78px;
     vertical-align: top;
 }
 
 .schema-table[data-table="ex_permissions"] tbody tr:first-child td {
-    height: 64px;
+    height: 38px;
     vertical-align: top;
 }
 

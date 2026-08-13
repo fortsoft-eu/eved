@@ -2345,20 +2345,67 @@ function dateFromIsoDate($mValue) {
     return $oDate;
 }
 
-function exCalendarGetRequestYear() {
+function exCalendarGetYear() {
     $iCurrentYear = (int)date("Y");
-    $sYear = isset($_GET["year"]) ? trim((string)$_GET["year"]) : "";
-    if ($sYear == "") {
-        return $iCurrentYear;
-    }
-    if (!preg_match("/^[0-9]{1,4}$/", $sYear)) {
-        send404AndExit();
-    }
-    $iYear = (int)$sYear;
+    $iYear = isset($_SESSION["ex_calendar"]) && is_array($_SESSION["ex_calendar"]) && isset($_SESSION["ex_calendar"]["iYear"]) ? (int)$_SESSION["ex_calendar"]["iYear"] : $iCurrentYear;
     if ($iYear < 1583 || $iYear > 9999) {
-        send404AndExit();
+        $iYear = $iCurrentYear;
+    }
+    if (isset($_GET["iYear"])) {
+        $sYear = trim((string)$_GET["iYear"]);
+        if (!preg_match("/^[0-9]{1,4}$/", $sYear)) {
+            send404AndExit();
+        }
+        $iYear = (int)$sYear;
+        if ($iYear < 1583 || $iYear > 9999) {
+            send404AndExit();
+        }
     }
     return $iYear;
+}
+
+function exCalendarGetCalendarGroups() {
+    return array(
+        "Persons" => array(
+            1 => "Birthdays",
+            2 => "Name Days"
+        ),
+        "Calendars" => array(
+            3 => "Czech Furry Events"
+        ),
+        "Name Days" => array(
+            4 => "CZ Name Days",
+            5 => "CZ Name Days Ext.",
+            6 => "SK Name Days",
+            7 => "SK Name Days Ext."
+        )
+    );
+}
+
+function exCalendarGetCalendars() {
+    $aCalendars = array();
+    foreach (exCalendarGetCalendarGroups() as $aCalendarGroup) {
+        foreach ($aCalendarGroup as $iCal => $sCalendar) {
+            $aCalendars[$iCal] = $sCalendar;
+        }
+    }
+    return $aCalendars;
+}
+
+function exCalendarGetICal() {
+    $aCalendars = exCalendarGetCalendars();
+    $iCal = isset($_SESSION["ex_calendar"]) && is_array($_SESSION["ex_calendar"]) && isset($_SESSION["ex_calendar"]["iCal"]) ? (int)$_SESSION["ex_calendar"]["iCal"] : 1;
+    if (!isset($aCalendars[$iCal])) {
+        $iCal = 1;
+    }
+    if (isset($_GET["iCal"])) {
+        $sCal = trim((string)$_GET["iCal"]);
+        if (!preg_match("/^[1-7]$/", $sCal)) {
+            send404AndExit();
+        }
+        $iCal = (int)$sCal;
+    }
+    return $iCal;
 }
 
 function exCalendarDateKey($iYear, $iMonth, $iDay) {
@@ -2388,7 +2435,7 @@ function exCalendarGetEasterSunday($iYear) {
     return exCalendarDate($iYear, $iMonth, $iDay);
 }
 
-function exCalendarAddHoliday(&$aHolidays, $sDate, $sType, $sName, $sTime = "", $sLocation = "") {
+function exCalendarAddHoliday(&$aHolidays, $sDate, $sType, $sName, $sTime = "", $sLocation = "", $sBoxName = "") {
     if (!isset($aHolidays[$sDate])) {
         $aHolidays[$sDate] = array();
     }
@@ -2396,7 +2443,8 @@ function exCalendarAddHoliday(&$aHolidays, $sDate, $sType, $sName, $sTime = "", 
         "type" => $sType,
         "name" => $sName,
         "time" => $sTime,
-        "location" => $sLocation
+        "location" => $sLocation,
+        "box_name" => $sBoxName
     );
 }
 
@@ -2429,6 +2477,73 @@ function exCalendarGetHolidays($iYear) {
     exCalendarAddHoliday($aHolidays, $oEasterSunday->modify("+1 day")->format("Y-m-d"), "moving", "Velikonoční pondělí");
     ksort($aHolidays);
     return $aHolidays;
+}
+
+function exCalendarFetchNameDays($oPdo, $iGroupId) {
+    $oStatement = $oPdo->prepare("SELECT `date`, `name` FROM ex_name_days WHERE group_id = :group_id ORDER BY `date` ASC, id ASC");
+    $oStatement->execute(array("group_id" => $iGroupId));
+    return $oStatement->fetchAll();
+}
+
+function exCalendarFetchAllNameDays($oPdo) {
+    $oStatement = $oPdo->prepare("SELECT group_id, `date`, `name` FROM ex_name_days ORDER BY group_id ASC, id ASC");
+    $oStatement->execute();
+    return $oStatement->fetchAll();
+}
+
+function exCalendarAddNameDays(&$aHolidays, $oPdo, $iYear, $iGroupId) {
+    foreach (exCalendarFetchNameDays($oPdo, $iGroupId) as $aNameDay) {
+        exCalendarAddHoliday($aHolidays, sprintf("%04d-%s", $iYear, $aNameDay["date"]), "name-day", $aNameDay["name"]);
+    }
+    ksort($aHolidays);
+}
+
+function exCalendarFetchPersonRows($oPdo) {
+    $sSql = "SELECT p.subject_id, p.first_name, p.last_name, p.birth_date, subject_rows.subject_name, subject_rows.subject_sort_name FROM ex_persons AS p INNER JOIN ex_subjects AS s ON s.id = p.subject_id INNER JOIN (" . getSubjectNameSelectSql() . ") AS subject_rows ON subject_rows.subject_id = p.subject_id WHERE s.subject_type = :subject_type AND s.is_active = :is_active ORDER BY subject_rows.subject_sort_name COLLATE utf8mb4_czech_ci ASC, p.subject_id ASC";
+    $oStatement = $oPdo->prepare($sSql);
+    $oStatement->execute(array(
+        "subject_type" => "person",
+        "is_active" => 1
+    ));
+    return $oStatement->fetchAll();
+}
+
+function exCalendarGetPersonBoxName($aPerson) {
+    return trim(preg_replace("/\s+/u", " ", trim((string)$aPerson["first_name"]) . " " . trim((string)$aPerson["last_name"])));
+}
+
+function exCalendarAddPersonBirthdays(&$aHolidays, $oPdo, $iYear) {
+    foreach (exCalendarFetchPersonRows($oPdo) as $aPerson) {
+        $sBirthDate = trim((string)$aPerson["birth_date"]);
+        if (!preg_match("/^[0-9]{4}-([0-9]{2})-([0-9]{2})$/", $sBirthDate, $aMatches)) {
+            continue;
+        }
+        $iMonth = (int)$aMatches[1];
+        $iDay = (int)$aMatches[2];
+        if (!checkdate($iMonth, $iDay, $iYear)) {
+            continue;
+        }
+        exCalendarAddHoliday($aHolidays, exCalendarDateKey($iYear, $iMonth, $iDay), "person", $aPerson["subject_name"], "", "", exCalendarGetPersonBoxName($aPerson));
+    }
+    ksort($aHolidays);
+}
+
+function exCalendarAddPersonNameDays(&$aHolidays, $oPdo, $iYear) {
+    $aNameDaysByName = array();
+    foreach (exCalendarFetchAllNameDays($oPdo) as $aNameDay) {
+        $sNameKey = mb_strtolower(trim((string)$aNameDay["name"]), "UTF-8");
+        if (!isset($aNameDaysByName[$sNameKey])) {
+            $aNameDaysByName[$sNameKey] = $aNameDay["date"];
+        }
+    }
+    foreach (exCalendarFetchPersonRows($oPdo) as $aPerson) {
+        $sNameKey = mb_strtolower(trim((string)$aPerson["first_name"]), "UTF-8");
+        if ($sNameKey == "" || !isset($aNameDaysByName[$sNameKey])) {
+            continue;
+        }
+        exCalendarAddHoliday($aHolidays, sprintf("%04d-%s", $iYear, $aNameDaysByName[$sNameKey]), "person", $aPerson["subject_name"], "", "", exCalendarGetPersonBoxName($aPerson));
+    }
+    ksort($aHolidays);
 }
 
 function exCalendarGetExternalCalendarUrl() {
@@ -2974,24 +3089,30 @@ function exCalendarGetHolidayLabelLength($sName) {
     return count($aMatches[0]);
 }
 
+function exCalendarGetHolidayBoxName($aHolidayItem) {
+    $sName = isset($aHolidayItem["box_name"]) && $aHolidayItem["box_name"] != "" ? $aHolidayItem["box_name"] : $aHolidayItem["name"];
+    return exCalendarBoxName($sName);
+}
+
 function exCalendarRenderHolidayLabels($aHolidayItems, $sDate) {
     $sHtml = "";
+    $aHolidayItems = array_slice($aHolidayItems, 0, 3);
     if (count($aHolidayItems) == 2) {
-        $iLongLabelIndex = exCalendarGetHolidayLabelLength(exCalendarBoxName($aHolidayItems[1]["name"])) > exCalendarGetHolidayLabelLength(exCalendarBoxName($aHolidayItems[0]["name"])) ? 1 : 0;
+        $iLongLabelIndex = exCalendarGetHolidayLabelLength(exCalendarGetHolidayBoxName($aHolidayItems[1])) > exCalendarGetHolidayLabelLength(exCalendarGetHolidayBoxName($aHolidayItems[0])) ? 1 : 0;
         foreach ($aHolidayItems as $iIndex => $aHolidayItem) {
             $sClass = $iIndex == $iLongLabelIndex ? "holiday-day-label" : "holiday-day-label holiday-day-label-single";
-            $sHtml .= "<span class=\"" . $sClass . "\">" . html(exCalendarBoxName($aHolidayItem["name"])) . "</span>";
+            $sHtml .= "<span class=\"" . $sClass . "\">" . html(exCalendarGetHolidayBoxName($aHolidayItem)) . "</span>";
         }
         return $sHtml;
     }
     if (count($aHolidayItems) > 2) {
         foreach ($aHolidayItems as $aHolidayItem) {
-            $sHtml .= "<span class=\"holiday-day-label holiday-day-label-single\">" . html(exCalendarBoxName($aHolidayItem["name"])) . "</span>";
+            $sHtml .= "<span class=\"holiday-day-label holiday-day-label-single\">" . html(exCalendarGetHolidayBoxName($aHolidayItem)) . "</span>";
         }
         return $sHtml;
     }
     foreach ($aHolidayItems as $aHolidayItem) {
-        $sHtml .= "<span class=\"holiday-day-label holiday-day-label-triple\">" . html(exCalendarBoxName($aHolidayItem["name"])) . "</span>";
+        $sHtml .= "<span class=\"holiday-day-label holiday-day-label-triple\">" . html(exCalendarGetHolidayBoxName($aHolidayItem)) . "</span>";
     }
     return $sHtml;
 }
@@ -3104,7 +3225,7 @@ function fetchSubjectRows($oPdo, $iSubjectId = 0, $aFilterSql = null) {
         LEFT JOIN (SELECT sc.subject_id, GROUP_CONCAT(CONCAT(" . $sContactTypeNameSql . ", ': ', c.contact_value, IF(sc.note IS NULL OR sc.note = '', '', CONCAT(' (', sc.note, ')'))) ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n') AS contacts, SUBSTRING_INDEX(GROUP_CONCAT(c.contact_value ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact, SUBSTRING_INDEX(GROUP_CONCAT(COALESCE(ct.contact_type, '') ORDER BY sc.is_active DESC, ct.`order` ASC, sc.is_primary DESC, sc.id ASC SEPARATOR '\n'), '\n', 1) AS primary_contact_type FROM ex_subject_contacts AS sc INNER JOIN ex_contacts AS c ON c.id = sc.contact_id" . $sContactTypeJoinSql . " GROUP BY sc.subject_id) AS c ON c.subject_id = s.id
         LEFT JOIN (SELECT subject_id, GROUP_CONCAT(NULLIF(CONCAT_WS(', ', NULLIF(TRIM(CONCAT_WS(' ', NULLIF(street_name, ''), NULLIF(CONCAT_WS('/', NULLIF(house_number, ''), NULLIF(orientation_number, '')), ''))), ''), NULLIF(city, ''), NULLIF(postal_code, ''), NULLIF(country, '')), '') ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n') AS addresses FROM ex_subject_addresses GROUP BY subject_id) AS a ON a.subject_id = s.id
         LEFT JOIN (SELECT subject_id, GROUP_CONCAT(CONCAT(nickname, IF(context IS NULL OR context = '', '', CONCAT(' [', context, ']')), IF(note IS NULL OR note = '', '', CONCAT(' (', note, ')'))) ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n') AS nicknames, SUBSTRING_INDEX(GROUP_CONCAT(nickname ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n'), '\n', 1) AS primary_nickname FROM ex_subject_nicknames GROUP BY subject_id) AS n ON n.subject_id = s.id
-        LEFT JOIN (SELECT sg.subject_id, GROUP_CONCAT(g.name ORDER BY g.`order` ASC, g.id ASC SEPARATOR '\n') AS group_names FROM ex_subject_groups AS sg INNER JOIN ex_groups AS g ON g.id = sg.group_id GROUP BY sg.subject_id) AS g ON g.subject_id = s.id
+        LEFT JOIN (SELECT sg.subject_id, GROUP_CONCAT(g.name ORDER BY g.`order` ASC, g.id ASC SEPARATOR '\n') AS group_names FROM ex_group_subject AS sg INNER JOIN ex_groups AS g ON g.id = sg.group_id GROUP BY sg.subject_id) AS g ON g.subject_id = s.id
         LEFT JOIN (SELECT subject_id, GROUP_CONCAT(note_text ORDER BY is_active DESC, is_primary DESC, id ASC SEPARATOR '\n') AS notes FROM ex_subject_notes GROUP BY subject_id) AS sn ON sn.subject_id = s.id";
     if ($iSubjectId > 0) {
         $sSql .= " WHERE s.id = :subject_id";
@@ -3204,7 +3325,7 @@ function fetchSubjectAddresses($oPdo, $iSubjectId = 0) {
 
 function fetchSubjectGroups($oPdo, $iSubjectId = 0) {
     $aGroups = array();
-    $sSql = "SELECT sg.subject_id, sg.group_id, g.name, g.created_at, g.updated_at FROM ex_subject_groups AS sg INNER JOIN ex_groups AS g ON g.id = sg.group_id";
+    $sSql = "SELECT sg.subject_id, sg.group_id, g.name, g.created_at, g.updated_at FROM ex_group_subject AS sg INNER JOIN ex_groups AS g ON g.id = sg.group_id";
     if ($iSubjectId > 0) {
         $sSql .= " WHERE sg.subject_id = :subject_id";
     }
@@ -3248,7 +3369,7 @@ function fetchGroups($oPdo) {
 }
 
 function fetchGroupAdminRows($oPdo, $iGroupId = 0) {
-    $sSql = "SELECT g.id, g.name, g.`order`, g.created_at, g.updated_at, COUNT(DISTINCT sg.subject_id) AS subject_count, GROUP_CONCAT(DISTINCT p.permission_key ORDER BY p.permission_key ASC SEPARATOR ',') AS permission_keys, GROUP_CONCAT(DISTINCT p.name ORDER BY p.permission_key ASC SEPARATOR ',') AS permission_names FROM ex_groups AS g LEFT JOIN ex_subject_groups AS sg ON sg.group_id = g.id LEFT JOIN ex_group_permissions AS gp ON gp.group_id = g.id AND gp.is_allowed = 1 LEFT JOIN ex_permissions AS p ON p.id = gp.permission_id AND p.is_active = 1";
+    $sSql = "SELECT g.id, g.name, g.`order`, g.created_at, g.updated_at, COUNT(DISTINCT sg.subject_id) AS subject_count, GROUP_CONCAT(DISTINCT p.permission_key ORDER BY p.permission_key ASC SEPARATOR ',') AS permission_keys, GROUP_CONCAT(DISTINCT p.name ORDER BY p.permission_key ASC SEPARATOR ',') AS permission_names FROM ex_groups AS g LEFT JOIN ex_group_subject AS sg ON sg.group_id = g.id LEFT JOIN ex_group_permissions AS gp ON gp.group_id = g.id AND gp.is_allowed = 1 LEFT JOIN ex_permissions AS p ON p.id = gp.permission_id AND p.is_active = 1";
     if ($iGroupId > 0) {
         $sSql .= " WHERE g.id = :id";
     }

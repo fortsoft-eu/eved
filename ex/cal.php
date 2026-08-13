@@ -7,13 +7,43 @@ if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-$iYear = exCalendarGetRequestYear();
+$aCalendarGroups = exCalendarGetCalendarGroups();
+$iCal = exCalendarGetICal();
+$iYear = exCalendarGetYear();
 $iPreviousYear = $iYear > 1583 ? $iYear - 1 : $iYear;
 $iNextYear = $iYear < 9999 ? $iYear + 1 : $iYear;
 $iCurrentYear = (int)date("Y");
+$_SESSION["ex_calendar"] = array(
+    "iCal" => $iCal,
+    "iYear" => $iYear
+);
+$blCanViewPersons = isTrustedClient($aAllowedIps) || isProjectViewAllowed("ex");
+session_write_close();
 $sPageTitle = getPageTitleText($aAllowedIps);
 $aHolidays = exCalendarGetHolidays($iYear);
-exCalendarAddExternalCalendarDatabaseEvents($aHolidays, $oPdo, $iYear, exCalendarGetExternalCalendarUrl());
+if ($iCal == 1 || $iCal == 2) {
+    if ($blCanViewPersons) {
+        try {
+            if ($iCal == 1) {
+                exCalendarAddPersonBirthdays($aHolidays, $oPdo, $iYear);
+            } else {
+                exCalendarAddPersonNameDays($aHolidays, $oPdo, $iYear);
+            }
+        } catch (Exception $oException) {
+            error_log((string)$oException);
+            send500AndExit("Database error: " . $oException->getMessage());
+        }
+    }
+} elseif ($iCal == 3) {
+    exCalendarAddExternalCalendarDatabaseEvents($aHolidays, $oPdo, $iYear, exCalendarGetExternalCalendarUrl());
+} else {
+    try {
+        exCalendarAddNameDays($aHolidays, $oPdo, $iYear, $iCal - 3);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        send500AndExit("Database error: " . $oException->getMessage());
+    }
+}
 $iTime = sendPageHeaders("", "cs-CZ");
 
 ?>
@@ -36,21 +66,32 @@ $iTime = sendPageHeaders("", "cs-CZ");
 <?php
 
 renderMenu();
+echo "    <select id=\"calendar-type\" name=\"iCal\" class=\"calendar-type js-submit-on-change\" form=\"calendar-year-form\">\n";
+foreach ($aCalendarGroups as $sCalendarGroup => $aCalendars) {
+    echo "      <optgroup label=\"" . html($sCalendarGroup) . "\"" . (!$blCanViewPersons && $sCalendarGroup == "Persons" ? " disabled" : "") . ">\n";
+    foreach ($aCalendars as $iCalValue => $sCalLabel) {
+        echo "        <option value=\"" . $iCalValue . "\"" . ($iCalValue == $iCal ? " selected" : "") . ">" . html($sCalLabel) . "</option>\n";
+    }
+    echo "      </optgroup>\n";
+}
+echo "    </select>\n";
 
 ?>
     <label for="calendar-year">Year:</label>
-    <input type="text" id="calendar-year" name="year" class="calendar-year-input" value="<?php echo $iYear; ?>" inputmode="numeric" pattern="[0-9]{1,4}" maxlength="4" autocomplete="off" form="calendar-year-form">
+    <input type="text" id="calendar-year" name="iYear" class="calendar-year-input" value="<?php echo $iYear; ?>" inputmode="numeric" pattern="[0-9]{1,4}" maxlength="4" autocomplete="off" form="calendar-year-form">
     <button type="submit" class="button-link calendar-year-submit" form="calendar-year-form">Show</button>
     <button type="submit" class="button-link calendar-year-link" form="calendar-previous-year-form" title="Previous year">Prev</button>
     <button type="submit" class="button-link calendar-year-link" form="calendar-next-year-form" title="Next year">Next</button>
-    <button type="button" class="button-link calendar-year-link js-calendar-current-year" data-calendar-url="<?php echo html($sBaseUrl . "cal.php"); ?>" title="Current year">Today</button>
+    <button type="button" class="button-link calendar-year-link js-calendar-current-year" data-calendar-url="<?php echo html($sBaseUrl . "cal.php?iCal=" . $iCal . "&iYear=" . $iCurrentYear); ?>" title="Current year">Today</button>
   </p>
   <form id="calendar-year-form" method="get" action="<?php echo html($sBaseUrl . "cal.php"); ?>" enctype="application/x-www-form-urlencoded" hidden></form>
   <form id="calendar-previous-year-form" method="get" action="<?php echo html($sBaseUrl . "cal.php"); ?>" enctype="application/x-www-form-urlencoded" hidden>
-    <input type="hidden" name="year" value="<?php echo $iPreviousYear; ?>">
+    <input type="hidden" name="iCal" value="<?php echo $iCal; ?>">
+    <input type="hidden" name="iYear" value="<?php echo $iPreviousYear; ?>">
   </form>
   <form id="calendar-next-year-form" method="get" action="<?php echo html($sBaseUrl . "cal.php"); ?>" enctype="application/x-www-form-urlencoded" hidden>
-    <input type="hidden" name="year" value="<?php echo $iNextYear; ?>">
+    <input type="hidden" name="iCal" value="<?php echo $iCal; ?>">
+    <input type="hidden" name="iYear" value="<?php echo $iNextYear; ?>">
   </form>
   <p class="holiday-legend">
     <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-state"></span>Státní svátek</span>

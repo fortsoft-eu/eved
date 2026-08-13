@@ -76,21 +76,22 @@ try {
 
 $aSchemaRelationRoutes = array(
     "ex_contacts.contact_type_id>ex_contact_types.id" => array("source" => "right", "target" => "right", "curve" => "24", "via-x-offset" => "36"),
-    "ex_group_permissions.group_id>ex_groups.id" => array("source" => "right", "target" => "left", "curve" => "74"),
-    "ex_group_permissions.permission_id>ex_permissions.id" => array("source" => "right", "target" => "right", "curve" => "24", "target-y" => "-18", "via-x-offset" => "36"),
-    "ex_persons.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "70", "target-y" => "-53"),
-    "ex_phone_book.subject_contact_id>ex_subject_contacts.id" => array("source" => "right", "target" => "right", "curve" => "24", "via-x-offset" => "32"),
-    "ex_subject_addresses.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "24", "target-y" => "-24", "via-x-offset" => "96"),
-    "ex_subject_contacts.contact_id>ex_contacts.id" => array("source" => "left", "target" => "right", "curve" => "70"),
-    "ex_subject_contacts.subject_id>ex_subjects.id" => array("source" => "left", "target" => "left", "curve" => "24", "target-y" => "48", "via-x-offset" => "-35"),
-    "ex_subject_groups.group_id>ex_groups.id" => array("source" => "right", "target" => "right", "curve" => "24", "via-x-offset" => "32"),
-    "ex_subject_groups.subject_id>ex_subjects.id" => array("source" => "left", "target" => "left", "curve" => "44", "target-y" => "24", "via-x-offset" => "-54"),
-    "ex_subject_names.subject_id>ex_subjects.id" => array("source" => "right", "target" => "left", "curve" => "70", "target-y" => "-53"),
-    "ex_subject_nicknames.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "24", "target-y" => "48", "via-x-offset" => "52"),
-    "ex_subject_notes.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "44", "target-y" => "24", "via-x-offset" => "74"),
-    "ex_users.subject_id>ex_subjects.id" => array("source" => "left", "target" => "left", "curve" => "70", "target-y" => "-24", "via-x-offset" => "-73"),
-    "ex_user_permissions.permission_id>ex_permissions.id" => array("source" => "left", "target" => "right", "curve" => "72", "target-y" => "18", "via-y-offset" => "190"),
-    "ex_user_permissions.user_id>ex_users.id" => array("source" => "left", "target" => "right", "curve" => "74")
+    "ex_group_permissions.group_id>ex_groups.id" => array("source" => "left", "target" => "left", "curve" => "24", "target-y" => "10", "via-x-offset" => "-36"),
+    "ex_group_permissions.permission_id>ex_permissions.id" => array("source" => "left", "target" => "right", "curve" => "36", "target-y" => "10", "via-y" => "430"),
+    "ex_name_days.group_id>ex_name_day_groups.id" => array("source" => "right", "target" => "right", "curve" => "24", "via-x-offset" => "36"),
+    "ex_persons.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "24", "radius" => "18", "target-y" => "-10", "via-x-offset" => "90"),
+    "ex_phone_book.subject_contact_id>ex_subject_contacts.id" => array("source" => "right", "target" => "right", "curve" => "24", "via-x-offset" => "36"),
+    "ex_subject_addresses.subject_id>ex_subjects.id" => array("source" => "left", "target" => "left", "curve" => "24", "target-y" => "30", "via-x-offset" => "-36"),
+    "ex_subject_contacts.contact_id>ex_contacts.id" => array("source" => "right", "target" => "right", "curve" => "24", "via-x-offset" => "36"),
+    "ex_subject_contacts.subject_id>ex_subjects.id" => array("source" => "right", "target" => "left", "curve" => "24", "target-y" => "10", "via-x-offset" => "-63"),
+    "ex_group_subject.group_id>ex_groups.id" => array("source" => "right", "target" => "left", "curve" => "24", "radius" => "18", "target-y" => "-10", "via-x-offset" => "-90"),
+    "ex_group_subject.subject_id>ex_subjects.id" => array("source" => "right", "target" => "right", "curve" => "24", "target-y" => "-30", "via-x-offset" => "36"),
+    "ex_subject_names.subject_id>ex_subjects.id" => array("source" => "right", "target" => "left", "curve" => "24", "radius" => "18", "target-y" => "-10", "via-x-offset" => "-90"),
+    "ex_subject_nicknames.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "24", "target-y" => "30", "via-x-offset" => "36"),
+    "ex_subject_notes.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "44", "target-y" => "10", "via-x-offset" => "74"),
+    "ex_users.subject_id>ex_subjects.id" => array("source" => "left", "target" => "left", "curve" => "24", "target-y" => "-30", "via-x-offset" => "-36"),
+    "ex_user_permissions.permission_id>ex_permissions.id" => array("source" => "right", "target" => "right", "curve" => "24", "target-y" => "-10", "via-x-offset" => "36"),
+    "ex_user_permissions.user_id>ex_users.id" => array("source" => "right", "target" => "left", "curve" => "24", "via-x-offset" => "-36")
 );
 
 $iTime = sendPageHeaders();
@@ -210,6 +211,9 @@ if (!$aRelations) {
                 . " data-target-side=\"" . html($aSchemaRelationRoutes[$sRelationKey]["target"]) . "\"";
             if (isset($aSchemaRelationRoutes[$sRelationKey]["curve"])) {
                 $sRouteAttributes .= " data-curve=\"" . html($aSchemaRelationRoutes[$sRelationKey]["curve"]) . "\"";
+            }
+            if (isset($aSchemaRelationRoutes[$sRelationKey]["radius"])) {
+                $sRouteAttributes .= " data-radius=\"" . html($aSchemaRelationRoutes[$sRelationKey]["radius"]) . "\"";
             }
             if (isset($aSchemaRelationRoutes[$sRelationKey]["source-x"])) {
                 $sRouteAttributes .= " data-source-x-offset=\"" . html($aSchemaRelationRoutes[$sRelationKey]["source-x"]) . "\"";

@@ -3143,6 +3143,7 @@ document.addEventListener("DOMContentLoaded", function () {
             "source": sSourceSide,
             "target": oRelation.getAttribute("data-target-side") || sSourceSide,
             "curve": parseInt(oRelation.getAttribute("data-curve") || "0", 10),
+            "radius": parseInt(oRelation.getAttribute("data-radius") || "", 10),
             "sourceXOffset": parseInt(oRelation.getAttribute("data-source-x-offset") || "0", 10),
             "sourceYOffset": parseInt(oRelation.getAttribute("data-source-y-offset") || "0", 10),
             "targetXOffset": parseInt(oRelation.getAttribute("data-target-x-offset") || "0", 10),
@@ -3241,8 +3242,37 @@ document.addEventListener("DOMContentLoaded", function () {
         return aCleanPoints;
     }
 
-    function getRoundedPolylinePath(aPoints, iRadius) {
+    function getRoundedPolylinePath(aPoints, iRadius, blKeepRadius) {
         aPoints = cleanPolylinePoints(aPoints);
+        if (blKeepRadius
+            && aPoints.length == 4
+            && aPoints[0].y == aPoints[1].y
+            && aPoints[1].x == aPoints[2].x
+            && aPoints[2].y == aPoints[3].y) {
+            var iFirstHorizontalDistance = Math.abs(aPoints[1].x - aPoints[0].x);
+            var iMiddleDistance = Math.abs(aPoints[2].y - aPoints[1].y);
+            var iLastHorizontalDistance = Math.abs(aPoints[3].x - aPoints[2].x);
+            var iFirstHorizontalDirection = aPoints[1].x > aPoints[0].x ? 1 : -1;
+            var iLastHorizontalDirection = aPoints[3].x > aPoints[2].x ? 1 : -1;
+            if (iMiddleDistance > 0
+                && iMiddleDistance < iRadius * 2
+                && iFirstHorizontalDirection == iLastHorizontalDirection) {
+                var iArcWidth = Math.sqrt(4 * iRadius * iMiddleDistance - iMiddleDistance * iMiddleDistance);
+                var iArcHalfWidth = iArcWidth / 2;
+                if (iFirstHorizontalDistance >= iArcHalfWidth && iLastHorizontalDistance >= iArcHalfWidth) {
+                    var iVerticalDirection = aPoints[2].y > aPoints[1].y ? 1 : -1;
+                    var iFirstSweep = iFirstHorizontalDirection == iVerticalDirection ? 1 : 0;
+                    var iMiddleY = (aPoints[1].y + aPoints[2].y) / 2;
+                    var iFirstArcX = aPoints[1].x - iFirstHorizontalDirection * iArcHalfWidth;
+                    var iLastArcX = aPoints[2].x + iFirstHorizontalDirection * iArcHalfWidth;
+                    return "M " + aPoints[0].x + " " + aPoints[0].y
+                        + " L " + iFirstArcX + " " + aPoints[1].y
+                        + " A " + iRadius + " " + iRadius + " 0 0 " + iFirstSweep + " " + aPoints[1].x + " " + iMiddleY
+                        + " A " + iRadius + " " + iRadius + " 0 0 " + (1 - iFirstSweep) + " " + iLastArcX + " " + aPoints[2].y
+                        + " L " + aPoints[3].x + " " + aPoints[3].y;
+                }
+            }
+        }
         var sPath = "M " + aPoints[0].x + " " + aPoints[0].y;
         for (var iI = 1; iI < aPoints.length - 1; iI += 1) {
             var oPrevious = aPoints[iI - 1];
@@ -3374,7 +3404,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
                 aPoints.push(oControl2);
                 aPoints.push(oEnd);
-                sPath = getRoundedPolylinePath(aPoints, 18);
+                var iRouteRadius = aRoute && !isNaN(aRoute.radius) && aRoute.radius > 0 ? aRoute.radius : 18;
+                sPath = getRoundedPolylinePath(aPoints, iRouteRadius, aRoute && !isNaN(aRoute.radius) && aRoute.radius > 0);
             } else {
                 sPath = "M " + oStart.x + " " + oStart.y + " C " + oControl1.x + " " + oControl1.y + ", " + oControl2.x + " " + oControl2.y + ", " + oEnd.x + " " + oEnd.y;
             }

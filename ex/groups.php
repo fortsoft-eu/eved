@@ -98,7 +98,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             $oPdo->rollBack();
             sendJsonAndExit(array("success" => false, "message" => "Group was not found."), 404);
         }
-        $oStatement = $oPdo->prepare("DELETE FROM ex_subject_groups WHERE group_id = :id");
+        $oStatement = $oPdo->prepare("DELETE FROM ex_group_subject WHERE group_id = :id");
         $oStatement->execute(array("id" => $iGroupId));
         $oStatement = $oPdo->prepare("DELETE FROM ex_group_permissions WHERE group_id = :id");
         $oStatement->execute(array("id" => $iGroupId));
@@ -183,7 +183,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             }
         }
         $aTargetSubjectIds = array();
-        $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE group_id = :target_group_id FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_group_subject WHERE group_id = :target_group_id FOR UPDATE");
         $oStatement->execute(array("target_group_id" => $iTargetGroupId));
         while ($iSubjectId = $oStatement->fetchColumn()) {
             $aTargetSubjectIds[(int)$iSubjectId] = true;
@@ -196,13 +196,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             $aSourcePlaceholders[] = ":" . $sParam;
             $aSourceParams[$sParam] = $iSourceGroupId;
         }
-        $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_subject_groups WHERE group_id IN (" . implode(", ", $aSourcePlaceholders) . ") FOR UPDATE");
+        $oStatement = $oPdo->prepare("SELECT subject_id FROM ex_group_subject WHERE group_id IN (" . implode(", ", $aSourcePlaceholders) . ") FOR UPDATE");
         $oStatement->execute($aSourceParams);
         $aMergeSubjectIds = array();
         while ($iSubjectId = $oStatement->fetchColumn()) {
             $aMergeSubjectIds[(int)$iSubjectId] = true;
         }
-        $oInsertStatement = $oPdo->prepare("INSERT INTO ex_subject_groups (subject_id, group_id) VALUES (:subject_id, :group_id)");
+        $oInsertStatement = $oPdo->prepare("INSERT INTO ex_group_subject (subject_id, group_id) VALUES (:subject_id, :group_id)");
         foreach ($aMergeSubjectIds as $iSubjectId => $blMergeSubject) {
             if (!isset($aTargetSubjectIds[$iSubjectId])) {
                 $oInsertStatement->execute(array("subject_id" => $iSubjectId, "group_id" => $iTargetGroupId));
@@ -229,7 +229,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
             }
         }
         if ($blDeleteSourceGroups) {
-            $oStatement = $oPdo->prepare("DELETE FROM ex_subject_groups WHERE group_id IN (" . implode(", ", $aSourcePlaceholders) . ")");
+            $oStatement = $oPdo->prepare("DELETE FROM ex_group_subject WHERE group_id IN (" . implode(", ", $aSourcePlaceholders) . ")");
             $oStatement->execute($aSourceParams);
             $oStatement = $oPdo->prepare("DELETE FROM ex_group_permissions WHERE group_id IN (" . implode(", ", $aSourcePlaceholders) . ")");
             $oStatement->execute($aSourceParams);

@@ -360,6 +360,16 @@ function menuAdminFindAccessProjects($sCode, $sFunctionName) {
     return $aProjects;
 }
 
+function menuAdminFindProjectAccessProjects($sCode, $sFunctionName) {
+    $aProjects = array();
+    if (preg_match_all("/\\b" . preg_quote($sFunctionName, "/") . "\\s*\\(\\s*([\"'])((?:\\\\\\\\.|(?!\\1).)*)\\1/s", $sCode, $aMatches, PREG_SET_ORDER)) {
+        foreach ($aMatches as $aMatch) {
+            menuAdminAppendUniqueValue($aProjects, stripcslashes($aMatch[2]));
+        }
+    }
+    return $aProjects;
+}
+
 function menuAdminResolveScriptFile($sPath) {
     $sPath = menuAdminGetScriptPath($sPath);
     if ($sPath == "" || !menuAdminPathIsValid($sPath)) {
@@ -412,6 +422,9 @@ function menuAdminGetScriptAccess($sPath) {
     }
     $sCode = menuAdminStripPhpComments($sSource);
     $aAccess["view"] = menuAdminFindAccessProjects($sCode, "requireViewAccess");
+    foreach (menuAdminFindProjectAccessProjects($sCode, "isProjectViewAllowed") as $sProject) {
+        menuAdminAppendUniqueValue($aAccess["view"], $sProject);
+    }
     $aAccess["full"] = menuAdminFindAccessProjects($sCode, "requireFullAccess");
     $aAccess["full_flag"] = menuAdminFindAccessProjects($sCode, "isFullAccessAllowed");
     if (!$aAccess["view"] && !$aAccess["full"] && !$aAccess["full_flag"]) {
