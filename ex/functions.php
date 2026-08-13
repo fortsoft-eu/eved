@@ -3413,7 +3413,7 @@ function fetchSubjectPortalUser($oPdo, $iSubjectId) {
     $aPortalUser["created_at"] = (string)$aUser["created_at"];
     $aPortalUser["updated_at"] = (string)$aUser["updated_at"];
     $aPortalUser["timestamp_tooltip"] = timestampTooltipText($aUser);
-    $oStatement = $oPdo->prepare("SELECT p.permission_key FROM ex_user_permissions AS up INNER JOIN ex_permissions AS p ON p.id = up.permission_id WHERE up.user_id = :user_id AND up.is_allowed = 1 AND p.is_active = 1 ORDER BY p.permission_key ASC");
+    $oStatement = $oPdo->prepare("SELECT p.permission_key FROM ex_user_permission AS up INNER JOIN ex_permissions AS p ON p.id = up.permission_id WHERE up.user_id = :user_id AND up.is_allowed = 1 AND p.is_active = 1 ORDER BY p.permission_key ASC");
     $oStatement->execute(array("user_id" => (int)$aUser["id"]));
     while ($sPermissionKey = $oStatement->fetchColumn()) {
         $aPortalUser["direct_permission_keys"][] = (string)$sPermissionKey;
@@ -3462,10 +3462,10 @@ function normalizePortalPermissionKeys($oPdo, $aPermissionKeys) {
 
 function savePortalUserPermissions($oPdo, $iUserId, $aPermissionKeys) {
     $aPermissions = normalizePortalPermissionKeys($oPdo, $aPermissionKeys);
-    $oStatement = $oPdo->prepare("DELETE FROM ex_user_permissions WHERE user_id = :user_id");
+    $oStatement = $oPdo->prepare("DELETE FROM ex_user_permission WHERE user_id = :user_id");
     $oStatement->execute(array("user_id" => $iUserId));
     foreach ($aPermissions as $sPermissionKey => $iPermissionId) {
-        $oStatement = $oPdo->prepare("INSERT INTO ex_user_permissions (user_id, permission_id, is_allowed) VALUES (:user_id, :permission_id, 1)");
+        $oStatement = $oPdo->prepare("INSERT INTO ex_user_permission (user_id, permission_id, is_allowed) VALUES (:user_id, :permission_id, 1)");
         $oStatement->execute(array(
             "user_id" => $iUserId,
             "permission_id" => $iPermissionId
@@ -3534,7 +3534,7 @@ function saveSubjectPortalAccess($oPdo, $iSubjectId, $sSubjectType, $aPayload) {
     $aUser = $oStatement->fetch();
     if (!$iEnabled) {
         if ($aUser) {
-            $oStatement = $oPdo->prepare("DELETE FROM ex_user_permissions WHERE user_id = :user_id");
+            $oStatement = $oPdo->prepare("DELETE FROM ex_user_permission WHERE user_id = :user_id");
             $oStatement->execute(array("user_id" => (int)$aUser["id"]));
             $oStatement = $oPdo->prepare("DELETE FROM ex_users WHERE id = :id");
             $oStatement->execute(array("id" => (int)$aUser["id"]));

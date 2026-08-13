@@ -90,8 +90,8 @@ $aSchemaRelationRoutes = array(
     "ex_subject_nicknames.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "24", "target-y" => "30", "via-x-offset" => "36"),
     "ex_subject_notes.subject_id>ex_subjects.id" => array("source" => "left", "target" => "right", "curve" => "44", "target-y" => "10", "via-x-offset" => "74"),
     "ex_users.subject_id>ex_subjects.id" => array("source" => "left", "target" => "left", "curve" => "24", "target-y" => "-30", "via-x-offset" => "-36"),
-    "ex_user_permissions.permission_id>ex_permissions.id" => array("source" => "right", "target" => "right", "curve" => "24", "target-y" => "-10", "via-x-offset" => "36"),
-    "ex_user_permissions.user_id>ex_users.id" => array("source" => "right", "target" => "left", "curve" => "24", "via-x-offset" => "-36")
+    "ex_user_permission.permission_id>ex_permissions.id" => array("source" => "right", "target" => "right", "curve" => "24", "target-y" => "-10", "via-x-offset" => "36"),
+    "ex_user_permission.user_id>ex_users.id" => array("source" => "right", "target" => "left", "curve" => "24", "via-x-offset" => "-36")
 );
 
 $iTime = sendPageHeaders();

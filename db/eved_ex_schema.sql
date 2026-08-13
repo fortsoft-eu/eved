@@ -281,12 +281,12 @@ CREATE TABLE `ex_users` (
   CONSTRAINT `fk_ex_users_subject` FOREIGN KEY (`subject_id`) REFERENCES `ex_subjects` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
-CREATE TABLE `ex_user_permissions` (
+CREATE TABLE `ex_user_permission` (
   `user_id` int(10) unsigned NOT NULL,
   `permission_id` int(10) unsigned NOT NULL,
   `is_allowed` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`user_id`,`permission_id`),
-  KEY `fk_ex_user_permissions_permission` (`permission_id`),
-  CONSTRAINT `fk_ex_user_permissions_permission` FOREIGN KEY (`permission_id`) REFERENCES `ex_permissions` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_ex_user_permissions_user` FOREIGN KEY (`user_id`) REFERENCES `ex_users` (`id`) ON DELETE CASCADE
+  KEY `fk_user_permission` (`permission_id`),
+  CONSTRAINT `fk_permission_user` FOREIGN KEY (`user_id`) REFERENCES `ex_users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_permission` FOREIGN KEY (`permission_id`) REFERENCES `ex_permissions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;

@@ -1744,7 +1744,7 @@ body.phpinfo-page .admin-controls {
     grid-row: 1;
 }
 
-.schema-table[data-table="ex_user_permissions"] {
+.schema-table[data-table="ex_user_permission"] {
     align-self: start;
     grid-column: 1;
     grid-row: 1;
