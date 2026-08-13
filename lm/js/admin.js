@@ -5045,7 +5045,7 @@ function bindMailForm() {
         window.setTimeout(function() {
             oStatus.textContent = "";
             oStatus.className = "mail-form-status";
-        }, 5000);
+        }, 10000);
     }
     oForm.addEventListener("submit", function(oEvent) {
         var aValidation;
@@ -5777,7 +5777,7 @@ function bindSnippetBoardForm() {
                 iStatusTimer = null;
                 oStatus.textContent = "";
                 oStatus.className = "snippet-board-status js-snippet-board-status";
-            }, 5000);
+            }, 10000);
         }
     }
 
