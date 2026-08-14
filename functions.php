@@ -7,9 +7,9 @@ function isAllowedIp() {
 }
 
 function isTrustedClient() {
-    global $sTrustedUserAgents, $sTrustedAcceptLanguages;
+    global $aTrustedUserAgents, $aTrustedAcceptLanguages;
 
-    if (!isAllowedIp() || !$sTrustedUserAgents || !$sTrustedAcceptLanguages) {
+    if (!isAllowedIp() || !$aTrustedUserAgents || !$aTrustedAcceptLanguages) {
         return false;
     }
     if (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) || isset($_SERVER["HTTP_CF_WORKER"])
@@ -22,8 +22,8 @@ function isTrustedClient() {
     if (!isset($_SERVER["HTTP_USER_AGENT"], $_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
         return false;
     }
-    return in_array((string)$_SERVER["HTTP_USER_AGENT"], $sTrustedUserAgents, true)
-        && in_array((string)$_SERVER["HTTP_ACCEPT_LANGUAGE"], $sTrustedAcceptLanguages, true);
+    return in_array((string)$_SERVER["HTTP_USER_AGENT"], $aTrustedUserAgents, true)
+        && in_array((string)$_SERVER["HTTP_ACCEPT_LANGUAGE"], $aTrustedAcceptLanguages, true);
 }
 
 function isDesktop() {
@@ -414,12 +414,10 @@ function formatUaGpu($sGpuInfo) {
 }
 
 function getContentSecurityPolicySource() {
-    global $sPortalUriScheme;
-
     if (!isset($_SERVER["HTTP_HOST"])) {
         return "'self'";
     }
-    $sRequestScheme = $sPortalUriScheme;
+    $sRequestScheme = $_SERVER['REQUEST_SCHEME'];
     $sHost = preg_replace("/[^A-Za-z0-9\\.\\-\\:\\[\\]]/", "", $_SERVER["HTTP_HOST"]);
     if ($sHost == "") {
         return "'self'";
@@ -597,8 +595,7 @@ function redirectIndexPhpToRoot() {
     if ($sTarget == "\\" || $sTarget == ".") {
         $sTarget = "/";
     }
-    $sQueryString = $_SERVER["QUERY_STRING"];
-    $sTarget .= $sQueryString == "" ? "/" : "/?" . $sQueryString;
+    $sTarget .= $_SERVER["QUERY_STRING"] == "" ? "/" : "/?" . $_SERVER["QUERY_STRING"];
     sendSecurityHeaders();
     header("Location: " . $sTarget, true, 301);
     exit;
@@ -815,13 +812,25 @@ function getCurrentScriptName() {
     return $sScriptName != "" ? $sScriptName : "index.php";
 }
 
-function getMenuItems($oPdo) {
+function getMenuItems($oPdo, $blOnlyActive = true) {
     try {
-        return getMenuItemsFromDatabase($oPdo);
+        return getMenuItemsFromDatabase($oPdo, $blOnlyActive);
     } catch (Exception $oException) {
         error_log((string)$oException);
         return array();
     }
+}
+
+function getMenuItemUrls($oPdo) {
+    global $sBaseUrl;
+
+    $aUrls = array();
+    foreach (getMenuItems($oPdo, false) as $aItem) {
+        if (!$aItem["separator"]) {
+            $aUrls[$aItem["relative_path"]] = $sBaseUrl . encodeMenuPath($aItem["relative_path"]);
+        }
+    }
+    return $aUrls;
 }
 
 function renderMenu() {
@@ -886,13 +895,18 @@ function getCurrentMenuPath() {
     return $sScriptName == "index.php" ? getMenuPathPrefix() : getMenuPathPrefix() . $sScriptName;
 }
 
-function getMenuItemsFromDatabase($oPdo) {
+function getMenuItemsFromDatabase($oPdo, $blOnlyActive = true) {
     $aItems = array();
     if (!$oPdo) {
         return $aItems;
     }
     $sPathPrefix = getMenuPathPrefix();
-    $oStatement = $oPdo->prepare("SELECT id, path, icon, name, title, target, `order` AS menu_order FROM fs_menu WHERE is_active = 1 AND path LIKE :path_prefix ORDER BY `order` ASC, id ASC");
+    $sSql = "SELECT id, path, icon, name, title, target, `order` AS menu_order FROM fs_menu WHERE path LIKE :path_prefix";
+    if ($blOnlyActive) {
+        $sSql .= " AND is_active = 1";
+    }
+    $sSql .= " ORDER BY `order` ASC, id ASC";
+    $oStatement = $oPdo->prepare($sSql);
     $oStatement->execute(array("path_prefix" => $sPathPrefix . "%"));
     while ($aRow = $oStatement->fetch()) {
         $sPath = "/" . normalizeMenuPath($aRow["path"]);
@@ -1245,8 +1259,6 @@ function requireNamedCsrfToken($sTokenName, $blJsonResponse = false) {
 }
 
 function getCurrentUrlWithoutAuthActionForToken($sTokenName) {
-    global $sPortalUriScheme;
-
     $sPath = isset($_SERVER["REQUEST_URI"]) ? (string)$_SERVER["REQUEST_URI"] : "";
     $aParts = parse_url($sPath);
     $sResult = isset($aParts["path"]) ? $aParts["path"] : "";
@@ -1259,7 +1271,7 @@ function getCurrentUrlWithoutAuthActionForToken($sTokenName) {
     if ($aQuery) {
         $sResult .= "?" . http_build_query($aQuery, "", "&");
     }
-    return $sPortalUriScheme . "://" . $_SERVER["HTTP_HOST"] . ($sResult == "" ? "/" : $sResult);
+    return $_SERVER['REQUEST_SCHEME'] . "://" . $_SERVER["HTTP_HOST"] . ($sResult == "" ? "/" : $sResult);
 }
 
 function getLoginToken() {
@@ -1313,28 +1325,25 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         unset($_SESSION["login_message"]);
     }
     $iTime = sendPageHeaders();
-    $sScriptDirectory = dirname((string)$_SERVER["SCRIPT_FILENAME"]);
-    $sLoginScriptUrl = html($sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime($sScriptDirectory . "/js/admin.js")));
-    $sAdminCssUrl = html($sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")));
-    $sAction = html(getCurrentUrlWithoutAuthActionForToken($sTokenName));
-    $sToken = html(getLoginToken());
-    $sMessageHtml = getLoginMessageHtml($sMessage);
+    $sScriptDirectory = dirname($_SERVER["SCRIPT_FILENAME"]);
     echo "<!DOCTYPE html>\n",
         "<html lang=\"en-US\" dir=\"ltr\">\n",
         "<head>\n",
         "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n",
         "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n",
+        "  <meta name=\"author\" content=\"Petr Červinka &lt;cervinka@fortsoft.cz&gt;\">\n",
+        "  <meta name=\"contact\" content=\"cervinka@fortsoft.cz\">\n",
         "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n",
         "  <link rel=\"icon\" href=\"" . $sBaseUrl . "favicon.ico\" type=\"image/x-icon\">\n",
         "  <link rel=\"shortcut icon\" href=\"" . $sBaseUrl . "favicon.ico\" type=\"image/x-icon\">\n",
         "  <title>Sign In</title>\n",
         "  <meta name=\"date\" content=\"" . gmdate("D, d M Y H:i:s", $iTime) . " GMT\">\n",
-        "  <link href=\"" . $sAdminCssUrl . "\" rel=\"stylesheet\" type=\"text/css\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")) . "\" rel=\"stylesheet\" type=\"text/css\">\n",
         "</head>\n",
         "<body class=\"login-page\">\n",
         "  <div class=\"confirm-dialog login-dialog\">\n",
-        "    <form class=\"confirm-dialog-box login-form\" method=\"post\" action=\"" . $sAction . "\" enctype=\"application/x-www-form-urlencoded\">\n",
-        "      <input type=\"hidden\" name=\"login_token\" value=\"" . $sToken . "\">\n",
+        "    <form class=\"confirm-dialog-box login-form\" method=\"post\" action=\"" . html(getCurrentUrlWithoutAuthActionForToken($sTokenName)) . "\" enctype=\"application/x-www-form-urlencoded\">\n",
+        "      <input type=\"hidden\" name=\"login_token\" value=\"" . getLoginToken() . "\">\n",
         "      <div class=\"confirm-dialog-header\">\n",
         "        <strong>Sign In</strong>\n",
         "        <button type=\"button\" class=\"confirm-dialog-close js-login-cancel\" aria-label=\"Close\">&times;</button>\n",
@@ -1344,7 +1353,7 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "        <input type=\"text\" id=\"login-user\" name=\"user_name\" autocomplete=\"username\" required autofocus>\n",
         "        <label for=\"login-password\">Password</label>\n",
         "        <input type=\"password\" id=\"login-password\" name=\"password\" autocomplete=\"current-password\" required>\n",
-        $sMessageHtml,
+        getLoginMessageHtml($sMessage),
         "      </div>\n",
         "      <div class=\"confirm-dialog-actions\">\n",
         "        <button type=\"submit\" name=\"action\" value=\"login\" class=\"confirm-dialog-button\">Login</button>\n",
@@ -1352,7 +1361,7 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "      </div>\n",
         "    </form>\n",
         "  </div>\n",
-        "  <script type=\"text/javascript\" src=\"" . $sLoginScriptUrl . "\"></script>\n",
+        "  <script type=\"text/javascript\" src=\"" . $sBaseUrl . "js/admin.js?sToken=" . dechex(filemtime($sScriptDirectory . "/js/admin.js")) . "\"></script>\n",
         "</body>\n",
         "</html>\n";
     exit;
@@ -2028,17 +2037,11 @@ function getDumpVarIndentation($mVar) {
 }
 
 function runKfExchangeRateProcess($oPdo, $sError = "") {
-    $sKfFunctionsPath = __DIR__ . "/kf/functions.php";
     $sRequestedFor = "";
     if (!$oPdo) {
         error_log("kf/proc.php database error: " . $sError);
         return array("result" => "ERR", "status_code" => 500);
     }
-    if (!is_file($sKfFunctionsPath)) {
-        error_log("kf/proc.php path error: " . $sKfFunctionsPath);
-        return array("result" => "ERR", "status_code" => 500);
-    }
-    include_once $sKfFunctionsPath;
     try {
         $sRequestedFor = getExchangeRateRequestedFor();
         if (!reserveExchangeRateFetchAttempt($oPdo, $sRequestedFor)) {
@@ -2074,47 +2077,55 @@ function runKfExchangeRateProcess($oPdo, $sError = "") {
 }
 
 function runExCalendarProcess($oPdo, $sError = "") {
-    $sExFunctionsPath = __DIR__ . "/ex/functions.php";
-    $sCalendarUrl = "";
+    $blHasFetchError = false;
+    $blHasInternalError = false;
     if (!$oPdo) {
         error_log("ex/proc.php database error: " . $sError);
         return array("result" => "ERR", "status_code" => 500);
     }
-    if (!is_file($sExFunctionsPath)) {
-        error_log("ex/proc.php path error: " . $sExFunctionsPath);
-        return array("result" => "ERR", "status_code" => 500);
-    }
-    include_once $sExFunctionsPath;
     try {
-        $sCalendarUrl = exCalendarGetExternalCalendarUrl();
-        if (!reserveExternalCalendarFetchAttempt($oPdo, $sCalendarUrl)) {
-            return array("result" => "OK", "status_code" => 200);
+        foreach (exCalendarFetchExternalCalendars($oPdo) as $aExternalCalendar) {
+            $iCalendarFetchId = (int)$aExternalCalendar["id"];
+            try {
+                if (!reserveExternalCalendarFetchAttempt($oPdo, $iCalendarFetchId)) {
+                    continue;
+                }
+                $aResponse = exCalendarFetchExternalCalendarResponse($aExternalCalendar["calendar_url"]);
+                if (!$aResponse["success"]) {
+                    $sErrorMessage = trim((string)$aResponse["error"]) != "" ? (string)$aResponse["error"] : "ICS calendar returned HTTP " . (int)$aResponse["status_code"] . ".";
+                    recordExternalCalendarFetchError($oPdo, $iCalendarFetchId, (int)$aResponse["status_code"], $sErrorMessage);
+                    error_log("ex/proc.php calendar fetch failed: " . $sErrorMessage);
+                    $blHasFetchError = true;
+                    continue;
+                }
+                $sParseError = "";
+                $aRows = exCalendarBuildExternalCalendarEventRows($aResponse["body"], $sParseError);
+                if ($aRows === false) {
+                    recordExternalCalendarFetchError($oPdo, $iCalendarFetchId, (int)$aResponse["status_code"], $sParseError);
+                    error_log("ex/proc.php calendar parse failed: " . $sParseError);
+                    $blHasFetchError = true;
+                    continue;
+                }
+                saveExternalCalendarEvents($oPdo, $iCalendarFetchId, $aExternalCalendar["calendar_url_hash"], $aRows, $aResponse["body"], (int)$aResponse["status_code"]);
+            } catch (Exception $oException) {
+                error_log((string)$oException);
+                try {
+                    recordExternalCalendarFetchError($oPdo, $iCalendarFetchId, 0, $oException->getMessage());
+                } catch (Exception $oIgnoredException) {
+                    error_log((string)$oIgnoredException);
+                }
+                $blHasInternalError = true;
+            }
         }
-        $aResponse = exCalendarFetchExternalCalendarResponse($sCalendarUrl);
-        if (!$aResponse["success"]) {
-            $sErrorMessage = trim((string)$aResponse["error"]) != "" ? (string)$aResponse["error"] : "ICS calendar returned HTTP " . (int)$aResponse["status_code"] . ".";
-            recordExternalCalendarFetchError($oPdo, $sCalendarUrl, (int)$aResponse["status_code"], $sErrorMessage);
-            error_log("ex/proc.php calendar fetch failed: " . $sErrorMessage);
+        if ($blHasInternalError) {
+            return array("result" => "ERR", "status_code" => 500);
+        }
+        if ($blHasFetchError) {
             return array("result" => "ERR", "status_code" => 502);
         }
-        $sParseError = "";
-        $aRows = exCalendarBuildExternalCalendarEventRows($aResponse["body"], $sParseError);
-        if ($aRows === false) {
-            recordExternalCalendarFetchError($oPdo, $sCalendarUrl, (int)$aResponse["status_code"], $sParseError);
-            error_log("ex/proc.php calendar parse failed: " . $sParseError);
-            return array("result" => "ERR", "status_code" => 502);
-        }
-        saveExternalCalendarEvents($oPdo, $sCalendarUrl, $aRows, $aResponse["body"], (int)$aResponse["status_code"]);
         return array("result" => "OK", "status_code" => 200);
     } catch (Exception $oException) {
         error_log((string)$oException);
-        if ($sCalendarUrl != "") {
-            try {
-                recordExternalCalendarFetchError($oPdo, $sCalendarUrl, 0, $oException->getMessage());
-            } catch (Exception $oIgnoredException) {
-                error_log((string)$oIgnoredException);
-            }
-        }
     }
     return array("result" => "ERR", "status_code" => 500);
 }
@@ -2129,8 +2140,6 @@ function arrayReadNext(&$aArray) {
 }
 
 function redirectToCanonicalUrl() {
-    global $sPortalUriScheme;
-
     $sPrefix = preg_replace("/\..*$/", "", $_SERVER["HTTP_HOST"]);
     $sPattern = "#^/" . preg_quote($sPrefix, "#") . "(/.*)?$#i";
     if (preg_match($sPattern, $_SERVER["REQUEST_URI"])) {
@@ -2143,18 +2152,82 @@ function redirectToCanonicalUrl() {
             $sNewUri = "/" . $sNewUri;
         }
         sendSecurityHeaders();
-        header("Location: " . $sPortalUriScheme . "://" . $_SERVER["HTTP_HOST"] . $sNewUri, true, 301);
+        header("Location: " . $_SERVER['REQUEST_SCHEME'] . "://" . $_SERVER["HTTP_HOST"] . $sNewUri, true, 301);
         exit;
     }
 }
 
 function getBaseUrl() {
-    global $sPortalUriScheme;
-
     $sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
     if (substr($sPath, -1) != "/") {
         $sPath = dirname($sPath) . "/";
     }
-    $sOrigin = $sPortalUriScheme . "://" . $_SERVER["HTTP_HOST"];
+    $sOrigin = $_SERVER['REQUEST_SCHEME'] . "://" . $_SERVER["HTTP_HOST"];
     return array($sOrigin, $sOrigin . $sPath);
+}
+
+function databaseConnect() {
+    global $sDatabaseHostname, $sDatabaseNamePrefix, $sDatabaseUsernamePrefix, $sDatabasePassword;
+
+    $sError = "";
+    $oPdo = null;
+    try {
+        $oPdo = new PDO(
+            "mysql:host=" . $sDatabaseHostname . ";dbname=" . $sDatabaseNamePrefix . $_SERVER['USER'] . ";charset=utf8mb4",
+            $sDatabaseUsernamePrefix . $_SERVER['USER'],
+            $sDatabasePassword,
+            array(
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false
+            )
+        );
+    } catch (PDOException $oException) {
+        error_log((string)$oException);
+        $sError = $oException->getMessage();
+    }
+    return array($oPdo, $sError);
+}
+
+function configureErrorReporting() {
+    global $blPortalDebugMode;
+
+    if ($blPortalDebugMode && isTrustedClient()) {
+        error_reporting(E_ALL);
+        ini_set("display_errors", 1);
+        ini_set("display_startup_errors", 1);
+    } else {
+        error_reporting(0);
+        ini_set("display_errors", 0);
+        ini_set("display_startup_errors", 0);
+    }
+}
+
+function initializeSession($blStartOnlyIfExists = false) {
+    global $iSessionLifetime;
+
+    ignore_user_abort(true);
+    ini_set("session.use_strict_mode", 1);
+    ini_set("session.use_only_cookies", 1);
+    ini_set("session.use_trans_sid", 0);
+    ini_set("session.gc_maxlifetime", $iSessionLifetime);
+    $sSessionName = null;
+    if ($blStartOnlyIfExists) {
+        $sSessionName = session_name();
+    }
+    session_set_cookie_params(array(
+        "lifetime" => $iSessionLifetime,
+        "path" => "/",
+        "domain" => "",
+        "secure" => true,
+        "httponly" => true,
+        "samesite" => "Lax"
+    ));
+    if ($blStartOnlyIfExists) {
+        if ($sSessionName && isset($_COOKIE[$sSessionName]) && $_COOKIE[$sSessionName]) {
+            session_start();
+        }
+    } else {
+        session_start();
+    }
 }

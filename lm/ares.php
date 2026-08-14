@@ -100,6 +100,7 @@ if (isset($_GET["ico"]) || isset($_GET["business_name"]) || isset($_GET["registe
     }
 }
 
+$sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $iTime = sendPageHeaders();
 
 ?>
@@ -126,7 +127,7 @@ renderMenu();
 ?>
   </p>
   <div class="admin-top ares-lookup-top">
-    <form action="<?php echo $sBaseUrl; ?>ares.php" method="get" id="ares-lookup-form" class="ares-lookup-form">
+    <form action="<?php echo $sScriptUrl; ?>" method="get" id="ares-lookup-form" class="ares-lookup-form">
       <span class="ares-lookup-fields">
         <span class="ares-lookup-field">
           <label for="ico">Company ID</label>

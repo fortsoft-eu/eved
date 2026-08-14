@@ -2364,27 +2364,41 @@ function exCalendarGetYear() {
     return $iYear;
 }
 
-function exCalendarGetCalendarGroups() {
+function exCalendarFetchNameDayGroups($oPdo) {
+    $oStatement = $oPdo->query("SELECT id, name FROM ex_name_day_groups ORDER BY `order` ASC, id ASC");
+    return $oStatement->fetchAll();
+}
+
+function exCalendarFetchExternalCalendars($oPdo) {
+    $oStatement = $oPdo->query("SELECT id, calendar_name, calendar_url_hash, calendar_url FROM ex_calendar_fetches ORDER BY `order` ASC, id ASC");
+    return $oStatement->fetchAll();
+}
+
+function exCalendarGetCalendarGroups($aExternalCalendars, $aNameDayGroups) {
+    $aExternalCalendarNames = array();
+    $aNameDayCalendars = array();
+    $iCal = 3;
+    foreach ($aExternalCalendars as $aExternalCalendar) {
+        $aExternalCalendarNames[$iCal] = (string)$aExternalCalendar["calendar_name"];
+        $iCal++;
+    }
+    foreach ($aNameDayGroups as $aNameDayGroup) {
+        $aNameDayCalendars[$iCal] = (string)$aNameDayGroup["name"];
+        $iCal++;
+    }
     return array(
         "Persons" => array(
             1 => "Birthdays",
             2 => "Name Days"
         ),
-        "Calendars" => array(
-            3 => "Czech Furry Events"
-        ),
-        "Name Days" => array(
-            4 => "CZ Name Days",
-            5 => "CZ Name Days Ext.",
-            6 => "SK Name Days",
-            7 => "SK Name Days Ext."
-        )
+        "Calendars" => $aExternalCalendarNames,
+        "Name Days" => $aNameDayCalendars
     );
 }
 
-function exCalendarGetCalendars() {
+function exCalendarGetCalendars($aCalendarGroups) {
     $aCalendars = array();
-    foreach (exCalendarGetCalendarGroups() as $aCalendarGroup) {
+    foreach ($aCalendarGroups as $aCalendarGroup) {
         foreach ($aCalendarGroup as $iCal => $sCalendar) {
             $aCalendars[$iCal] = $sCalendar;
         }
@@ -2392,18 +2406,20 @@ function exCalendarGetCalendars() {
     return $aCalendars;
 }
 
-function exCalendarGetICal() {
-    $aCalendars = exCalendarGetCalendars();
+function exCalendarGetICal($aCalendars) {
     $iCal = isset($_SESSION["ex_calendar"]) && is_array($_SESSION["ex_calendar"]) && isset($_SESSION["ex_calendar"]["iCal"]) ? (int)$_SESSION["ex_calendar"]["iCal"] : 1;
     if (!isset($aCalendars[$iCal])) {
         $iCal = 1;
     }
     if (isset($_GET["iCal"])) {
         $sCal = trim((string)$_GET["iCal"]);
-        if (!preg_match("/^[1-7]$/", $sCal)) {
+        if (!preg_match("/^[1-9][0-9]*$/", $sCal)) {
             send404AndExit();
         }
         $iCal = (int)$sCal;
+        if (!isset($aCalendars[$iCal])) {
+            send404AndExit();
+        }
     }
     return $iCal;
 }
@@ -2544,16 +2560,6 @@ function exCalendarAddPersonNameDays(&$aHolidays, $oPdo, $iYear) {
         exCalendarAddHoliday($aHolidays, sprintf("%04d-%s", $iYear, $aNameDaysByName[$sNameKey]), "person", $aPerson["subject_name"], "", "", exCalendarGetPersonBoxName($aPerson));
     }
     ksort($aHolidays);
-}
-
-function exCalendarGetExternalCalendarUrl() {
-    global $sExCalendarUrl;
-
-    return $sExCalendarUrl;
-}
-
-function exCalendarGetExternalCalendarUrlHash($sUrl) {
-    return hash("sha256", (string)$sUrl);
 }
 
 function exCalendarGetExternalCalendarHttpStatusCode($aHeaders) {
@@ -2800,28 +2806,16 @@ function exCalendarGetExternalCalendarEventSourceKey($aRow) {
     return hash("sha256", "raw\n" . (string)$aRow["raw_event"]);
 }
 
-function reserveExternalCalendarFetchAttempt($oPdo, $sCalendarUrl) {
-    $sCalendarUrlHash = exCalendarGetExternalCalendarUrlHash($sCalendarUrl);
+function reserveExternalCalendarFetchAttempt($oPdo, $iCalendarFetchId) {
     $oPdo->beginTransaction();
     try {
-        $oStatement = $oPdo->prepare("SELECT id, status, last_attempt_at FROM ex_calendar_fetches WHERE calendar_url_hash = :calendar_url_hash ORDER BY id ASC LIMIT 1 FOR UPDATE");
-        $oStatement->execute(array("calendar_url_hash" => $sCalendarUrlHash));
+        $oStatement = $oPdo->prepare("SELECT id, status, last_attempt_at FROM ex_calendar_fetches WHERE id = :id FOR UPDATE");
+        $oStatement->execute(array("id" => $iCalendarFetchId));
         $aFetch = $oStatement->fetch();
         if (!$aFetch) {
-            $oStatement = $oPdo->prepare("INSERT INTO ex_calendar_fetches (calendar_url_hash, calendar_url, status) VALUES (:calendar_url_hash, :calendar_url, 'pending') ON DUPLICATE KEY UPDATE calendar_url = VALUES(calendar_url)");
-            $oStatement->execute(array(
-                "calendar_url_hash" => $sCalendarUrlHash,
-                "calendar_url" => $sCalendarUrl
-            ));
-            $oStatement = $oPdo->prepare("SELECT id, status, last_attempt_at FROM ex_calendar_fetches WHERE calendar_url_hash = :calendar_url_hash ORDER BY id ASC LIMIT 1 FOR UPDATE");
-            $oStatement->execute(array("calendar_url_hash" => $sCalendarUrlHash));
-            $aFetch = $oStatement->fetch();
+            $oPdo->commit();
+            return false;
         }
-        $oStatement = $oPdo->prepare("UPDATE ex_calendar_fetches SET calendar_url = :calendar_url WHERE id = :id");
-        $oStatement->execute(array(
-            "calendar_url" => $sCalendarUrl,
-            "id" => (int)$aFetch["id"]
-        ));
         if ($aFetch && trim((string)$aFetch["last_attempt_at"]) != "") {
             $iLastAttempt = strtotime((string)$aFetch["last_attempt_at"]);
             if ($iLastAttempt !== false && $iLastAttempt > time() - 14400) {
@@ -2841,22 +2835,21 @@ function reserveExternalCalendarFetchAttempt($oPdo, $sCalendarUrl) {
     }
 }
 
-function recordExternalCalendarFetchError($oPdo, $sCalendarUrl, $iHttpStatusCode, $sErrorMessage) {
+function recordExternalCalendarFetchError($oPdo, $iCalendarFetchId, $iHttpStatusCode, $sErrorMessage) {
     $sErrorMessage = substr((string)$sErrorMessage, 0, 1000);
-    $oStatement = $oPdo->prepare("UPDATE ex_calendar_fetches SET status = 'error', http_status_code = :http_status_code, error_message = :error_message WHERE calendar_url_hash = :calendar_url_hash");
+    $oStatement = $oPdo->prepare("UPDATE ex_calendar_fetches SET status = 'error', http_status_code = :http_status_code, error_message = :error_message WHERE id = :id");
     $oStatement->execute(array(
         "http_status_code" => $iHttpStatusCode > 0 ? $iHttpStatusCode : null,
         "error_message" => $sErrorMessage,
-        "calendar_url_hash" => exCalendarGetExternalCalendarUrlHash($sCalendarUrl)
+        "id" => $iCalendarFetchId
     ));
 }
 
-function saveExternalCalendarEvents($oPdo, $sCalendarUrl, $aRows, $sRawContent, $iHttpStatusCode) {
-    $sCalendarUrlHash = exCalendarGetExternalCalendarUrlHash($sCalendarUrl);
+function saveExternalCalendarEvents($oPdo, $iCalendarFetchId, $sCalendarUrlHash, $aRows, $sRawContent, $iHttpStatusCode) {
     $oPdo->beginTransaction();
     try {
-        $oStatement = $oPdo->prepare("SELECT id FROM ex_calendar_fetches WHERE calendar_url_hash = :calendar_url_hash ORDER BY id ASC LIMIT 1 FOR UPDATE");
-        $oStatement->execute(array("calendar_url_hash" => $sCalendarUrlHash));
+        $oStatement = $oPdo->prepare("SELECT id FROM ex_calendar_fetches WHERE id = :id FOR UPDATE");
+        $oStatement->execute(array("id" => $iCalendarFetchId));
         $iFetchId = (int)$oStatement->fetchColumn();
         $oStatement = $oPdo->prepare("UPDATE ex_calendar_events SET is_active = 0 WHERE calendar_url_hash = :calendar_url_hash");
         $oStatement->execute(array("calendar_url_hash" => $sCalendarUrlHash));
@@ -2921,11 +2914,10 @@ function saveExternalCalendarEvents($oPdo, $sCalendarUrl, $aRows, $sRawContent, 
     }
 }
 
-function exCalendarAddExternalCalendarDatabaseEvents(&$aHolidays, $oPdo, $iYear, $sCalendarUrl) {
+function exCalendarAddExternalCalendarDatabaseEvents(&$aHolidays, $oPdo, $iYear, $sCalendarUrlHash) {
     $aEvents = array();
     $sFromDate = sprintf("%04d-01-01", (int)$iYear);
     $sToDate = sprintf("%04d-12-31", (int)$iYear);
-    $sCalendarUrlHash = exCalendarGetExternalCalendarUrlHash($sCalendarUrl);
     $oStatement = $oPdo->prepare("SELECT id, event_order, start_date, start_time, summary, location, status FROM ex_calendar_events WHERE calendar_url_hash = :calendar_url_hash AND is_active = 1 AND start_date BETWEEN :from_date AND :to_date ORDER BY start_date ASC, start_time ASC, event_order ASC, id ASC");
     $oStatement->execute(array(
         "calendar_url_hash" => $sCalendarUrlHash,

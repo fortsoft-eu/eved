@@ -110,6 +110,7 @@ $iTime = sendPageHeaders();
 renderMenu();
 
 ?>
+    <button type="button" class="button-link js-schema-save-png" data-file-name="kf_database_schema" aria-label="Save PNG">Save PNG</button>
   </p>
   <p class="schema-unavailable-message"><strong>Database Schema: </strong>The database schema cannot be displayed on this device.</p>
   <div class="schema-diagram" id="schema-diagram">
@@ -242,6 +243,7 @@ if (!$aRelations) {
 
 ?>
   <div class="confirm-dialog" id="admin-reusable-dialog" data-reusable-dialog="1" hidden></div>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/html2canvas-1.4.1/html2canvas.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

@@ -8,7 +8,19 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess("kf", "csrf_token");
+$sDownload = "";
+if (isset($_GET["download"])) {
+    $sDownload = (string)$_GET["download"];
+    if ($sDownload == "db.sql") {
+        $sDownload = "schema";
+    }
+    if ($sDownload == "backup" && !isTrustedClient() && !isProjectViewAllowed("kf")) {
+        if ($blDatabaseBackupDownloadLogin) {
+            requireViewAccess("kf", "csrf_token");
+        }
+        send403AndExit();
+    }
+}
 
 
 $aTables = array();

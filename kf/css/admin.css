@@ -620,11 +620,15 @@ tr:nth-child(even) {
     cursor: help;
 }
 
+.admin-controls .js-schema-save-png {
+    white-space: nowrap;
+}
+
 @media (max-width: 600px) {
     .menu-panel {
         max-width: calc(100vw - 16px);
     }
-    .schema-diagram, .schema-relations {
+    .schema-diagram, .schema-relations, .admin-controls .js-schema-save-png {
         display: none;
     }
     .schema-unavailable-message {

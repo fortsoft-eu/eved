@@ -7,13 +7,21 @@ if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-$aCalendarGroups = exCalendarGetCalendarGroups();
-$aCalendarNames = exCalendarGetCalendars();
-$iCal = exCalendarGetICal();
+try {
+    $aExternalCalendars = exCalendarFetchExternalCalendars($oPdo);
+    $aNameDayGroups = exCalendarFetchNameDayGroups($oPdo);
+} catch (Exception $oException) {
+    error_log((string)$oException);
+    send500AndExit("Database error: " . $oException->getMessage());
+}
+$aCalendarGroups = exCalendarGetCalendarGroups($aExternalCalendars, $aNameDayGroups);
+$aCalendarNames = exCalendarGetCalendars($aCalendarGroups);
+$iCal = exCalendarGetICal($aCalendarNames);
 $iYear = exCalendarGetYear();
 $iPreviousYear = $iYear > 1583 ? $iYear - 1 : $iYear;
 $iNextYear = $iYear < 9999 ? $iYear + 1 : $iYear;
 $iCurrentYear = (int)date("Y");
+$sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $sCalendarPngFileName = strtolower(trim(preg_replace("/[^a-zA-Z0-9]+/", "_", $aCalendarNames[$iCal]), "_")) . "_" . $iYear . "_calendar";
 $_SESSION["ex_calendar"] = array(
     "iCal" => $iCal,
@@ -23,6 +31,7 @@ $blCanViewPersons = isTrustedClient() || isProjectViewAllowed("ex");
 session_write_close();
 $sPageTitle = getPageTitleText();
 $aHolidays = exCalendarGetHolidays($iYear);
+$iExternalCalendarCount = count($aExternalCalendars);
 if ($iCal == 1 || $iCal == 2) {
     if ($blCanViewPersons) {
         try {
@@ -36,11 +45,11 @@ if ($iCal == 1 || $iCal == 2) {
             send500AndExit("Database error: " . $oException->getMessage());
         }
     }
-} elseif ($iCal == 3) {
-    exCalendarAddExternalCalendarDatabaseEvents($aHolidays, $oPdo, $iYear, exCalendarGetExternalCalendarUrl());
+} elseif ($iCal >= 3 && $iCal < 3 + $iExternalCalendarCount) {
+    exCalendarAddExternalCalendarDatabaseEvents($aHolidays, $oPdo, $iYear, $aExternalCalendars[$iCal - 3]["calendar_url_hash"]);
 } else {
     try {
-        exCalendarAddNameDays($aHolidays, $oPdo, $iYear, $iCal - 3);
+        exCalendarAddNameDays($aHolidays, $oPdo, $iYear, $aNameDayGroups[$iCal - 3 - $iExternalCalendarCount]["id"]);
     } catch (Exception $oException) {
         error_log((string)$oException);
         send500AndExit("Database error: " . $oException->getMessage());
@@ -84,15 +93,15 @@ echo "    </select>\n";
     <button type="submit" class="button-link calendar-year-submit" form="calendar-year-form">Show</button>
     <button type="submit" class="button-link calendar-year-link" form="calendar-previous-year-form" title="Previous year">Prev</button>
     <button type="submit" class="button-link calendar-year-link" form="calendar-next-year-form" title="Next year">Next</button>
-    <button type="button" class="button-link calendar-year-link js-calendar-current-year" data-calendar-url="<?php echo html($sBaseUrl . "cal.php?iCal=" . $iCal . "&iYear=" . $iCurrentYear); ?>" title="Current year">Today</button>
+    <button type="button" class="button-link calendar-year-link js-calendar-current-year" data-calendar-url="<?php echo $sScriptUrl . "?iCal=" . $iCal . "&amp;iYear=" . $iCurrentYear; ?>" title="Current year">Today</button>
     <button type="button" class="button-link calendar-year-link js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" aria-label="Save PNG">Save PNG</button>
   </p>
-  <form id="calendar-year-form" method="get" action="<?php echo html($sBaseUrl . "cal.php"); ?>" enctype="application/x-www-form-urlencoded" hidden></form>
-  <form id="calendar-previous-year-form" method="get" action="<?php echo html($sBaseUrl . "cal.php"); ?>" enctype="application/x-www-form-urlencoded" hidden>
+  <form id="calendar-year-form" method="get" action="<?php echo $sScriptUrl; ?>" enctype="application/x-www-form-urlencoded" hidden></form>
+  <form id="calendar-previous-year-form" method="get" action="<?php echo $sScriptUrl; ?>" enctype="application/x-www-form-urlencoded" hidden>
     <input type="hidden" name="iCal" value="<?php echo $iCal; ?>">
     <input type="hidden" name="iYear" value="<?php echo $iPreviousYear; ?>">
   </form>
-  <form id="calendar-next-year-form" method="get" action="<?php echo html($sBaseUrl . "cal.php"); ?>" enctype="application/x-www-form-urlencoded" hidden>
+  <form id="calendar-next-year-form" method="get" action="<?php echo $sScriptUrl; ?>" enctype="application/x-www-form-urlencoded" hidden>
     <input type="hidden" name="iCal" value="<?php echo $iCal; ?>">
     <input type="hidden" name="iYear" value="<?php echo $iNextYear; ?>">
   </form>

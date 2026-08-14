@@ -120,10 +120,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($aMailValues["sender"] != "" && $aSender !== false && !mailFormEmailListUsesAllowedSenderDomains($aSender, $aAllowedSenderDomains)) {
             $aErrors[] = "Invalid Sender domain.";
         }
-        if ($aFrom !== false && $aFrom["count"] > 1 && $blMailRestrictFromToSingleAddress) {
+        if ($aFrom !== false && $aFrom["count"] > 1 && $blMailRestrictFromToOneAddress) {
             $aErrors[] = "Single From required.";
         }
-        if ($aFrom !== false && $aFrom["count"] > 1 && !$blMailRestrictFromToSingleAddress && $aMailValues["sender"] == "") {
+        if ($aFrom !== false && $aFrom["count"] > 1 && !$blMailRestrictFromToOneAddress && $aMailValues["sender"] == "") {
             $aErrors[] = "Sender required.";
         }
         if ($aMailValues["reply_to"] != "" && $aReplyTo === false) {
@@ -193,7 +193,7 @@ renderMenu();
     <button type="submit" form="mail-form" name="mail_body_format" value="plain" class="button-link mail-send-button">Send plain text</button>
     <span class="mail-form-status <?php echo html($sMailStatusClass); ?>" aria-live="polite"><?php echo html($sMailStatus); ?></span>
   </p>
-  <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="mail-form" class="snippet-board-form mail-form" enctype="multipart/form-data" autocomplete="on" data-mail-allowed-sender-domains="<?php echo html(json_encode($aAllowedSenderDomains)); ?>" data-mail-restrict-from-to-single-address="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
+  <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="mail-form" class="snippet-board-form mail-form" enctype="multipart/form-data" autocomplete="on" data-mail-allowed-sender-domains="<?php echo html(json_encode($aAllowedSenderDomains)); ?>" data-mail-restrict-from-to-single-address="<?php echo $blMailRestrictFromToOneAddress ? "1" : "0"; ?>">
     <input type="hidden" name="action" value="send_mail">
     <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
     <input type="hidden" name="mail_rich_text_paste" class="js-mail-rich-text-paste" value="<?php echo (int)$iMailRichTextPaste; ?>">
@@ -205,10 +205,10 @@ renderMenu();
       <label for="mail-bcc">Blind Carbon Copy:</label>
       <input type="text" id="mail-bcc" name="mail_bcc" value="<?php echo html($aMailValues["bcc"]); ?>" autocomplete="on" inputmode="email" spellcheck="false" data-mail-recipient-suggest="1">
       <label for="mail-from">From:</label>
-      <input type="text" id="mail-from" name="mail_from" value="<?php echo html($aMailValues["from"]); ?>" autocomplete="on" inputmode="email" spellcheck="false" data-mail-recipient-suggest="1" data-mail-recipient-suggest-allowed-domains="1" data-mail-recipient-suggest-single="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
+      <input type="text" id="mail-from" name="mail_from" value="<?php echo html($aMailValues["from"]); ?>" autocomplete="on" inputmode="email" spellcheck="false" data-mail-recipient-suggest="1" data-mail-recipient-suggest-allowed-domains="1" data-mail-recipient-suggest-single="<?php echo $blMailRestrictFromToOneAddress ? "1" : "0"; ?>">
 <?php
 
-if (!$blMailRestrictFromToSingleAddress) {
+if (!$blMailRestrictFromToOneAddress) {
 
 ?>
       <label for="mail-sender">Sender:</label>

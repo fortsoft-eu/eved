@@ -57,7 +57,7 @@ if (isset($_GET["sQuery"])) {
                 $sLookupMessage = $blLookupIsIp ? "Cached IP data was loaded from the database." : "Cached result was loaded from the database.";
                 $sLookupMessageClass = (string)$aDomainRow["result_status"] == "success" ? "message-success" : "message-warning";
             } else {
-                $aLookupResult = $blLookupIsIp ? domainLookupCallIpApi($sLookupValue, $sAbstractIpIntelApiKey) : domainLookupCallApi($sLookupValue, $sApiLayerWhoisApiKey);
+                $aLookupResult = $blLookupIsIp ? domainLookupCallIpApi($sLookupValue, $aApiKeys["AbstractAPI.IPIntelligence"]) : domainLookupCallApi($sLookupValue, $aApiKeys["APILayer.WhoisAPI"]);
                 if ($blLookupIsIp) {
                     $sReverseDns = "";
                     $sHostName = @gethostbyaddr($sLookupValue);

@@ -29,16 +29,18 @@ CREATE TABLE `ex_calendar_events` (
   `seen_count` int(10) unsigned NOT NULL DEFAULT 1,
   `first_seen_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `last_seen_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `ux_ex_calendar_events_source` (`calendar_url_hash`,`source_event_key`) USING BTREE,
-  KEY `ix_ex_calendar_events_calendar_date` (`calendar_url_hash`,`is_active`,`start_date`,`start_time`,`event_order`,`id`) USING BTREE,
-  KEY `ix_ex_calendar_events_first_fetch` (`first_fetch_id`) USING BTREE,
-  KEY `ix_ex_calendar_events_last_fetch` (`last_fetch_id`) USING BTREE,
-  KEY `ix_ex_calendar_events_uid` (`uid`) USING BTREE
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_ex_calendar_events_source` (`calendar_url_hash`,`source_event_key`),
+  KEY `ix_ex_calendar_events_calendar_date` (`calendar_url_hash`,`is_active`,`start_date`,`start_time`,`event_order`,`id`),
+  KEY `ix_ex_calendar_events_first_fetch` (`first_fetch_id`),
+  KEY `ix_ex_calendar_events_last_fetch` (`last_fetch_id`),
+  KEY `ix_ex_calendar_events_uid` (`uid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `ex_calendar_fetches` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `calendar_name` varchar(255) NOT NULL,
+  `order` int(10) unsigned NOT NULL DEFAULT 0,
   `calendar_url_hash` char(64) NOT NULL,
   `calendar_url` text NOT NULL,
   `status` varchar(16) NOT NULL DEFAULT 'pending',
@@ -51,9 +53,11 @@ CREATE TABLE `ex_calendar_fetches` (
   `error_message` varchar(1000) DEFAULT NULL,
   `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `ux_ex_calendar_fetches_hash` (`calendar_url_hash`) USING BTREE,
-  KEY `ix_ex_calendar_fetches_status_attempt` (`status`,`last_attempt_at`) USING BTREE
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_ex_calendar_fetches_name` (`calendar_name`),
+  UNIQUE KEY `ux_ex_calendar_fetches_hash` (`calendar_url_hash`),
+  KEY `ix_ex_calendar_fetches_order` (`order`,`id`),
+  KEY `ix_ex_calendar_fetches_status_attempt` (`status`,`last_attempt_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `ex_contact_types` (
@@ -62,11 +66,11 @@ CREATE TABLE `ex_contact_types` (
   `name` varchar(100) NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `order` int(10) unsigned NOT NULL DEFAULT 0,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `ux_ex_contact_types_type` (`contact_type`) USING BTREE,
-  UNIQUE KEY `ux_ex_contact_types_name` (`name`) USING BTREE,
-  KEY `ix_ex_contact_types_active_order` (`is_active`,`order`,`id`) USING BTREE,
-  KEY `ix_ex_contact_types_order` (`order`,`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_ex_contact_types_type` (`contact_type`),
+  UNIQUE KEY `ux_ex_contact_types_name` (`name`),
+  KEY `ix_ex_contact_types_order` (`order`,`id`),
+  KEY `ix_ex_contact_types_active_order` (`is_active`,`order`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `ex_contacts` (
@@ -75,9 +79,9 @@ CREATE TABLE `ex_contacts` (
   `contact_value` varchar(255) NOT NULL,
   `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `ux_ex_contacts_type_value` (`contact_type_id`,`contact_value`) USING BTREE,
-  KEY `ix_ex_contacts_value` (`contact_value`) USING BTREE,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_ex_contacts_type_value` (`contact_type_id`,`contact_value`),
+  KEY `ix_ex_contacts_value` (`contact_value`),
   CONSTRAINT `fk_ex_contacts_contact_type` FOREIGN KEY (`contact_type_id`) REFERENCES `ex_contact_types` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
@@ -129,8 +133,8 @@ CREATE TABLE `ex_subjects` (
 CREATE TABLE `ex_group_subject` (
   `group_id` int(10) unsigned NOT NULL,
   `subject_id` int(10) unsigned NOT NULL,
-  PRIMARY KEY (`group_id`,`subject_id`) USING BTREE,
-  KEY `ix_ex_group_subject_subject_id` (`subject_id`) USING BTREE,
+  PRIMARY KEY (`group_id`,`subject_id`),
+  KEY `ix_ex_group_subject_subject_id` (`subject_id`),
   CONSTRAINT `fk_ex_group_subject_group` FOREIGN KEY (`group_id`) REFERENCES `ex_groups` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_ex_group_subject_subject` FOREIGN KEY (`subject_id`) REFERENCES `ex_subjects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
@@ -138,6 +142,7 @@ CREATE TABLE `ex_group_subject` (
 CREATE TABLE `ex_name_day_groups` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
+  `order` int(10) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `ix_ex_name_day_groups_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
@@ -180,10 +185,10 @@ CREATE TABLE `ex_subject_contacts` (
   `is_primary` tinyint(1) NOT NULL DEFAULT 0,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `note` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_czech_ci DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE KEY `ux_ex_subject_contacts_subject_contact` (`subject_id`,`contact_id`) USING BTREE,
-  KEY `ix_ex_subject_contacts_contact_id` (`contact_id`) USING BTREE,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ux_ex_subject_contacts_subject_contact` (`subject_id`,`contact_id`),
   KEY `ix_ex_subject_contacts_subject_sort` (`subject_id`,`is_active`,`is_primary`,`id`),
+  KEY `ix_ex_subject_contacts_contact_id` (`contact_id`),
   CONSTRAINT `fk_ex_subject_contacts_contact` FOREIGN KEY (`contact_id`) REFERENCES `ex_contacts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_ex_subject_contacts_subject` FOREIGN KEY (`subject_id`) REFERENCES `ex_subjects` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;

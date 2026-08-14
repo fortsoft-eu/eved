@@ -1,50 +1,11 @@
 <?php
 
-include "config.php";
-include "../functions.php";
-include "functions.php";
-
-
-ini_set("log_errors", "1");
-ini_set("error_log", __DIR__ . "/../log/error.log");
-
-
-redirectIndexPhpToRoot();
-
-
-if ($blPortalDebugMode && isTrustedClient()) {
-    error_reporting(E_ALL);
-    ini_set("display_errors", 1);
-    ini_set("display_startup_errors", 1);
-} else {
-    error_reporting(0);
-    ini_set("display_errors", 0);
-    ini_set("display_startup_errors", 0);
-}
-
-
-ignore_user_abort(true);
-ini_set("session.use_strict_mode", 1);
-ini_set("session.use_only_cookies", 1);
-ini_set("session.use_trans_sid", 0);
-ini_set("session.gc_maxlifetime", 31536000);
-session_set_cookie_params(array(
-    "lifetime" => 31536000,
-    "path" => "/",
-    "domain" => "",
-    "secure" => true,
-    "httponly" => true,
-    "samesite" => "Lax"
-));
-session_start();
-
-
-handleQuickTableFilterRequest();
-redirectToCanonicalUrl();
-list($sOrigin, $sBaseUrl) = getBaseUrl();
-
-
 $blDatabaseBackupDownloadLogin  = true;
+$blMailRestrictFromToOneAddress = true;
+$iRenderThrobberRowLimit        = 300;
+$iCalendarFirstDay              = 1;
+$iBirthdayDisplayMinDays        = -2;
+$iBirthdayDisplayMaxDays        = 17;
 $sMenuEmoji                     = "&#9776;";
 $sEditEmoji                     = "&#128221;";
 $sDeleteEmoji                   = "&#128465;&#65039;";
@@ -73,28 +34,26 @@ $sContactWebEmoji               = "&#127760;";
 $sContactTelegramEmoji          = "&#9992;&#65039;";
 $sContactMessageEmoji           = "&#128172;";
 $sContactYouTubeEmoji           = "&#9654;&#65039;";
-$iRenderThrobberRowLimit        = 300;
-$iCalendarFirstDay              = 1;
-$iBirthdayDisplayMinDays        = -2;
-$iBirthdayDisplayMaxDays        = 17;
 $sDateInputFormat               = "YYYY-MM-DD";
-$blMailRestrictFromToSingleAddress = true;
 
 
-$sError = "";
-$oPdo = null;
-try {
-    $oPdo = new PDO(
-        "mysql:host=" . $sDatabaseHost . ";dbname=" . $sDatabaseName . ";charset=utf8mb4",
-        $sDatabaseUsername,
-        $sDatabasePassword,
-        array(
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false
-        )
-    );
-} catch (PDOException $oException) {
-    error_log((string)$oException);
-    $sError = $oException->getMessage();
-}
+ini_set("log_errors", "1");
+ini_set("error_log", __DIR__ . "/../log/error.log");
+
+
+include "config.php";
+include "../functions.php";
+
+
+redirectIndexPhpToRoot();
+redirectToCanonicalUrl();
+configureErrorReporting();
+initializeSession();
+handleQuickTableFilterRequest();
+
+
+include "./functions.php";
+
+
+list($sOrigin, $sBaseUrl) = getBaseUrl();
+list($oPdo, $sError) = databaseConnect();

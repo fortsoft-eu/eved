@@ -8,6 +8,8 @@ if (!$oPdo) {
 }
 
 
+$aMenuItemUrls = getMenuItemUrls($oPdo);
+$sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $iTime = sendPageHeaders();
 
 ?>
@@ -118,7 +120,7 @@ renderMenu();
   </dl>
   <h3>Menu Pages</h3>
   <dl class="portal-help-list">
-    <dt><a href="<?php echo $sBaseUrl; ?>index.php">Contacts</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["index.php"]); ?>">Contacts</a></dt>
     <dd>
       <p>Contacts is the compact read-only overview of portal subjects. It is optimized for scanning people and services, copying table values, and opening contact links without exposing the full editing surface. It uses the same subject rendering helpers as the editing pages, but it intentionally keeps the page lighter and hides less important columns on narrower screens.</p>
       <p>The table contains the computed subject name, personal dates, nicknames, postal addresses, contacts, groups, and notes. Values are displayed in the form used by the rest of the portal, so the compact overview is suitable for checking how a subject will appear outside the full editor.</p>
@@ -131,7 +133,7 @@ renderMenu();
         <li><strong>Actions:</strong> Copy and contact-link actions are available; editing is intentionally not shown.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>contacts.php">Shared Contacts</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["contacts.php"]); ?>">Shared Contacts</a></dt>
     <dd>
       <p>Shared Contacts groups exact shared contact values and shows every subject that uses each value. It is intended for finding reused phone numbers, e-mail addresses, web links, messaging identifiers, and profile URLs, and for correcting a shared value in one place when the stored contact itself is wrong.</p>
       <p>The Contact column represents the shared contact row. Editing that cell changes the contact type or contact value for every linked subject. Deleting that cell removes the shared contact and its subject links. These actions are broad by design, so they should be used only when the contact value itself is the problem.</p>
@@ -144,7 +146,7 @@ renderMenu();
         <li><strong>Validation:</strong> Contact values are normalized and checked by contact type.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>pb.php">Phone Book</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["pb.php"]); ?>">Phone Book</a></dt>
     <dd>
       <p>Phone Book is a compact read-only contact list grouped by subject. It shows each subject once and lists the subject's active contact values underneath, including contact type, formatted value, primary marker, and note where available.</p>
       <p>The page is optimized for quickly finding a phone number, e-mail address, or other contact without opening the full subject editor. The quick filter searches both the subject name and the rendered contact values.</p>
@@ -155,7 +157,7 @@ renderMenu();
         <li><strong>Safety:</strong> Read-only page.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>mail.php">Mail</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["mail.php"]); ?>">Mail</a></dt>
     <dd>
       <p>Mail is the full-access message composition page. It provides To, Carbon Copy, Blind Carbon Copy, From, optional Sender, Reply-To, Subject, attachment, and message fields, and it can send either HTML or plain text.</p>
       <p>Recipient fields use the portal recipient suggestion behavior. Sender fields can be restricted to configured sender domains, and the form keeps entered values in the session when a send attempt needs to be corrected.</p>
@@ -166,7 +168,7 @@ renderMenu();
         <li><strong>Safety:</strong> CSRF-protected POST with validation before sending.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>list.php">Subjects</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["list.php"]); ?>">Subjects</a></dt>
     <dd>
       <p>Subjects is the full portal editor and the main place for maintaining subject data. It shows person, organization, service, and other subject types in one table and exposes the editors for the subject itself and for the subject's dependent records.</p>
       <p>For person subjects, the displayed name is computed from personal name fields and related person data. For non-person subjects, the displayed name comes from the subject-name record. The table also includes birth name, birth number, birth and death dates, nicknames, postal addresses, contacts, groups, notes, and portal account information where available.</p>
@@ -180,7 +182,7 @@ renderMenu();
         <li><strong>Defaults:</strong> The full list shows inactive subjects and inactive items by default.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>bd.php">Birthdays</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["bd.php"]); ?>">Birthdays</a></dt>
     <dd>
       <p>Birthdays shows person subjects whose birthday falls into the current birthday service window: two days back, today, and seventeen days forward. It is a work queue, not a general subject list, so subjects outside that window are intentionally absent.</p>
       <p>The In column shows the day offset from today and contains the service action when the current account has full access. Marking a birthday as served stores the current timestamp in <code>birthday_served_at</code> and also updates <code>inter_served_at</code>, because birthday contact counts as a handled interaction.</p>
@@ -193,7 +195,7 @@ renderMenu();
         <li><strong>Editing:</strong> New subjects are blocked, but visible subject data can be maintained.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>inter.php">Interactions</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["inter.php"]); ?>">Interactions</a></dt>
     <dd>
       <p>Interactions shows person subjects whose communication service date is due now or soon. A subject is due when the stored <code>inter_served_at</code> value is missing or old enough that the next interaction date falls within the current window, which reaches today and the next twenty days.</p>
       <p>The In column shows how many days remain until the interaction is due. A missing previous service time is treated as due today. Marking an interaction as served updates <code>inter_served_at</code> to the current timestamp and removes the subject from the current due list.</p>
@@ -205,7 +207,7 @@ renderMenu();
         <li><strong>Editing:</strong> Existing visible subject data can be maintained; new subjects are blocked.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>addresses.php">Addresses</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["addresses.php"]); ?>">Addresses</a></dt>
     <dd>
       <p>Addresses groups exact shared postal address forms and lists every subject that uses each form. It is useful for finding households, shared service addresses, duplicated addresses, and address rows that differ only because of a small formatting or field difference.</p>
       <p>The Address column represents the postal fields that make up the shared address form. It uses the normal one-line display in the table, while copy actions use the multiline postal form. Editing the Address cell changes the address fields of all exact matching rows while preserving subject-specific flags such as address type, primary, active, and note.</p>
@@ -218,7 +220,7 @@ renderMenu();
         <li><strong>Display:</strong> Copy uses the multiline postal form; the table uses the one-line form.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>groups.php">Groups</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["groups.php"]); ?>">Groups</a></dt>
     <dd>
       <p>Groups manages subject groups and group-based portal permissions. The table shows group names, the number of linked subjects, active portal permissions assigned to the group, order controls, merge controls, and edit or delete actions.</p>
       <p>Full access can create groups, rename them, change their active state and order, assign active portal permissions, merge groups, and delete groups when deletion is allowed. Group order affects how groups are displayed inside subject tables and other grouped output.</p>
@@ -231,7 +233,7 @@ renderMenu();
         <li><strong>Restriction:</strong> The portal access group cannot be deleted.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ctypes.php">Contact Types</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ctypes.php"]); ?>">Contact Types</a></dt>
     <dd>
       <p>Contact Types manages the visible names, active state, display order, and merging of portal contact types. Contact types control how contact values are labeled, validated, normalized, offered in dialogs, and ordered in subject tables.</p>
       <p>The internal <code>contact_type</code> key is generated from the visible name and is not normally edited directly. This keeps stored contact type identifiers predictable while allowing the displayed name to be managed from the administration page.</p>
@@ -244,7 +246,7 @@ renderMenu();
         <li><strong>Deletion:</strong> Types with existing contacts must be merged first.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["db.php"]); ?>">Database Structure</a></dt>
     <dd>
       <p>Database Structure is the full-access SQL structure and export page for portal tables. It inspects the current database, lists <code>ex_*</code> tables in dependency-aware order, and shows normalized <code>SHOW CREATE TABLE</code> output for review.</p>
       <p>The schema download exports structure SQL. The backup download exports structure plus data and is the expected input for Database Difference. Copy schema link and Copy backup link copy direct download URLs so the same export can be retrieved without navigating the form again.</p>
@@ -256,7 +258,7 @@ renderMenu();
         <li><strong>Safety:</strong> Reads metadata and export data without modifying the database.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["schema.php"]); ?>">Database Schema</a></dt>
     <dd>
       <p>Database Schema is the visual schema viewer for portal tables. It reads table, column, key, index, and relation metadata from <code>INFORMATION_SCHEMA</code> and renders a schema-oriented view of the current database.</p>
       <p>Table boxes show column key markers, column names, shortened data types, nullability, and extra attributes. Long enum definitions are shortened in the visible table but remain available through the title tooltip so the diagram stays readable.</p>
@@ -268,7 +270,7 @@ renderMenu();
         <li><strong>Safety:</strong> Read-only schema inspection.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>check.php">Database Consistency</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["check.php"]); ?>">Database Consistency</a></dt>
     <dd>
       <p>Database Consistency is a full-access diagnostic page for broken or suspicious portal records. It does not repair records automatically; it reports what should be reviewed in the database or through the editors.</p>
       <p>Error checks include subject-contact links with missing subjects or contacts, person rows without subjects, person rows assigned to non-person subjects, subject-name rows without subjects, subject-name rows assigned to person subjects, addresses with missing subjects, nicknames with missing subjects, notes with missing subjects, group links with missing subjects, and group links with missing groups.</p>
@@ -280,7 +282,7 @@ renderMenu();
         <li><strong>Output:</strong> Row counts and affected database columns for each check.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>diff.php">Database Difference</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["diff.php"]); ?>">Database Difference</a></dt>
     <dd>
       <p>Database Difference compares an uploaded SQL backup generated by Database Structure with the current database. It is meant for checking what changed between a saved portal backup and the live portal tables, especially whether a person or subject disappeared, was added, or changed in important display fields.</p>
       <p>The upload parser accepts <code>CREATE TABLE</code> and <code>INSERT</code> statements from the portal backup export. Before comparison, the current database is exported internally with the same backup generator, so both sides are compared in the same normalized representation.</p>
@@ -293,7 +295,7 @@ renderMenu();
         <li><strong>Safety:</strong> Upload is compared only; no restore or database write is performed.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>exlib.php">External Libraries</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["exlib.php"]); ?>">External Libraries</a></dt>
     <dd>
       <p>External Libraries is a full-access filesystem inventory of files stored in <code>ex/lib</code>. It is used to verify bundled library files and metadata that belong to the portal without fetching anything from the network.</p>
       <p>The table shows permissions, owner, downloaded timestamp derived from the file modification time, and file name. The quick filter can narrow the visible inventory. The page does not modify files and does not download updates.</p>
@@ -304,7 +306,7 @@ renderMenu();
         <li><strong>Safety:</strong> No network access and no file modification.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
+    <dt><a href="<?php echo $sScriptUrl; ?>">Help</a></dt>
     <dd>
       <p>Help is this bilingual help page. It documents portal menu pages, shared controls, filters, settings, access expectations, edit scopes, diagnostic tools, exports, and the difference between shared aggregate actions and subject-specific actions.</p>
       <p>The help page itself is read-only. Its links follow the same base URL and menu behavior as the rest of the portal so that a user can move from documentation to the relevant page directly.</p>
@@ -314,7 +316,7 @@ renderMenu();
         <li><strong>Links:</strong> Point to the same portal pages shown in the menu.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>demo.php">Demo Subjects</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["demo.php"]); ?>">Demo Subjects</a></dt>
     <dd>
       <p>Demo Subjects opens a standalone sample subject table. It uses hardcoded demonstration data instead of real database rows, so it can be used to exercise rendering and filtering behavior without changing production records.</p>
       <p>The page tests the subject table layout, responsive column hiding, quick filter, complex filter, settings, modals, action rendering, contact formatting, address formatting, copied text, and timestamp tooltip behavior. It deliberately mirrors enough of the real subject table to make UI regressions visible.</p>
@@ -411,7 +413,7 @@ renderMenu();
   </dl>
   <h3>Stránky v menu</h3>
   <dl class="portal-help-list">
-    <dt><a href="<?php echo $sBaseUrl; ?>index.php">Contacts</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["index.php"]); ?>">Contacts</a></dt>
     <dd>
       <p>Contacts je kompaktní pouze čtecí přehled portálových subjektů. Je určený k rychlému procházení osob a služeb, kopírování hodnot z tabulky a otevírání kontaktních odkazů bez zobrazení celé editační vrstvy. Používá stejné pomocné vykreslování subjektů jako editační stránky, ale záměrně zůstává lehčí a na užších displayích skrývá méně důležité sloupce.</p>
       <p>Tabulka obsahuje vypočtené jméno subjektu, osobní data, přezdívky, poštovní adresy, kontakty, skupiny a poznámky. Hodnoty se zobrazují ve stejném tvaru jako ve zbytku portálu, takže kompaktní přehled je vhodný i ke kontrole toho, jak bude subjekt vypadat mimo úplný editor.</p>
@@ -424,7 +426,7 @@ renderMenu();
         <li><strong>Akce:</strong> Dostupné je kopírování a kontaktní odkazy; editace se záměrně nezobrazuje.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>contacts.php">Shared Contacts</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["contacts.php"]); ?>">Shared Contacts</a></dt>
     <dd>
       <p>Shared Contacts seskupuje exaktně shodné sdílené kontaktní hodnoty a ukazuje každý subjekt, který danou hodnotu používá. Slouží k hledání znovu použitých telefonů, e-mailů, webových odkazů, komunikačních identifikátorů a profilových URL a k opravě sdílené hodnoty na jednom místě, pokud je špatně samotný uložený kontakt.</p>
       <p>Sloupec Contact představuje sdílený řádek kontaktu. Editace této buňky změní typ kontaktu nebo hodnotu kontaktu pro všechny navázané subjekty. Smazání této buňky odstraní sdílený kontakt a jeho vazby na subjekty. Tyto akce jsou záměrně široké, takže patří jen k situaci, kdy je problém v samotné kontaktní hodnotě.</p>
@@ -437,7 +439,7 @@ renderMenu();
         <li><strong>Validace:</strong> Kontaktní hodnoty se normalizují a kontrolují podle typu kontaktu.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>pb.php">Phone Book</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["pb.php"]); ?>">Phone Book</a></dt>
     <dd>
       <p>Phone Book je kompaktní pouze čtecí seznam kontaktů seskupený podle subjektu. Každý subjekt ukazuje jednou a pod ním vypisuje aktivní kontaktní hodnoty včetně typu kontaktu, formátované hodnoty, příznaku primary a poznámky, pokud jsou dostupné.</p>
       <p>Stránka je určená k rychlému nalezení telefonního čísla, e-mailové adresy nebo jiného kontaktu bez otevření úplného editoru subjektu. Rychlý filtr hledá ve jménu subjektu i ve vykreslených kontaktních hodnotách.</p>
@@ -448,7 +450,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Pouze čtecí stránka.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>mail.php">Mail</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["mail.php"]); ?>">Mail</a></dt>
     <dd>
       <p>Mail je stránka pro psaní zpráv s full přístupem. Obsahuje pole To, Carbon Copy, Blind Carbon Copy, From, volitelný Sender, Reply-To, Subject, přílohy a zprávu a umí odeslat HTML i prostý text.</p>
       <p>Pole příjemců používají portálové našeptávání adres. Pole odesílatele mohou být omezená na nastavené domény odesílatelů a formulář uchovává zadané hodnoty v session, pokud je potřeba pokus o odeslání opravit.</p>
@@ -459,7 +461,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> CSRF chráněný POST s validací před odesláním.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>list.php">Subjects</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["list.php"]); ?>">Subjects</a></dt>
     <dd>
       <p>Subjects je úplný editor portálu a hlavní místo pro údržbu dat subjektů. V jedné tabulce zobrazuje subjekty typu person, organization, service a other a zpřístupňuje editory samotného subjektu i závislých záznamů subjektu.</p>
       <p>U osob se zobrazované jméno počítá z osobních jmenných polí a souvisejících osobních údajů. U neosobních subjektů vychází zobrazované jméno z řádku jména subjektu. Tabulka dále obsahuje rodné jméno, rodné číslo, data narození a úmrtí, přezdívky, poštovní adresy, kontakty, skupiny, poznámky a dostupné informace o portálovém účtu.</p>
@@ -473,7 +475,7 @@ renderMenu();
         <li><strong>Výchozí stav:</strong> Úplný výpis zobrazuje neaktivní subjekty i neaktivní položky.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>bd.php">Birthdays</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["bd.php"]); ?>">Birthdays</a></dt>
     <dd>
       <p>Birthdays zobrazuje osoby, jejichž narozeniny spadají do aktuálního okna obsloužení narozenin: dva dny zpět, dnešek a sedmnáct dnů dopředu. Je to pracovní fronta, ne obecný seznam subjektů, takže subjekty mimo toto okno záměrně chybí.</p>
       <p>Sloupec In ukazuje odchylku ve dnech od dneška a při plném přístupu obsahuje akci obsloužení. Označení narozenin jako obsloužených uloží aktuální čas do <code>birthday_served_at</code> a zároveň aktualizuje <code>inter_served_at</code>, protože narozeninový kontakt se počítá jako vyřízená interakce.</p>
@@ -486,7 +488,7 @@ renderMenu();
         <li><strong>Editace:</strong> Nové subjekty jsou blokované, ale viditelný subjekt lze udržovat.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>inter.php">Interactions</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["inter.php"]); ?>">Interactions</a></dt>
     <dd>
       <p>Interactions zobrazuje osoby, jejichž obsloužení komunikace je splatné nyní nebo brzy. Subjekt je splatný, pokud hodnota <code>inter_served_at</code> chybí nebo je dost stará na to, aby další termín interakce spadal do aktuálního okna, které zahrnuje dnešek a dalších dvacet dnů.</p>
       <p>Sloupec In ukazuje, kolik dnů zbývá do termínu interakce. Chybějící předchozí čas obsloužení se bere jako splatnost dnes. Označení interakce jako obsloužené aktualizuje <code>inter_served_at</code> na aktuální čas a odstraní subjekt z aktuálního seznamu splatných interakcí.</p>
@@ -498,7 +500,7 @@ renderMenu();
         <li><strong>Editace:</strong> Existující viditelný subjekt lze udržovat; nové subjekty jsou blokované.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>addresses.php">Addresses</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["addresses.php"]); ?>">Addresses</a></dt>
     <dd>
       <p>Addresses seskupuje exaktně shodné poštovní adresní tvary a vypisuje každý subjekt, který daný tvar používá. Hodí se pro hledání domácností, sdílených servisních adres, duplicitních adres a adresních řádků, které se liší jen drobným formátováním nebo jedním polem.</p>
       <p>Sloupec Address představuje poštovní pole tvořící sdílený adresní tvar. V tabulce používá běžný jednořádkový výpis, zatímco kopírovací akce používají víceřádkový poštovní tvar. Editace buňky Address změní adresní pole všech exaktně shodných řádků a zachová subjektové příznaky jako typ adresy, primary, active a poznámku.</p>
@@ -511,7 +513,7 @@ renderMenu();
         <li><strong>Zobrazení:</strong> Kopírování používá víceřádkový poštovní tvar; tabulka jednořádkový tvar.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>groups.php">Groups</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["groups.php"]); ?>">Groups</a></dt>
     <dd>
       <p>Groups spravuje skupiny subjektů a skupinová portálová oprávnění. Tabulka ukazuje názvy skupin, počet navázaných subjektů, aktivní portálová oprávnění přiřazená skupině, ovládání pořadí, ovládání sloučení a akce editace nebo smazání.</p>
       <p>Plný přístup může skupiny vytvářet, přejmenovávat, měnit jejich aktivitu a pořadí, přiřazovat aktivní portálová oprávnění, slučovat skupiny a mazat skupiny tam, kde je smazání dovolené. Pořadí skupin ovlivňuje, jak se skupiny zobrazují v tabulkách subjektů a dalších seskupených výstupech.</p>
@@ -524,7 +526,7 @@ renderMenu();
         <li><strong>Omezení:</strong> Skupinu pro portálový přístup nelze smazat.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ctypes.php">Contact Types</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ctypes.php"]); ?>">Contact Types</a></dt>
     <dd>
       <p>Contact Types spravuje viditelné názvy, aktivitu, pořadí zobrazení a slučování portálových typů kontaktů. Typy kontaktů určují, jak se kontaktní hodnoty popisují, validují, normalizují, nabízejí v dialozích a řadí v tabulkách subjektů.</p>
       <p>Interní klíč <code>contact_type</code> se generuje z viditelného názvu a běžně se needituje přímo. Uložené identifikátory typů kontaktů tak zůstávají předvídatelné a přitom lze viditelný název spravovat z administrační stránky.</p>
@@ -537,7 +539,7 @@ renderMenu();
         <li><strong>Smazání:</strong> Typy s existujícími kontakty je nejprve nutné sloučit.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["db.php"]); ?>">Database Structure</a></dt>
     <dd>
       <p>Database Structure je stránka s plným přístupem pro SQL strukturu a export portálových tabulek. Kontroluje aktuální databázi, vypisuje tabulky <code>ex_*</code> v pořadí podle závislostí a ukazuje normalizovaný výstup <code>SHOW CREATE TABLE</code> pro revizi.</p>
       <p>Download schema exportuje SQL struktury. Download backup exportuje strukturu i data a je očekávaným vstupem pro Database Difference. Copy schema link a Copy backup link kopírují přímé URL pro stažení, aby bylo možné stejný export získat znovu bez procházení formuláře.</p>
@@ -549,7 +551,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Čte metadata a exportuje data bez úprav databáze.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["schema.php"]); ?>">Database Schema</a></dt>
     <dd>
       <p>Database Schema je vizuální prohlížeč schématu portálových tabulek. Čte metadata tabulek, sloupců, klíčů, indexů a vazeb z <code>INFORMATION_SCHEMA</code> a vykresluje schématický pohled na aktuální databázi.</p>
       <p>Boxy tabulek ukazují značky klíčů, názvy sloupců, zkrácené datové typy, nullabilitu a extra atributy. Dlouhé enum definice se ve viditelné tabulce zkracují, ale zůstávají dostupné přes title tooltip, aby diagram zůstal čitelný.</p>
@@ -561,7 +563,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Pouze čtecí kontrola schématu.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>check.php">Database Consistency</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["check.php"]); ?>">Database Consistency</a></dt>
     <dd>
       <p>Database Consistency je diagnostická stránka s plným přístupem pro porušené nebo podezřelé portálové záznamy. Záznamy neopravuje automaticky; vypisuje, co je potřeba prověřit v databázi nebo přes editory.</p>
       <p>Chybové kontroly zahrnují vazby subjekt-kontakt s chybějícím subjektem nebo kontaktem, řádky osob bez subjektů, řádky osob přiřazené neosobním subjektům, řádky jmen subjektů bez subjektů, řádky jmen subjektů přiřazené osobám, adresy s chybějícími subjekty, přezdívky s chybějícími subjekty, poznámky s chybějícími subjekty, skupinové vazby s chybějícími subjekty a skupinové vazby s chybějícími skupinami.</p>
@@ -573,7 +575,7 @@ renderMenu();
         <li><strong>Výstup:</strong> Počty řádků a dotčené databázové sloupce pro každou kontrolu.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>diff.php">Database Difference</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["diff.php"]); ?>">Database Difference</a></dt>
     <dd>
       <p>Database Difference porovnává nahranou SQL zálohu vygenerovanou stránkou Database Structure s aktuální databází. Slouží ke kontrole toho, co se změnilo mezi uloženou portálovou zálohou a živými portálovými tabulkami, zejména jestli osoba nebo subjekt nezmizel, nepřibyl nebo se nezměnil v důležitých zobrazovacích polích.</p>
       <p>Upload parser přijímá příkazy <code>CREATE TABLE</code> a <code>INSERT</code> z portálového zálohového exportu. Před porovnáním se aktuální databáze interně vyexportuje stejným generátorem záloh, takže obě strany se porovnávají ve stejné normalizované podobě.</p>
@@ -586,7 +588,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Upload se pouze porovnává; neprobíhá obnova ani zápis do databáze.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>exlib.php">External Libraries</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["exlib.php"]); ?>">External Libraries</a></dt>
     <dd>
       <p>External Libraries je filesystemový inventář souborů uložených v <code>ex/lib</code> a vyžaduje plný přístup. Používá se ke kontrole přibalených knihovních souborů a metadat patřících k portálu bez toho, aby stránka cokoli stahovala ze sítě.</p>
       <p>Tabulka ukazuje práva, vlastníka, čas stažení odvozený z času modifikace souboru a název souboru. Rychlý filtr umí viditelný inventář zúžit. Stránka soubory neupravuje a nestahuje aktualizace.</p>
@@ -597,7 +599,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Bez síťového přístupu a bez úprav souborů.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
+    <dt><a href="<?php echo $sScriptUrl; ?>">Help</a></dt>
     <dd>
       <p>Help je tato dvojjazyčná nápověda. Dokumentuje stránky menu portálu, společné ovládání, filtry, nastavení, očekávaný přístup, rozsahy editací, diagnostické nástroje, exporty a rozdíl mezi sdílenými agregačními akcemi a akcemi konkrétního subjektu.</p>
       <p>Samotná nápověda je pouze pro čtení. Její odkazy používají stejnou základní URL a stejné chování menu jako zbytek portálu, aby bylo možné z dokumentace přejít přímo na příslušnou stránku.</p>
@@ -607,7 +609,7 @@ renderMenu();
         <li><strong>Odkazy:</strong> Směřují na stejné portálové stránky, které jsou v menu.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>demo.php">Demo Subjects</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["demo.php"]); ?>">Demo Subjects</a></dt>
     <dd>
       <p>Demo Subjects otevírá samostatnou ukázkovou tabulku subjektů. Používá pevně zadaná demonstrační data místo skutečných databázových řádků, takže se dá použít k ověření vykreslování a filtrování bez změn produkčních záznamů.</p>
       <p>Stránka testuje rozložení tabulky subjektů, responsivní skrývání sloupců, rychlý filtr, komplexní filtr, nastavení, modály, vykreslení akcí, formátování kontaktů, formátování adres, kopírovaný text a chování timestamp tooltipů. Záměrně zrcadlí dost z reálné tabulky subjektů, aby byly vidět regrese v UI.</p>

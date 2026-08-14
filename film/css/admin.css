@@ -925,6 +925,10 @@ tr:nth-child(even) {
     margin-top: 24px;
 }
 
+.admin-controls .js-schema-save-png {
+    white-space: nowrap;
+}
+
 .film-help-list {
     max-width: 1100px;
 }
@@ -1003,7 +1007,7 @@ body.film-link-page[data-pmd-like="1"] .order-detail-columns {
     .menu-panel {
         max-width: calc(100vw - 16px);
     }
-    .schema-diagram, .schema-relations {
+    .schema-diagram, .schema-relations, .admin-controls .js-schema-save-png {
         display: none;
     }
     .schema-unavailable-message {

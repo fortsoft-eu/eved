@@ -38,7 +38,7 @@ CREATE TABLE `fs_film_scans` (
   `created_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `updated_at` datetime(6) NOT NULL DEFAULT current_timestamp(6) ON UPDATE current_timestamp(6),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `accession_no` (`archive_no`) USING BTREE,
+  UNIQUE KEY `accession_no` (`archive_no`),
   KEY `idx_scanned_at` (`scanned_at`),
   KEY `idx_lab` (`lab`),
   KEY `fk_fs_film_scans_lab_order` (`lab_order_id`),
@@ -107,10 +107,10 @@ CREATE TABLE `fs_film_ua` (
   `plugins` text DEFAULT NULL,
   `mime_types` text DEFAULT NULL,
   `timestamp` datetime(6) NOT NULL DEFAULT current_timestamp(6),
-  PRIMARY KEY (`id`) USING BTREE,
-  KEY `idx_fs_film_ua_created_at` (`timestamp`) USING BTREE,
-  KEY `idx_fs_film_ua_requested_film_scan_id` (`requested_film_scan_id`) USING BTREE,
-  KEY `idx_fs_film_ua_requested_img` (`requested_img`) USING BTREE
+  PRIMARY KEY (`id`),
+  KEY `idx_fs_film_ua_created_at` (`timestamp`),
+  KEY `idx_fs_film_ua_requested_film_scan_id` (`requested_film_scan_id`),
+  KEY `idx_fs_film_ua_requested_img` (`requested_img`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `fs_flickr_photosets` (
@@ -148,9 +148,9 @@ CREATE TABLE `fs_photo_equip` (
   `acquired_at` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   `retired_at` datetime(6) DEFAULT NULL,
   `disposition_note` varchar(768) NOT NULL,
-  PRIMARY KEY (`id`) USING BTREE,
-  KEY `acquired_at` (`acquired_at`) USING BTREE,
-  KEY `retired_at` (`retired_at`) USING BTREE
+  PRIMARY KEY (`id`),
+  KEY `acquired_at` (`acquired_at`),
+  KEY `retired_at` (`retired_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
 
 CREATE TABLE `fs_photo_equip_groups` (

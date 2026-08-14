@@ -3,6 +3,8 @@
 include "main.php";
 
 
+$aMenuItemUrls = getMenuItemUrls($oPdo);
+$sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $iTime = sendPageHeaders();
 
 ?>
@@ -75,7 +77,7 @@ renderMenu();
   </dl>
   <h3>Public Gallery Entry Point</h3>
   <dl class="film-help-list">
-    <dt><a href="<?php echo $sBaseUrl; ?>index.php">Film Scans Public Gallery</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["index.php"]); ?>">Film Scans Public Gallery</a></dt>
     <dd>
       <p><code>index.php</code> is the public gallery entry point. It is intentionally not listed in the film menu, because it is the user-facing film scan viewer rather than an administrative menu page. Without an <code>id</code> parameter it shows the camera image; for an allowed IP address using Firefox with English language it also shows maintenance PHP file links and plain request information.</p>
       <p>With an <code>id</code> parameter, the page loads the selected row from <code>fs_film_scans</code>, derives the archive subdirectory from <code>folder_name</code>, verifies that the directory exists, and renders the selected film roll. The page title is built from the archive number, folder-name parts, and subdirectory. Previous and next buttons point to the nearest lower or higher <code>archive_no</code> whose directory exists.</p>
@@ -163,7 +165,7 @@ renderMenu();
   </dl>
   <h3>Menu Pages</h3>
   <dl class="film-help-list">
-    <dt><a href="<?php echo $sBaseUrl; ?>equip.php">Photographic Equipment</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["equip.php"]); ?>">Photographic Equipment</a></dt>
     <dd>
       <p>Photographic Equipment is a read-only inventory of photo equipment stored in <code>fs_photo_equip</code>. It lists equipment type, equipment name, acquisition date, retirement date, and disposition notes, ordered by acquisition date.</p>
       <p>The page is useful for checking historical camera, lens, scanner, and related equipment records without opening the broader database tools. It does not edit equipment and does not expose SQL export controls.</p>
@@ -173,7 +175,7 @@ renderMenu();
         <li><strong>Safety:</strong> Read-only page.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>link.php">Assign Film to Lab Bag</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["link.php"]); ?>">Assign Film to Lab Bag</a></dt>
     <dd>
       <p>Assign Film to Lab Bag is the maintenance page for linking scanned film rolls to photo lab orders. It is restricted to full access because it updates database rows.</p>
       <p>The form offers unassigned film rolls with archive numbers up to 990 and recent lab orders that have a bag number and were ordered within the last year. After a successful assignment, the selected bag is remembered in the session for the next assignment. The page redirects after POST so a refresh does not repeat the write.</p>
@@ -185,7 +187,7 @@ renderMenu();
         <li><strong>Unassign:</strong> Allowed only for lab orders from the last year.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>list.php">Film Scans Overview</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["list.php"]); ?>">Film Scans Overview</a></dt>
     <dd>
       <p>Film Scans Overview is the main read-only table for scanned film rolls. It reads <code>fs_film_scans</code>, joins the linked lab order when present, and displays archive number, archive folder name, film stock, cartridge, exposure index, push/pull value, scan date and time, and order number.</p>
       <p>The page also performs lightweight consistency checks against the archive folder name. It compares the archive number, film stock, and cartridge stored in the database with the values parsed from the folder name. Mismatches are marked in the table so naming or metadata problems are visible during review.</p>
@@ -196,7 +198,7 @@ renderMenu();
         <li><strong>Filtering:</strong> Quick filter over the film scan table.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>work.php">Film Work</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["work.php"]); ?>">Film Work</a></dt>
     <dd>
       <p>Film Work is the full-access work queue for scanned film rolls that still need manual processing. It shows unprocessed scan rows with archive number, archive folder name, film stock, cartridge, scan date and time, format, and resolution.</p>
       <p>Marking a row as processed stores the processed state for that film scan and removes it from the current work list. If there is nothing waiting, the page shows a short nothing-to-do message instead of an empty table.</p>
@@ -207,7 +209,7 @@ renderMenu();
         <li><strong>Empty state:</strong> Shows <code>Nothing to do.</code> when the queue is clear.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>orders.php">Photo Lab Orders</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["orders.php"]); ?>">Photo Lab Orders</a></dt>
     <dd>
       <p>Photo Lab Orders is a read-only overview of lab orders from <code>fs_photo_lab_orders</code>. It joins linked film scan rows and shows which film rolls belong to each lab order, along with scan dates and order-level financial and date fields.</p>
       <p>The page separates film scan dates by film roll and distinct lab scan dates by order. It highlights orders that have not yet been returned, which makes open lab work visible without editing the order records.</p>
@@ -218,7 +220,7 @@ renderMenu();
         <li><strong>Filtering:</strong> Quick filter over the order table.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ua.php">Film Access Log</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ua.php"]); ?>">Film Access Log</a></dt>
     <dd>
       <p>Film Access Log is a full-access diagnostic page for recent film-access browser records. It reads the latest 100 rows from <code>fs_film_ua</code> and joins the requested film scan when available.</p>
       <p>The table combines server-side request data with browser fingerprint details collected by the film pages. It shows IP address, geo headers, parsed user agent, requested film roll and image, GPU, fonts, screen data, timezone, language, platform, plugins, MIME types, and timestamp. Long values are clipped in cells but kept in title tooltips.</p>
@@ -229,7 +231,7 @@ renderMenu();
         <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["db.php"]); ?>">Database Structure</a></dt>
     <dd>
       <p>Database Structure is the full-access SQL structure and export page for film-related tables. It includes tables whose names match <code>fs_film_*</code>, <code>fs_photo_*</code>, or <code>fs_flickr_*</code>, sorts them by foreign-key dependencies, and displays normalized <code>SHOW CREATE TABLE</code> output.</p>
       <p>The page can download schema-only SQL or a backup containing structure and data. Copy buttons place direct schema and backup download URLs on the clipboard. The page reads metadata and table contents for export, but does not modify the database.</p>
@@ -240,7 +242,7 @@ renderMenu();
         <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>info.php">PHP Info and PHP Credits</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["info.php"]); ?>">PHP Info and PHP Credits</a></dt>
     <dd>
       <p>PHP Info and PHP Credits is the full PHP diagnostic page. It is restricted to full access because it can expose detailed server and PHP configuration data.</p>
       <p>The selector can show PHP info sections such as general information, configuration, modules, environment, variables, license, or all info. It can also show PHP credits sections such as group, general, SAPI, modules, documentation, QA, or all credits. Output is loaded into an iframe by default and can be opened in a new window.</p>
@@ -250,7 +252,7 @@ renderMenu();
         <li><strong>Display:</strong> Iframe by default, separate window on request.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["schema.php"]); ?>">Database Schema</a></dt>
     <dd>
       <p>Database Schema is the visual schema viewer for film-related tables. It reads <code>INFORMATION_SCHEMA</code> metadata for <code>fs_film_*</code>, <code>fs_photo_*</code>, and <code>fs_flickr_*</code> tables and renders table boxes, keys, column types, nullability, extra attributes, and foreign-key relations.</p>
       <p>Relation lines are routed for the known film and photo relationships. On small screens, the schema diagram and relation table are hidden and a message is shown instead, because the diagram needs enough space to be readable.</p>
@@ -261,7 +263,7 @@ renderMenu();
         <li><strong>Safety:</strong> Read-only schema inspection.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
+    <dt><a href="<?php echo $sScriptUrl; ?>">Help</a></dt>
     <dd>
       <p>Help is this bilingual help page. It documents the film menu pages, shared controls, access expectations, diagnostic pages, database exports, and the difference between read-only listings and the assignment page that writes to the database.</p>
       <ul>
@@ -317,7 +319,7 @@ renderMenu();
   </dl>
   <h3>Veřejný vstup galerie</h3>
   <dl class="film-help-list">
-    <dt><a href="<?php echo $sBaseUrl; ?>index.php">Film Scans Public Gallery</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["index.php"]); ?>">Film Scans Public Gallery</a></dt>
     <dd>
       <p><code>index.php</code> je veřejný vstup galerie. Záměrně není ve filmovém menu, protože jde o uživatelský prohlížeč filmových scanů, ne o administrační stránku menu. Bez parametru <code>id</code> zobrazuje obrázek fotoaparátu; pro povolenou IP adresu ve Firefoxu s anglickým jazykem navíc ukazuje údržbové odkazy na PHP soubory a prostý výpis informací o požadavku.</p>
       <p>S parametrem <code>id</code> stránka načte vybraný řádek z <code>fs_film_scans</code>, odvodí archivní podadresář z <code>folder_name</code>, ověří existenci adresáře a vykreslí vybraný film. Titulek stránky se skládá z archivního čísla, částí názvu složky a podadresáře. Tlačítka předchozí a další vedou na nejbližší nižší nebo vyšší <code>archive_no</code>, jehož adresář existuje.</p>
@@ -405,7 +407,7 @@ renderMenu();
   </dl>
   <h3>Stránky v menu</h3>
   <dl class="film-help-list">
-    <dt><a href="<?php echo $sBaseUrl; ?>equip.php">Photographic Equipment</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["equip.php"]); ?>">Photographic Equipment</a></dt>
     <dd>
       <p>Photographic Equipment je pouze čtecí inventář fotografického vybavení uloženého v <code>fs_photo_equip</code>. Vypisuje typ vybavení, název, datum pořízení, datum vyřazení a dispoziční poznámku v pořadí podle data pořízení.</p>
       <p>Stránka slouží ke kontrole historických záznamů fotoaparátů, objektivů, scannerů a souvisejícího vybavení bez otevírání širších databázových nástrojů. Vybavení neupravuje a nenabízí SQL export.</p>
@@ -415,7 +417,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Pouze čtecí stránka.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>link.php">Assign Film to Lab Bag</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["link.php"]); ?>">Assign Film to Lab Bag</a></dt>
     <dd>
       <p>Assign Film to Lab Bag je údržbová stránka pro napojení naskenovaných filmů na laboratorní objednávky. Je omezená na full přístup, protože aktualizuje databázové řádky.</p>
       <p>Formulář nabízí nepřiřazené filmy s archivním číslem do 990 a nedávné laboratorní objednávky, které mají číslo sáčku a byly objednané během posledního roku. Po úspěšném přiřazení se vybraný sáček zapamatuje v session pro další přiřazování. Stránka po POSTu přesměruje, aby refresh neopakoval zápis.</p>
@@ -427,7 +429,7 @@ renderMenu();
         <li><strong>Odebrání:</strong> Dovoleno jen pro laboratorní objednávky z posledního roku.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>list.php">Film Scans Overview</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["list.php"]); ?>">Film Scans Overview</a></dt>
     <dd>
       <p>Film Scans Overview je hlavní pouze čtecí tabulka naskenovaných filmů. Čte <code>fs_film_scans</code>, připojuje laboratorní objednávku, pokud existuje, a zobrazuje archivní číslo, název archivní složky, film, cartridge, exposure index, push/pull, datum a čas scanu a číslo objednávky.</p>
       <p>Stránka provádí i lehké konzistenční kontroly vůči názvu archivní složky. Porovnává archivní číslo, film a cartridge uložené v databázi s hodnotami vyčtenými z názvu složky. Neshody jsou označené v tabulce, aby byly při kontrole vidět problémy v pojmenování nebo metadatech.</p>
@@ -438,7 +440,7 @@ renderMenu();
         <li><strong>Filtrování:</strong> Rychlý filtr nad tabulkou filmových scanů.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>work.php">Film Work</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["work.php"]); ?>">Film Work</a></dt>
     <dd>
       <p>Film Work je pracovní fronta naskenovaných filmů čekajících na ruční zpracování a vyžaduje full přístup. Zobrazuje nezpracované scany s archivním číslem, názvem archivní složky, filmem, cartridge, datem a časem scanu, formátem a rozlišením.</p>
       <p>Označení řádku jako processed uloží stav zpracování pro daný filmový scan a odebere ho z aktuálního pracovního seznamu. Pokud nic nečeká, stránka místo prázdné tabulky ukáže krátkou zprávu Nothing to do.</p>
@@ -449,7 +451,7 @@ renderMenu();
         <li><strong>Prázdný stav:</strong> Při prázdné frontě ukazuje <code>Nothing to do.</code></li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>orders.php">Photo Lab Orders</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["orders.php"]); ?>">Photo Lab Orders</a></dt>
     <dd>
       <p>Photo Lab Orders je pouze čtecí přehled laboratorních objednávek z <code>fs_photo_lab_orders</code>. Připojuje navázané filmové scany a ukazuje, které filmy patří ke které objednávce, společně s daty scanů, finančními poli a daty objednávky.</p>
       <p>Stránka odděluje data filmových scanů podle filmů a odlišná data laboratorních scanů podle objednávky. Objednávky, které ještě nemají datum vrácení, jsou zvýrazněné, takže otevřená laboratorní práce je viditelná bez editace záznamů.</p>
@@ -460,7 +462,7 @@ renderMenu();
         <li><strong>Filtrování:</strong> Rychlý filtr nad tabulkou objednávek.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ua.php">Film Access Log</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ua.php"]); ?>">Film Access Log</a></dt>
     <dd>
       <p>Film Access Log je diagnostická stránka s full přístupem pro poslední záznamy přístupů k filmům. Čte posledních 100 řádků z <code>fs_film_ua</code> a podle možnosti připojuje požadovaný filmový scan.</p>
       <p>Tabulka kombinuje serverová request data s browser fingerprint detaily sbíranými filmovými stránkami. Ukazuje IP adresu, geo hlavičky, parsovaný user agent, požadovaný film a obrázek, GPU, fonty, display, časové pásmo, jazyk, platformu, pluginy, MIME typy a timestamp. Dlouhé hodnoty jsou v buňkách zkrácené, ale zůstávají v title tooltipech.</p>
@@ -471,7 +473,7 @@ renderMenu();
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["db.php"]); ?>">Database Structure</a></dt>
     <dd>
       <p>Database Structure je stránka s SQL strukturou a exportem filmových tabulek s full přístupem. Zahrnuje tabulky odpovídající <code>fs_film_*</code>, <code>fs_photo_*</code> nebo <code>fs_flickr_*</code>, řadí je podle závislostí cizích klíčů a zobrazuje normalizovaný výstup <code>SHOW CREATE TABLE</code>.</p>
       <p>Stránka umí stáhnout SQL pouze se schématem nebo zálohu obsahující strukturu i data. Kopírovací tlačítka ukládají do schránky přímé odkazy pro stažení schématu a zálohy. Stránka čte metadata a pro export i obsah tabulek, ale databázi neupravuje.</p>
@@ -482,7 +484,7 @@ renderMenu();
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>info.php">PHP Info and PHP Credits</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["info.php"]); ?>">PHP Info and PHP Credits</a></dt>
     <dd>
       <p>PHP Info and PHP Credits je plná diagnostická stránka PHP. Je omezená na full přístup, protože může zobrazit detailní serverovou a PHP konfiguraci.</p>
       <p>Selector umí zobrazit phpinfo sekce jako general information, configuration, modules, environment, variables, license nebo all info. Umí také zobrazit PHP credits sekce jako group, general, SAPI, modules, documentation, QA nebo all credits. Výstup se standardně načítá do iframe a lze ho otevřít i v novém okně.</p>
@@ -492,7 +494,7 @@ renderMenu();
         <li><strong>Zobrazení:</strong> Standardně iframe, na vyžádání samostatné okno.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["schema.php"]); ?>">Database Schema</a></dt>
     <dd>
       <p>Database Schema je vizuální prohlížeč schématu filmových tabulek. Čte metadata <code>INFORMATION_SCHEMA</code> pro tabulky <code>fs_film_*</code>, <code>fs_photo_*</code> a <code>fs_flickr_*</code> a vykresluje tabulkové boxy, klíče, typy sloupců, nullabilitu, extra atributy a vazby cizích klíčů.</p>
       <p>Spojovací linie jsou ručně trasované pro známé filmové a fotografické vztahy. Na malých displayích se diagram i tabulka vazeb skryjí a zobrazí se hláška, protože diagram potřebuje dost prostoru, aby byl čitelný.</p>
@@ -503,7 +505,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Pouze čtecí kontrola schématu.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
+    <dt><a href="<?php echo $sScriptUrl; ?>">Help</a></dt>
     <dd>
       <p>Help je tato dvojjazyčná nápověda. Dokumentuje stránky filmového menu, společné ovládání, očekávaný přístup, diagnostické stránky, databázové exporty a rozdíl mezi pouze čtecími výpisy a přiřazovací stránkou, která zapisuje do databáze.</p>
       <ul>

@@ -1087,6 +1087,40 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+function setupSchemaSavePngButton() {
+    var oButton = document.querySelector(".js-schema-save-png");
+    if (!oButton) {
+        return;
+    }
+    oButton.addEventListener("click", function () {
+        var oElement = document.querySelector(".schema-grid");
+        var sFileName = oButton.getAttribute("data-file-name") || "database_schema";
+        if (!oElement || typeof html2canvas != "function") {
+            return;
+        }
+        oButton.disabled = true;
+        html2canvas(oElement, {
+            scale: 3
+        }).then(function (oCanvas) {
+            oCanvas.toBlob(function (oBlob) {
+                var oLink = document.createElement("a");
+                oLink.download = sFileName + ".png";
+                oLink.href = URL.createObjectURL(oBlob);
+                oLink.click();
+                URL.revokeObjectURL(oLink.href);
+                oButton.disabled = false;
+            }, "image/png", 1.0);
+        }).catch(function (oError) {
+            console.error(oError);
+            oButton.disabled = false;
+        });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    setupSchemaSavePngButton();
+});
+
 document.addEventListener("DOMContentLoaded", function () {
     var oCanvas = document.getElementById("schema-canvas");
     var oSvg = document.getElementById("schema-lines");

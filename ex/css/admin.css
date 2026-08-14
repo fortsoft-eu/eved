@@ -1572,7 +1572,7 @@ body.phpinfo-page .admin-controls {
 }
 
 @media (max-width: 600px) {
-    .schema-diagram, .schema-relations {
+    .schema-diagram, .schema-relations, .admin-controls .js-schema-save-png {
         display: none;
     }
     .schema-unavailable-message {

@@ -7,9 +7,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET["fingerprint"]) && (stri
     sendEvedUaFingerprintResponse($oPdo);
 }
 
-runKfExchangeRateProcess($oPdo, $sError);
-runExCalendarProcess($oPdo, $sError);
-
 $sStyleNonce = base64_encode(random_bytes(16));
 
 $blPortalIndexAllowed = isAllowedIp() || isProjectViewAllowed("portal");
@@ -22,12 +19,12 @@ if ($blPortalIndexAllowed) {
         array("href" => "film/", "icon" => "&#127902;&#65039;", "name" => "Film", "title" => "Film scans gallery")
     );
     $aLinks = array();
-    $aLinks[] = array("href" => "https://admin.aerohosting.cz/", "icon" => "&#128745;&#65039;", "name" => "AeroHosting", "title" => "Hosting administration");
-    $aLinks[] = array("href" => "https://myadmin.aerohosting.cz/", "icon" => "&#128452;&#65039;", "name" => "MyAdmin", "title" => "Database administration");
+    $aLinks[] = array("href" => "https://admin." . $sWebHostingDomain . "/", "icon" => "&#128745;&#65039;", "name" => "AeroHosting", "title" => "Hosting administration");
+    $aLinks[] = array("href" => "https://myadmin." . $sWebHostingDomain . "/", "icon" => "&#128452;&#65039;", "name" => "MyAdmin", "title" => "Database administration");
     list($user, $pass) = arrayReadNext($aAWStatsAccounts);
-    $aLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats.aerohosting.cz/", "icon" => "&#128202;", "name" => "AWStats", "title" => html($user) . " site statistics");
+    $aLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats." . $sWebHostingDomain . "/", "icon" => "&#128202;", "name" => "AWStats", "title" => html($user) . " site statistics");
     list($user, $pass) = arrayReadNext($aAWStatsAccounts);
-    $aLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats.aerohosting.cz/", "icon" => "&#128200;", "name" => "AWStats", "title" => html($user) . " site statistics");
+    $aLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats." . $sWebHostingDomain . "/", "icon" => "&#128200;", "name" => "AWStats", "title" => html($user) . " site statistics");
     $aLinks[] = array("href" => "https://securityheaders.com/", "icon" => "&#128274;", "name" => "Security Headers", "title" => "HTTP security header scanner");
     $aLinks[] = array("href" => "https://developer.mozilla.org/en-US/observatory", "icon" => "&#128301;", "name" => "MDN Observatory", "title" => "Mozilla site security scanner");
     $aLinks[] = array("href" => "https://github.com/fortsoft-eu", "icon" => "&#128008;", "name" => "GitHub", "title" => "Source code hosting");
@@ -186,6 +183,12 @@ if ($blPortalIndexAllowed) {
 
     exit;
 }
+
+include "kf/functions.php";
+include "ex/functions.php";
+
+runKfExchangeRateProcess($oPdo, $sError);
+runExCalendarProcess($oPdo, $sError);
 
 $iEvedUaId = insertEvedUaRequest($oPdo);
 $iTime     = time();

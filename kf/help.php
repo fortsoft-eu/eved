@@ -11,6 +11,8 @@ if (!$oPdo) {
 requireViewAccess("kf", "csrf_token");
 
 
+$aMenuItemUrls = getMenuItemUrls($oPdo);
+$sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $iTime = sendPageHeaders();
 
 ?>
@@ -98,7 +100,7 @@ renderMenu();
   </dl>
   <h3>Menu Pages</h3>
   <dl class="kf-help-list">
-    <dt><a href="<?php echo $sBaseUrl; ?>index.php">Income and Expenses</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["index.php"]); ?>">Income and Expenses</a></dt>
     <dd>
       <p>Income and Expenses is the monthly overview. It reads transactions, groups them by month, and shows columns for individual finance types, type groups, income total, expense total, and net total.</p>
       <p>Amounts are converted before monthly, type, group, and summary totals are calculated. This means totals are numerically consistent with the selected display currency when conversion data is available.</p>
@@ -109,7 +111,7 @@ renderMenu();
         <li><strong>Currency:</strong> Totals are converted before aggregation when a display currency is selected.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>trans.php">Transactions</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["trans.php"]); ?>">Transactions</a></dt>
     <dd>
       <p>Transactions is the detailed list of finance transactions. It shows date, type, signed amount, counterparty, and note. Income rows are stored as positive amounts and expense rows as negative amounts.</p>
       <p>Full access can create, edit, and delete transactions. New or edited transactions require a valid date, income or expense type, positive input amount, and available currency. The selected type decides whether the stored amount is positive or negative.</p>
@@ -120,7 +122,7 @@ renderMenu();
         <li><strong>Additional rows:</strong> Optional same-kind split rows reduce the main saved amount.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>debts.php">Debts</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["debts.php"]); ?>">Debts</a></dt>
     <dd>
       <p>Debts links a debt to a portal subject and shows its movements. The table displays subject, total amount, movement list, account number, e-mail, phone, and note.</p>
       <p>Subject contact details are read from the portal contact data. Bank account, e-mail, and the first available phone contact are displayed for quick reference and copying. The debt amount is the total of its movements.</p>
@@ -131,7 +133,7 @@ renderMenu();
         <li><strong>Total:</strong> Movement totals respect the selected display currency when conversion is possible.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>subscr.php">Subscriptions</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["subscr.php"]); ?>">Subscriptions</a></dt>
     <dd>
       <p>Subscriptions tracks recurring income or expense rows. It shows days until due, name, finance type, amount, period, next due date and time, counterparty, note, and active state.</p>
       <p>The In column is calculated from <code>next_due_at</code>. Next Due is displayed with a clear visual separation between date and time. If a subscription has a supported automatic period and a due date, full access can mark it served.</p>
@@ -143,7 +145,7 @@ renderMenu();
         <li><strong>Defaults:</strong> New-entry type, currency, and period are session-backed.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>types.php">Income and Expense Types</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["types.php"]); ?>">Income and Expense Types</a></dt>
     <dd>
       <p>Income and Expense Types manages finance type rows. A type can be income, expense, or group. Income and expense types are used directly by transactions and subscriptions; group types collect member types for overview columns.</p>
       <p>Full access can create and edit types, change their kind, and choose group members. Deleting a type is blocked when it is already used by transactions.</p>
@@ -153,7 +155,7 @@ renderMenu();
         <li><strong>Deletion:</strong> Used transaction types cannot be deleted.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>exrates.php">Exchange Rates</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["exrates.php"]); ?>">Exchange Rates</a></dt>
     <dd>
       <p>Exchange Rates is a read-only view of the latest stored exchange-rate set. The table shows valid date, order, country, currency name, currency code, amount, rate, and fetch timestamp.</p>
       <p>Amount is displayed as amount plus currency code, for example <code>100 HUF</code>. Rate is displayed as the CZK value for that amount, for example <code>6.123 CZK</code>. Fetched At uses the same separated date-and-time style as subscription Next Due.</p>
@@ -164,7 +166,7 @@ renderMenu();
         <li><strong>Rate:</strong> CZK value for the displayed source amount.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>iban.php">IBAN Calculator</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["iban.php"]); ?>">IBAN Calculator</a></dt>
     <dd>
       <p>IBAN Calculator converts a Czech national account number into IBAN values in electronic and written form. It also displays the normalized Czech national account format and the bank SWIFT code when the entered bank code is known.</p>
       <p>The calculation runs in the browser and does not write finance data. Reset clears the form and calculated output.</p>
@@ -174,7 +176,7 @@ renderMenu();
         <li><strong>Safety:</strong> Client-side calculation without database writes.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["db.php"]); ?>">Database Structure</a></dt>
     <dd>
       <p>Database Structure is a full-access diagnostic and export page. It lists <code>kf_*</code> tables in dependency-aware order and shows normalized <code>SHOW CREATE TABLE</code> output.</p>
       <p>The page can download a schema-only SQL file or a backup SQL file. Download links and copy-link buttons use the current script URL and project path.</p>
@@ -184,7 +186,7 @@ renderMenu();
         <li><strong>Downloads:</strong> Schema and backup SQL exports.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["schema.php"]); ?>">Database Schema</a></dt>
     <dd>
       <p>Database Schema is the full-access visual schema viewer. It reads Kesef table, column, key, index, and relation metadata from <code>INFORMATION_SCHEMA</code>.</p>
       <p>The diagram displays Kesef tables, primary keys, foreign keys, unique keys, indexes, column types, nullability, and relation lines. On devices where the diagram is not suitable, the page shows an unavailable message instead of a broken view.</p>
@@ -194,7 +196,7 @@ renderMenu();
         <li><strong>Purpose:</strong> Visual review of the Kesef data model.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
+    <dt><a href="<?php echo $sScriptUrl; ?>">Help</a></dt>
     <dd>
       <p>Help is this bilingual read-only help page. It documents common controls, access expectations, monetary conversion behavior, settings, dialogs, and Kesef menu pages.</p>
       <p>The page itself requires only Kesef view access and does not modify finance data.</p>
@@ -265,7 +267,7 @@ renderMenu();
   </dl>
   <h3>Stránky v menu</h3>
   <dl class="kf-help-list">
-    <dt><a href="<?php echo $sBaseUrl; ?>index.php">Income and Expenses</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["index.php"]); ?>">Income and Expenses</a></dt>
     <dd>
       <p>Income and Expenses je měsíční přehled. Čte transakce, seskupuje je podle měsíce a zobrazuje sloupce pro jednotlivé finanční typy, skupiny typů, součet příjmů, součet výdajů a čistý součet.</p>
       <p>Částky se přepočítají před výpočtem měsíčních, typových, skupinových a souhrnných součtů. Díky tomu jsou součty číselně konzistentní s vybranou zobrazovanou měnou, pokud jsou dostupná kurzová data.</p>
@@ -276,7 +278,7 @@ renderMenu();
         <li><strong>Měna:</strong> Součty se při vybrané zobrazované měně přepočítají před agregací.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>trans.php">Transactions</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["trans.php"]); ?>">Transactions</a></dt>
     <dd>
       <p>Transactions je podrobný seznam finančních transakcí. Zobrazuje datum, typ, podepsanou částku, protistranu a poznámku. Příjmy jsou uložené jako kladné částky a výdaje jako záporné částky.</p>
       <p>Full přístup může vytvářet, upravovat a mazat transakce. Nová nebo upravená transakce vyžaduje platné datum, příjmový nebo výdajový typ, kladnou vstupní částku a dostupnou měnu. Vybraný typ rozhoduje, jestli se uložená částka zapíše kladně nebo záporně.</p>
@@ -287,7 +289,7 @@ renderMenu();
         <li><strong>Další řádky:</strong> Volitelné rozdělení stejného druhu snižuje hlavní uloženou částku.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>debts.php">Debts</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["debts.php"]); ?>">Debts</a></dt>
     <dd>
       <p>Debts propojuje dluh s portálovým subjektem a zobrazuje jeho pohyby. Tabulka ukazuje subjekt, celkovou částku, seznam pohybů, číslo účtu, e-mail, telefon a poznámku.</p>
       <p>Kontaktní údaje subjektu se čtou z portálových kontaktů. Bankovní účet, e-mail a první dostupný telefon se zobrazují kvůli rychlé kontrole a kopírování. Částka dluhu je součet jeho pohybů.</p>
@@ -298,7 +300,7 @@ renderMenu();
         <li><strong>Součet:</strong> Součty pohybů respektují vybranou zobrazovanou měnu, pokud lze přepočítat.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>subscr.php">Subscriptions</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["subscr.php"]); ?>">Subscriptions</a></dt>
     <dd>
       <p>Subscriptions sleduje opakované příjmy nebo výdaje. Zobrazuje počet dnů do splatnosti, název, finanční typ, částku, periodu, další termín včetně času, protistranu, poznámku a aktivní stav.</p>
       <p>Sloupec In se počítá z <code>next_due_at</code>. Next Due se zobrazuje s jasným oddělením data od času. Pokud má předplatné podporovanou automatickou periodu a termín, full přístup ho může označit jako obsloužené.</p>
@@ -310,7 +312,7 @@ renderMenu();
         <li><strong>Výchozí hodnoty:</strong> Typ, měna a perioda nového záznamu jsou uložené v session.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>types.php">Income and Expense Types</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["types.php"]); ?>">Income and Expense Types</a></dt>
     <dd>
       <p>Income and Expense Types spravuje řádky finančních typů. Typ může být income, expense nebo group. Income a expense typy se používají přímo v transakcích a předplatných; group typy sdružují členské typy pro sloupce přehledu.</p>
       <p>Full přístup může vytvářet a upravovat typy, měnit jejich druh a vybírat členy skupiny. Smazání typu je blokované, pokud už je použitý transakcemi.</p>
@@ -320,7 +322,7 @@ renderMenu();
         <li><strong>Mazání:</strong> Typy použité v transakcích nelze smazat.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>exrates.php">Exchange Rates</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["exrates.php"]); ?>">Exchange Rates</a></dt>
     <dd>
       <p>Exchange Rates je pouze čtecí pohled na poslední uloženou sadu kurzů. Tabulka zobrazuje platnost, pořadí, zemi, název měny, kód měny, množství, kurz a čas stažení.</p>
       <p>Amount se zobrazuje jako množství a kód zdrojové měny, například <code>100 HUF</code>. Rate se zobrazuje jako hodnota v CZK pro dané množství, například <code>6.123 CZK</code>. Fetched At používá stejné oddělení data a času jako subscription Next Due.</p>
@@ -331,7 +333,7 @@ renderMenu();
         <li><strong>Rate:</strong> Hodnota v CZK pro zobrazené zdrojové množství.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>iban.php">IBAN Calculator</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["iban.php"]); ?>">IBAN Calculator</a></dt>
     <dd>
       <p>IBAN Calculator převádí české národní číslo účtu na IBAN v elektronickém i písemném tvaru. Zobrazuje také normalizovaný český formát čísla účtu a SWIFT kód banky, pokud je zadaný kód banky známý.</p>
       <p>Výpočet běží v prohlížeči a nezapisuje finanční data. Reset vyčistí formulář i vypočtený výstup.</p>
@@ -341,7 +343,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Výpočet v prohlížeči bez databázových zápisů.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["db.php"]); ?>">Database Structure</a></dt>
     <dd>
       <p>Database Structure je diagnostická a exportní stránka pouze pro full přístup. Vypisuje tabulky <code>kf_*</code> v pořadí podle závislostí a zobrazuje normalizovaný výstup <code>SHOW CREATE TABLE</code>.</p>
       <p>Stránka umí stáhnout SQL soubor se schématem nebo SQL zálohu. Download odkazy a tlačítka pro kopírování odkazů používají aktuální URL skriptu a cestu projektu.</p>
@@ -351,7 +353,7 @@ renderMenu();
         <li><strong>Stahování:</strong> SQL export schématu a zálohy.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>schema.php">Database Schema</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["schema.php"]); ?>">Database Schema</a></dt>
     <dd>
       <p>Database Schema je vizuální schema viewer pouze pro full přístup. Čte metadata Kesef tabulek, sloupců, klíčů, indexů a relací z <code>INFORMATION_SCHEMA</code>.</p>
       <p>Diagram zobrazuje Kesef tabulky, primární klíče, cizí klíče, unikátní klíče, indexy, typy sloupců, nullability a spojnice relací. Na zařízeních, kde diagram není vhodný, stránka zobrazí zprávu o nedostupnosti místo rozbitého pohledu.</p>
@@ -361,7 +363,7 @@ renderMenu();
         <li><strong>Účel:</strong> Vizuální kontrola datového modelu Kesef.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
+    <dt><a href="<?php echo $sScriptUrl; ?>">Help</a></dt>
     <dd>
       <p>Help je tato dvojjazyčná pouze čtecí nápověda. Dokumentuje společné ovládání, očekávaný přístup, chování měnových přepočtů, nastavení, dialogy a stránky menu Kesef.</p>
       <p>Samotná stránka vyžaduje jen Kesef view přístup a neupravuje finanční data.</p>

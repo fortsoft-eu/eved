@@ -8,6 +8,8 @@ if (!$oPdo) {
 }
 
 
+$aMenuItemUrls = getMenuItemUrls($oPdo);
+$sScriptUrl = $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]);
 $iTime = sendPageHeaders();
 
 ?>
@@ -57,17 +59,17 @@ renderMenu();
   </dl>
   <h3>Menu Pages</h3>
   <dl class="lm-help-list">
-    <dt><a href="<?php echo $sBaseUrl; ?>index.php">Dashboard</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["index.php"]); ?>">Dashboard</a></dt>
     <dd>
       <p>Dashboard is the section entry point. It shows the maintenance request overview that used to be available from the trusted branch of the film entry point, from Navigation through the PHP <code>$_COOKIE</code> array.</p>
       <p>The page is read-only. It is meant for checking the current request, headers, session, cookies, and server values without opening several separate diagnostic pages.</p>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>req.php">Request Overview</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["req.php"]); ?>">Request Overview</a></dt>
     <dd>
       <p>Request Overview is the compact plain-text request diagnostic page. It prints the current request summary in a preformatted block so the request can be copied or compared without opening the larger table view.</p>
       <p>The page is read-only and is intended for quick inspection of request, server, session, and cookie context.</p>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>bt.php">Issue Tracker</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["bt.php"]); ?>">Issue Tracker</a></dt>
     <dd>
       <p>Issue Tracker lists maintenance issues with type, status, priority, title, due date, updated date, and edit actions. Full access can create, edit, and delete issues from the page dialogs.</p>
       <p>The quick filter narrows the rendered issue table. Description fields are edited as text areas and use the browser's normal spellcheck settings.</p>
@@ -77,7 +79,7 @@ renderMenu();
         <li><strong>Filtering:</strong> Quick filter over visible issue text.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>bh.php">Business Hours</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["bh.php"]); ?>">Business Hours</a></dt>
     <dd>
       <p>Business Hours manages displayed opening-hour rows. The page uses tabbed business-hour groups, cards for individual records, and a New dialog for adding another entry.</p>
       <p>Full access can add and maintain business-hour records. The page keeps the editing surface focused on the visible business-hour cards instead of exposing raw database tables.</p>
@@ -87,7 +89,7 @@ renderMenu();
         <li><strong>Dialogs:</strong> Uses the shared project modal dialog.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>email.php">E-mail Domains</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["email.php"]); ?>">E-mail Domains</a></dt>
     <dd>
       <p>E-mail Domains shows local-part users across managed domains. Domains are columns, local parts are rows, and a missing address cell is shown as an em dash so gaps are visible.</p>
       <p>The New dialog adds a domain and a list of local users. It stores whether each added address is a mailbox, alias, or forwarder, ignores duplicates already present in the database, and colors table cells by account type.</p>
@@ -97,7 +99,7 @@ renderMenu();
         <li><strong>Input:</strong> User tokens can be separated by commas, semicolons, whitespace, or lines.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>phone.php">Phone Accounts</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["phone.php"]); ?>">Phone Accounts</a></dt>
     <dd>
       <p>Phone Accounts stores standalone phone-number records with SIM identifiers, PIN/PUK values, IMEI, note, paid date/time, paid amount, currency, and Telegram account. It has no subject, domain, or other page relation.</p>
       <p>Phone numbers and Telegram accounts are normalized to the same canonical values used by the EX contact pages before they are stored.</p>
@@ -109,7 +111,7 @@ renderMenu();
         <li><strong>Filtering:</strong> Quick filter over visible phone-account text.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>sb.php">Snippet Board</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["sb.php"]); ?>">Snippet Board</a></dt>
     <dd>
       <p>Snippet Board stores six rich-text snippets for quick reuse. Each slot is edited with the shared rich-text editor and saved through the page without leaving the board.</p>
       <p>The board tracks changed, saving, and saved state in the toolbar. On compact devices the visible slot is selected through numbered tabs.</p>
@@ -119,7 +121,7 @@ renderMenu();
         <li><strong>State:</strong> Changed and saved status is shown in the toolbar.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>char.php">Character Converter</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["char.php"]); ?>">Character Converter</a></dt>
     <dd>
       <p>Character Converter converts a Unicode character between the character itself, decimal code point, hexadecimal code point, decimal HTML entity, hexadecimal HTML entity, and named HTML entity where available.</p>
       <p>The palette offers commonly used characters and variants. Text and Emoji buttons choose the preferred presentation for characters that support variation selectors.</p>
@@ -129,7 +131,7 @@ renderMenu();
         <li><strong>Safety:</strong> Browser-side conversion without database writes.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>fancy.php">Fancy Text</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["fancy.php"]); ?>">Fancy Text</a></dt>
     <dd>
       <p>Fancy Text converts plain or already styled Unicode text into selected Unicode mathematical alphanumeric styles. The left text area contains the source text and the right text area shows the regenerated styled output.</p>
       <p>The style selector is in the top control row. Changing the selected style regenerates the output, and unsupported characters are left unchanged.</p>
@@ -139,7 +141,7 @@ renderMenu();
         <li><strong>Layout:</strong> Text areas switch between vertical and side-by-side layout according to available space.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ares.php">ARES Lookup</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ares.php"]); ?>">ARES Lookup</a></dt>
     <dd>
       <p>ARES Lookup searches Czech business-register data by company ID, business name, registered office, legal form, tax office, and CZ-NACE fields. A direct company-ID match shows a detail table; broader searches show result rows.</p>
       <p>The form is read-only from the local database point of view. It displays returned ARES values in tables that can use the compact table style on small devices.</p>
@@ -149,7 +151,7 @@ renderMenu();
         <li><strong>Safety:</strong> Lookup page without local data writes.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>whois.php">Domain/IP Lookup</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["whois.php"]); ?>">Domain/IP Lookup</a></dt>
     <dd>
       <p>Domain/IP Lookup checks a domain name or IP address and displays registration, reverse DNS, and DNS record information when available.</p>
       <p>The top row follows the same compact control layout as other lookup pages: menu, label, input, and Lookup button. Result tables keep detail values separate from DNS rows so they can be copied or reviewed independently.</p>
@@ -159,7 +161,7 @@ renderMenu();
         <li><strong>Safety:</strong> Lookup page without local data writes.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["db.php"]); ?>">Database Structure</a></dt>
     <dd>
       <p>Database Structure is the full-access SQL structure and export page for all database tables. It sorts them by foreign-key dependencies and displays normalized <code>SHOW CREATE TABLE</code> output.</p>
       <p>The page can download schema-only SQL or a backup containing structure and data. Copy buttons place direct schema and backup download URLs on the clipboard. The page reads metadata and table contents for export, but does not modify the database.</p>
@@ -170,7 +172,7 @@ renderMenu();
         <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>dbinfo.php">Database Information</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["dbinfo.php"]); ?>">Database Information</a></dt>
     <dd>
       <p>Database Information is a full-access diagnostic page for the current database connection. It queries server version, database name, server comment, character set, collation, SQL mode, time zone values, and PDO client/server attributes.</p>
       <p>This page is useful when comparing local, staging, and production environments because it shows both SQL-level values and PDO connection metadata in one table.</p>
@@ -180,17 +182,17 @@ renderMenu();
         <li><strong>Safety:</strong> Read-only diagnostic page.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>authors.php">Authors</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["authors.php"]); ?>">Authors</a></dt>
     <dd>
       <p>Authors lists authors cited in books and their linked page numbers from the source tables.</p>
       <p>The page is a maintenance overview for cited-author data. It does not describe portal users or application authors.</p>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>menu.php">Menu Management</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["menu.php"]); ?>">Menu Management</a></dt>
     <dd>
       <p>Menu Management edits global menu rows stored in <code>fs_menu</code>. Items are grouped by path section so menu entries from different project areas are not mixed while ordering is changed.</p>
       <p>Full access can create, edit, delete, activate, deactivate, and reorder menu entries within their own section.</p>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>info.php">PHP Info and PHP Credits</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["info.php"]); ?>">PHP Info and PHP Credits</a></dt>
     <dd>
       <p>PHP Info and PHP Credits is the full PHP diagnostic page. It is restricted to full access because it can expose detailed server and PHP configuration data.</p>
       <p>The selector can show PHP info sections such as general information, configuration, modules, environment, variables, license, or all info. It can also show PHP credits sections such as group, general, SAPI, modules, documentation, QA, or all credits. Output is loaded into an iframe by default and can be opened in a new window.</p>
@@ -200,7 +202,7 @@ renderMenu();
         <li><strong>Display:</strong> Iframe by default, separate window on request.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>env.php">PHP Environment</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["env.php"]); ?>">PHP Environment</a></dt>
     <dd>
       <p>PHP Environment is a full-access diagnostic page for high-level runtime information. It shows PHP version, SAPI, operating system, architecture, time zones, locale, loaded configuration files, PDO drivers, resource limits, and selected security-related configuration values.</p>
       <p>It is more curated than PHP Info and is easier to scan when the question is whether the runtime has the expected PHP version, limits, session settings, PDO drivers, or file-loading configuration.</p>
@@ -210,7 +212,7 @@ renderMenu();
         <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ini.php">PHP Configuration Options</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ini.php"]); ?>">PHP Configuration Options</a></dt>
     <dd>
       <p>PHP Configuration Options lists values returned by <code>ini_get_all()</code>. It is a full-access diagnostic page for comparing global and local configuration values and checking each option's access level.</p>
       <p>Long string values are wrapped for table readability. The table is useful when a setting differs between the master configuration and the local runtime value used by this application.</p>
@@ -220,7 +222,7 @@ renderMenu();
         <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>const.php">PHP Defined Constants</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["const.php"]); ?>">PHP Defined Constants</a></dt>
     <dd>
       <p>PHP Defined Constants lists constants returned by <code>get_defined_constants(true)</code>. It is a full-access diagnostic page for checking PHP core, extension, and application constants visible in the current runtime.</p>
       <p>Values are converted to readable strings, including booleans, nulls, arrays, special float values, and <code>PHP_EOL</code>. The table keeps the constant group, name, value, and PHP type separate for easier filtering.</p>
@@ -230,7 +232,7 @@ renderMenu();
         <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ext.php">PHP Loaded Extensions</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ext.php"]); ?>">PHP Loaded Extensions</a></dt>
     <dd>
       <p>PHP Loaded Extensions lists the currently loaded PHP extensions from <code>get_loaded_extensions()</code>. It is a full-access diagnostic page for confirming whether required extensions are available to this runtime.</p>
       <ul>
@@ -239,7 +241,7 @@ renderMenu();
         <li><strong>Safety:</strong> Read-only diagnostic page.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>streams.php">PHP Stream Support</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["streams.php"]); ?>">PHP Stream Support</a></dt>
     <dd>
       <p>PHP Stream Support lists stream wrappers, transports, and filters available in the current PHP runtime. It is restricted to full access and is useful when debugging file, URL, compression, or transport behavior.</p>
       <ul>
@@ -248,7 +250,7 @@ renderMenu();
         <li><strong>Safety:</strong> Read-only diagnostic page.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>opcache.php">PHP OPcache Status</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["opcache.php"]); ?>">PHP OPcache Status</a></dt>
     <dd>
       <p>PHP OPcache Status shows OPcache status and configuration when OPcache functions are available. If OPcache is unavailable or disabled, the page reports that state instead of failing.</p>
       <p>Nested OPcache status and configuration values are flattened into category, name, value, and type rows so they can be filtered and compared easily.</p>
@@ -258,7 +260,7 @@ renderMenu();
         <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ua.php">Eved Access Log</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ua.php"]); ?>">Eved Access Log</a></dt>
     <dd>
       <p>Eved Access Log is a full-access diagnostic page for recent browser fingerprint records. It shows request time, IP address, geo headers, parsed user agent, GPU, fonts, screen data, timezone, language, platform, plugins, and MIME types.</p>
       <p>The page can auto-refresh every five minutes and uses the quick filter for narrowing already rendered rows.</p>
@@ -268,7 +270,7 @@ renderMenu();
         <li><strong>Refresh:</strong> Optional five-minute auto-refresh.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>request.php">PHP Request Variables</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["request.php"]); ?>">PHP Request Variables</a></dt>
     <dd>
       <p>PHP Request Variables is a full-access diagnostic page for the current request. It prints <code>$_GET</code>, <code>$_POST</code>, <code>$_FILES</code>, <code>$_SERVER</code>, <code>$_SESSION</code>, and <code>$_COOKIE</code> in a filterable table.</p>
       <p>Because it can reveal session values, cookies, server paths, headers, and request data, it should remain restricted. Empty arrays are shown explicitly so it is clear that the source was checked.</p>
@@ -278,7 +280,7 @@ renderMenu();
         <li><strong>Access:</strong> Restricted to full access.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
+    <dt><a href="<?php echo $sScriptUrl; ?>">Help</a></dt>
     <dd>
       <p>Help is this read-only Dashboard help page. It documents Dashboard controls, access expectations, and Dashboard menu pages.</p>
       <p>The page itself is public, reads menu metadata for navigation, and does not modify data.</p>
@@ -307,17 +309,17 @@ renderMenu();
   </dl>
   <h3>Stránky v menu</h3>
   <dl class="lm-help-list">
-    <dt><a href="<?php echo $sBaseUrl; ?>index.php">Dashboard</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["index.php"]); ?>">Dashboard</a></dt>
     <dd>
       <p>Dashboard je vstupní stránka sekce. Zobrazuje údržbový přehled requestu, který byl dříve dostupný v trusted větvi filmového vstupu, od Navigation až po PHP pole <code>$_COOKIE</code>.</p>
       <p>Stránka je pouze pro čtení. Slouží ke kontrole aktuálního requestu, hlaviček, session, cookies a serverových hodnot bez otevírání několika samostatných diagnostik.</p>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>req.php">Request Overview</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["req.php"]); ?>">Request Overview</a></dt>
     <dd>
       <p>Request Overview je kompaktní plain-text diagnostika aktuálního requestu. Vypisuje souhrn požadavku do preformátovaného bloku, aby ho šlo snadno kopírovat nebo porovnat bez otevření větší tabulkové stránky.</p>
       <p>Stránka je pouze pro čtení a slouží k rychlé kontrole requestu, serveru, session a cookies.</p>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>bt.php">Issue Tracker</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["bt.php"]); ?>">Issue Tracker</a></dt>
     <dd>
       <p>Issue Tracker vypisuje údržbové issues s typem, stavem, prioritou, názvem, termínem, časem aktualizace a editačními akcemi. Full přístup může issues vytvářet, upravovat a mazat z dialogů stránky.</p>
       <p>Rychlý filtr zužuje vykreslenou tabulku issues. Pole Description se upravují jako textareas a používají běžné nastavení kontroly pravopisu v prohlížeči.</p>
@@ -327,7 +329,7 @@ renderMenu();
         <li><strong>Filtrování:</strong> Rychlý filtr nad viditelným textem issues.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>bh.php">Business Hours</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["bh.php"]); ?>">Business Hours</a></dt>
     <dd>
       <p>Business Hours spravuje zobrazované řádky otevírací doby. Stránka používá taby skupin business hours, karty jednotlivých záznamů a dialog New pro přidání další položky.</p>
       <p>Full přístup může přidávat a udržovat záznamy business hours. Stránka nechává editační vrstvu zaměřenou na viditelné karty místo zobrazení surových databázových tabulek.</p>
@@ -337,7 +339,7 @@ renderMenu();
         <li><strong>Dialogy:</strong> Používá sdílený projektový modální dialog.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>email.php">E-mail Domains</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["email.php"]); ?>">E-mail Domains</a></dt>
     <dd>
       <p>E-mail Domains ukazuje uživatele před zavináčem napříč spravovanými doménami. Domény jsou sloupce, lokální části adres jsou řádky a chybějící adresa se zobrazuje jako em dash, aby byly mezery viditelné.</p>
       <p>Dialog New přidává doménu a seznam lokálních uživatelů. Ukládá, jestli jde o mailbox, alias nebo forwarder, ignoruje duplicity, které už v databázi jsou, a buňky tabulky barevně odlišuje podle typu účtu.</p>
@@ -347,7 +349,7 @@ renderMenu();
         <li><strong>Vstup:</strong> Uživatelské tokeny lze oddělovat čárkami, středníky, bílými znaky nebo řádky.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>phone.php">Phone Accounts</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["phone.php"]); ?>">Phone Accounts</a></dt>
     <dd>
       <p>Phone Accounts ukládá samostatné záznamy telefonních čísel s identifikátory SIM, PIN/PUK hodnotami, IMEI, poznámkou, datem a časem zaplacení, částkou, měnou a Telegram účtem. Nemá vazbu na subject, doménu ani jinou stránku.</p>
       <p>Telefonní čísla a Telegram účty se před uložením normalizují do stejných kanonických hodnot, jaké používají EX kontaktní stránky.</p>
@@ -359,7 +361,7 @@ renderMenu();
         <li><strong>Filtrování:</strong> Rychlý filtr nad viditelným textem phone accounts.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>sb.php">Snippet Board</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["sb.php"]); ?>">Snippet Board</a></dt>
     <dd>
       <p>Snippet Board ukládá šest rich-text snippetů pro rychlé opakované použití. Každý slot se upravuje sdíleným rich-text editorem a ukládá se přímo ze stránky bez opuštění boardu.</p>
       <p>Board ukazuje stav changed, saving a saved v horní liště. Na kompaktních zařízeních se viditelný slot vybírá očíslovanými taby.</p>
@@ -369,7 +371,7 @@ renderMenu();
         <li><strong>Stav:</strong> Změna a uložení jsou vidět v horní liště.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>char.php">Character Converter</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["char.php"]); ?>">Character Converter</a></dt>
     <dd>
       <p>Character Converter převádí Unicode znak mezi samotným znakem, decimálním code pointem, hexadecimálním code pointem, decimální HTML entitou, hexadecimální HTML entitou a pojmenovanou HTML entitou, pokud existuje.</p>
       <p>Paleta nabízí často používané znaky a varianty. Tlačítka Text a Emoji volí preferovanou prezentaci u znaků, které podporují variation selectors.</p>
@@ -379,7 +381,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Převod v prohlížeči bez databázových zápisů.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>fancy.php">Fancy Text</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["fancy.php"]); ?>">Fancy Text</a></dt>
     <dd>
       <p>Fancy Text převádí plain nebo už stylovaný Unicode text do vybraných Unicode mathematical alphanumeric stylů. Levá textarea obsahuje zdrojový text a pravá textarea ukazuje znovu vygenerovaný stylovaný výstup.</p>
       <p>Select stylu je v horním řádku ovládacích prvků. Změna stylu přegeneruje výstup a nepodporované znaky zůstanou beze změny.</p>
@@ -389,7 +391,7 @@ renderMenu();
         <li><strong>Rozložení:</strong> Textareas se přepínají mezi svislým a vedle sebe rozložením podle dostupného prostoru.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ares.php">ARES Lookup</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ares.php"]); ?>">ARES Lookup</a></dt>
     <dd>
       <p>ARES Lookup hledá česká data ekonomických subjektů podle IČO, obchodního jména, sídla, právní formy, finančního úřadu a CZ-NACE. Přímá shoda podle IČO ukazuje detailní tabulku; širší hledání ukazuje výsledkové řádky.</p>
       <p>Z pohledu lokální databáze je formulář pouze čtecí. Vrácené hodnoty ARES vypisuje v tabulkách, které mohou na malých zařízeních používat kompaktní styl tabulky.</p>
@@ -399,7 +401,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Vyhledávací stránka bez lokálních datových zápisů.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>whois.php">Domain/IP Lookup</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["whois.php"]); ?>">Domain/IP Lookup</a></dt>
     <dd>
       <p>Domain/IP Lookup kontroluje doménové jméno nebo IP adresu a zobrazuje registrační, reverse DNS a DNS informace, pokud jsou dostupné.</p>
       <p>Horní řádek používá stejné kompaktní rozložení ovládacích prvků jako ostatní lookup stránky: menu, label, vstup a tlačítko Lookup. Výsledkové tabulky oddělují detailní hodnoty od DNS řádků, aby šly samostatně kopírovat nebo kontrolovat.</p>
@@ -409,7 +411,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Vyhledávací stránka bez lokálních datových zápisů.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>db.php">Database Structure</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["db.php"]); ?>">Database Structure</a></dt>
     <dd>
       <p>Database Structure je stránka s SQL strukturou a exportem všech databázových tabulek s full přístupem. Řadí je podle závislostí cizích klíčů a zobrazuje normalizovaný výstup <code>SHOW CREATE TABLE</code>.</p>
       <p>Stránka umí stáhnout SQL pouze se schématem nebo zálohu obsahující strukturu i data. Kopírovací tlačítka ukládají do schránky přímé odkazy pro stažení schématu a zálohy. Stránka čte metadata a pro export i obsah tabulek, ale databázi neupravuje.</p>
@@ -420,7 +422,7 @@ renderMenu();
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>dbinfo.php">Database Information</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["dbinfo.php"]); ?>">Database Information</a></dt>
     <dd>
       <p>Database Information je diagnostická stránka aktuálního databázového připojení s full přístupem. Dotazuje se na verzi serveru, název databáze, komentář serveru, znakovou sadu, collation, SQL mode, časové zóny a atributy PDO klienta a serveru.</p>
       <p>Stránka je užitečná při porovnání lokálního, staging a produkčního prostředí, protože v jedné tabulce ukazuje SQL hodnoty i metadata PDO připojení.</p>
@@ -430,17 +432,17 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Pouze čtecí diagnostická stránka.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>authors.php">Authors</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["authors.php"]); ?>">Authors</a></dt>
     <dd>
       <p>Authors vypisuje autory citované v knihách a jejich navázaná čísla stran ze zdrojových tabulek.</p>
       <p>Jde o údržbový přehled dat citovaných autorů. Nejde o portálové uživatele ani autory aplikace.</p>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>menu.php">Menu Management</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["menu.php"]); ?>">Menu Management</a></dt>
     <dd>
       <p>Menu Management spravuje globální řádky menu uložené v <code>fs_menu</code>. Položky jsou seskupené podle části cesty, aby se při změně pořadí nemíchaly položky z různých částí projektu.</p>
       <p>Full přístup může položky menu vytvářet, upravovat, mazat, aktivovat, deaktivovat a přesouvat v pořadí v rámci jejich vlastní sekce.</p>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>info.php">PHP Info and PHP Credits</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["info.php"]); ?>">PHP Info and PHP Credits</a></dt>
     <dd>
       <p>PHP Info and PHP Credits je plná diagnostická stránka PHP. Je omezená na full přístup, protože může zobrazit detailní serverovou a PHP konfiguraci.</p>
       <p>Selector umí zobrazit phpinfo sekce jako general information, configuration, modules, environment, variables, license nebo all info. Umí také zobrazit PHP credits sekce jako group, general, SAPI, modules, documentation, QA nebo all credits. Výstup se standardně načítá do iframe a lze ho otevřít i v novém okně.</p>
@@ -450,7 +452,7 @@ renderMenu();
         <li><strong>Zobrazení:</strong> Standardně iframe, na vyžádání samostatné okno.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>env.php">PHP Environment</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["env.php"]); ?>">PHP Environment</a></dt>
     <dd>
       <p>PHP Environment je diagnostická stránka s přehledem runtime s full přístupem. Ukazuje verzi PHP, SAPI, operační systém, architekturu, časové zóny, locale, načtené konfigurační soubory, PDO drivery, limity prostředků a vybrané bezpečnostní konfigurační hodnoty.</p>
       <p>Je stručnější než PHP Info a lépe se čte, když je potřeba ověřit verzi PHP, limity, session nastavení, PDO drivery nebo konfiguraci načítání souborů.</p>
@@ -460,7 +462,7 @@ renderMenu();
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ini.php">PHP Configuration Options</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ini.php"]); ?>">PHP Configuration Options</a></dt>
     <dd>
       <p>PHP Configuration Options vypisuje hodnoty vrácené funkcí <code>ini_get_all()</code>. Je to diagnostická stránka s full přístupem, která slouží k porovnání globálních a lokálních konfiguračních hodnot a kontrole access levelu každé volby.</p>
       <p>Dlouhé textové hodnoty se zalamují kvůli čitelnosti tabulky. Stránka je užitečná, když se nastavení liší mezi master konfigurací a lokální runtime hodnotou použitou aplikací.</p>
@@ -470,7 +472,7 @@ renderMenu();
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>const.php">PHP Defined Constants</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["const.php"]); ?>">PHP Defined Constants</a></dt>
     <dd>
       <p>PHP Defined Constants vypisuje konstanty vrácené funkcí <code>get_defined_constants(true)</code>. Je to diagnostická stránka s full přístupem určená ke kontrole PHP core, extension a aplikačních konstant viditelných v aktuálním běhu.</p>
       <p>Hodnoty se převádějí na čitelné řetězce, včetně boolean, null, polí, speciálních float hodnot a <code>PHP_EOL</code>. Tabulka odděluje skupinu konstanty, název, hodnotu a PHP typ pro snazší filtrování.</p>
@@ -480,7 +482,7 @@ renderMenu();
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ext.php">PHP Loaded Extensions</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ext.php"]); ?>">PHP Loaded Extensions</a></dt>
     <dd>
       <p>PHP Loaded Extensions vypisuje aktuálně načtená PHP rozšíření z <code>get_loaded_extensions()</code>. Jde o diagnostickou stránku s full přístupem určenou ke kontrole, zda má runtime k dispozici potřebná rozšíření.</p>
       <ul>
@@ -489,7 +491,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Pouze čtecí diagnostická stránka.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>streams.php">PHP Stream Support</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["streams.php"]); ?>">PHP Stream Support</a></dt>
     <dd>
       <p>PHP Stream Support vypisuje stream wrappers, transports a filters dostupné v aktuálním PHP runtime. Je omezený na full přístup a hodí se při ladění práce se soubory, URL, kompresí nebo transporty.</p>
       <ul>
@@ -498,7 +500,7 @@ renderMenu();
         <li><strong>Bezpečnost:</strong> Pouze čtecí diagnostická stránka.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>opcache.php">PHP OPcache Status</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["opcache.php"]); ?>">PHP OPcache Status</a></dt>
     <dd>
       <p>PHP OPcache Status ukazuje stav a konfiguraci OPcache, pokud jsou OPcache funkce dostupné. Pokud OPcache dostupná není nebo je vypnutá, stránka tento stav vypíše místo selhání.</p>
       <p>Vnořené hodnoty stavu a konfigurace OPcache se převádějí do řádků kategorie, název, hodnota a typ, aby je šlo snadno filtrovat a porovnávat.</p>
@@ -508,7 +510,7 @@ renderMenu();
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>ua.php">Eved Access Log</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["ua.php"]); ?>">Eved Access Log</a></dt>
     <dd>
       <p>Eved Access Log je diagnostická stránka s full přístupem pro poslední browser fingerprint záznamy. Ukazuje čas requestu, IP adresu, geo hlavičky, parsovaný user agent, GPU, fonty, display, časové pásmo, jazyk, platformu, pluginy a MIME typy.</p>
       <p>Stránka může provádět auto-refresh každých pět minut a používá rychlý filtr pro zúžení už vykreslených řádků.</p>
@@ -518,7 +520,7 @@ renderMenu();
         <li><strong>Refresh:</strong> Volitelný pětiminutový auto-refresh.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>request.php">PHP Request Variables</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["request.php"]); ?>">PHP Request Variables</a></dt>
     <dd>
       <p>PHP Request Variables je diagnostická stránka aktuálního požadavku s full přístupem. Vypisuje <code>$_GET</code>, <code>$_POST</code>, <code>$_FILES</code>, <code>$_SERVER</code>, <code>$_SESSION</code> a <code>$_COOKIE</code> ve filtrovatelné tabulce.</p>
       <p>Protože může odhalit session hodnoty, cookies, serverové cesty, hlavičky a data požadavku, má zůstat omezená. Prázdná pole se vypisují explicitně, aby bylo jasné, že zdroj byl zkontrolovaný.</p>
@@ -528,7 +530,7 @@ renderMenu();
         <li><strong>Přístup:</strong> Omezeno na full přístup.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo $sBaseUrl; ?>help.php">Help</a></dt>
+    <dt><a href="<?php echo $sScriptUrl; ?>">Help</a></dt>
     <dd>
       <p>Help je tato pouze čtecí nápověda Dashboardu. Dokumentuje ovládání Dashboardu, očekávaný přístup a stránky v menu Dashboardu.</p>
       <p>Samotná stránka je veřejná, čte metadata menu kvůli navigaci a neupravuje data.</p>
