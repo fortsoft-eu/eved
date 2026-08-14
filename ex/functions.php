@@ -7540,6 +7540,32 @@ function mailFormAllowedSenderDomainMap($aAllowedDomains) {
     return $aDomainMap;
 }
 
+function mailFormFetchSenderData($oPdo, $aAdditionalSenderDomains) {
+    $aDomainMap = mailFormAllowedSenderDomainMap($aAdditionalSenderDomains);
+    $aAddressMap = array();
+    $oStatement = $oPdo->query("SELECT d.domain, u.local_part FROM fs_email_domains AS d LEFT JOIN fs_email_domain_users AS u ON u.email_domain_id = d.id ORDER BY d.domain ASC, u.local_part ASC");
+    while ($aRow = $oStatement->fetch()) {
+        $sDomain = strtolower(trim((string)$aRow["domain"]));
+        if ($sDomain == "") {
+            continue;
+        }
+        $aDomainMap[$sDomain] = true;
+        if ($aRow["local_part"] === null) {
+            continue;
+        }
+        $sEmail = mailFormNormalizeEmailAddress(trim((string)$aRow["local_part"]) . "@" . $sDomain);
+        if ($sEmail !== false && $sEmail != "") {
+            $aAddressMap[strtolower($sEmail)] = $sEmail;
+        }
+    }
+    ksort($aDomainMap, SORT_STRING);
+    ksort($aAddressMap, SORT_STRING);
+    return array(
+        "allowed_domains" => array_keys($aDomainMap),
+        "account_addresses" => array_values($aAddressMap)
+    );
+}
+
 function mailFormEmailListUsesAllowedSenderDomains($aEmailList, $aAllowedDomains) {
     $aDomainMap = mailFormAllowedSenderDomainMap($aAllowedDomains);
     $sDomain = "";
@@ -7555,9 +7581,10 @@ function mailFormEmailListUsesAllowedSenderDomains($aEmailList, $aAllowedDomains
     return true;
 }
 
-function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowedDomains = null) {
+function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowedDomains = null, $aAdditionalAddresses = array()) {
     $aSuggestions = array();
     $aSeen = array();
+    $aSeenEmails = array();
     $aParams = array();
     $aAllowedDomainMap = array();
     $aDomainPlaceholders = array();
@@ -7589,7 +7616,7 @@ function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowe
         $sDomainSql = " AND LOWER(SUBSTRING_INDEX(c.contact_value, '@', -1)) IN (" . implode(", ", $aDomainPlaceholders) . ")";
     }
     $sLike = "%" . strtr($sTerm, array("!" => "!!", "%" => "!%", "_" => "!_")) . "%";
-    $sSql = "SELECT subject_rows.subject_id, subject_rows.subject_name, subject_rows.subject_sort_name, c.contact_value AS email FROM (" . getSubjectNameSelectSql() . ") AS subject_rows INNER JOIN ex_subject_contacts AS sc ON sc.subject_id = subject_rows.subject_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id INNER JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id WHERE ct.contact_type = 'email' AND sc.is_active = 1 AND c.contact_value <> ''" . $sDomainSql . " AND (LOWER(subject_rows.subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_rows.subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' OR LOWER(c.contact_value) LIKE LOWER(:email_term) ESCAPE '!') ORDER BY subject_rows.subject_sort_name COLLATE utf8mb4_czech_ci ASC, sc.is_primary DESC, c.contact_value ASC, sc.id ASC LIMIT " . $iLimit;
+    $sSql = "SELECT subject_rows.subject_id, subject_rows.subject_name, subject_rows.subject_sort_name, c.contact_value AS email FROM (" . getSubjectNameSelectSql() . ") AS subject_rows INNER JOIN ex_subjects AS s ON s.id = subject_rows.subject_id AND s.is_active = 1 INNER JOIN ex_subject_contacts AS sc ON sc.subject_id = subject_rows.subject_id INNER JOIN ex_contacts AS c ON c.id = sc.contact_id INNER JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id WHERE ct.contact_type = 'email' AND sc.is_active = 1 AND c.contact_value <> ''" . $sDomainSql . " AND (LOWER(subject_rows.subject_name) LIKE LOWER(:subject_name_term) ESCAPE '!' OR LOWER(subject_rows.subject_sort_name) LIKE LOWER(:subject_sort_name_term) ESCAPE '!' OR LOWER(c.contact_value) LIKE LOWER(:email_term) ESCAPE '!') ORDER BY subject_rows.subject_sort_name COLLATE utf8mb4_czech_ci ASC, sc.is_primary DESC, c.contact_value ASC, sc.id ASC LIMIT " . $iLimit;
     $oStatement = $oPdo->prepare($sSql);
     $aParams["subject_name_term"] = $sLike;
     $aParams["subject_sort_name_term"] = $sLike;
@@ -7606,11 +7633,32 @@ function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowe
             continue;
         }
         $aSeen[$sKey] = true;
+        $aSeenEmails[strtolower($sEmail)] = true;
         $aSuggestions[] = array(
             "subject_id" => (int)$aRow["subject_id"],
             "name" => $sName,
             "email" => $sEmail,
             "value" => $sName != "" ? "<" . $sName . "> " . $sEmail : $sEmail
+        );
+    }
+    foreach ($aAdditionalAddresses as $sAdditionalAddress) {
+        if (count($aSuggestions) >= $iLimit) {
+            break;
+        }
+        $sEmail = mailFormNormalizeEmailAddress($sAdditionalAddress);
+        $sEmailKey = strtolower((string)$sEmail);
+        if ($sEmail === false || $sEmail == "" || isset($aSeenEmails[$sEmailKey]) || stripos($sEmail, $sTerm) === false) {
+            continue;
+        }
+        if (is_array($aAllowedDomains) && !isset($aAllowedDomainMap[mailFormEmailDomain($sEmail)])) {
+            continue;
+        }
+        $aSeenEmails[$sEmailKey] = true;
+        $aSuggestions[] = array(
+            "subject_id" => 0,
+            "name" => "",
+            "email" => $sEmail,
+            "value" => $sEmail
         );
     }
     return $aSuggestions;

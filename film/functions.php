@@ -36,10 +36,10 @@ function startFilmUaPageRequest($iRequestedFilmScanId) {
     );
 }
 
-function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension, $aAllowedIps) {
+function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension) {
     global $iVisitTimeout;
 
-    if (!$oPdo || isAllowedIp($aAllowedIps)) {
+    if (!$oPdo || isAllowedIp()) {
         return;
     }
     $sRequestedImg = basename($sImgParam);
@@ -148,11 +148,11 @@ function insertFilmUaRequest($oPdo, $aRequest, $aData) {
     return true;
 }
 
-function sendFilmUaFingerprintResponse($oPdo, $aAllowedIps) {
+function sendFilmUaFingerprintResponse($oPdo) {
     if (!isset($_SESSION["film"]) || !is_array($_SESSION["film"])) {
         $_SESSION["film"] = array();
     }
-    if (isAllowedIp($aAllowedIps)) {
+    if (isAllowedIp()) {
         unset($_SESSION["film"]["ua"]);
         sendUaJsonAndExit(array("status" => "ignored"));
     }

@@ -4,7 +4,7 @@ include "main.php";
 
 
 $sVisibility = "public";
-if (isAllowedIp($aAllowedIps)) {
+if (isAllowedIp()) {
     $sVisibility = "all";
 }
 
@@ -60,7 +60,7 @@ if (isset($_GET["mode"])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET["fingerprint"]) && $_GET["fingerprint"] == "1") {
-    sendFilmUaFingerprintResponse($oPdo, $aAllowedIps);
+    sendFilmUaFingerprintResponse($oPdo);
 }
 
 if (isset($_GET["img"])) {
@@ -96,7 +96,7 @@ if (isset($_GET["img"])) {
         }
 
         if (is_file($sFilePath)) {
-            markFilmUaImageRequest($oPdo, $sImgParam, $sExtension, $aAllowedIps);
+            markFilmUaImageRequest($oPdo, $sImgParam, $sExtension);
             session_write_close();
             sendSecurityHeaders();
             header("Content-Type: " . mime_content_type($sFilePath), true);
@@ -204,7 +204,7 @@ if ($iId > 0) {
     }
 }
 
-if (isAllowedIp($aAllowedIps)) {
+if (isAllowedIp()) {
     unset($_SESSION["film"]["ua"]);
 } else {
     startFilmUaPageRequest($iId > 0 ? $iId : null);
@@ -571,7 +571,7 @@ if ($oPdo) {
                 $blEnglishLanguage = strpos($sPrimaryLanguage, "en") === 0;
             }
         }
-        if ($blFirefoxBrowser && $blEnglishLanguage && isAllowedIp($aAllowedIps)) {
+        if ($blFirefoxBrowser && $blEnglishLanguage && isAllowedIp()) {
             printPhpFileLinks($sBaseUrl);
         } else {
             echo "          <div id=\"camera-image\">\n",

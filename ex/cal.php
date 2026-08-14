@@ -19,9 +19,9 @@ $_SESSION["ex_calendar"] = array(
     "iCal" => $iCal,
     "iYear" => $iYear
 );
-$blCanViewPersons = isTrustedClient($aAllowedIps) || isProjectViewAllowed("ex");
+$blCanViewPersons = isTrustedClient() || isProjectViewAllowed("ex");
 session_write_close();
-$sPageTitle = getPageTitleText($aAllowedIps);
+$sPageTitle = getPageTitleText();
 $aHolidays = exCalendarGetHolidays($iYear);
 if ($iCal == 1 || $iCal == 2) {
     if ($blCanViewPersons) {

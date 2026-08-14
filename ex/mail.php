@@ -9,7 +9,16 @@ if (!$oPdo) {
 
 
 $blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
-requireFullAccess($aAllowedIps, "ex", "csrf_token", $blJsonResponse);
+requireFullAccess("ex", "csrf_token", $blJsonResponse);
+
+try {
+    $aMailSenderData = mailFormFetchSenderData($oPdo, $aAdditionalSenderDomains);
+    $aAllowedSenderDomains = $aMailSenderData["allowed_domains"];
+    $aEmailAccountAddresses = $aMailSenderData["account_addresses"];
+} catch (Exception $oException) {
+    error_log((string)$oException);
+    send500AndExit("Database error: " . $oException->getMessage());
+}
 
 $sMailRichTextPasteSessionKey = "ex_mail_rich_text_paste";
 $sMailStatusSessionKey = "ex_mail_status";
@@ -49,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     if (getPostedValue("action") == "suggest_mail_recipients") {
         try {
-            sendJsonAndExit(array("success" => true, "recipients" => mailFormFetchRecipientSuggestions($oPdo, getPostedTrimmedValue("term"), 12, getPostedValue("allowed_sender_domains") == "1" ? $aMailAllowedSenderDomains : null)));
+            sendJsonAndExit(array("success" => true, "recipients" => mailFormFetchRecipientSuggestions($oPdo, getPostedTrimmedValue("term"), 12, getPostedValue("allowed_sender_domains") == "1" ? $aAllowedSenderDomains : null, $aEmailAccountAddresses)));
         } catch (Exception $oException) {
             error_log((string)$oException);
             sendJsonAndExit(array("success" => false, "message" => "Recipients could not be loaded."), 500);
@@ -102,13 +111,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($aMailValues["from"] != "" && $aFrom === false) {
             $aErrors[] = "Invalid From.";
         }
-        if ($aMailValues["from"] != "" && $aFrom !== false && !mailFormEmailListUsesAllowedSenderDomains($aFrom, $aMailAllowedSenderDomains)) {
+        if ($aMailValues["from"] != "" && $aFrom !== false && !mailFormEmailListUsesAllowedSenderDomains($aFrom, $aAllowedSenderDomains)) {
             $aErrors[] = "Invalid From domain.";
         }
         if ($aMailValues["sender"] != "" && $aSender === false) {
             $aErrors[] = "Invalid Sender.";
         }
-        if ($aMailValues["sender"] != "" && $aSender !== false && !mailFormEmailListUsesAllowedSenderDomains($aSender, $aMailAllowedSenderDomains)) {
+        if ($aMailValues["sender"] != "" && $aSender !== false && !mailFormEmailListUsesAllowedSenderDomains($aSender, $aAllowedSenderDomains)) {
             $aErrors[] = "Invalid Sender domain.";
         }
         if ($aFrom !== false && $aFrom["count"] > 1 && $blMailRestrictFromToSingleAddress) {
@@ -169,7 +178,7 @@ $iTime = sendPageHeaders();
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText()); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
@@ -184,7 +193,7 @@ renderMenu();
     <button type="submit" form="mail-form" name="mail_body_format" value="plain" class="button-link mail-send-button">Send plain text</button>
     <span class="mail-form-status <?php echo html($sMailStatusClass); ?>" aria-live="polite"><?php echo html($sMailStatus); ?></span>
   </p>
-  <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="mail-form" class="snippet-board-form mail-form" enctype="multipart/form-data" autocomplete="on" data-mail-allowed-sender-domains="<?php echo html(json_encode($aMailAllowedSenderDomains)); ?>" data-mail-restrict-from-to-single-address="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
+  <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="post" id="mail-form" class="snippet-board-form mail-form" enctype="multipart/form-data" autocomplete="on" data-mail-allowed-sender-domains="<?php echo html(json_encode($aAllowedSenderDomains)); ?>" data-mail-restrict-from-to-single-address="<?php echo $blMailRestrictFromToSingleAddress ? "1" : "0"; ?>">
     <input type="hidden" name="action" value="send_mail">
     <input type="hidden" name="csrf_token" value="<?php echo html(getCsrfToken("csrf_token")); ?>">
     <input type="hidden" name="mail_rich_text_paste" class="js-mail-rich-text-paste" value="<?php echo (int)$iMailRichTextPaste; ?>">

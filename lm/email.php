@@ -8,19 +8,16 @@ if (!$oPdo) {
 }
 
 $blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
-requireFullAccess($aAllowedIps, "portal", "csrf_token", $blJsonResponse);
-
+requireFullAccess("portal", "csrf_token", $blJsonResponse);
 
 $sAction = $_SERVER["REQUEST_METHOD"] == "POST" ? getPostedValue("action") : "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("csrf_token", true);
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "set_email_account_type") {
     emailOverviewSaveAccountType();
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && $sAction == "create_email_domain") {
     emailOverviewCreateDomain($oPdo);
 }
@@ -52,7 +49,7 @@ $iTime = sendPageHeaders();
   <meta name="email-account-type" content="<?php echo html($sEmailAccountType); ?>">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText()); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>

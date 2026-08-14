@@ -352,7 +352,7 @@ function menuAdminAppendUniqueValue(&$aValues, $sValue) {
 
 function menuAdminFindAccessProjects($sCode, $sFunctionName) {
     $aProjects = array();
-    if (preg_match_all("/\\b" . preg_quote($sFunctionName, "/") . "\\s*\\(\\s*\\\$aAllowedIps\\s*,\\s*([\"'])((?:\\\\\\\\.|(?!\\1).)*)\\1/s", $sCode, $aMatches, PREG_SET_ORDER)) {
+    if (preg_match_all("/\\b" . preg_quote($sFunctionName, "/") . "\\s*\\(\\s*([\"'])((?:\\\\\\\\.|(?!\\1).)*)\\1/s", $sCode, $aMatches, PREG_SET_ORDER)) {
         foreach ($aMatches as $aMatch) {
             menuAdminAppendUniqueValue($aProjects, stripcslashes($aMatch[2]));
         }

@@ -1,22 +1,29 @@
 <?php
 
-function isAllowedIp($aAllowedIps) {
-    return isset($_SERVER["REMOTE_ADDR"]) && in_array($_SERVER["REMOTE_ADDR"], $aAllowedIps, true);
+function isAllowedIp() {
+    global $aAllowedIpAddresses;
+
+    return isset($_SERVER["REMOTE_ADDR"]) && in_array($_SERVER["REMOTE_ADDR"], $aAllowedIpAddresses, true);
 }
 
-function isTrustedClient($aAllowedIps) {
-    global $sTrustedUserAgent, $sTrustedAcceptLanguage;
+function isTrustedClient() {
+    global $sTrustedUserAgents, $sTrustedAcceptLanguages;
 
-    if (!isAllowedIp($aAllowedIps) || $sTrustedUserAgent == "" || $sTrustedAcceptLanguage == "") {
+    if (!isAllowedIp() || !$sTrustedUserAgents || !$sTrustedAcceptLanguages) {
         return false;
     }
-    if (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) || isset($_SERVER["HTTP_CF_WORKER"]) || isset($_SERVER["HTTP_CF_CONNECTING_IP"]) || isset($_SERVER["HTTP_CF_VISITOR"]) || isset($_SERVER["HTTP_CF_RAY"]) || isset($_SERVER["HTTP_CDN_LOOP"]) || isset($_SERVER["HTTP_CF_EW_VIA"])) {
+    if (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) || isset($_SERVER["HTTP_CF_WORKER"])
+            || isset($_SERVER["HTTP_CF_EW_VIA"]) || isset($_SERVER["HTTP_CDN_LOOP"])
+            || isset($_SERVER["HTTP_CF_RAY"]) || isset($_SERVER["HTTP_CF_VISITOR"])
+            || isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
+
         return false;
     }
     if (!isset($_SERVER["HTTP_USER_AGENT"], $_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
         return false;
     }
-    return hash_equals($sTrustedUserAgent, (string)$_SERVER["HTTP_USER_AGENT"]) && hash_equals($sTrustedAcceptLanguage, (string)$_SERVER["HTTP_ACCEPT_LANGUAGE"]);
+    return in_array((string)$_SERVER["HTTP_USER_AGENT"], $sTrustedUserAgents, true)
+        && in_array((string)$_SERVER["HTTP_ACCEPT_LANGUAGE"], $sTrustedAcceptLanguages, true);
 }
 
 function isDesktop() {
@@ -314,8 +321,8 @@ function sendUaJsonAndExit($aResponse, $iStatus = 200) {
     exit;
 }
 
-function sendEvedUaFingerprintResponse($oPdo, $aAllowedIps) {
-    if (isAllowedIp($aAllowedIps)) {
+function sendEvedUaFingerprintResponse($oPdo) {
+    if (isAllowedIp()) {
         sendUaJsonAndExit(array("status" => "ignored"));
     }
     if (!$oPdo) {
@@ -407,12 +414,12 @@ function formatUaGpu($sGpuInfo) {
 }
 
 function getContentSecurityPolicySource() {
-    global $sScheme;
+    global $sPortalUriScheme;
 
     if (!isset($_SERVER["HTTP_HOST"])) {
         return "'self'";
     }
-    $sRequestScheme = $sScheme;
+    $sRequestScheme = $sPortalUriScheme;
     $sHost = preg_replace("/[^A-Za-z0-9\\.\\-\\:\\[\\]]/", "", $_SERVER["HTTP_HOST"]);
     if ($sHost == "") {
         return "'self'";
@@ -542,8 +549,6 @@ function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
 }
 
 function sendPhpGeneratedOutputAndExit($sType, $iSelect) {
-    global $aAllowedIps;
-
     ob_start();
     if ($sType == "credits") {
         if ($iSelect > 0) {
@@ -560,7 +565,7 @@ function sendPhpGeneratedOutputAndExit($sType, $iSelect) {
     }
     $sHtml = ob_get_clean();
     $sStyleNonce = stripos($sHtml, "<html") !== false ? "" : base64_encode(random_bytes(16));
-    $sHtml = formatPhpGeneratedOutput($sHtml, $sStyleNonce, getPageTitleText($aAllowedIps));
+    $sHtml = formatPhpGeneratedOutput($sHtml, $sStyleNonce, getPageTitleText());
     sendPhpGeneratedHeaders($sStyleNonce);
     echo $sHtml;
     exit;
@@ -1171,11 +1176,11 @@ function isProjectFullAllowed($sProject) {
     return refreshAuthSession() && isset($_SESSION["permissions"]) && is_array($_SESSION["permissions"]) && permissionArrayAllowsProjectFull($_SESSION["permissions"], $sProject);
 }
 
-function isFullAccessAllowed($aAllowedIps, $sProject) {
-    return isTrustedClient($aAllowedIps) || isProjectFullAllowed($sProject);
+function isFullAccessAllowed($sProject) {
+    return isTrustedClient() || isProjectFullAllowed($sProject);
 }
 
-function getPageTitleText($aAllowedIps) {
+function getPageTitleText() {
     global $oPdo;
 
     $sTitle = "";
@@ -1190,7 +1195,7 @@ function getPageTitleText($aAllowedIps) {
         error_log((string)$oException);
     }
     $aStates = array();
-    if (isTrustedClient($aAllowedIps)) {
+    if (isTrustedClient()) {
         $aStates[] = "Trusted";
     }
     if (refreshAuthSession()) {
@@ -1240,7 +1245,7 @@ function requireNamedCsrfToken($sTokenName, $blJsonResponse = false) {
 }
 
 function getCurrentUrlWithoutAuthActionForToken($sTokenName) {
-    global $sScheme;
+    global $sPortalUriScheme;
 
     $sPath = isset($_SERVER["REQUEST_URI"]) ? (string)$_SERVER["REQUEST_URI"] : "";
     $aParts = parse_url($sPath);
@@ -1251,10 +1256,10 @@ function getCurrentUrlWithoutAuthActionForToken($sTokenName) {
         unset($aQuery["logout"]);
         unset($aQuery[$sTokenName]);
     }
-    if (count($aQuery) > 0) {
+    if ($aQuery) {
         $sResult .= "?" . http_build_query($aQuery, "", "&");
     }
-    return $sScheme . "://" . $_SERVER["HTTP_HOST"] . ($sResult == "" ? "/" : $sResult);
+    return $sPortalUriScheme . "://" . $_SERVER["HTTP_HOST"] . ($sResult == "" ? "/" : $sResult);
 }
 
 function getLoginToken() {
@@ -1393,7 +1398,7 @@ function handleLoginPost($sTokenName) {
     redirectLoginForm($sTokenName, "Invalid user name or password.");
 }
 
-function requireViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse = false) {
+function requireViewAccess($sProject, $sTokenName, $blJsonResponse = false) {
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "logout") {
         requireNamedCsrfToken($sTokenName, $blJsonResponse);
         clearAuthSession();
@@ -1417,7 +1422,7 @@ function requireViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse
     }
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "cancel") {
         $blAuthenticated = refreshAuthSession();
-        if (isTrustedClient($aAllowedIps) || $blAuthenticated) {
+        if (isTrustedClient() || $blAuthenticated) {
             unset($_SESSION["login_cancel_forbidden"]);
             resetLoginToken();
             sendSecurityHeaders();
@@ -1437,7 +1442,7 @@ function requireViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse
         handleLoginPost($sTokenName);
     }
     $blAuthenticated = refreshAuthSession();
-    if (isTrustedClient($aAllowedIps)) {
+    if (isTrustedClient()) {
         unset($_SESSION["login_cancel_forbidden"]);
         return;
     }
@@ -1461,9 +1466,9 @@ function requireViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse
     renderLoginPageAndExit($sTokenName);
 }
 
-function requireFullAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse = false) {
-    requireViewAccess($aAllowedIps, $sProject, $sTokenName, $blJsonResponse);
-    if (isFullAccessAllowed($aAllowedIps, $sProject)) {
+function requireFullAccess($sProject, $sTokenName, $blJsonResponse = false) {
+    requireViewAccess($sProject, $sTokenName, $blJsonResponse);
+    if (isFullAccessAllowed($sProject)) {
         return;
     }
     if ($blJsonResponse && (isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest")) {
@@ -2124,10 +2129,9 @@ function arrayReadNext(&$aArray) {
 }
 
 function redirectToCanonicalUrl() {
-    global $sScheme;
+    global $sPortalUriScheme;
 
-    $sHost = $_SERVER["HTTP_HOST"];
-    $sPrefix = preg_replace("/\..*$/", "", $sHost);
+    $sPrefix = preg_replace("/\..*$/", "", $_SERVER["HTTP_HOST"]);
     $sPattern = "#^/" . preg_quote($sPrefix, "#") . "(/.*)?$#i";
     if (preg_match($sPattern, $_SERVER["REQUEST_URI"])) {
         $sNewUri = preg_replace(
@@ -2139,19 +2143,18 @@ function redirectToCanonicalUrl() {
             $sNewUri = "/" . $sNewUri;
         }
         sendSecurityHeaders();
-        header("Location: " . $sScheme . "://" . $sHost . $sNewUri, true, 301);
+        header("Location: " . $sPortalUriScheme . "://" . $_SERVER["HTTP_HOST"] . $sNewUri, true, 301);
         exit;
     }
 }
 
 function getBaseUrl() {
-    global $sScheme;
+    global $sPortalUriScheme;
 
-    $sHost = $_SERVER["HTTP_HOST"];
     $sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
     if (substr($sPath, -1) != "/") {
         $sPath = dirname($sPath) . "/";
     }
-    $sOrigin = $sScheme . "://" . $sHost;
+    $sOrigin = $sPortalUriScheme . "://" . $_SERVER["HTTP_HOST"];
     return array($sOrigin, $sOrigin . $sPath);
 }

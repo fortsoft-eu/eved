@@ -4,7 +4,7 @@ include "main.php";
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET["fingerprint"]) && (string)$_GET["fingerprint"] == "1") {
-    sendEvedUaFingerprintResponse($oPdo, $aAllowedIps);
+    sendEvedUaFingerprintResponse($oPdo);
 }
 
 runKfExchangeRateProcess($oPdo, $sError);
@@ -12,7 +12,7 @@ runExCalendarProcess($oPdo, $sError);
 
 $sStyleNonce = base64_encode(random_bytes(16));
 
-$blPortalIndexAllowed = isAllowedIp($aAllowedIps) || isProjectViewAllowed("portal");
+$blPortalIndexAllowed = isAllowedIp() || isProjectViewAllowed("portal");
 if ($blPortalIndexAllowed) {
     $iTime = sendPageHeaders($sStyleNonce);
     $aProjects = array(

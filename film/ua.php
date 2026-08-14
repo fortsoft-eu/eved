@@ -11,7 +11,7 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "film", $sCsrfTokenName, $blJsonResponse);
+requireFullAccess("film", $sCsrfTokenName, $blJsonResponse);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["admin_auto_refresh_action"])) {
     requireNamedCsrfToken($sCsrfTokenName, true);
@@ -46,7 +46,7 @@ $iTime = sendPageHeaders();
   <meta name="csrf-token" content="<?php echo html($sCsrfToken); ?>">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText()); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>

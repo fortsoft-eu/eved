@@ -10,7 +10,7 @@ if (!$oPdo) {
 }
 
 
-requireFullAccess($aAllowedIps, "portal", "csrf_token", $blJsonResponse);
+requireFullAccess("portal", "csrf_token", $blJsonResponse);
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -97,7 +97,7 @@ $iTime = sendPageHeaders();
   <meta name="csrf-token" content="<?php echo html(getCsrfToken("csrf_token")); ?>">
   <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo html(getPageTitleText($aAllowedIps)); ?></title>
+  <title><?php echo html(getPageTitleText()); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
   <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css">
 </head>
