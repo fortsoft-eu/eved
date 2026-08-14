@@ -3,32 +3,21 @@
 include "main.php";
 
 
-$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
-$sMailRichTextPasteSessionKey = "ex_mail_rich_text_paste";
-$sMailStatusSessionKey = "ex_mail_status";
-$sMailStatusClassSessionKey = "ex_mail_status_class";
-$sMailValuesSessionKey = "ex_mail_values";
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
 
+$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
 requireFullAccess($aAllowedIps, "ex", "csrf_token", $blJsonResponse);
 
-
+$sMailRichTextPasteSessionKey = "ex_mail_rich_text_paste";
+$sMailStatusSessionKey = "ex_mail_status";
+$sMailStatusClassSessionKey = "ex_mail_status_class";
+$sMailValuesSessionKey = "ex_mail_values";
 $iMailRichTextPaste = isset($_SESSION[$sMailRichTextPasteSessionKey]) && (string)$_SESSION[$sMailRichTextPasteSessionKey] == "1" ? 1 : 0;
 $_SESSION[$sMailRichTextPasteSessionKey] = (string)$iMailRichTextPaste;
-$aMailValues = array(
-    "to" => "",
-    "cc" => "",
-    "bcc" => "",
-    "from" => "",
-    "sender" => "",
-    "reply_to" => "",
-    "subject" => "",
-    "message" => ""
-);
+$aMailValues = array("to" => "", "cc" => "", "bcc" => "", "from" => "", "sender" => "", "reply_to" => "", "subject" => "", "message" => "");
 $sMailStatus = "";
 $sMailStatusClass = "";
 
@@ -231,7 +220,7 @@ if (!$blMailRestrictFromToSingleAddress) {
     <textarea id="mail-message" name="mail_message" class="snippet-board-textarea js-snippet-board-textarea mail-message-textarea" rows="18" spellcheck="true"><?php echo html($aMailValues["message"]); ?></textarea>
   </form>
   <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
-  <script type="text/javascript" src="/vendors/tinymce-8.8.1/tinymce.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/tinymce-8.8.1/tinymce.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

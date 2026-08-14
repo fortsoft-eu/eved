@@ -260,7 +260,7 @@ if (!$blLmEncryptionUnlocked) {
 
 ?>
   <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
-  <script type="text/javascript" src="/vendors/tinymce-8.8.1/tinymce.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/tinymce-8.8.1/tinymce.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

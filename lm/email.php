@@ -3,13 +3,11 @@
 include "main.php";
 
 
-$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-
+$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
 requireFullAccess($aAllowedIps, "portal", "csrf_token", $blJsonResponse);
 
 

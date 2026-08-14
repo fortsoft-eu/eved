@@ -132,30 +132,21 @@ foreach ($aTables as $sTableName => $aColumns) {
     echo "          </tbody>\n",
         "        </table>\n";
 }
-
-?>
-      </div>
-    </div>
-  </div>
-
-<?php
-
+echo "      </div>\n",
+    "    </div>\n",
+    "  </div>\n";
 if (!$aRelations) {
     echo "  <p>No records found.</p>\n";
 } else {
-
-?>
-  <table class="schema-relations">
-    <thead>
-      <tr>
-        <th>Constraint</th>
-        <th>Foreign Key</th>
-        <th>References</th>
-      </tr>
-    </thead>
-    <tbody>
-<?php
-
+    echo "  <table class=\"schema-relations\">\n",
+        "    <thead>\n",
+        "      <tr>\n",
+        "        <th>Constraint</th>\n",
+        "        <th>Foreign Key</th>\n",
+        "        <th>References</th>\n",
+        "      </tr>\n",
+        "    </thead>\n",
+        "    <tbody>\n";
     foreach ($aRelations as $aRelation) {
         $sRelationKey = $aRelation["TABLE_NAME"] . "." . $aRelation["COLUMN_NAME"] . ">" . $aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"];
         $sRouteAttributes = "";
@@ -203,12 +194,8 @@ if (!$aRelations) {
             "        <td>" . html($aRelation["REFERENCED_TABLE_NAME"] . "." . $aRelation["REFERENCED_COLUMN_NAME"]) . "</td>\n",
             "      </tr>\n";
     }
-
-?>
-    </tbody>
-  </table>
-<?php
-
+    echo "    </tbody>\n",
+        "  </table>\n";
 }
 
 ?>

@@ -244,7 +244,7 @@ sendSecurityHeaders($sStyleNonce);
 <body>
   <h1>עֶבֶד יְהוָה</h1>
   <h2>וְאָנֹכִי וּבֵיתִי נַעֲבֹד אֶת־יְהוָה</h2>
-  <script type="text/javascript" src="/vendors/bowser-2.14.1/es5.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bowser-2.14.1/es5.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>film/js/ua.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/film/js/ua.js")); ?>"></script>
 </body>
 </html>

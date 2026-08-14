@@ -3,21 +3,19 @@
 include "main.php";
 
 
-$sCsrfTokenName = "csrf_token";
-$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
-
 if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
 
+$sCsrfTokenName = "csrf_token";
+$blJsonResponse = isset($_SERVER["HTTP_X_REQUESTED_WITH"]) && $_SERVER["HTTP_X_REQUESTED_WITH"] == "XMLHttpRequest";
 requireFullAccess($aAllowedIps, "portal", $sCsrfTokenName, $blJsonResponse);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["admin_auto_refresh_action"])) {
     requireNamedCsrfToken($sCsrfTokenName, true);
     handleAdminAutoRefreshRequest();
 }
-
 
 $aRows = array();
 try {
@@ -198,7 +196,7 @@ if (!$aRows) {
 
 ?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>
-  <script type="text/javascript" src="/vendors/bowser-2.14.1/es5.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bowser-2.14.1/es5.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>
