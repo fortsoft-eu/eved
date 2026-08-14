@@ -712,7 +712,7 @@ if (!$aRows) {
   <table id="subjects-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
-        <th class="subject-type-column">Type</th>
+        <th class="tc">Type</th>
         <th>Name</th>
         <th>First Name</th>
         <th>Last Name</th>
@@ -735,13 +735,13 @@ if (!$aRows) {
         $sPortalJson = html(json_encode($aDummySubjectPortals[$iSubjectId], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT));
         $sRowHtml = renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, true, $aHiddenInactive, $aFullListSettings);
         $sRowHtml = str_replace(
-            "class=\"item-action js-edit-subject\" data-subject-id=\"" . html($iSubjectId) . "\"",
-            "class=\"item-action js-edit-subject\" data-subject-id=\"" . html($iSubjectId) . "\" data-test-subject=\"" . $sSubjectJson . "\"",
+            "class=\"ia js-edit-subject\" data-subject-id=\"" . html($iSubjectId) . "\"",
+            "class=\"ia js-edit-subject\" data-subject-id=\"" . html($iSubjectId) . "\" data-test-subject=\"" . $sSubjectJson . "\"",
             $sRowHtml
         );
         $sRowHtml = str_replace(
-            "class=\"item-action js-edit-subject-portal\" data-subject-id=\"" . html($iSubjectId) . "\"",
-            "class=\"item-action js-edit-subject-portal\" data-subject-id=\"" . html($iSubjectId) . "\" data-test-subject-portal=\"" . $sPortalJson . "\"",
+            "class=\"ia js-edit-subject-portal\" data-subject-id=\"" . html($iSubjectId) . "\"",
+            "class=\"ia js-edit-subject-portal\" data-subject-id=\"" . html($iSubjectId) . "\" data-test-subject-portal=\"" . $sPortalJson . "\"",
             $sRowHtml
         );
         echo $sRowHtml;

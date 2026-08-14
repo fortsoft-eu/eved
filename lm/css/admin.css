@@ -878,7 +878,7 @@ body.phpinfo-page .admin-controls {
     width: auto;
 }
 
-#phpinfo-select-form button, .list-item-actions, .dashboard-service-http, .dashboard-service-checked, .dashboard-services-table .admin-action-column, .admin-controls label {
+#phpinfo-select-form button, .la, .dashboard-service-http, .dashboard-service-checked, .dashboard-services-table .admin-action-column, .admin-controls label {
     white-space: nowrap;
 }
 
@@ -1262,12 +1262,12 @@ td.numeric, th.numeric, .email-overview-table th, .email-overview-table td, .bus
     grid-row: 3;
 }
 
-.invalid-contact-value {
+.vx {
     background-color: #FFF9C4;
     color: #D00;
 }
 
-.item-action {
+.ia {
     border: 0;
     color: inherit;
     display: inline-block;
@@ -1278,12 +1278,12 @@ td.numeric, th.numeric, .email-overview-table th, .email-overview-table td, .bus
     vertical-align: top;
 }
 
-.item-action:hover {
+.ia:hover {
     background: transparent;
     text-decoration: none;
 }
 
-.column-header-icon, .contact-flags span:not(:empty) {
+.column-header-icon, .cf span:not(:empty) {
     display: inline-block;
     margin-left: 1px;
     vertical-align: top;
@@ -1300,7 +1300,7 @@ td.numeric, th.numeric, .email-overview-table th, .email-overview-table td, .bus
     word-break: normal;
 }
 
-.contact-copy, .copy-action {
+.cc, .ca {
     display: inline-block;
     font-size: inherit;
     margin-left: 0;
@@ -1308,7 +1308,7 @@ td.numeric, th.numeric, .email-overview-table th, .email-overview-table td, .bus
     vertical-align: top;
 }
 
-.contact-link {
+.lk {
     display: inline-block;
     font-size: inherit;
     margin-left: 1px;
@@ -1316,14 +1316,14 @@ td.numeric, th.numeric, .email-overview-table th, .email-overview-table td, .bus
     vertical-align: top;
 }
 
-.copy-action-box {
+.cb {
     display: inline-block;
     text-align: right;
     vertical-align: top;
     width: 1.35em;
 }
 
-.contact-flags {
+.cf {
     color: #666;
     font-size: inherit;
 }
@@ -1740,11 +1740,11 @@ body.fancy-text-page .admin-controls {
     white-space: nowrap;
 }
 
-.business-hours-card-actions .item-action + .item-action {
+.business-hours-card-actions .ia + .ia {
     margin-left: 6px;
 }
 
-.business-hours-card-actions .item-action:active, .business-hours-card-actions .item-action:focus {
+.business-hours-card-actions .ia:active, .business-hours-card-actions .ia:focus {
     background: transparent;
     color: inherit;
     outline: 0;
@@ -1912,7 +1912,7 @@ body[data-pmd-like="1"] .business-hours-card {
     max-height: none;
 }
 
-body[data-pmd-like="1"] .business-hours-card-actions .item-action + .item-action {
+body[data-pmd-like="1"] .business-hours-card-actions .ia + .ia {
     margin-left: 14px;
 }
 
@@ -1976,7 +1976,7 @@ body.php-generated-output h2 {
     font-size: 125%;
 }
 
-body.php-generated-output h2 > a, body.php-generated-output a:hover, .contact-copy:hover, .contact-link:hover, .copy-action:hover {
+body.php-generated-output h2 > a, body.php-generated-output a:hover, .cc:hover, .lk:hover, .ca:hover {
     text-decoration: none;
 }
 

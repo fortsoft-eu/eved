@@ -116,7 +116,7 @@ form {
     white-space: nowrap;
 }
 
-.mail-form-status:empty, .mail-recipient-suggest-box[hidden], .snippet-board-form .tox .tox-statusbar__resize-handle, .confirm-dialog[hidden], .render-throbber[hidden], .menu-panel[hidden], .schema-unavailable-message, .contacts-table .column-hidden, .contacts-table .column-step-one, .contacts-table .column-step-three, .contacts-table .column-step-two, .subject-type-column {
+.mail-form-status:empty, .mail-recipient-suggest-box[hidden], .snippet-board-form .tox .tox-statusbar__resize-handle, .confirm-dialog[hidden], .render-throbber[hidden], .menu-panel[hidden], .schema-unavailable-message, .contacts-table .ch, .contacts-table .c1, .contacts-table .c3, .contacts-table .c2, .tc {
     display: none;
 }
 
@@ -1340,7 +1340,7 @@ body[data-pmd-like="1"] .calendar-tooltip {
     word-break: normal;
 }
 
-.consistency-status-error, .contact-item-inactive, .subject-item-inactive, .contact-inactive-label, .contact-item-inactive .contact-flags, .subject-item-inactive .subject-item-flags {
+.consistency-status-error, .cx, .ii, .cz, .cx .cf, .ii .fl {
     color: #D00;
 }
 
@@ -1567,7 +1567,7 @@ body.phpinfo-page .admin-controls {
     width: auto;
 }
 
-#phpinfo-select-form button, .list-item-actions {
+#phpinfo-select-form button, .la {
     white-space: nowrap;
 }
 
@@ -1605,25 +1605,25 @@ body.phpinfo-page .admin-controls {
     }
 }
 
-.invalid-birth-number, .invalid-contact-value {
+.bx, .vx {
     background-color: #FFF9C4;
     color: #D00;
 }
 
 @media (min-width: 1100px) {
-    .contacts-table .column-step-one {
+    .contacts-table .c1 {
         display: table-cell;
     }
 }
 
 @media (min-width: 1350px) {
-    .contacts-table .column-step-two {
+    .contacts-table .c2 {
         display: table-cell;
     }
 }
 
 @media (min-width: 1600px) {
-    .contacts-table .column-step-three {
+    .contacts-table .c3 {
         display: table-cell;
     }
 }
@@ -1804,20 +1804,20 @@ body.phpinfo-page .admin-controls {
     stroke-width: 1.5;
 }
 
-.contact-list, .subject-item-list {
+.cl, .il {
     display: grid;
     gap: 0;
 }
 
-.contact-item, .subject-item {
+.ci, .si {
 }
 
-.add-item-row {
+.ar {
     text-align: left;
     white-space: nowrap;
 }
 
-.item-action {
+.ia {
     border: 0;
     color: inherit;
     display: inline-block;
@@ -1828,7 +1828,7 @@ body.phpinfo-page .admin-controls {
     vertical-align: top;
 }
 
-.item-action:hover {
+.ia:hover {
     background: transparent;
     text-decoration: none;
 }
@@ -1841,7 +1841,7 @@ body.phpinfo-page .admin-controls {
     word-break: normal;
 }
 
-.subject-date-age {
+.da {
     color: #666;
     display: block;
     line-height: 1.5;
@@ -1874,7 +1874,7 @@ body.phpinfo-page .admin-controls {
     width: auto;
 }
 
-.phone-book-row-inactive > td, .subject-row-inactive > td, #addresses-table .address-subject-inactive, #contacts-table .contact-subject-inactive {
+.phone-book-row-inactive > td, .ri > td, #addresses-table .address-subject-inactive, #contacts-table .contact-subject-inactive {
     background: #FEE;
 }
 
@@ -1913,21 +1913,21 @@ body.phpinfo-page .admin-controls {
     text-align: left;
 }
 
-.add-item-row .add-item-action, .add-item-row .copy-action, .add-item-row .hidden-inactive-indicator {
+.ar .aa, .ar .ca, .ar .hi {
     margin-left: 0;
 }
 
-.add-item-action {
+.aa {
     margin-left: 1px;
 }
 
-.hidden-inactive-indicator, .contact-flags span:not(:empty), .subject-item-flags span:not(:empty) {
+.hi, .cf span:not(:empty), .fl span:not(:empty) {
     display: inline-block;
     margin-left: 1px;
     vertical-align: top;
 }
 
-.contact-copy, .copy-action {
+.cc, .ca {
     display: inline-block;
     font-size: inherit;
     margin-left: 0;
@@ -1935,7 +1935,7 @@ body.phpinfo-page .admin-controls {
     vertical-align: top;
 }
 
-.contact-link {
+.lk {
     display: inline-block;
     font-size: inherit;
     margin-left: 1px;
@@ -1943,11 +1943,11 @@ body.phpinfo-page .admin-controls {
     vertical-align: top;
 }
 
-.contact-copy:hover, .contact-link:hover, .copy-action:hover, body.php-generated-output a:hover, body.php-generated-output h2 > a {
+.cc:hover, .lk:hover, .ca:hover, body.php-generated-output a:hover, body.php-generated-output h2 > a {
     text-decoration: none;
 }
 
-.copy-action-box {
+.cb {
     display: inline-block;
     text-align: right;
     vertical-align: top;
@@ -1959,25 +1959,25 @@ body.phpinfo-page .admin-controls {
     padding: 0 6px;
 }
 
-.contact-flags {
+.cf {
     color: #666;
     font-size: inherit;
 }
 
-.subject-address-main-value {
+.am {
     background: #FFF9C4;
     color: #0070E7;
 }
 
-.subject-row-active.subject-row-type-organization > td, #addresses-table .address-subject-active.address-subject-type-organization, #contacts-table .contact-subject-active.contact-subject-type-organization {
+.ra.ro > td, #addresses-table .address-subject-active.address-subject-type-organization, #contacts-table .contact-subject-active.contact-subject-type-organization {
     background: #F8F5FF;
 }
 
-.subject-row-active.subject-row-type-service > td, #addresses-table .address-subject-active.address-subject-type-service, #contacts-table .contact-subject-active.contact-subject-type-service {
+.ra.rs > td, #addresses-table .address-subject-active.address-subject-type-service, #contacts-table .contact-subject-active.contact-subject-type-service {
     background: #F7FFF8;
 }
 
-.subject-row-active.subject-row-type-other > td, #addresses-table .address-subject-active.address-subject-type-other, #contacts-table .contact-subject-active.contact-subject-type-other {
+.ra.rx > td, #addresses-table .address-subject-active.address-subject-type-other, #contacts-table .contact-subject-active.contact-subject-type-other {
     background: #FFFDF4;
 }
 

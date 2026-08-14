@@ -448,11 +448,11 @@ if (!$aContactRows) {
         $sContactFilterText = contactsFilterText($aContactRow);
         $sContactTimestampTooltipText = timestampTooltipText($aContactRow);
         $sContactTimestampTooltipAttribute = $sContactTimestampTooltipText ? " title=\"" . str_replace("\n", "&#10;", html($sContactTimestampTooltipText)) . "\"" : "";
-        $sContactActions = $blCanEdit ? "<span class=\"list-item-actions\"><a href=\"#\" class=\"item-action js-edit-shared-contact\" title=\"Edit shared contact\" aria-label=\"Edit shared contact\">" . $sEditEmoji . "</a><a href=\"#\" class=\"item-action js-delete-shared-contact\" title=\"Delete shared contact\" aria-label=\"Delete shared contact\">" . $sDeleteEmoji . "</a></span>" : "";
+        $sContactActions = $blCanEdit ? "<span class=\"la\"><a href=\"#\" class=\"ia js-edit-shared-contact\" title=\"Edit shared contact\" aria-label=\"Edit shared contact\">" . $sEditEmoji . "</a><a href=\"#\" class=\"ia js-delete-shared-contact\" title=\"Delete shared contact\" aria-label=\"Delete shared contact\">" . $sDeleteEmoji . "</a></span>" : "";
         if (!$aContactRow["subjects"]) {
             echo "      <tr>\n",
-                "        <td class=\"contact-cell contact-item\"" . contactsRenderContactDataAttributes($aContactRow) . "><span class=\"contact-db-values\"",
-                $sContactTimestampTooltipAttribute . "><span class=\"contact-type\">" . html($aContactRow["contact_type_name"]) . "</span>: " . renderContactValueText($aContactRow["contact_type"], $aContactRow["contact_value"]),
+                "        <td class=\"contact-cell ci\"" . contactsRenderContactDataAttributes($aContactRow) . "><span class=\"dv\"",
+                $sContactTimestampTooltipAttribute . "><span class=\"ct\">" . html($aContactRow["contact_type_name"]) . "</span>: " . renderContactValueText($aContactRow["contact_type"], $aContactRow["contact_value"]),
                 "</span>" . renderContactValueActions($aContactRow["contact_type"], $aContactRow["contact_value"], true, true) . $sContactActions . "</td>\n",
                 "        <td class=\"contact-subject-cell contact-subject-inactive\">" . htmlValue("") . "</td>\n",
                 "      </tr>\n";
@@ -461,8 +461,8 @@ if (!$aContactRows) {
         foreach ($aContactRow["subjects"] as $aSubject) {
             echo "      <tr data-subject-id=\"" . html($aSubject["subject_id"]) . "\">\n";
             if ($blFirstSubject) {
-                echo "        <td class=\"contact-cell contact-item\" rowspan=\"" . html($iSubjectCount) . "\"" . contactsRenderContactDataAttributes($aContactRow) . "><span class=\"contact-db-values\"",
-                    $sContactTimestampTooltipAttribute . "><span class=\"contact-type\">" . html($aContactRow["contact_type_name"]) . "</span>: " . renderContactValueText($aContactRow["contact_type"], $aContactRow["contact_value"]),
+                echo "        <td class=\"contact-cell ci\" rowspan=\"" . html($iSubjectCount) . "\"" . contactsRenderContactDataAttributes($aContactRow) . "><span class=\"dv\"",
+                    $sContactTimestampTooltipAttribute . "><span class=\"ct\">" . html($aContactRow["contact_type_name"]) . "</span>: " . renderContactValueText($aContactRow["contact_type"], $aContactRow["contact_value"]),
                     "</span>" . renderContactValueActions($aContactRow["contact_type"], $aContactRow["contact_value"], true, true) . $sContactActions . "</td>\n";
                 $blFirstSubject = false;
             }

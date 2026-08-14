@@ -140,19 +140,19 @@ function getAdminContactItemText(oItem) {
 }
 
 function getAdminContactTypeName(oItem) {
-    var oType = oItem ? oItem.querySelector(".contact-type") : null;
+    var oType = oItem ? oItem.querySelector(".ct") : null;
     var sType = oType ? (oType.textContent || "") : "";
     return sType != "" ? sType : (oItem ? (oItem.getAttribute("data-contact-type-name") || "") : "");
 }
 
 function getAdminContactValue(oItem) {
-    var oValue = oItem ? oItem.querySelector(".contact-value") : null;
+    var oValue = oItem ? oItem.querySelector(".cv") : null;
     var sValue = oValue ? (oValue.textContent || "") : "";
     return sValue != "" ? sValue : (oItem ? (oItem.getAttribute("data-contact-value") || "") : "");
 }
 
 function getAdminContactNote(oItem) {
-    var oNote = oItem ? oItem.querySelector(".contact-note") : null;
+    var oNote = oItem ? oItem.querySelector(".cn") : null;
     var sNote = oNote ? (oNote.textContent || "") : "";
     if (sNote.length >= 2 && sNote.charAt(0) == "(" && sNote.charAt(sNote.length - 1) == ")") {
         return sNote.substring(1, sNote.length - 1);
@@ -165,13 +165,13 @@ function trimAdminCopyValue(sValue) {
 }
 
 function getAdminNicknameCopyValue(oItem) {
-    var oValues = oItem ? oItem.querySelector(".subject-nickname-values") : null;
-    var oNote = oItem ? oItem.querySelector(".subject-item-note") : null;
+    var oValues = oItem ? oItem.querySelector(".ns") : null;
+    var oNote = oItem ? oItem.querySelector(".nt") : null;
     return trimAdminCopyValue((oValues ? (oValues.textContent || "") : "") + (oNote ? (oNote.textContent || "") : ""));
 }
 
 function getAdminGroupCopyValue(oItem) {
-    var oValue = oItem ? oItem.querySelector(".subject-item-value") : null;
+    var oValue = oItem ? oItem.querySelector(".iv") : null;
     return trimAdminCopyValue(oValue ? (oValue.textContent || "") : "");
 }
 
@@ -3040,13 +3040,13 @@ function getAdminCopyActionValue(oButton) {
         return sValue;
     }
     if (sClass.indexOf(" js-copy-subject-note ") !== -1) {
-        oItem = oButton.closest ? oButton.closest(".subject-note-item") : null;
-        oValue = oItem ? oItem.querySelector(".subject-item-value") : null;
+        oItem = oButton.closest ? oButton.closest(".no") : null;
+        oValue = oItem ? oItem.querySelector(".iv") : null;
         return getAdminMultilineElementText(oValue);
     }
     if (sClass.indexOf(" js-copy-subject-notes ") !== -1) {
-        oList = oButton.closest ? oButton.closest(".subject-item-list") : null;
-        aValues = oList ? oList.querySelectorAll(".subject-note-item .subject-item-value") : [];
+        oList = oButton.closest ? oButton.closest(".il") : null;
+        aValues = oList ? oList.querySelectorAll(".no .iv") : [];
         aTexts = [];
         for (iI = 0; iI < aValues.length; iI += 1) {
             sValue = getAdminMultilineElementText(aValues[iI]);
@@ -3057,8 +3057,8 @@ function getAdminCopyActionValue(oButton) {
         return aTexts.join("\n");
     }
     if (sClass.indexOf(" js-copy-subject-contacts ") !== -1) {
-        oList = oButton.closest ? oButton.closest(".contact-list") : null;
-        aValues = oList ? oList.querySelectorAll(".contact-item") : [];
+        oList = oButton.closest ? oButton.closest(".cl") : null;
+        aValues = oList ? oList.querySelectorAll(".ci") : [];
         aTexts = [];
         for (iI = 0; iI < aValues.length; iI += 1) {
             sValue = getAdminContactItemText(aValues[iI]);
@@ -3074,16 +3074,16 @@ function getAdminCopyActionValue(oButton) {
     }
     if (sClass.indexOf(" js-copy-subject-name ") !== -1) {
         oItem = oButton.closest ? oButton.closest("tr[data-subject-id]") : null;
-        oValue = oItem ? oItem.querySelector(".subject-name-value") : null;
+        oValue = oItem ? oItem.querySelector(".nv") : null;
         return trimAdminCopyValue(oValue ? (oValue.textContent || "") : "");
     }
     if (sClass.indexOf(" js-copy-subject-nickname ") !== -1) {
-        oItem = oButton.closest ? oButton.closest(".subject-nickname-item") : null;
+        oItem = oButton.closest ? oButton.closest(".ni") : null;
         return getAdminNicknameCopyValue(oItem);
     }
     if (sClass.indexOf(" js-copy-subject-nicknames ") !== -1) {
-        oList = oButton.closest ? oButton.closest(".subject-item-list") : null;
-        aValues = oList ? oList.querySelectorAll(".subject-nickname-item") : [];
+        oList = oButton.closest ? oButton.closest(".il") : null;
+        aValues = oList ? oList.querySelectorAll(".ni") : [];
         aTexts = [];
         for (iI = 0; iI < aValues.length; iI += 1) {
             sValue = getAdminNicknameCopyValue(aValues[iI]);
@@ -3094,12 +3094,12 @@ function getAdminCopyActionValue(oButton) {
         return aTexts.join("\n");
     }
     if (sClass.indexOf(" js-copy-subject-group ") !== -1) {
-        oItem = oButton.closest ? oButton.closest(".subject-group-item") : null;
+        oItem = oButton.closest ? oButton.closest(".gi") : null;
         return getAdminGroupCopyValue(oItem);
     }
     if (sClass.indexOf(" js-copy-subject-groups ") !== -1) {
-        oList = oButton.closest ? oButton.closest(".subject-item-list") : null;
-        aValues = oList ? oList.querySelectorAll(".subject-group-item") : [];
+        oList = oButton.closest ? oButton.closest(".il") : null;
+        aValues = oList ? oList.querySelectorAll(".gi") : [];
         aTexts = [];
         for (iI = 0; iI < aValues.length; iI += 1) {
             sValue = getAdminGroupCopyValue(aValues[iI]);
@@ -3117,12 +3117,12 @@ function getAdminDeferredAddressCopyItems(oButton) {
     var oItem;
     var oList;
     if (sClass.indexOf(" js-copy-subject-address ") !== -1) {
-        oItem = oButton.closest ? oButton.closest(".subject-address-data-deferred") : null;
+        oItem = oButton.closest ? oButton.closest(".ad") : null;
         return oItem ? [oItem] : [];
     }
     if (sClass.indexOf(" js-copy-subject-addresses ") !== -1) {
-        oList = oButton.closest ? oButton.closest(".subject-item-list") : null;
-        return oList ? oList.querySelectorAll(".subject-address-data-deferred") : [];
+        oList = oButton.closest ? oButton.closest(".il") : null;
+        return oList ? oList.querySelectorAll(".ad") : [];
     }
     return null;
 }
@@ -3131,7 +3131,7 @@ function loadAdminSubjectAddressData(aItems, fSuccess, fFailure) {
     var aMissingItems = [];
     var aResult = [];
     var oRow = aItems && aItems.length > 0 && aItems[0].closest ? aItems[0].closest("tr[data-subject-id]") : null;
-    var oSubjectName = oRow ? oRow.querySelector(".subject-name-value") : null;
+    var oSubjectName = oRow ? oRow.querySelector(".nv") : null;
     var oData;
     var iI;
     if (!aItems || aItems.length < 1 || !oRow || !window.fetch || !window.FormData) {
@@ -3266,7 +3266,7 @@ function loadAdminSubjectNicknameData(oItem, fSuccess, fFailure) {
 }
 
 document.addEventListener("click", function (oEvent) {
-    var oButton = oEvent.target.closest ? oEvent.target.closest(".copy-action") : null;
+    var oButton = oEvent.target.closest ? oEvent.target.closest(".ca") : null;
     var aAddressItems;
     var sValue;
     if (!oButton) {
@@ -3278,7 +3278,7 @@ document.addEventListener("click", function (oEvent) {
 
 
     function showCopyValueResult(blSuccess) {
-        var oBox = oButton.querySelector ? oButton.querySelector(".copy-action-box") : null;
+        var oBox = oButton.querySelector ? oButton.querySelector(".cb") : null;
         var sText = oButton.getAttribute("data-copy-text") || (oBox ? oBox.textContent : oButton.textContent);
         var sResultText = blSuccess ? getAdminEmoji("copy-success") : getAdminEmoji("copy-failure");
         oButton.setAttribute("data-copy-text", sText);
@@ -5229,12 +5229,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function getSubjectNoteText(oItem) {
-        var oValue = oItem ? oItem.querySelector(".subject-item-value") : null;
+        var oValue = oItem ? oItem.querySelector(".iv") : null;
         return oValue ? (oValue.textContent || "") : "";
     }
 
     function getSubjectItemText(oItem) {
-        var oValue = oItem ? oItem.querySelector(".subject-item-value") : null;
+        var oValue = oItem ? oItem.querySelector(".iv") : null;
         return getAdminElementText(oValue);
     }
 
@@ -5919,7 +5919,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         sTimestampTooltip = aGroup.timestamp_tooltip || "";
-        aItems = document.querySelectorAll(".subject-group-item[data-group-id=\"" + aGroup.group_id + "\"]");
+        aItems = document.querySelectorAll(".gi[data-group-id=\"" + aGroup.group_id + "\"]");
         for (iI = 0; iI < aItems.length; iI += 1) {
             if (aItems[iI].hasAttribute("data-group-name")) {
                 aItems[iI].setAttribute("data-group-name", aGroup.name || "");
@@ -5927,7 +5927,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (sTimestampTooltip && aItems[iI].hasAttribute("data-timestamp-tooltip")) {
                 aItems[iI].setAttribute("data-timestamp-tooltip", sTimestampTooltip);
             }
-            oValue = aItems[iI].querySelector(".subject-item-value");
+            oValue = aItems[iI].querySelector(".iv");
             if (oValue) {
                 oValue.textContent = aGroup.name || "";
                 if (sTimestampTooltip) {
@@ -6694,8 +6694,8 @@ document.addEventListener("DOMContentLoaded", function () {
             } else if (oButton.className.indexOf("js-edit-subject-portal") !== -1) {
                 loadSubjectPortal(oButton);
             } else if (oButton.className.indexOf("js-edit-subject-nickname") !== -1) {
-                oNicknameItem = oButton.closest(".subject-nickname-item");
-                if (oNicknameItem && (" " + oNicknameItem.className + " ").indexOf(" subject-nickname-data-deferred ") !== -1) {
+                oNicknameItem = oButton.closest(".ni");
+                if (oNicknameItem && (" " + oNicknameItem.className + " ").indexOf(" nd ") !== -1) {
                     loadAdminSubjectNicknameData(oNicknameItem, function (aNickname) {
                         openNicknameDialog(oNicknameItem, null, false, aNickname);
                     }, function (sMessage) {
@@ -6705,8 +6705,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     openNicknameDialog(oNicknameItem, null, false);
                 }
             } else if (oButton.className.indexOf("js-edit-subject-address") !== -1) {
-                oAddressItem = oButton.closest(".subject-address-item");
-                if (oAddressItem && (" " + oAddressItem.className + " ").indexOf(" subject-address-data-deferred ") !== -1) {
+                oAddressItem = oButton.closest(".ai");
+                if (oAddressItem && (" " + oAddressItem.className + " ").indexOf(" ad ") !== -1) {
                     loadAdminSubjectAddressData([oAddressItem], function (aAddresses) {
                         openAddressDialog(oAddressItem, null, false, aAddresses[0]);
                     }, function (sMessage) {
@@ -6716,19 +6716,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     openAddressDialog(oAddressItem, null, false);
                 }
             } else if (oButton.className.indexOf("js-edit-subject-group") !== -1) {
-                openGroupDialog(oButton.closest(".subject-group-item"));
+                openGroupDialog(oButton.closest(".gi"));
             } else if (oButton.className.indexOf("js-edit-subject-note") !== -1) {
-                openNoteDialog(oButton.closest(".subject-note-item"), null, false);
+                openNoteDialog(oButton.closest(".no"), null, false);
             } else if (oButton.className.indexOf("js-delete-subject-contact") !== -1) {
-                openDeleteContactDialog(oButton.closest(".contact-item"));
+                openDeleteContactDialog(oButton.closest(".ci"));
             } else if (oButton.className.indexOf("js-delete-subject-nickname") !== -1) {
-                openDeleteNicknameDialog(oButton.closest(".subject-nickname-item"));
+                openDeleteNicknameDialog(oButton.closest(".ni"));
             } else if (oButton.className.indexOf("js-delete-subject-address") !== -1) {
-                openDeleteAddressDialog(oButton.closest(".subject-address-item"));
+                openDeleteAddressDialog(oButton.closest(".ai"));
             } else if (oButton.className.indexOf("js-delete-subject-group") !== -1) {
-                openDeleteGroupDialog(oButton.closest(".subject-group-item"));
+                openDeleteGroupDialog(oButton.closest(".gi"));
             } else if (oButton.className.indexOf("js-delete-subject-note") !== -1) {
-                openDeleteNoteDialog(oButton.closest(".subject-note-item"));
+                openDeleteNoteDialog(oButton.closest(".no"));
             } else if (oButton.className.indexOf("js-delete-subject") !== -1) {
                 openDeleteSubjectDialog(oButton);
             } else {
@@ -6743,7 +6743,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var blCanEditContacts = !!aContactButtons && window.fetch && window.FormData;
 
     function showContactCopyResult(oButton, blSuccess) {
-        var oBox = oButton.querySelector ? oButton.querySelector(".copy-action-box") : null;
+        var oBox = oButton.querySelector ? oButton.querySelector(".cb") : null;
         var sText = oButton.getAttribute("data-copy-text") || (oBox ? oBox.textContent : oButton.textContent);
         var sResultText = blSuccess ? getAdminEmoji("copy-success") : getAdminEmoji("copy-failure");
         if (oBox) {
@@ -6761,7 +6761,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function copyContactValue(oButton) {
-        var oItem = oButton.closest ? oButton.closest(".contact-item") : null;
+        var oItem = oButton.closest ? oButton.closest(".ci") : null;
         var sValue = getAdminContactValue(oItem);
         oButton.setAttribute("data-copy-text", oButton.getAttribute("data-copy-text") || oButton.textContent);
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -6777,7 +6777,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.addEventListener("click", function (oEvent) {
-        var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".contact-copy") : null;
+        var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".cc") : null;
         var oLink;
         if (oButton) {
             oEvent.preventDefault();
@@ -6785,7 +6785,7 @@ document.addEventListener("DOMContentLoaded", function () {
             copyContactValue(oButton);
             return;
         }
-        oLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".contact-link") : null;
+        oLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".lk") : null;
         if (oLink) {
             oEvent.stopPropagation();
         }
@@ -7057,8 +7057,8 @@ document.addEventListener("DOMContentLoaded", function () {
             if (oButton.className.indexOf("js-add-subject-contact") !== -1) {
                 openContactDialog(null, getAdminSubjectRow(oButton), true);
             } else {
-                oContactItem = oButton.closest(".contact-item");
-                if (oContactItem && (" " + oContactItem.className + " ").indexOf(" contact-data-deferred ") !== -1) {
+                oContactItem = oButton.closest(".ci");
+                if (oContactItem && (" " + oContactItem.className + " ").indexOf(" cd ") !== -1) {
                     loadAdminSubjectContactData(oContactItem, function (aContact) {
                         openContactDialog(oContactItem, null, false, aContact);
                     }, function (sMessage) {
@@ -7474,7 +7474,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function getAddressCellText(oCell) {
-        var oValue = oCell ? oCell.querySelector(".subject-item-value") : null;
+        var oValue = oCell ? oCell.querySelector(".iv") : null;
         return getAdminElementText(oValue);
     }
 

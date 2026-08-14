@@ -890,7 +890,7 @@ tr:nth-child(even) {
     margin-left: 4px;
 }
 
-.list-item-actions {
+.la {
     white-space: nowrap;
 }
 
@@ -964,12 +964,12 @@ td.numeric, th.numeric {
     grid-row: 3;
 }
 
-.invalid-contact-value {
+.vx {
     background-color: #FFF9C4;
     color: #D00;
 }
 
-.item-action {
+.ia {
     border: 0;
     color: inherit;
     display: inline-block;
@@ -980,12 +980,12 @@ td.numeric, th.numeric {
     vertical-align: top;
 }
 
-.item-action:hover {
+.ia:hover {
     background: transparent;
     text-decoration: none;
 }
 
-.column-header-icon, .contact-flags span:not(:empty) {
+.column-header-icon, .cf span:not(:empty) {
     display: inline-block;
     margin-left: 1px;
     vertical-align: top;
@@ -1008,7 +1008,7 @@ td.numeric, th.numeric {
     width: 8em;
 }
 
-.contact-copy, .copy-action {
+.cc, .ca {
     display: inline-block;
     font-size: inherit;
     margin-left: 0;
@@ -1016,7 +1016,7 @@ td.numeric, th.numeric {
     vertical-align: top;
 }
 
-.contact-link {
+.lk {
     display: inline-block;
     font-size: inherit;
     margin-left: 1px;
@@ -1024,18 +1024,18 @@ td.numeric, th.numeric {
     vertical-align: top;
 }
 
-.contact-copy:hover, .contact-link:hover, .copy-action:hover {
+.cc:hover, .lk:hover, .ca:hover {
     text-decoration: none;
 }
 
-.copy-action-box {
+.cb {
     display: inline-block;
     text-align: right;
     vertical-align: top;
     width: 1.35em;
 }
 
-.contact-flags {
+.cf {
     color: #666;
     font-size: inherit;
 }

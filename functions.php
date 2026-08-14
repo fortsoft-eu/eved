@@ -1719,13 +1719,13 @@ function renderCopyAction($mValue, $sTitle = "Copy") {
     if ($sValue == "") {
         return "";
     }
-    return "<a class=\"copy-action\" href=\"#\" data-copy-value=\"" . html($sValue) . "\" title=\"" . html($sTitle) . "\" aria-label=\"" . html($sTitle) . "\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
+    return "<a class=\"ca\" href=\"#\" data-copy-value=\"" . html($sValue) . "\" title=\"" . html($sTitle) . "\" aria-label=\"" . html($sTitle) . "\"><span class=\"cb\">" . $sCopyEmoji . "</span></a>";
 }
 
 function renderDeferredCopyAction($sClass, $sTitle = "Copy") {
     global $sCopyEmoji;
 
-    return "<a class=\"copy-action " . html($sClass) . "\" href=\"#\" title=\"" . html($sTitle) . "\" aria-label=\"" . html($sTitle) . "\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
+    return "<a class=\"ca " . html($sClass) . "\" href=\"#\" title=\"" . html($sTitle) . "\" aria-label=\"" . html($sTitle) . "\"><span class=\"cb\">" . $sCopyEmoji . "</span></a>";
 }
 
 function phoneContactTypes() {

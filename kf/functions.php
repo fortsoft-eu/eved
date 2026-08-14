@@ -463,12 +463,12 @@ function renderDebtMovementValues($aMovements, $blShowActions = true, $blUseEuro
         $sFormattedAmount = formatAmount($aMovement["amount"], $blUseEuropeanAmountFormat);
         $sDisplayedAmount = formatCurrencyAmount($oPdo, $aMovement["amount"], $sCurrency, $aMovement["movement_date"], $sDisplayCurrency, $blUseEuropeanAmountFormat);
         $sNote = trim((string)$aMovement["note"]);
-        $sActions = $blShowActions ? "<span class=\"list-item-actions\"><a href=\"#\" class=\"item-action js-edit-debt-movement\" title=\"Edit movement\" aria-label=\"Edit movement\">" . $sEditEmoji . "</a><a href=\"#\" class=\"item-action js-delete-debt-movement\" title=\"Delete movement\" aria-label=\"Delete movement\">" . $sDeleteEmoji . "</a></span>" : "";
+        $sActions = $blShowActions ? "<span class=\"la\"><a href=\"#\" class=\"ia js-edit-debt-movement\" title=\"Edit movement\" aria-label=\"Edit movement\">" . $sEditEmoji . "</a><a href=\"#\" class=\"ia js-delete-debt-movement\" title=\"Delete movement\" aria-label=\"Delete movement\">" . $sDeleteEmoji . "</a></span>" : "";
         $sHtml .= "<span class=\"debt-movement\" data-debt-movement-id=\"" . (int)$aMovement["id"] . "\" data-movement-date=\"" . html(formatDate($aMovement["movement_date"])) . "\" data-amount=\"" . html($sFormattedAmount) . "\" data-currency=\"" . html($sCurrency) . "\" data-note=\"" . html($sNote) . "\">"
             . "<span class=\"debt-movement-amount " . $sAmountClass . "\">" . html($sDisplayedAmount) . "</span>"
             . renderCopyAction($sDisplayedAmount)
             . "<span class=\"debt-movement-date\">" . html(formatDate($aMovement["movement_date"])) . "</span>"
-            . ($sNote != "" ? "<span class=\"contact-note\"> (" . html($sNote) . ")</span>" : "")
+            . ($sNote != "" ? "<span class=\"cn\"> (" . html($sNote) . ")</span>" : "")
             . $sActions
             . "</span>";
     }
@@ -488,9 +488,9 @@ function renderDebtAdminRow($aRow, $blShowActions = true, $blUseEuropeanAmountFo
         $sDebtCurrency = normalizeStoredCurrency($aMovement["currency"]);
         break;
     }
-    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-add-debt-movement\" title=\"New movement\" aria-label=\"New movement\">" . $sAddEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-debt\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-debt\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
+    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"ia js-add-debt-movement\" title=\"New movement\" aria-label=\"New movement\">" . $sAddEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-edit-debt\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-delete-debt\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
     return "      <tr data-debt-id=\"" . (int)$aRow["id"] . "\" data-ex-subjects-id=\"" . html($sSubjectId) . "\" data-subject-name=\"" . html($aRow["subject_name"]) . "\" data-amount=\"" . html($sFormattedAmount) . "\" data-debt-currency=\"" . html($sDebtCurrency) . "\" data-note=\"" . html($aRow["note"]) . "\">\n"
-        . "        <td><span class=\"subject-item-value\">" . htmlValue($aRow["subject_name"], $sEmptyValueEmoji) . "</span>" . renderCopyAction($aRow["subject_name"]) . "</td>\n"
+        . "        <td><span class=\"iv\">" . htmlValue($aRow["subject_name"], $sEmptyValueEmoji) . "</span>" . renderCopyAction($aRow["subject_name"]) . "</td>\n"
         . "        <td class=\"numeric " . $sAmountClass . "\">" . html($sFormattedAmount) . renderCopyAction($sFormattedAmount) . "</td>\n"
         . "        <td class=\"debt-movements-cell\">" . renderDebtMovementValues($aRow["debt_movements"], $blShowActions, $blUseEuropeanAmountFormat, $sDisplayCurrency) . "</td>\n"
         . "        <td>" . renderDebtContactValue("bankaccount", $aRow["account_number"], $aRow["account_note"], (int)$aRow["account_primary"] == 1) . "</td>\n"
@@ -548,7 +548,7 @@ function renderTransactionAdminRow($aRow, $blShowActions = true, $blUseEuropeanA
     $sCurrency = normalizeStoredCurrency($aRow["currency"]);
     $sFormattedAmount = formatCurrencyAmount($oPdo, $aRow["amount"], $sCurrency, $aRow["transaction_date"], $sDisplayCurrency, $blUseEuropeanAmountFormat);
     $sFormattedAbsoluteAmount = formatAmount(abs($aRow["amount"]), $blUseEuropeanAmountFormat);
-    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-edit-transaction\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-transaction\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
+    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"ia js-edit-transaction\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-delete-transaction\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
     return "      <tr data-transaction-id=\"" . (int)$aRow["id"] . "\" data-transaction-date=\"" . html(formatDate($aRow["transaction_date"])) . "\" data-finance-type-id=\"" . (int)$aRow["finance_type_id"] . "\" data-amount=\"" . html($sFormattedAbsoluteAmount) . "\" data-currency=\"" . html($sCurrency) . "\" data-counterparty=\"" . html($aRow["counterparty"]) . "\" data-note=\"" . html($aRow["note"]) . "\">\n"
         . "        <td class=\"nowrap\">" . html(formatDate($aRow["transaction_date"])) . "</td>\n"
         . "        <td>" . html($aRow["type_name"]) . "</td>\n"
@@ -818,10 +818,10 @@ function renderSubscriptionAdminRow($aRow, $blShowActions = true, $blUseEuropean
     $sNextDueAtDisplay = $sNextDueAtDisplay != "" ? str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sNextDueAtDisplay)) : "&mdash;";
     $sServedAction = "";
     if ($blShowActions && trim((string)$aRow["next_due_at"]) != "" && getSubscriptionBillingPeriodDateModifier($aRow["billing_period"]) != "") {
-        $sServedAction = "<a class=\"item-action subscription-served-action js-subscription-served\" href=\"#\" data-subscription-id=\"" . (int)$aRow["id"] . "\" title=\"Mark subscription served\" aria-label=\"Mark subscription served\"><span class=\"copy-action-box\">" . $sSubscriptionServedEmoji . "</span></a>";
+        $sServedAction = "<a class=\"ia subscription-served-action js-subscription-served\" href=\"#\" data-subscription-id=\"" . (int)$aRow["id"] . "\" title=\"Mark subscription served\" aria-label=\"Mark subscription served\"><span class=\"cb\">" . $sSubscriptionServedEmoji . "</span></a>";
     }
     $sServedInCell = formatSubscriptionDueInDays($aRow["next_due_at"]) . ($sServedAction != "" ? "&#8288;" . $sServedAction : "");
-    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-edit-subscription\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-subscription\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
+    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"ia js-edit-subscription\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-delete-subscription\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
     return "      <tr data-subscription-id=\"" . (int)$aRow["id"] . "\" data-name=\"" . html($aRow["name"]) . "\" data-finance-type-id=\"" . (int)$aRow["finance_type_id"] . "\" data-amount=\"" . html(formatAmount(abs($aRow["amount"]), $blUseEuropeanAmountFormat)) . "\" data-currency=\"" . html($sCurrency) . "\" data-billing-period=\"" . html($aRow["billing_period"]) . "\" data-billing-day=\"" . html($aRow["billing_day"]) . "\" data-next-due-at=\"" . html(formatSubscriptionDueInput($aRow["next_due_at"])) . "\" data-counterparty=\"" . html($aRow["counterparty"]) . "\" data-note=\"" . html($aRow["note"]) . "\" data-is-active=\"" . ((int)$aRow["is_active"] == 1 ? "1" : "0") . "\">\n"
         . "        <td class=\"subscription-in-column\">" . $sServedInCell . "</td>\n"
         . "        <td>" . html($aRow["name"]) . "</td>\n"
@@ -1115,7 +1115,7 @@ function fetchFinanceTypeAdminRows($oPdo, $iTypeId = 0) {
 function renderFinanceTypeAdminRow($aRow, $blShowActions = true) {
     global $sEditEmoji, $sDeleteEmoji;
 
-    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"item-action js-edit-type\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-type\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
+    $sActionCell = $blShowActions ? "<a href=\"#\" class=\"ia js-edit-type\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-delete-type\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>" : "";
     return "      <tr data-type-id=\"" . (int)$aRow["id"] . "\" data-type-name=\"" . html($aRow["name"]) . "\" data-type-kind=\"" . html($aRow["type_kind"]) . "\" data-members=\"" . html($aRow["member_ids"]) . "\">\n"
         . "        <td>" . html(ucfirst($aRow["type_kind"])) . "</td>\n"
         . "        <td>" . html($aRow["name"]) . "</td>\n"
@@ -1223,7 +1223,7 @@ function kfContactLinkTitle($sType) {
 
 function kfRenderContactValueText($sType, $sValue, $sTooltipAttribute = "") {
     $sDisplayValue = kfContactDisplayValue($sType, $sValue);
-    $sClass = "contact-value" . (kfContactValueIsInvalid($sType, $sValue) ? " invalid-contact-value" : "");
+    $sClass = "cv" . (kfContactValueIsInvalid($sType, $sValue) ? " vx" : "");
     return "<span class=\"" . html($sClass) . "\"" . $sTooltipAttribute . ">" . html($sDisplayValue) . "</span>";
 }
 
@@ -1236,13 +1236,13 @@ function kfRenderContactValueActions($sType, $sValue, $blShowCopy = false, $blAl
     $sLinkTitle = "";
     $blHasIcon = false;
     if ($blShowCopy && $sDisplayValue != "") {
-        $sHtml .= "<a class=\"contact-copy\" href=\"#\" title=\"Copy\" aria-label=\"Copy\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
+        $sHtml .= "<a class=\"cc\" href=\"#\" title=\"Copy\" aria-label=\"Copy\"><span class=\"cb\">" . $sCopyEmoji . "</span></a>";
         $blHasIcon = true;
     }
     if ($sHref != "") {
         $sTarget = $blAllowExternalLinks && preg_match("#^https?://#i", $sHref) ? " target=\"_blank\" rel=\"noopener noreferrer\"" : "";
         $sLinkTitle = kfContactLinkTitle($sType);
-        return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"contact-link\" href=\"" . html($sHref) . "\"" . $sTarget . " title=\"" . html($sLinkTitle) . "\" aria-label=\"" . html($sLinkTitle) . "\">" . kfContactLinkEmoji($sType) . "</a>";
+        return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"lk\" href=\"" . html($sHref) . "\"" . $sTarget . " title=\"" . html($sLinkTitle) . "\" aria-label=\"" . html($sLinkTitle) . "\">" . kfContactLinkEmoji($sType) . "</a>";
     }
     return $sHtml;
 }
@@ -1254,7 +1254,7 @@ function renderDebtNoteValue($sNote) {
     if ($sNote == "") {
         return $sEmptyValueEmoji;
     }
-    return "<span class=\"subject-item-value\">" . nl2br(html($sNote), false) . "</span>" . renderCopyAction($sNote);
+    return "<span class=\"iv\">" . nl2br(html($sNote), false) . "</span>" . renderCopyAction($sNote);
 }
 
 function renderDebtContactValue($sType, $sValue, $sNote, $blIsPrimary = false) {
@@ -1265,10 +1265,10 @@ function renderDebtContactValue($sType, $sValue, $sNote, $blIsPrimary = false) {
     if (trim($sDisplayValue) == "") {
         return $sEmptyValueEmoji;
     }
-    return "<span class=\"contact-item\" data-contact-value=\"" . html($sDisplayValue) . "\">"
-        . "<span class=\"contact-db-values\">" . kfRenderContactValueText($sType, $sValue) . "</span>"
+    return "<span class=\"ci\" data-contact-value=\"" . html($sDisplayValue) . "\">"
+        . "<span class=\"dv\">" . kfRenderContactValueText($sType, $sValue) . "</span>"
         . kfRenderContactValueActions($sType, $sValue, true, false)
-        . "<span class=\"contact-note\">" . ($sNote != "" ? "(" . html($sNote) . ")" : "") . "</span>"
-        . "<span class=\"contact-flags\"><span class=\"contact-primary\" title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span></span>"
+        . "<span class=\"cn\">" . ($sNote != "" ? "(" . html($sNote) . ")" : "") . "</span>"
+        . "<span class=\"cf\"><span class=\"cp\" title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span></span>"
         . "</span>";
 }

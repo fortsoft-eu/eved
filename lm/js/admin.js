@@ -52,7 +52,7 @@ function getAdminEmoji(sName) {
 }
 
 function getAdminContactValue(oItem) {
-    var oValue = oItem ? oItem.querySelector(".contact-value") : null;
+    var oValue = oItem ? oItem.querySelector(".cv") : null;
     var sValue = oValue ? (oValue.textContent || "") : "";
     return sValue != "" ? sValue : (oItem ? (oItem.getAttribute("data-contact-value") || "") : "");
 }
@@ -1378,7 +1378,7 @@ function bindAdminCopyLinks() {
 
 function bindAdminContactCopy() {
     function showContactCopyResult(oButton, blSuccess) {
-        var oBox = oButton.querySelector ? oButton.querySelector(".copy-action-box") : null;
+        var oBox = oButton.querySelector ? oButton.querySelector(".cb") : null;
         var sText = oButton.getAttribute("data-copy-text") || (oBox ? oBox.textContent : oButton.textContent);
         var sResultText = blSuccess ? getAdminEmoji("copy-success") : getAdminEmoji("copy-failure");
         if (oBox) {
@@ -1396,7 +1396,7 @@ function bindAdminContactCopy() {
     }
 
     function copyContactValue(oButton) {
-        var oItem = oButton.closest ? oButton.closest(".contact-item") : null;
+        var oItem = oButton.closest ? oButton.closest(".ci") : null;
         var sValue = getAdminContactValue(oItem);
         oButton.setAttribute("data-copy-text", oButton.getAttribute("data-copy-text") || oButton.textContent);
         if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1412,7 +1412,7 @@ function bindAdminContactCopy() {
     }
 
     document.addEventListener("click", function(oEvent) {
-        var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".contact-copy") : null;
+        var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".cc") : null;
         var oLink;
         if (oButton) {
             oEvent.preventDefault();
@@ -1420,7 +1420,7 @@ function bindAdminContactCopy() {
             copyContactValue(oButton);
             return;
         }
-        oLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".contact-link") : null;
+        oLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".lk") : null;
         if (oLink) {
             oEvent.stopPropagation();
         }

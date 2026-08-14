@@ -3815,7 +3815,7 @@ function setupCopyLinks() {
 
 function setupCopyActions() {
     document.addEventListener("click", function (oEvent) {
-        var oButton = oEvent.target.closest ? oEvent.target.closest(".copy-action") : null;
+        var oButton = oEvent.target.closest ? oEvent.target.closest(".ca") : null;
         var sValue;
         if (!oButton) {
             return;
@@ -3825,7 +3825,7 @@ function setupCopyActions() {
         sValue = oButton.getAttribute("data-copy-value") || "";
 
         function showCopyValueResult(blSuccess) {
-            var oBox = oButton.querySelector ? oButton.querySelector(".copy-action-box") : null;
+            var oBox = oButton.querySelector ? oButton.querySelector(".cb") : null;
             var sText = oButton.getAttribute("data-copy-text") || (oBox ? oBox.textContent : oButton.textContent);
             var sResultText = blSuccess ? getAdminEmoji("copy-success") : getAdminEmoji("copy-failure");
             oButton.setAttribute("data-copy-text", sText);
@@ -3856,7 +3856,7 @@ function setupCopyActions() {
     });
 
     document.addEventListener("click", function (oEvent) {
-        var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".contact-copy") : null;
+        var oButton = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".cc") : null;
         var oLink;
         if (oButton) {
             oEvent.preventDefault();
@@ -3864,14 +3864,14 @@ function setupCopyActions() {
             copyContactValue(oButton);
             return;
         }
-        oLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".contact-link") : null;
+        oLink = oEvent.target && oEvent.target.closest ? oEvent.target.closest(".lk") : null;
         if (oLink) {
             oEvent.stopPropagation();
         }
     }, true);
 
     function showContactCopyResult(oButton, blSuccess) {
-        var oBox = oButton.querySelector ? oButton.querySelector(".copy-action-box") : null;
+        var oBox = oButton.querySelector ? oButton.querySelector(".cb") : null;
         var sText = oButton.getAttribute("data-copy-text") || (oBox ? oBox.textContent : oButton.textContent);
         var sResultText = blSuccess ? getAdminEmoji("copy-success") : getAdminEmoji("copy-failure");
         if (oBox) {
@@ -3889,7 +3889,7 @@ function setupCopyActions() {
     }
 
     function copyContactValue(oButton) {
-        var oItem = oButton.closest ? oButton.closest(".contact-item") : null;
+        var oItem = oButton.closest ? oButton.closest(".ci") : null;
         var sValue = oItem ? (oItem.getAttribute("data-contact-value") || "") : "";
         oButton.setAttribute("data-copy-text", oButton.getAttribute("data-copy-text") || oButton.textContent);
         if (navigator.clipboard && navigator.clipboard.writeText) {

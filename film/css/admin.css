@@ -618,7 +618,7 @@ table {
     white-space: normal;
 }
 
-.item-action {
+.ia {
     border: 0;
     color: inherit;
     display: inline-block;
@@ -629,7 +629,7 @@ table {
     vertical-align: top;
 }
 
-.item-action:hover {
+.ia:hover {
     background: transparent;
     text-decoration: none;
 }

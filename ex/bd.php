@@ -1127,20 +1127,20 @@ if (!$aBirthdayRows) {
   <table id="birthdays-table" class="contacts-table table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
-        <th class="column-hidden">Type</th>
+        <th class="ch">Type</th>
         <th class="served-in-column">In</th>
         <th>Name</th>
-        <th class="column-hidden">First Name</th>
-        <th class="column-hidden">Last Name</th>
-        <th class="column-step-one">Birth Name</th>
-        <th class="column-hidden">Birth Number</th>
-        <th class="column-step-two" style="overflow-wrap: normal; white-space: nowrap; word-break: normal;">Birth Date</th>
-        <th class="column-hidden">Death Date</th>
-        <th class="column-step-one">Nicknames</th>
+        <th class="ch">First Name</th>
+        <th class="ch">Last Name</th>
+        <th class="c1">Birth Name</th>
+        <th class="ch">Birth Number</th>
+        <th class="c2" style="overflow-wrap: normal; white-space: nowrap; word-break: normal;">Birth Date</th>
+        <th class="ch">Death Date</th>
+        <th class="c1">Nicknames</th>
         <th>Addresses</th>
         <th>Contacts</th>
-        <th class="column-step-three">Groups</th>
-        <th class="column-step-three">Notes</th>
+        <th class="c3">Groups</th>
+        <th class="c3">Notes</th>
       </tr>
     </thead>
     <tbody>

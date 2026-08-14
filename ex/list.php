@@ -1226,7 +1226,7 @@ if (!$aRows) {
   <table id="subjects-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
-        <th class="subject-type-column">Type</th>
+        <th class="tc">Type</th>
         <th>Name</th>
         <th>First Name</th>
         <th>Last Name</th>
@@ -1247,8 +1247,12 @@ if (!$aRows) {
     foreach ($aRows as $aRow) {
         echo renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aFullListSettings, true, true, true, true, true);
     }
-    echo "    </tbody>\n",
-        "  </table>\n";
+
+?>
+    </tbody>
+  </table>
+<?php
+
 }
 echo renderEmojiData();
 

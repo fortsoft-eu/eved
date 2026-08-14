@@ -622,8 +622,8 @@ function menuAdminRenderRow($aRow) {
         . "<td>" . $sAccess . "</td>"
         . "<td>" . ((int)$aRow["is_active"] == 1 ? "Yes" : "No") . "</td>"
         . "<td>" . ($aRow["separator"] ? "Yes" : "No") . "</td>"
-        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-menu-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-menu-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
-        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-edit-menu-item\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-menu-item\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"ia js-move-menu-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-move-menu-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"ia js-edit-menu-item\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-delete-menu-item\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
         . "</tr>\n";
 }
 
@@ -1175,7 +1175,7 @@ function businessHoursRenderCard($aRow, $blActiveCard = false) {
         . " data-business-hours-hours=\"" . html($aRow["hours"]) . "\""
         . " data-business-hours-icon=\"" . htmlEmoji($aRow["icon"]) . "\""
         . " data-business-hours-active=\"" . ((int)$aRow["is_active"] == 1 ? "1" : "0") . "\">\n"
-        . "      <div class=\"business-hours-card-top\">" . $sTitleHtml . "<span class=\"business-hours-card-actions\"><a href=\"#\" class=\"item-action js-move-business-hours-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-business-hours-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-business-hours\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-business-hours\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></span></div>\n"
+        . "      <div class=\"business-hours-card-top\">" . $sTitleHtml . "<span class=\"business-hours-card-actions\"><a href=\"#\" class=\"ia js-move-business-hours-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"ia js-move-business-hours-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"ia js-edit-business-hours\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"ia js-delete-business-hours\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></span></div>\n"
         . "      <div class=\"business-hours-address\">" . html($sAddressText) . "</div>\n"
         . "      " . businessHoursRenderHours($aRow["hours_data"]) . "<br class=\"business-hours-linear-gap\"><br class=\"business-hours-linear-gap\">\n"
         . "    </section>\n";
@@ -1590,8 +1590,8 @@ function dashboardServiceRenderRow($aRow) {
         . "<td class=\"dashboard-service-checked js-dashboard-service-checked\">" . ($aRow["checked_at"] != "" ? renderDateTimeWithNbspIndent($aRow["checked_at"]) : "") . "</td>"
         . "<td class=\"dashboard-service-detail js-dashboard-service-detail\">" . ($aRow["message"] != "" ? html($aRow["message"]) : "") . "</td>"
         . "<td>" . ((int)$aRow["is_active"] == 1 ? "Yes" : "No") . "</td>"
-        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-dashboard-service-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-dashboard-service-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
-        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-check-dashboard-service\" title=\"Check\" aria-label=\"Check\">" . $sRefreshEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-dashboard-service\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-dashboard-service\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"ia js-move-dashboard-service-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-move-dashboard-service-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"ia js-check-dashboard-service\" title=\"Check\" aria-label=\"Check\">" . $sRefreshEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-edit-dashboard-service\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-delete-dashboard-service\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
         . "</tr>\n";
 }
 
@@ -2243,7 +2243,7 @@ function issueTrackerRenderRow($aRow) {
         . "<td class=\"issue-title-cell\"><strong>" . html($aRow["title"]) . "</strong>" . ($sDescription != "" ? "<div class=\"issue-description\">" . nl2br(html($sDescription), false) . "</div>" : "") . "</td>"
         . "<td class=\"issue-date" . $sDueClass . "\">" . ($sDueDate != "" ? renderDateTimeWithNbspIndent($sDueDate) : "&mdash;") . "</td>"
         . "<td class=\"issue-date\">" . renderDateTimeWithNbspIndent($aRow["updated_at"]) . "</td>"
-        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-toggle-issue\" title=\"" . html($sToggleTitle) . "\" aria-label=\"" . html($sToggleTitle) . "\">" . $sToggleEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-issue\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-issue issue-delete-action\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"ia js-toggle-issue\" title=\"" . html($sToggleTitle) . "\" aria-label=\"" . html($sToggleTitle) . "\">" . $sToggleEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-edit-issue\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-delete-issue issue-delete-action\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
         . "</tr>\n";
 }
 
@@ -2518,16 +2518,16 @@ function phoneAccountsRenderPhoneNumber($sValue) {
 
     $sDisplayValue = phoneContactDisplayValue($sValue);
     $sHref = phoneContactHref($sValue);
-    $sHtml = "<span class=\"contact-value\">" . html($sDisplayValue) . "</span>";
+    $sHtml = "<span class=\"cv\">" . html($sDisplayValue) . "</span>";
     $blHasIcon = false;
     if ($sDisplayValue != "") {
-        $sHtml .= "<a class=\"contact-copy\" href=\"#\" title=\"Copy\" aria-label=\"Copy\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
+        $sHtml .= "<a class=\"cc\" href=\"#\" title=\"Copy\" aria-label=\"Copy\"><span class=\"cb\">" . $sCopyEmoji . "</span></a>";
         $blHasIcon = true;
     }
     if ($sHref == "") {
         return $sHtml;
     }
-    return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"contact-link\" href=\"" . html($sHref) . "\" title=\"Call cell phone\" aria-label=\"Call cell phone\">" . $sContactCellEmoji . "</a>";
+    return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"lk\" href=\"" . html($sHref) . "\" title=\"Call cell phone\" aria-label=\"Call cell phone\">" . $sContactCellEmoji . "</a>";
 }
 
 function phoneAccountsRenderTelegramAccount($sValue) {
@@ -2537,13 +2537,13 @@ function phoneAccountsRenderTelegramAccount($sValue) {
     $sHref = normalizeTelegramContactValue($sValue);
     $sHtml = "";
     if ($sValue == "") {
-        return "<span class=\"contact-value\">" . $sEmptyValueEmoji . "</span>";
+        return "<span class=\"cv\">" . $sEmptyValueEmoji . "</span>";
     }
-    $sHtml = "<span class=\"contact-value\">" . html($sValue) . "</span>";
+    $sHtml = "<span class=\"cv\">" . html($sValue) . "</span>";
     if ($sHref === false || $sHref == "") {
         return $sHtml;
     }
-    return $sHtml . " <a class=\"contact-link\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\" title=\"Open Telegram\" aria-label=\"Open Telegram\">" . $sContactTelegramEmoji . "</a>";
+    return $sHtml . " <a class=\"lk\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\" title=\"Open Telegram\" aria-label=\"Open Telegram\">" . $sContactTelegramEmoji . "</a>";
 }
 
 function phoneAccountsRenderTextValue($sValue) {
@@ -2584,7 +2584,7 @@ function phoneAccountsRenderRow($aRow, $blSecretsUnlocked) {
         . " data-phone-account-paid-amount=\"" . html($sPaidAmount) . "\""
         . " data-phone-account-paid-currency=\"" . html($aRow["paid_currency"]) . "\""
         . ">"
-        . "<td class=\"phone-account-number contact-item\">" . phoneAccountsRenderPhoneNumber($aRow["number"]) . "</td>"
+        . "<td class=\"phone-account-number ci\">" . phoneAccountsRenderPhoneNumber($aRow["number"]) . "</td>"
         . "<td class=\"phone-account-account\">" . phoneAccountsRenderTelegramAccount($aRow["account"]) . "</td>";
     if ($blSecretsUnlocked) {
         $sHtml .= "<td class=\"phone-account-token\">" . phoneAccountsRenderTextValue($aRow["pin"]) . "</td>"
@@ -2607,14 +2607,14 @@ function phoneAccountsRenderRow($aRow, $blSecretsUnlocked) {
         $sHtml .= "<td class=\"phone-account-note\">" . $sLockedEmoji . "</td>";
     }
     $sHtml .= "<td class=\"phone-account-date\">" . renderDateTimeWithNbspIndent($aRow["updated_at"]) . "</td>"
-        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-phone-account-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-phone-account-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"ia js-move-phone-account-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-move-phone-account-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
         . "<td class=\"admin-action-column\">";
     if ($blSecretsUnlocked) {
-        $sHtml .= "<a href=\"#\" class=\"item-action js-edit-phone-account\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>";
+        $sHtml .= "<a href=\"#\" class=\"ia js-edit-phone-account\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>";
     } else {
-        $sHtml .= "<span class=\"item-action\" title=\"Unlock encrypted data to edit\" aria-label=\"Edit\">" . $sEditEmoji . "</span>";
+        $sHtml .= "<span class=\"ia\" title=\"Unlock encrypted data to edit\" aria-label=\"Edit\">" . $sEditEmoji . "</span>";
     }
-    return $sHtml . "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-phone-account phone-account-delete-action\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
+    return $sHtml . "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"ia js-delete-phone-account phone-account-delete-action\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
         . "</tr>\n";
 }
 
