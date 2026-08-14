@@ -2,8 +2,10 @@
 
 $blDatabaseBackupDownloadLogin  = true;
 $blMailRestrictFromToOneAddress = true;
-$blDirectoryAriaAttributes      = false;
-$blSubjectsAriaAttributes       = false;
+$blDirectoryDesktopAriaAttributes = true;
+$blDirectoryPmdLikeAriaAttributes = false;
+$blSubjectsDesktopAriaAttributes  = true;
+$blSubjectsPmdLikeAriaAttributes  = false;
 $iRenderThrobberRowLimit        = 300;
 $iCalendarFirstDay              = 1;
 $iBirthdayDisplayMinDays        = -2;

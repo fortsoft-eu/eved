@@ -10,15 +10,8 @@ if (!$oPdo) {
 
 $blCanEdit = isFullAccessAllowed("ex");
 requireViewAccess("ex", "csrf_token", true);
-
-
-$aFullListSettingsDefaults = array(
-    "show_inactive_subjects" => 1,
-    "show_inactive_nicknames" => 1,
-    "show_inactive_addresses" => 1,
-    "show_inactive_contacts" => 1,
-    "show_inactive_notes" => 1
-);
+$blSubjectsAriaAttributes = isDesktop() ? $blSubjectsDesktopAriaAttributes : $blSubjectsPmdLikeAriaAttributes;
+$aFullListSettingsDefaults = array("show_inactive_subjects" => 1, "show_inactive_nicknames" => 1, "show_inactive_addresses" => 1, "show_inactive_contacts" => 1, "show_inactive_notes" => 1);
 $aFullListSettings = array();
 if (!isset($_SESSION["ex_full_list_settings"]) || !is_array($_SESSION["ex_full_list_settings"])) {
     $_SESSION["ex_full_list_settings"] = array();

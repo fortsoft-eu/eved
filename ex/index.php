@@ -10,21 +10,12 @@ if (!$oPdo) {
 
 $blCanEdit = isFullAccessAllowed("ex");
 requireViewAccess("ex", "csrf_token", true);
-
-
-$aIndexSettingsDefaults = array(
-    "show_inactive_subjects" => 0,
-    "show_inactive_nicknames" => 0,
-    "show_inactive_addresses" => 0,
-    "show_inactive_contacts" => 0,
-    "show_inactive_notes" => 0
-);
-
+$blDirectoryAriaAttributes = isDesktop() ? $blDirectoryDesktopAriaAttributes : $blDirectoryPmdLikeAriaAttributes;
+$aIndexSettingsDefaults = array("show_inactive_subjects" => 0, "show_inactive_nicknames" => 0, "show_inactive_addresses" => 0, "show_inactive_contacts" => 0, "show_inactive_notes" => 0);
 $aIndexSettings = array();
 if (!isset($_SESSION["ex_index_settings"]) || !is_array($_SESSION["ex_index_settings"])) {
     $_SESSION["ex_index_settings"] = array();
 }
-
 foreach ($aIndexSettingsDefaults as $sIndexSettingName => $iIndexSettingDefault) {
     if (isset($_SESSION["ex_index_settings"][$sIndexSettingName])) {
         $aIndexSettings[$sIndexSettingName] = (int)$_SESSION["ex_index_settings"][$sIndexSettingName] == 1 ? 1 : 0;
@@ -42,7 +33,6 @@ try {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());
 }
-
 $aFullListComplexFilterFields = getFullListComplexFilterFields($aFullListComplexFilterContactTypes);
 $aFullListComplexFilterOperators = getFullListComplexFilterOperators();
 $aFullListComplexFilter = getDefaultFullListComplexFilter();
@@ -50,13 +40,11 @@ $aFullListComplexFilterDraft = getDefaultFullListComplexFilterDraft();
 if (isset($_SESSION["ex_index_complex_filter"]) && is_array($_SESSION["ex_index_complex_filter"])) {
     $aFullListComplexFilter = normalizeFullListComplexFilter($_SESSION["ex_index_complex_filter"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 }
-
 if (isset($_SESSION["ex_index_complex_filter_draft"]) && is_array($_SESSION["ex_index_complex_filter_draft"])) {
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($_SESSION["ex_index_complex_filter_draft"], $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 } elseif (count($aFullListComplexFilter["conditions"]) > 0) {
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("csrf_token", true);
 }
@@ -72,7 +60,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     header("Location: " . $sBaseUrl, true, 303);
     exit;
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter") {
     $aFullListComplexFilterPayload = getFullListComplexFilterPostPayload();
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
@@ -84,14 +71,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     header("Location: " . $sBaseUrl, true, 303);
     exit;
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter_draft") {
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft(getFullListComplexFilterPostPayload(), $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
     $_SESSION["ex_index_complex_filter_draft"] = $aFullListComplexFilterDraft;
     session_write_close();
     sendJsonAndExit(array("success" => true));
 }
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "reset_full_list_complex_filter") {
     $aFullListComplexFilter = getDefaultFullListComplexFilter();
     $_SESSION["ex_index_complex_filter"] = $aFullListComplexFilter;
@@ -127,7 +112,6 @@ try {
     send500AndExit("Database error: " . $oException->getMessage());
 }
 
-
 $aHiddenInactive = getHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aIndexSettings);
 if (!$aIndexSettings["show_inactive_subjects"]) {
     $aActiveRows = array();
@@ -138,7 +122,6 @@ if (!$aIndexSettings["show_inactive_subjects"]) {
     }
     $aRows = $aActiveRows;
 }
-
 if (!$aIndexSettings["show_inactive_nicknames"]) {
     foreach ($aNicknames as $iSubjectId => $aSubjectNicknames) {
         $aActiveNicknames = array();
@@ -150,7 +133,6 @@ if (!$aIndexSettings["show_inactive_nicknames"]) {
         $aNicknames[$iSubjectId] = $aActiveNicknames;
     }
 }
-
 if (!$aIndexSettings["show_inactive_addresses"]) {
     foreach ($aAddresses as $iSubjectId => $aSubjectAddresses) {
         $aActiveAddresses = array();
@@ -162,7 +144,6 @@ if (!$aIndexSettings["show_inactive_addresses"]) {
         $aAddresses[$iSubjectId] = $aActiveAddresses;
     }
 }
-
 if (!$aIndexSettings["show_inactive_contacts"]) {
     foreach ($aContacts as $iSubjectId => $aSubjectContacts) {
         $aActiveContacts = array();
@@ -174,7 +155,6 @@ if (!$aIndexSettings["show_inactive_contacts"]) {
         $aContacts[$iSubjectId] = $aActiveContacts;
     }
 }
-
 if (!$aIndexSettings["show_inactive_notes"]) {
     foreach ($aNotes as $iSubjectId => $aSubjectNotes) {
         $aActiveNotes = array();
@@ -187,7 +167,6 @@ if (!$aIndexSettings["show_inactive_notes"]) {
     }
 }
 
-
 $blFullListComplexFilterActive = count($aFullListComplexFilter["conditions"]) > 0;
 $aFullListComplexFilterRows = isset($aFullListComplexFilterDraft["conditions"]) && is_array($aFullListComplexFilterDraft["conditions"]) ? $aFullListComplexFilterDraft["conditions"] : array();
 while (count($aFullListComplexFilterRows) < 1) {
@@ -198,12 +177,10 @@ while (count($aFullListComplexFilterRows) < 1) {
     );
 }
 
-
 $aFullListComplexFilterGroups = array();
 foreach ($aAllGroups as $aGroup) {
     $aFullListComplexFilterGroups[] = (string)$aGroup["name"];
 }
-
 
 $aFullListComplexFilterSubjectTypes = array();
 foreach (getSubjectTypes() as $sSubjectType) {
@@ -213,7 +190,6 @@ foreach (getSubjectTypes() as $sSubjectType) {
     );
 }
 
-
 $aFullListComplexFilterAddressTypes = array();
 foreach (getAddressTypes() as $sAddressType) {
     $aFullListComplexFilterAddressTypes[] = array(
@@ -221,7 +197,6 @@ foreach (getAddressTypes() as $sAddressType) {
         "label" => addressTypeLabel($sAddressType)
     );
 }
-
 
 $blRenderPageThrobber = count($aRows) > $iRenderThrobberRowLimit;
 $sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes($blRenderPageThrobber);
