@@ -242,7 +242,6 @@ $iTime = sendPageHeaders();
   <meta name="copyright" content="Petr Červinka <?php echo date("Y", $iTime); ?>">
   <meta name="robots" content="noindex, nofollow">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:domain" content="<?php echo $sHost; ?>">
   <meta name="twitter:title" content="Film Scans">
   <meta name="twitter:description" content="High-quality film scans of negatives and slides.">
   <meta name="twitter:url" content="<?php echo $sBaseUrl; ?>">
@@ -262,16 +261,16 @@ $iTime = sendPageHeaders();
   <meta property="og:image:height" content="1280">
   <meta property="og:locale" content="en-US">
   <meta property="og:site_name" content="Film Scans">
-  <link href="/vendors/bootstrap-3.4.1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-  <link href="/vendors/bootstrap-3.4.1/css/ie10-viewport-bug-workaround.css" rel="stylesheet" type="text/css">
-  <link href="/vendors/jstree-3.3.10/themes/default/style.min.css" rel="stylesheet" type="text/css">
-  <link href="/vendors/fancybox-6.1.14/css/fancybox.css" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/css/ie10-viewport-bug-workaround.css" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sOrigin; ?>/vendors/jstree-3.3.10/themes/default/style.min.css" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sOrigin; ?>/vendors/fancybox-6.1.14/css/fancybox.css" rel="stylesheet" type="text/css">
   <link href="<?php echo $sBaseUrl; ?>css/layout.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/layout.min.css")); ?>" rel="stylesheet" type="text/css">
   <link href="<?php echo $sBaseUrl; ?>css/effects.min.css" rel="stylesheet" type="text/css">
   <link href="<?php echo $sBaseUrl; ?>css/theme-light-blue.min.css" rel="stylesheet" type="text/css">
   <link href="<?php echo $sBaseUrl; ?>css/print.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/print.min.css")); ?>" rel="stylesheet" type="text/css" media="print">
   <style type="text/css">nav { width: 350px} @media screen and (min-width:769px) { body.md-nav-expanded div#main { margin-left: 350px} body.md-nav-expanded header { padding-left: 364px} }</style>
-  <style type="text/css">.navigation #inline-toc { width: auto !important}</style>
+  <style type="text/css">.navigation #inline-toc { width: auto !important} .js-save-png { white-space: nowrap}</style>
 </head>
 <body itemscope itemtype="https://schema.org/CreativeWork" class="md-nav-expanded">
   <meta itemprop="name" content="Film Scans">
@@ -604,19 +603,19 @@ if ($oPdo) {
     </div>
   </div>
   <div id="hnd-splitter" style="left: 350px"></div>
-  <script type="text/javascript" src="/vendors/jquery-3.5.1/jquery.min.js"></script>
-  <script type="text/javascript" src="/vendors/bootstrap-3.4.1/js/bootstrap.min.js"></script>
-  <script type="text/javascript" src="/vendors/bootstrap-3.4.1/js/ie10-viewport-bug-workaround.js"></script>
-  <script type="text/javascript" src="/vendors/uri-1.19.2/uri.min.js"></script>
-  <script type="text/javascript" src="/vendors/headroom-0.11.0/headroom.min.js"></script>
-  <script type="text/javascript" src="/vendors/jstree-3.3.10/jstree.min.js"></script>
-  <script type="text/javascript" src="/vendors/interactjs-1.10.27/interact.min.js"></script>
-  <script type="text/javascript" src="/vendors/html2canvas-1.4.1/html2canvas.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jquery-3.5.1/jquery.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/js/bootstrap.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/js/ie10-viewport-bug-workaround.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/uri-1.19.2/uri.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/headroom-0.11.0/headroom.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jstree-3.3.10/jstree.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/interactjs-1.10.27/interact.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/html2canvas-1.4.1/html2canvas.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/hndsd.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/hndse.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/app.min.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/app.min.js")); ?>"></script>
-  <script type="text/javascript" src="/vendors/fancybox-6.1.14/js/fancybox.umd.js"></script>
-  <script type="text/javascript" src="/vendors/bowser-2.14.1/es5.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/fancybox-6.1.14/js/fancybox.umd.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bowser-2.14.1/es5.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/gallery.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/gallery.js")); ?>"></script>
 </body>
 </html>

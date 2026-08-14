@@ -41,26 +41,8 @@ if (isset($_COOKIE[$sSessionName]) && (string)$_COOKIE[$sSessionName] != "") {
 }
 
 
-$sHost = $_SERVER["HTTP_HOST"];
-$sPrefix = preg_replace("/\..*$/", "", $sHost);
-$sPattern = "#^/" . preg_quote($sPrefix, "#") . "(/.*)?$#i";
-
-
-if (preg_match($sPattern, $_SERVER["REQUEST_URI"])) {
-    $sNewUri = preg_replace("#^/" . preg_quote($sPrefix, "#") . "#i", "", $_SERVER["REQUEST_URI"]);
-    if ($sNewUri == "" || $sNewUri[0] != "/") {
-        $sNewUri = "/" . $sNewUri;
-    }
-    sendSecurityHeaders();
-    header("Location: " . $sScheme . "://" . $sHost . $sNewUri, true, 301);
-    exit;
-}
-
-$sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
-if (substr($sPath, -1) != "/") {
-    $sPath = dirname($sPath) . "/";
-}
-$sBaseUrl = $sScheme . "://" . $sHost . $sPath;
+redirectToCanonicalUrl();
+list($sOrigin, $sBaseUrl) = getBaseUrl();
 
 
 $sError = "";

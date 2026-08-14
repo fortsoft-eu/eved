@@ -839,6 +839,16 @@ body.mail-page .admin-controls .mail-send-button {
     width: 73px;
 }
 
+.admin-controls .js-calendar-save-png, .admin-controls .js-schema-save-png {
+    white-space: nowrap;
+}
+
+.holiday-calendar-export {
+    background: #F8F8F8;
+    margin: -6px;
+    padding: 6px;
+}
+
 .holiday-legend {
     display: flex;
     flex-wrap: wrap;

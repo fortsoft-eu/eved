@@ -2756,6 +2756,40 @@ document.addEventListener("DOMContentLoaded", function () {
     setupHolidayCalendarTodayButton();
 });
 
+function setupHolidayCalendarSavePngButton() {
+    var oButton = document.querySelector(".js-calendar-save-png");
+    if (!oButton) {
+        return;
+    }
+    oButton.addEventListener("click", function () {
+        var oElement = document.querySelector(".holiday-calendar-export");
+        var sFileName = oButton.getAttribute("data-file-name") || "calendar";
+        if (!oElement || typeof html2canvas != "function") {
+            return;
+        }
+        oButton.disabled = true;
+        html2canvas(oElement, {
+            scale: 5
+        }).then(function (oCanvas) {
+            oCanvas.toBlob(function (oBlob) {
+                var oLink = document.createElement("a");
+                oLink.download = sFileName + ".png";
+                oLink.href = URL.createObjectURL(oBlob);
+                oLink.click();
+                URL.revokeObjectURL(oLink.href);
+                oButton.disabled = false;
+            }, "image/png", 1.0);
+        }).catch(function (oError) {
+            console.error(oError);
+            oButton.disabled = false;
+        });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    setupHolidayCalendarSavePngButton();
+});
+
 function setupHolidayCalendarDaySelection() {
     var blDragSelectValue = true;
     var blDragging = false;
@@ -3116,6 +3150,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
     window.copyAdminTableRowState = copyTableRowState;
     window.bindAdminTableRow = bindTableRow;
+});
+
+function setupSchemaSavePngButton() {
+    var oButton = document.querySelector(".js-schema-save-png");
+    if (!oButton) {
+        return;
+    }
+    oButton.addEventListener("click", function () {
+        var oElement = document.querySelector(".schema-grid");
+        var sFileName = oButton.getAttribute("data-file-name") || "database_schema";
+        if (!oElement || typeof html2canvas != "function") {
+            return;
+        }
+        oButton.disabled = true;
+        html2canvas(oElement, {
+            scale: 3
+        }).then(function (oCanvas) {
+            oCanvas.toBlob(function (oBlob) {
+                var oLink = document.createElement("a");
+                oLink.download = sFileName + ".png";
+                oLink.href = URL.createObjectURL(oBlob);
+                oLink.click();
+                URL.revokeObjectURL(oLink.href);
+                oButton.disabled = false;
+            }, "image/png", 1.0);
+        }).catch(function (oError) {
+            console.error(oError);
+            oButton.disabled = false;
+        });
+    });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    setupSchemaSavePngButton();
 });
 
 document.addEventListener("DOMContentLoaded", function () {

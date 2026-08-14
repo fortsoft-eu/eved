@@ -1891,7 +1891,6 @@ function dashboardServiceCheckStreamEndpoint($aEndpoint, $sUrl) {
     $oSocket = dashboardServiceOpenSocket($aEndpoint, $iErrorNumber, $sErrorText);
     $sLine = "";
     $aInfo = array();
-
     if (!$oSocket) {
         if ($sErrorText == "") {
             $sErrorText = "Stream connection failed.";

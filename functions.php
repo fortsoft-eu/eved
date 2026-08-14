@@ -1240,7 +1240,7 @@ function requireNamedCsrfToken($sTokenName, $blJsonResponse = false) {
 }
 
 function getCurrentUrlWithoutAuthActionForToken($sTokenName) {
-    global $sScheme, $sHost;
+    global $sScheme;
 
     $sPath = isset($_SERVER["REQUEST_URI"]) ? (string)$_SERVER["REQUEST_URI"] : "";
     $aParts = parse_url($sPath);
@@ -1254,7 +1254,7 @@ function getCurrentUrlWithoutAuthActionForToken($sTokenName) {
     if (count($aQuery) > 0) {
         $sResult .= "?" . http_build_query($aQuery, "", "&");
     }
-    return $sScheme . "://" . $sHost . ($sResult == "" ? "/" : $sResult);
+    return $sScheme . "://" . $_SERVER["HTTP_HOST"] . ($sResult == "" ? "/" : $sResult);
 }
 
 function getLoginToken() {
@@ -2121,4 +2121,37 @@ function arrayReadNext(&$aArray) {
         return array($mKey, $mValue);
     }
     return null;
+}
+
+function redirectToCanonicalUrl() {
+    global $sScheme;
+
+    $sHost = $_SERVER["HTTP_HOST"];
+    $sPrefix = preg_replace("/\..*$/", "", $sHost);
+    $sPattern = "#^/" . preg_quote($sPrefix, "#") . "(/.*)?$#i";
+    if (preg_match($sPattern, $_SERVER["REQUEST_URI"])) {
+        $sNewUri = preg_replace(
+            "#^/" . preg_quote($sPrefix, "#") . "#i",
+            "",
+            $_SERVER["REQUEST_URI"]
+        );
+        if ($sNewUri == "" || $sNewUri[0] != "/") {
+            $sNewUri = "/" . $sNewUri;
+        }
+        sendSecurityHeaders();
+        header("Location: " . $sScheme . "://" . $sHost . $sNewUri, true, 301);
+        exit;
+    }
+}
+
+function getBaseUrl() {
+    global $sScheme;
+
+    $sHost = $_SERVER["HTTP_HOST"];
+    $sPath = parse_url($_SERVER["REQUEST_URI"], PHP_URL_PATH);
+    if (substr($sPath, -1) != "/") {
+        $sPath = dirname($sPath) . "/";
+    }
+    $sOrigin = $sScheme . "://" . $sHost;
+    return array($sOrigin, $sOrigin . $sPath);
 }
