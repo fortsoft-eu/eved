@@ -209,6 +209,103 @@ function normalizeInputDateTimeForDatabase($mValue) {
     return $oDateTime ? $oDateTime->format("Y-m-d H:i:s") : false;
 }
 
+function normalizeCurrency($sCurrency) {
+    $sCurrency = strtoupper(trim((string)$sCurrency));
+    return preg_match("/^[A-Z]{3}$/", $sCurrency) ? $sCurrency : "";
+}
+
+function normalizeStoredCurrency($sCurrency) {
+    global $sDefaultCurrency;
+
+    $sCurrency = normalizeCurrency($sCurrency);
+    return $sCurrency != "" ? $sCurrency : $sDefaultCurrency;
+}
+
+function getCurrencyOptions($oPdo, $sSelectedCurrency = "") {
+    $sCurrencySeparator = " " . html_entity_decode("&#8212;", ENT_QUOTES, "UTF-8") . " ";
+    $aCurrencies = array(
+        "CZK" => array("currency" => "CZK", "label" => "CZK" . $sCurrencySeparator . "Czech koruna")
+    );
+    try {
+        $oStatement = $oPdo->query("SELECT currency_code, MIN(currency) AS currency_name FROM kf_exchange_rates GROUP BY currency_code ORDER BY currency_code ASC");
+        while ($aRow = $oStatement->fetch()) {
+            $sCurrency = normalizeCurrency($aRow["currency_code"]);
+            if ($sCurrency == "") {
+                continue;
+            }
+            $sCurrencyName = trim((string)$aRow["currency_name"]);
+            $aCurrencies[$sCurrency] = array(
+                "currency" => $sCurrency,
+                "label" => $sCurrencyName != "" ? $sCurrency . $sCurrencySeparator . $sCurrencyName : $sCurrency
+            );
+        }
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+    }
+    $sSelectedCurrency = normalizeCurrency($sSelectedCurrency);
+    if ($sSelectedCurrency != "" && !isset($aCurrencies[$sSelectedCurrency])) {
+        $aCurrencies[$sSelectedCurrency] = array("currency" => $sSelectedCurrency, "label" => $sSelectedCurrency);
+    }
+    ksort($aCurrencies);
+    return array_values($aCurrencies);
+}
+
+function isCurrencyAvailable($oPdo, $sCurrency) {
+    $sCurrency = normalizeCurrency($sCurrency);
+    if ($sCurrency == "") {
+        return false;
+    }
+    if ($sCurrency == "CZK") {
+        return true;
+    }
+    try {
+        $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_exchange_rates WHERE currency_code = :currency_code");
+        $oStatement->execute(array("currency_code" => $sCurrency));
+        return (int)$oStatement->fetchColumn() > 0;
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        return false;
+    }
+}
+
+function parseAmount($sValue) {
+    $sMinus = html_entity_decode("&#8722;", ENT_QUOTES, "UTF-8");
+    $sValue = str_replace(array(" ", "\xc2\xa0", $sMinus), array("", "", "-"), trim((string)$sValue));
+    $iCommaPosition = strrpos($sValue, ",");
+    $iDotPosition = strrpos($sValue, ".");
+    if ($iCommaPosition !== false && $iDotPosition !== false) {
+        if ($iCommaPosition > $iDotPosition) {
+            $sValue = str_replace(".", "", $sValue);
+            $sValue = str_replace(",", ".", $sValue);
+        } else {
+            $sValue = str_replace(",", "", $sValue);
+        }
+    } elseif ($iCommaPosition !== false) {
+        $sValue = str_replace(",", ".", $sValue);
+    }
+    return is_numeric($sValue) ? (float)$sValue : null;
+}
+
+function formatAmount($mAmount, $blUseEuropeanAmountFormat = false) {
+    $fAmount = round((float)$mAmount, 2);
+    $sDecimalSeparator = $blUseEuropeanAmountFormat ? "," : ".";
+    $sThousandsSeparator = $blUseEuropeanAmountFormat ? " " : ",";
+    $sAmount = number_format(abs($fAmount), 2, $sDecimalSeparator, $sThousandsSeparator);
+    return $fAmount < 0 ? html_entity_decode("&#8722;", ENT_QUOTES, "UTF-8") . $sAmount : $sAmount;
+}
+
+function getHttpStatusCode($aHeaders) {
+    $iStatusCode = 0;
+    if ($aHeaders) {
+        foreach ($aHeaders as $sHeader) {
+            if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", (string)$sHeader, $aMatches)) {
+                $iStatusCode = (int)$aMatches[1];
+            }
+        }
+    }
+    return $iStatusCode;
+}
+
 function getUaFingerprintText($aData, $sName) {
     if (!isset($aData[$sName])) {
         return "";
@@ -861,7 +958,7 @@ function renderMenu() {
             $sClass .= " menu-link-active";
             $sCurrent = " aria-current=\"page\"";
         }
-        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"menu-icon\" aria-hidden=\"true\">" . html($sIcon) . "</span><span class=\"menu-text\">" . html($aItem["name"]) . "</span></a>\n";
+        echo "        <a class=\"" . html($sClass) . "\" href=\"" . html($sBaseUrl . encodeMenuPath($aItem["relative_path"])) . "\"" . $sTitleAttribute . $sTargetAttribute . $sRelAttribute . $sCurrent . "><span class=\"menu-icon\" aria-hidden=\"true\">" . htmlEmoji($sIcon) . "</span><span class=\"menu-text\">" . html($aItem["name"]) . "</span></a>\n";
     }
     echo "      </span>\n",
         "    </span>\n";
@@ -1490,6 +1587,44 @@ function html($mValue) {
     return htmlspecialchars((string)$mValue, ENT_QUOTES | ENT_SUBSTITUTE, "UTF-8");
 }
 
+function htmlEmoji($mValue) {
+    $aParts = preg_split('/(&#(?:[xX][0-9A-Fa-f]+|[0-9]+);)/', (string)$mValue, -1, PREG_SPLIT_DELIM_CAPTURE);
+    $sHtml = "";
+    foreach ($aParts as $sPart) {
+        if (preg_match('/^&#[xX]([0-9A-Fa-f]+);$/', $sPart, $aMatches)) {
+            $sHtml .= "&#" . hexdec($aMatches[1]) . ";";
+            continue;
+        }
+        if (preg_match('/^&#([0-9]+);$/', $sPart, $aMatches)) {
+            $sHtml .= "&#" . (int)$aMatches[1] . ";";
+            continue;
+        }
+        $sHtml .= preg_replace_callback('/[\x{80}-\x{10FFFF}]/u', function ($aMatches) {
+            $sCharacter = $aMatches[0];
+            $iByte1 = ord($sCharacter[0]);
+            if (($iByte1 & 0xE0) == 0xC0) {
+                $iCodePoint = (($iByte1 & 0x1F) << 6) | (ord($sCharacter[1]) & 0x3F);
+            } elseif (($iByte1 & 0xF0) == 0xE0) {
+                $iCodePoint = (($iByte1 & 0x0F) << 12) | ((ord($sCharacter[1]) & 0x3F) << 6) | (ord($sCharacter[2]) & 0x3F);
+            } else {
+                $iCodePoint = (($iByte1 & 0x07) << 18) | ((ord($sCharacter[1]) & 0x3F) << 12) | ((ord($sCharacter[2]) & 0x3F) << 6) | (ord($sCharacter[3]) & 0x3F);
+            }
+            return "&#" . $iCodePoint . ";";
+        }, html($sPart));
+    }
+    return $sHtml;
+}
+
+function renderEmojiData() {
+    global $aEmojiData;
+
+    $sHtml = "  <span id=\"emoji-data\" hidden";
+    foreach ($aEmojiData as $sKey => $sValue) {
+        $sHtml .= " data-" . $sKey . "=\"" . htmlEmoji($sValue) . "\"";
+    }
+    return $sHtml . "></span>\n";
+}
+
 function isShortNoBreakWord($sWord, $iMaxLength = 3) {
     $sLetters = preg_replace('/[^\p{L}\p{N}]+/u', '', (string)$sWord);
     return $sLetters != "" && preg_match('/^[\p{L}\p{N}]{1,' . (int)$iMaxLength . '}$/u', $sLetters);
@@ -1553,9 +1688,11 @@ function htmlTooltip($sText) {
     return htmlNoShortWordBreaks($sText);
 }
 
-function htmlValue($mValue, $sEmptyValue = "&#10134;") {
+function htmlValue($mValue, $sEmptyValue = null) {
+    global $sEmptyValueEmoji;
+
     $sValue = trim((string)$mValue);
-    return $sValue != "" ? html($sValue) : $sEmptyValue;
+    return $sValue != "" ? html($sValue) : ($sEmptyValue !== null ? $sEmptyValue : $sEmptyValueEmoji);
 }
 
 function getSubjectNameSelectSql() {

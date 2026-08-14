@@ -492,7 +492,7 @@ function appendAdminDateField(oParent, sLabel, sName, sValue, blDateTime, blRequ
     oButton.type = "button";
     oButton.className = "subject-date-button";
     oButton.setAttribute("aria-label", "Open calendar");
-    oButton.textContent = "\u25BE";
+    oButton.textContent = getAdminEmoji("calendar-toggle");
     oCalendar.className = "subject-date-calendar";
     oCalendar.style.display = "none";
     oCalendar.addEventListener("mousedown", function (oEvent) {

@@ -113,6 +113,7 @@ if ($sIssuesHtml == "") {
 <?php
 
 }
+echo renderEmojiData();
 
 ?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>

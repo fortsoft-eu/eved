@@ -16,21 +16,6 @@ function renderDateTimeWithNbspIndent($mValue) {
     return html($sValue);
 }
 
-function renderEmojiData() {
-    global $sCopyEmoji, $sCopySuccessEmoji, $sCopyFailureEmoji;
-
-    $aValues = array(
-        "copy" => $sCopyEmoji,
-        "copy-success" => $sCopySuccessEmoji,
-        "copy-failure" => $sCopyFailureEmoji
-    );
-    $sHtml = "  <span id=\"emoji-data\" hidden";
-    foreach ($aValues as $sKey => $sValue) {
-        $sHtml .= " data-" . $sKey . "=\"" . html(html_entity_decode((string)$sValue, ENT_QUOTES | ENT_HTML5, "UTF-8")) . "\"";
-    }
-    return $sHtml . "></span>\n";
-}
-
 function getPhpGeneratedSelectedFlags($sName, $aTypes, $iDefaultValue) {
     $iSelected = 0;
     $aValues = array();
@@ -615,14 +600,14 @@ function menuAdminRenderRow($aRow) {
     if (!$aRow) {
         return "";
     }
-    $sIcon = $aRow["separator"] ? $sEmptyValueEmoji : htmlValue($aRow["icon"]);
+    $sIcon = htmlEmoji($aRow["separator"] || trim((string)$aRow["icon"]) == "" ? $sEmptyValueEmoji : trim((string)$aRow["icon"]));
     $sName = $aRow["separator"] ? $sEmptyValueEmoji : htmlValue($aRow["name"]);
     $sTitle = $aRow["separator"] ? $sEmptyValueEmoji : htmlValue($aRow["title"]);
     $sTarget = $aRow["target"] === null ? $sEmptyValueEmoji : htmlValue($aRow["target"]);
     $sAccess = menuAdminRenderScriptAccess($aRow);
     return "          <tr data-menu-id=\"" . (int)$aRow["id"] . "\""
         . " data-menu-path=\"" . html($aRow["path"]) . "\""
-        . " data-menu-icon=\"" . html($aRow["icon"]) . "\""
+        . " data-menu-icon=\"" . htmlEmoji($aRow["icon"]) . "\""
         . " data-menu-name=\"" . html($aRow["name"]) . "\""
         . " data-menu-title=\"" . html($aRow["title"]) . "\""
         . " data-menu-target=\"" . html($aRow["target"]) . "\""
@@ -1188,7 +1173,7 @@ function businessHoursRenderCard($aRow, $blActiveCard = false) {
         . " data-business-hours-subject-name=\"" . html($aRow["subject_name"]) . "\""
         . " data-business-hours-address-text=\"" . html($aRow["address_text"]) . "\""
         . " data-business-hours-hours=\"" . html($aRow["hours"]) . "\""
-        . " data-business-hours-icon=\"" . html($aRow["icon"]) . "\""
+        . " data-business-hours-icon=\"" . htmlEmoji($aRow["icon"]) . "\""
         . " data-business-hours-active=\"" . ((int)$aRow["is_active"] == 1 ? "1" : "0") . "\">\n"
         . "      <div class=\"business-hours-card-top\">" . $sTitleHtml . "<span class=\"business-hours-card-actions\"><a href=\"#\" class=\"item-action js-move-business-hours-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-business-hours-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-business-hours\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-business-hours\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></span></div>\n"
         . "      <div class=\"business-hours-address\">" . html($sAddressText) . "</div>\n"
@@ -1220,7 +1205,7 @@ function businessHoursRenderTabs($aRows) {
         if ((int)$aRow["is_active"] != 1) {
             continue;
         }
-        $sLabel = (string)$aRow["icon"] != "" ? htmlValue($aRow["icon"]) : (string)$iIndex;
+        $sLabel = trim((string)$aRow["icon"]) != "" ? htmlEmoji(trim((string)$aRow["icon"])) : (string)$iIndex;
         $sHtml .= "      <button type=\"button\" class=\"button-link business-hours-tab" . ($iIndex == 1 ? " business-hours-tab-active" : "") . "\" data-business-hours-tab-id=\"" . (int)$aRow["id"] . "\" role=\"tab\" aria-selected=\"" . ($iIndex == 1 ? "true" : "false") . "\" aria-label=\"Business Hours " . $iIndex . "\">" . $sLabel . "</button>\n";
         $iIndex++;
     }
@@ -1579,7 +1564,7 @@ function dashboardServiceStatusData($aRow) {
 }
 
 function dashboardServiceRenderRow($aRow) {
-    global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
+    global $sEditEmoji, $sDeleteEmoji, $sRefreshEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
 
     $sRowClass = (int)$aRow["is_active"] == 1 ? "" : " class=\"dashboard-service-inactive\"";
     $aStatus = dashboardServiceStatusData($aRow);
@@ -1606,7 +1591,7 @@ function dashboardServiceRenderRow($aRow) {
         . "<td class=\"dashboard-service-detail js-dashboard-service-detail\">" . ($aRow["message"] != "" ? html($aRow["message"]) : "") . "</td>"
         . "<td>" . ((int)$aRow["is_active"] == 1 ? "Yes" : "No") . "</td>"
         . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-dashboard-service-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-dashboard-service-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"
-        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-check-dashboard-service\" title=\"Check\" aria-label=\"Check\">&#128260;</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-dashboard-service\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-dashboard-service\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
+        . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-check-dashboard-service\" title=\"Check\" aria-label=\"Check\">" . $sRefreshEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-edit-dashboard-service\" title=\"Edit\" aria-label=\"Edit\">" . $sEditEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-delete-dashboard-service\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a></td>"
         . "</tr>\n";
 }
 
@@ -1790,16 +1775,6 @@ function dashboardServiceDelete($oPdo, $iServiceId) {
     }
 }
 
-function dashboardServiceGetHttpStatusCode($aHeaders) {
-    $iStatusCode = 0;
-    foreach ($aHeaders as $sHeader) {
-        if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", (string)$sHeader, $aMatches)) {
-            $iStatusCode = (int)$aMatches[1];
-        }
-    }
-    return $iStatusCode;
-}
-
 function dashboardServiceFetchUrl($sUrl) {
     if (function_exists("curl_init")) {
         $oCurl = curl_init($sUrl);
@@ -1841,7 +1816,7 @@ function dashboardServiceFetchUrl($sUrl) {
     if (!is_array($aHeaders)) {
         $aHeaders = array();
     }
-    $iStatusCode = dashboardServiceGetHttpStatusCode($aHeaders);
+    $iStatusCode = getHttpStatusCode($aHeaders);
     $aError = error_get_last();
     return array(
         "status_code" => $iStatusCode,
@@ -2240,7 +2215,7 @@ function issueTrackerDueDateIsOverdue($sDueDate) {
 }
 
 function issueTrackerRenderRow($aRow) {
-    global $sEditEmoji, $sDeleteEmoji;
+    global $sEditEmoji, $sDeleteEmoji, $sRefreshEmoji, $sDoneEmoji;
 
     $aTypes = issueTrackerTypeLabels();
     $aStatuses = issueTrackerStatusLabels();
@@ -2249,7 +2224,7 @@ function issueTrackerRenderRow($aRow) {
     $sDueDate = (string)$aRow["due_date"];
     $sDueClass = "";
     $sToggleTitle = $aRow["status"] == "done" ? "Reopen" : "Mark done";
-    $sToggleEmoji = $aRow["status"] == "done" ? "&#128260;" : "&#9989;";
+    $sToggleEmoji = $aRow["status"] == "done" ? $sRefreshEmoji : $sDoneEmoji;
     $sRowClass = $aRow["status"] == "done" ? " class=\"issue-row-done\"" : "";
     if ($aRow["status"] != "done" && issueTrackerDueDateIsOverdue($sDueDate)) {
         $sDueClass = " issue-due-overdue";
@@ -2437,97 +2412,12 @@ function phoneAccountsGetPostedPaidAt() {
     return $mPaidAt;
 }
 
-function phoneAccountsGetDefaultCurrency() {
-    return "USD";
-}
-
-function phoneAccountsNormalizeCurrency($sCurrency) {
-    $sCurrency = strtoupper(trim((string)$sCurrency));
-    return preg_match("/^[A-Z]{3}$/", $sCurrency) ? $sCurrency : "";
-}
-
-function phoneAccountsNormalizeStoredCurrency($sCurrency) {
-    $sCurrency = phoneAccountsNormalizeCurrency($sCurrency);
-    return $sCurrency != "" ? $sCurrency : phoneAccountsGetDefaultCurrency();
-}
-
-function phoneAccountsGetCurrencyOptions($oPdo, $sSelectedCurrency = "") {
-    $sCurrencySeparator = " " . html_entity_decode("&#8212;", ENT_QUOTES, "UTF-8") . " ";
-    $aCurrencies = array(
-        "CZK" => array("currency" => "CZK", "label" => "CZK" . $sCurrencySeparator . "Czech koruna")
-    );
-    try {
-        $oStatement = $oPdo->query("SELECT currency_code, MIN(currency) AS currency_name FROM kf_exchange_rates GROUP BY currency_code ORDER BY currency_code ASC");
-        while ($aRow = $oStatement->fetch()) {
-            $sCurrency = phoneAccountsNormalizeCurrency($aRow["currency_code"]);
-            if ($sCurrency == "") {
-                continue;
-            }
-            $sCurrencyName = trim((string)$aRow["currency_name"]);
-            $aCurrencies[$sCurrency] = array(
-                "currency" => $sCurrency,
-                "label" => $sCurrencyName != "" ? $sCurrency . $sCurrencySeparator . $sCurrencyName : $sCurrency
-            );
-        }
-    } catch (Exception $oException) {
-        error_log((string)$oException);
-    }
-    $sSelectedCurrency = phoneAccountsNormalizeCurrency($sSelectedCurrency);
-    if ($sSelectedCurrency != "" && !isset($aCurrencies[$sSelectedCurrency])) {
-        $aCurrencies[$sSelectedCurrency] = array("currency" => $sSelectedCurrency, "label" => $sSelectedCurrency);
-    }
-    ksort($aCurrencies);
-    return array_values($aCurrencies);
-}
-
-function phoneAccountsIsCurrencyAvailable($oPdo, $sCurrency) {
-    $sCurrency = phoneAccountsNormalizeCurrency($sCurrency);
-    if ($sCurrency == "") {
-        return false;
-    }
-    if ($sCurrency == "CZK") {
-        return true;
-    }
-    try {
-        $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_exchange_rates WHERE currency_code = :currency_code");
-        $oStatement->execute(array("currency_code" => $sCurrency));
-        return (int)$oStatement->fetchColumn() > 0;
-    } catch (Exception $oException) {
-        error_log((string)$oException);
-        return false;
-    }
-}
-
-function phoneAccountsParseAmount($sValue) {
-    $sMinus = html_entity_decode("&#8722;", ENT_QUOTES, "UTF-8");
-    $sValue = str_replace(array(" ", "\xc2\xa0", $sMinus), array("", "", "-"), trim((string)$sValue));
-    $iCommaPosition = strrpos($sValue, ",");
-    $iDotPosition = strrpos($sValue, ".");
-    if ($iCommaPosition !== false && $iDotPosition !== false) {
-        if ($iCommaPosition > $iDotPosition) {
-            $sValue = str_replace(".", "", $sValue);
-            $sValue = str_replace(",", ".", $sValue);
-        } else {
-            $sValue = str_replace(",", "", $sValue);
-        }
-    } elseif ($iCommaPosition !== false) {
-        $sValue = str_replace(",", ".", $sValue);
-    }
-    return is_numeric($sValue) ? (float)$sValue : null;
-}
-
-function phoneAccountsFormatAmount($mAmount) {
-    $fAmount = round((float)$mAmount, 2);
-    $sAmount = number_format(abs($fAmount), 2, ".", ",");
-    return $fAmount < 0 ? html_entity_decode("&#8722;", ENT_QUOTES, "UTF-8") . $sAmount : $sAmount;
-}
-
 function phoneAccountsGetPostedPaidAmount() {
     $sPaidAmount = getPostedTrimmedValue("paid_amount");
     if ($sPaidAmount == "") {
         return null;
     }
-    $mPaidAmount = phoneAccountsParseAmount($sPaidAmount);
+    $mPaidAmount = parseAmount($sPaidAmount);
     if ($mPaidAmount === null) {
         sendJsonAndExit(array("success" => false, "message" => "Paid amount is invalid."), 400);
     }
@@ -2541,29 +2431,31 @@ function phoneAccountsGetPostedPaidAmount() {
 }
 
 function phoneAccountsGetPostedPaidCurrency($oPdo) {
-    $sPaidCurrency = phoneAccountsNormalizeStoredCurrency(getPostedTrimmedValue("paid_currency", phoneAccountsGetDefaultCurrency()));
-    if (!phoneAccountsIsCurrencyAvailable($oPdo, $sPaidCurrency)) {
+    $sPaidCurrency = normalizeStoredCurrency(getPostedTrimmedValue("paid_currency"));
+    if (!isCurrencyAvailable($oPdo, $sPaidCurrency)) {
         sendJsonAndExit(array("success" => false, "message" => "Paid currency is not available."), 400);
     }
     return $sPaidCurrency;
 }
 
 function phoneAccountsGetNewDefaults($oPdo) {
+    global $sDefaultCurrency;
+
     $aDefaults = array(
         "paid_amount" => "",
-        "paid_currency" => phoneAccountsGetDefaultCurrency()
+        "paid_currency" => $sDefaultCurrency
     );
     if (!isset($_SESSION["lm_new_phone_account_defaults"]) || !is_array($_SESSION["lm_new_phone_account_defaults"])) {
         return $aDefaults;
     }
-    $sPaidCurrency = isset($_SESSION["lm_new_phone_account_defaults"]["paid_currency"]) ? phoneAccountsNormalizeCurrency($_SESSION["lm_new_phone_account_defaults"]["paid_currency"]) : "";
-    if ($sPaidCurrency != "" && phoneAccountsIsCurrencyAvailable($oPdo, $sPaidCurrency)) {
+    $sPaidCurrency = isset($_SESSION["lm_new_phone_account_defaults"]["paid_currency"]) ? normalizeCurrency($_SESSION["lm_new_phone_account_defaults"]["paid_currency"]) : "";
+    if ($sPaidCurrency != "" && isCurrencyAvailable($oPdo, $sPaidCurrency)) {
         $aDefaults["paid_currency"] = $sPaidCurrency;
     }
     $sPaidAmount = isset($_SESSION["lm_new_phone_account_defaults"]["paid_amount"]) ? trim((string)$_SESSION["lm_new_phone_account_defaults"]["paid_amount"]) : "";
-    $mPaidAmount = $sPaidAmount != "" ? phoneAccountsParseAmount($sPaidAmount) : null;
+    $mPaidAmount = $sPaidAmount != "" ? parseAmount($sPaidAmount) : null;
     if ($mPaidAmount !== null && $mPaidAmount >= 0 && $mPaidAmount < 10000000000000) {
-        $aDefaults["paid_amount"] = phoneAccountsFormatAmount($mPaidAmount);
+        $aDefaults["paid_amount"] = formatAmount($mPaidAmount);
     }
     return $aDefaults;
 }
@@ -2572,8 +2464,8 @@ function phoneAccountsSaveNewDefaults($mPaidAmount, $sPaidCurrency) {
     if (!isset($_SESSION["lm_new_phone_account_defaults"]) || !is_array($_SESSION["lm_new_phone_account_defaults"])) {
         $_SESSION["lm_new_phone_account_defaults"] = array();
     }
-    $_SESSION["lm_new_phone_account_defaults"]["paid_currency"] = phoneAccountsNormalizeStoredCurrency($sPaidCurrency);
-    $_SESSION["lm_new_phone_account_defaults"]["paid_amount"] = $mPaidAmount === null ? "" : phoneAccountsFormatAmount($mPaidAmount);
+    $_SESSION["lm_new_phone_account_defaults"]["paid_currency"] = normalizeStoredCurrency($sPaidCurrency);
+    $_SESSION["lm_new_phone_account_defaults"]["paid_amount"] = $mPaidAmount === null ? "" : formatAmount($mPaidAmount);
 }
 
 function phoneAccountsFetchRows($oPdo, $sKey = "") {
@@ -2594,7 +2486,7 @@ function phoneAccountsFetchRows($oPdo, $sKey = "") {
             "imei" => (string)$aRow["imei"],
             "note" => (string)$aRow["note"],
             "paid_amount" => $aRow["paid_amount"] === null ? null : (string)$aRow["paid_amount"],
-            "paid_currency" => phoneAccountsNormalizeStoredCurrency($aRow["paid_currency"]),
+            "paid_currency" => normalizeStoredCurrency($aRow["paid_currency"]),
             "paid_at" => (string)$aRow["paid_at_text"],
             "created_at" => (string)$aRow["created_at_text"],
             "updated_at" => (string)$aRow["updated_at_text"]
@@ -2622,7 +2514,7 @@ function phoneAccountsFetchRows($oPdo, $sKey = "") {
 }
 
 function phoneAccountsRenderPhoneNumber($sValue) {
-    global $sCopyEmoji;
+    global $sCopyEmoji, $sContactCellEmoji;
 
     $sDisplayValue = phoneContactDisplayValue($sValue);
     $sHref = phoneContactHref($sValue);
@@ -2635,11 +2527,11 @@ function phoneAccountsRenderPhoneNumber($sValue) {
     if ($sHref == "") {
         return $sHtml;
     }
-    return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"contact-link\" href=\"" . html($sHref) . "\" title=\"Call cell phone\" aria-label=\"Call cell phone\">&#128241;</a>";
+    return $sHtml . ($blHasIcon ? "" : " ") . "<a class=\"contact-link\" href=\"" . html($sHref) . "\" title=\"Call cell phone\" aria-label=\"Call cell phone\">" . $sContactCellEmoji . "</a>";
 }
 
 function phoneAccountsRenderTelegramAccount($sValue) {
-    global $sEmptyValueEmoji;
+    global $sEmptyValueEmoji, $sContactTelegramEmoji;
 
     $sValue = trim((string)$sValue);
     $sHref = normalizeTelegramContactValue($sValue);
@@ -2651,7 +2543,7 @@ function phoneAccountsRenderTelegramAccount($sValue) {
     if ($sHref === false || $sHref == "") {
         return $sHtml;
     }
-    return $sHtml . " <a class=\"contact-link\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\" title=\"Open Telegram\" aria-label=\"Open Telegram\">&#9992;&#65039;</a>";
+    return $sHtml . " <a class=\"contact-link\" href=\"" . html($sHref) . "\" target=\"_blank\" rel=\"noopener noreferrer\" title=\"Open Telegram\" aria-label=\"Open Telegram\">" . $sContactTelegramEmoji . "</a>";
 }
 
 function phoneAccountsRenderTextValue($sValue) {
@@ -2667,15 +2559,15 @@ function phoneAccountsRenderPaidAmount($mAmount, $sCurrency) {
     if ($mAmount === null || (string)$mAmount == "") {
         return $sEmptyValueEmoji;
     }
-    return html(phoneAccountsFormatAmount($mAmount) . " " . phoneAccountsNormalizeStoredCurrency($sCurrency));
+    return html(formatAmount($mAmount) . " " . normalizeStoredCurrency($sCurrency));
 }
 
 function phoneAccountsRenderRow($aRow, $blSecretsUnlocked) {
-    global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji, $sEmptyValueEmoji;
+    global $sEditEmoji, $sDeleteEmoji, $sMoveUpEmoji, $sMoveDownEmoji, $sEmptyValueEmoji, $sLockedEmoji;
 
     $sNote = trim((string)$aRow["note"]);
     $sPhoneDisplayValue = phoneContactDisplayValue($aRow["number"]);
-    $sPaidAmount = $aRow["paid_amount"] === null ? "" : phoneAccountsFormatAmount($aRow["paid_amount"]);
+    $sPaidAmount = $aRow["paid_amount"] === null ? "" : formatAmount($aRow["paid_amount"]);
     $sHtml = "      <tr data-phone-account-id=\"" . (int)$aRow["id"] . "\""
         . " data-phone-account-order=\"" . html($aRow["order"]) . "\""
         . " data-phone-account-number=\"" . html($sPhoneDisplayValue) . "\""
@@ -2701,18 +2593,18 @@ function phoneAccountsRenderRow($aRow, $blSecretsUnlocked) {
             . "<td class=\"phone-account-sim-id\">" . phoneAccountsRenderTextValue($aRow["sim_id"]) . "</td>"
             . "<td class=\"phone-account-imei\">" . phoneAccountsRenderTextValue($aRow["imei"]) . "</td>";
     } else {
-        $sHtml .= "<td class=\"phone-account-token\">&#128274;</td>"
-            . "<td class=\"phone-account-token\">&#128274;</td>"
-            . "<td class=\"phone-account-token\">&#128274;</td>"
-            . "<td class=\"phone-account-sim-id\">&#128274;</td>"
-            . "<td class=\"phone-account-imei\">&#128274;</td>";
+        $sHtml .= "<td class=\"phone-account-token\">" . $sLockedEmoji . "</td>"
+            . "<td class=\"phone-account-token\">" . $sLockedEmoji . "</td>"
+            . "<td class=\"phone-account-token\">" . $sLockedEmoji . "</td>"
+            . "<td class=\"phone-account-sim-id\">" . $sLockedEmoji . "</td>"
+            . "<td class=\"phone-account-imei\">" . $sLockedEmoji . "</td>";
     }
     $sHtml .= "<td class=\"phone-account-date\">" . ($aRow["paid_at"] != "" ? renderDateTimeWithNbspIndent($aRow["paid_at"]) : $sEmptyValueEmoji) . "</td>"
         . "<td class=\"phone-account-amount numeric\">" . phoneAccountsRenderPaidAmount($aRow["paid_amount"], $aRow["paid_currency"]) . "</td>";
     if ($blSecretsUnlocked) {
         $sHtml .= "<td class=\"phone-account-note\">" . ($sNote != "" ? nl2br(html($sNote), false) : $sEmptyValueEmoji) . "</td>";
     } else {
-        $sHtml .= "<td class=\"phone-account-note\">&#128274;</td>";
+        $sHtml .= "<td class=\"phone-account-note\">" . $sLockedEmoji . "</td>";
     }
     $sHtml .= "<td class=\"phone-account-date\">" . renderDateTimeWithNbspIndent($aRow["updated_at"]) . "</td>"
         . "<td class=\"admin-action-column\"><a href=\"#\" class=\"item-action js-move-phone-account-up\" title=\"Move up\" aria-label=\"Move up\">" . $sMoveUpEmoji . "</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href=\"#\" class=\"item-action js-move-phone-account-down\" title=\"Move down\" aria-label=\"Move down\">" . $sMoveDownEmoji . "</a></td>"

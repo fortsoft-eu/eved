@@ -1696,7 +1696,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oButton.type = "button";
         oButton.className = "complex-filter-date-button subject-date-button";
         oButton.setAttribute("aria-label", "Open calendar");
-        oButton.textContent = "\u25BE";
+        oButton.textContent = getAdminEmoji("calendar-toggle");
         oCalendar.className = "subject-date-calendar complex-filter-date-calendar";
         oCalendar.style.display = "none";
         bindComplexFilterDateCalendar(oInput, oButton, oCalendar, oWrapper);
@@ -4892,7 +4892,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (document.body) {
         iSubjectCalendarFirstDay = parseInt(document.body.getAttribute("data-calendar-first-day") || "1", 10);
-        sSubjectDateInputFormat = document.body.getAttribute("data-date-input-format") || sSubjectDateInputFormat;
         blHideSubjectBirthNumber = document.body.getAttribute("data-hide-subject-birth-number") == "1";
         blShowComputedSubjectName = document.body.getAttribute("data-show-computed-subject-name") == "1";
     }
@@ -5088,7 +5087,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oButton.type = "button";
         oButton.className = "subject-date-button";
         oButton.setAttribute("aria-label", "Open calendar");
-        oButton.textContent = "\u25BE";
+        oButton.textContent = getAdminEmoji("calendar-toggle");
         oCalendar.className = "subject-date-calendar";
         oCalendar.style.display = "none";
         oCalendar.addEventListener("mousedown", function (oEvent) {

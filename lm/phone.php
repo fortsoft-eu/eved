@@ -93,7 +93,7 @@ try {
     $aPhoneAccountRows = phoneAccountsFetchRows($oPdo, $sLmEncryptionKey);
     $sPhoneAccountsHtml = phoneAccountsRenderRows($oPdo, $sLmEncryptionKey, $aPhoneAccountRows);
     $aPhoneAccountDefaults = phoneAccountsGetNewDefaults($oPdo);
-    $aPhoneAccountCurrencies = phoneAccountsGetCurrencyOptions($oPdo, $aPhoneAccountDefaults["paid_currency"]);
+    $aPhoneAccountCurrencies = getCurrencyOptions($oPdo, $aPhoneAccountDefaults["paid_currency"]);
 } catch (Exception $oException) {
     error_log((string)$oException);
     send500AndExit("Database error: " . $oException->getMessage());

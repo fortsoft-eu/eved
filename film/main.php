@@ -7,6 +7,7 @@ $sExtension                     = ".avif";
 $sFilterFocusEmoji              = "&#128269;";
 $sMenuEmoji                     = "&#9776;";
 $sFilmMenuEmoji                 = "&#127902;&#65039;";
+$sEquipmentLinkEmoji            = "&#128279;";
 
 
 ini_set("log_errors", "1");

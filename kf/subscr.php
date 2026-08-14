@@ -276,7 +276,8 @@ if (!$aRows) {
         "  </table>\n";
 }
 echo
-    renderSettingsModal($aSettings);
+    renderSettingsModal($aSettings),
+    renderEmojiData();
 
 ?>
   <button type="button" class="filter-focus-button js-filter-focus" data-filter-input="table-filter" title="Focus filter" aria-label="Focus filter"><?php echo $sFilterFocusEmoji; ?> Filter</button>

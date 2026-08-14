@@ -32,51 +32,6 @@ function renderTimestampTooltipDataAttribute($aRow) {
     return " data-timestamp-tooltip=\"" . str_replace("\n", "&#10;", html($sText)) . "\"";
 }
 
-function renderEmojiData() {
-    global $sEditEmoji, $sDeleteEmoji, $sAddEmoji, $sHiddenInactiveEmoji, $sPortalEmoji, $sEmptyValueEmoji;
-    global $sThrobberEmoji, $sFilterFocusEmoji, $sCopyEmoji, $sCopySuccessEmoji, $sCopyFailureEmoji;
-    global $sPrimaryEmoji, $sInactiveEmoji, $sMergeEmoji, $sMoveUpEmoji, $sMoveDownEmoji;
-    global $sBirthdayServedEmoji, $sCommunicationServedEmoji, $sContactEmailEmoji, $sContactLandlineEmoji;
-    global $sContactCellEmoji, $sContactFaxEmoji, $sContactPagerEmoji, $sContactWebEmoji;
-    global $sContactTelegramEmoji, $sContactMessageEmoji, $sContactYouTubeEmoji;
-
-    $aValues = array(
-        "edit" => $sEditEmoji,
-        "delete" => $sDeleteEmoji,
-        "add" => $sAddEmoji,
-        "hidden-inactive" => $sHiddenInactiveEmoji,
-        "portal" => $sPortalEmoji,
-        "empty-value" => $sEmptyValueEmoji,
-        "throbber" => $sThrobberEmoji,
-        "filter-focus" => $sFilterFocusEmoji,
-        "copy" => $sCopyEmoji,
-        "copy-success" => $sCopySuccessEmoji,
-        "copy-failure" => $sCopyFailureEmoji,
-        "primary" => $sPrimaryEmoji,
-        "inactive" => $sInactiveEmoji,
-        "merge" => $sMergeEmoji,
-        "move-up" => $sMoveUpEmoji,
-        "move-down" => $sMoveDownEmoji,
-        "birthday-served" => $sBirthdayServedEmoji,
-        "communication-served" => $sCommunicationServedEmoji,
-        "contact-email" => $sContactEmailEmoji,
-        "contact-landline" => $sContactLandlineEmoji,
-        "contact-cell" => $sContactCellEmoji,
-        "contact-fax" => $sContactFaxEmoji,
-        "contact-pager" => $sContactPagerEmoji,
-        "contact-web" => $sContactWebEmoji,
-        "contact-telegram" => $sContactTelegramEmoji,
-        "contact-message" => $sContactMessageEmoji,
-        "contact-youtube" => $sContactYouTubeEmoji
-    );
-    $sHtml = "  <span id=\"emoji-data\" hidden";
-    foreach ($aValues as $sKey => $sValue) {
-        $sHtml .= " data-" . $sKey . "=\"" . html(html_entity_decode((string)$sValue, ENT_QUOTES | ENT_HTML5, "UTF-8")) . "\"";
-    }
-    return $sHtml . "></span>\n";
-}
-
-
 function renderPageThrobber() {
     global $sThrobberEmoji;
 
@@ -2562,18 +2517,6 @@ function exCalendarAddPersonNameDays(&$aHolidays, $oPdo, $iYear) {
     ksort($aHolidays);
 }
 
-function exCalendarGetExternalCalendarHttpStatusCode($aHeaders) {
-    $iStatusCode = 0;
-    if ($aHeaders) {
-        foreach ($aHeaders as $sHeader) {
-            if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", (string)$sHeader, $aMatches)) {
-                $iStatusCode = (int)$aMatches[1];
-            }
-        }
-    }
-    return $iStatusCode;
-}
-
 function exCalendarFetchExternalCalendarResponse($sUrl) {
     if (function_exists("curl_init")) {
         $oCurl = curl_init($sUrl);
@@ -2615,7 +2558,7 @@ function exCalendarFetchExternalCalendarResponse($sUrl) {
     if (!$aResponseHeaders) {
         $aResponseHeaders = array();
     }
-    $iStatusCode = exCalendarGetExternalCalendarHttpStatusCode($aResponseHeaders);
+    $iStatusCode = getHttpStatusCode($aResponseHeaders);
     $aError = error_get_last();
     return array(
         "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
@@ -5326,7 +5269,7 @@ function fetchPhoneBookRows($oPdo, $iPhoneBook = 0) {
 }
 
 function contactsRenderPhoneBookAction($aSubject) {
-    $sPhoneBookEmoji = "&#128242;";
+    global $sPhoneBookEmoji;
 
     if (!isPhoneContactType(contactTypeKey($aSubject["contact_type"])) || !empty($aSubject["phone_book_contact"]) || (int)$aSubject["is_active"] != 1 || (int)$aSubject["contact_is_active"] != 1) {
         return "";

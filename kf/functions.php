@@ -170,65 +170,6 @@ function renderSettingsModal($aSettings = null) {
         . "  </div>\n";
 }
 
-function normalizeCurrency($sCurrency) {
-    $sCurrency = strtoupper(trim((string)$sCurrency));
-    return preg_match("/^[A-Z]{3}$/", $sCurrency) ? $sCurrency : "";
-}
-
-function normalizeStoredCurrency($sCurrency) {
-    global $sDefaultCurrency;
-
-    $sCurrency = normalizeCurrency($sCurrency);
-    return $sCurrency != "" ? $sCurrency : $sDefaultCurrency;
-}
-
-function getCurrencyOptions($oPdo, $sSelectedCurrency = "") {
-    $sCurrencySeparator = " " . html_entity_decode("&#8212;", ENT_QUOTES, "UTF-8") . " ";
-    $aCurrencies = array(
-        "CZK" => array("currency" => "CZK", "label" => "CZK" . $sCurrencySeparator . "Czech koruna")
-    );
-    try {
-        $oStatement = $oPdo->query("SELECT currency_code, MIN(currency) AS currency_name FROM kf_exchange_rates GROUP BY currency_code ORDER BY currency_code ASC");
-        while ($aRow = $oStatement->fetch()) {
-            $sCurrency = normalizeCurrency($aRow["currency_code"]);
-            if ($sCurrency == "") {
-                continue;
-            }
-            $sCurrencyName = trim((string)$aRow["currency_name"]);
-            $aCurrencies[$sCurrency] = array(
-                "currency" => $sCurrency,
-                "label" => $sCurrencyName != "" ? $sCurrency . $sCurrencySeparator . $sCurrencyName : $sCurrency
-            );
-        }
-    } catch (Exception $oException) {
-        error_log((string)$oException);
-    }
-    $sSelectedCurrency = normalizeCurrency($sSelectedCurrency);
-    if ($sSelectedCurrency != "" && !isset($aCurrencies[$sSelectedCurrency])) {
-        $aCurrencies[$sSelectedCurrency] = array("currency" => $sSelectedCurrency, "label" => $sSelectedCurrency);
-    }
-    ksort($aCurrencies);
-    return array_values($aCurrencies);
-}
-
-function isCurrencyAvailable($oPdo, $sCurrency) {
-    $sCurrency = normalizeCurrency($sCurrency);
-    if ($sCurrency == "") {
-        return false;
-    }
-    if ($sCurrency == "CZK") {
-        return true;
-    }
-    try {
-        $oStatement = $oPdo->prepare("SELECT COUNT(*) FROM kf_exchange_rates WHERE currency_code = :currency_code");
-        $oStatement->execute(array("currency_code" => $sCurrency));
-        return (int)$oStatement->fetchColumn() > 0;
-    } catch (Exception $oException) {
-        error_log((string)$oException);
-        return false;
-    }
-}
-
 function getPostedCurrency($sName = "currency") {
     global $sDefaultCurrency;
 
@@ -358,31 +299,6 @@ function getDisplayCurrencyTotalAmount($oPdo, $aRows, $sDateColumn, $sDisplayCur
     );
 }
 
-function parseAmount($sValue) {
-    $sValue = str_replace(array(" ", "\xc2\xa0", "−"), array("", "", "-"), trim((string)$sValue));
-    $iCommaPosition = strrpos($sValue, ",");
-    $iDotPosition = strrpos($sValue, ".");
-    if ($iCommaPosition !== false && $iDotPosition !== false) {
-        if ($iCommaPosition > $iDotPosition) {
-            $sValue = str_replace(".", "", $sValue);
-            $sValue = str_replace(",", ".", $sValue);
-        } else {
-            $sValue = str_replace(",", "", $sValue);
-        }
-    } elseif ($iCommaPosition !== false) {
-        $sValue = str_replace(",", ".", $sValue);
-    }
-    return is_numeric($sValue) ? (float)$sValue : null;
-}
-
-function formatAmount($mAmount, $blUseEuropeanAmountFormat = false) {
-    $fAmount = round((float)$mAmount, 2);
-    $sDecimalSeparator = $blUseEuropeanAmountFormat ? "," : ".";
-    $sThousandsSeparator = $blUseEuropeanAmountFormat ? " " : ",";
-    $sAmount = number_format(abs($fAmount), 2, $sDecimalSeparator, $sThousandsSeparator);
-    return $fAmount < 0 ? "−" . $sAmount : $sAmount;
-}
-
 function formatDate($sDate) {
     $sNormalized = normalizeInputDate($sDate);
     return $sNormalized !== false ? $sNormalized : "";
@@ -400,22 +316,6 @@ function getFinanceTypes($blIncludeGroups = false) {
     $oStatement = $oPdo->query("SELECT id, type_kind, name FROM kf_fin_types " . $sWhere . " ORDER BY FIELD(type_kind, 'income', 'expense', 'group'), name ASC, id ASC");
     return $oStatement->fetchAll();
 }
-
-function kfRenderEmojiData() {
-    global $sCopyEmoji, $sCopySuccessEmoji, $sCopyFailureEmoji;
-
-    $aValues = array(
-        "copy" => $sCopyEmoji,
-        "copy-success" => $sCopySuccessEmoji,
-        "copy-failure" => $sCopyFailureEmoji
-    );
-    $sHtml = "  <span id=\"emoji-data\" hidden";
-    foreach ($aValues as $sKey => $sValue) {
-        $sHtml .= " data-" . $sKey . "=\"" . html(html_entity_decode((string)$sValue, ENT_QUOTES | ENT_HTML5, "UTF-8")) . "\"";
-    }
-    return $sHtml . "></span>\n";
-}
-
 
 function fetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
     $sTerm = trim((string)$sTerm);
@@ -1037,18 +937,6 @@ function reserveExchangeRateFetchAttempt($oPdo, $sRequestedFor) {
     }
 }
 
-function getExchangeRateHttpStatusCode($aHeaders) {
-    $iStatusCode = 0;
-    if ($aHeaders) {
-        foreach ($aHeaders as $sHeader) {
-            if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", (string)$sHeader, $aMatches)) {
-                $iStatusCode = (int)$aMatches[1];
-            }
-        }
-    }
-    return $iStatusCode;
-}
-
 function fetchExchangeRateApiResponse($sRequestedFor) {
     $sUrl = "https://api.cnb.cz/cnbapi/exrates/daily?" . http_build_query(array("date" => $sRequestedFor, "lang" => "EN"), "", "&");
     if (function_exists("curl_init")) {
@@ -1077,7 +965,7 @@ function fetchExchangeRateApiResponse($sRequestedFor) {
         )
     );
     $sBody = @file_get_contents($sUrl, false, stream_context_create($aContext));
-    $iStatusCode = getExchangeRateHttpStatusCode(http_get_last_response_headers());
+    $iStatusCode = getHttpStatusCode(http_get_last_response_headers());
     $aError = error_get_last();
     return array(
         "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,

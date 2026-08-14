@@ -11,12 +11,19 @@ $sCopySuccessEmoji              = "&#10004;&#65039;";
 $sCopyFailureEmoji              = "&#10060;&#65039;";
 $sEmptyValueEmoji               = "&#10134;";
 $sPrimaryEmoji                  = "&#11088;";
+$sCalendarToggleEmoji           = "&#9662;";
 $sSubscriptionServedEmoji       = "&#9745;&#65039;";
 $sContactEmailEmoji             = "&#128231;";
 $sContactLandlineEmoji          = "&#128222;";
 $sContactCellEmoji              = "&#128241;";
 $sContactFaxEmoji               = "&#128224;";
 $sContactPagerEmoji             = "&#128223;";
+$aEmojiData                     = array(
+    "copy" => $sCopyEmoji,
+    "copy-success" => $sCopySuccessEmoji,
+    "copy-failure" => $sCopyFailureEmoji,
+    "calendar-toggle" => $sCalendarToggleEmoji
+);
 $sDefaultCurrency               = "USD";
 
 

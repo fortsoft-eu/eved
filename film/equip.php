@@ -243,7 +243,7 @@ foreach ($aEquipment as $aRow) {
     $sEquipmentLabel = formatEquipmentOptionLabel($aRow);
     $sAssociatedEquipment = $aRow["associated_equipment"] ? html(implode("; ", $aRow["associated_equipment"])) : "&mdash;";
     $sEquipmentLinked = (int)$aRow["equipment_group_size"] > 1 ? "1" : "0";
-    $sActionCell = $blShowEquipmentActions ? "<a href=\"#\" class=\"item-action js-equipment-link\" data-equipment-id=\"" . (int)$aRow["id"] . "\" data-equipment-label=\"" . $sEquipmentLabel . "\" data-equipment-linked=\"" . $sEquipmentLinked . "\" title=\"Create equipment link\" aria-label=\"Create equipment link\">&#128279;</a>" : "";
+    $sActionCell = $blShowEquipmentActions ? "<a href=\"#\" class=\"item-action js-equipment-link\" data-equipment-id=\"" . (int)$aRow["id"] . "\" data-equipment-label=\"" . $sEquipmentLabel . "\" data-equipment-linked=\"" . $sEquipmentLinked . "\" title=\"Create equipment link\" aria-label=\"Create equipment link\">" . $sEquipmentLinkEmoji . "</a>" : "";
     $sGroupAttributes = (int)$aRow["equipment_group_size"] > 1 ? " data-order-id=\"" . html((string)$aRow["equipment_group_id"]) . "\" data-order-no=\"" . html((string)$aRow["equipment_group_id"]) . "\"" : "";
     $sAcquiredAt = html($sAcquiredAt);
     $sRetiredAt = html($sRetiredAt);
