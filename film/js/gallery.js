@@ -329,42 +329,6 @@ function openFancyboxGroupFromAnchor(a) {
     });
 }
 
-function prepareImagesForScreenshot(container) {
-    const replacements = [];
-    container.querySelectorAll("img").forEach(img => {
-        const style = getComputedStyle(img);
-        const objectFit = style.objectFit;
-        if (objectFit === "cover" || objectFit === "contain") {
-            const src = img.src;
-            const width = img.clientWidth;
-            const height = img.clientHeight;
-            const parent = img.parentNode;
-            const div = document.createElement("div");
-            div.style.width = width + "px";
-            div.style.height = height + "px";
-            div.style.backgroundImage = `url('${src}')`;
-            div.style.backgroundSize = objectFit;
-            div.style.backgroundPosition = "center";
-            div.style.backgroundRepeat = "no-repeat";
-            parent.replaceChild(div, img);
-            replacements.push({
-                parent,
-                div,
-                img
-            });
-        }
-    });
-    return function restoreDom() {
-        replacements.forEach(({
-                parent,
-                div,
-                img
-            }) => {
-            parent.replaceChild(img, div);
-        });
-    }
-}
-
 function onMetadataSubmit(form) {
     var id = form.querySelector('input[name="id"]').value;
     var metadataValue = form.querySelector('input[name="metadata"]').value;
@@ -390,31 +354,78 @@ function onSetChange(selectElement) {
     app.DoHandleLink(id, document.title, url, "_self", false, true);
 }
 
+function setSavePngExportDisabled(button, blDisabled) {
+    var dropdown = button && button.closest ? button.closest(".btn-group") : null;
+    var toggle = dropdown ? dropdown.querySelector(".dropdown-toggle") : null;
+    var links = dropdown ? dropdown.querySelectorAll(".js-save-png") : null;
+    var i;
+
+    function applyDisabledState() {
+        dropdown.setAttribute("data-exporting", blDisabled ? "true" : "false");
+        if (toggle) {
+            toggle.disabled = blDisabled;
+        }
+        for (i = 0; i < links.length; i += 1) {
+            if (blDisabled) {
+                links[i].setAttribute("aria-disabled", "true");
+                links[i].parentNode.classList.add("disabled");
+            } else {
+                links[i].removeAttribute("aria-disabled");
+                links[i].parentNode.classList.remove("disabled");
+            }
+        }
+    }
+
+    if (!dropdown || !links) {
+        return;
+    }
+    if (blDisabled) {
+        applyDisabledState();
+        return;
+    }
+    window.setTimeout(applyDisabledState, 1000);
+}
+
 function onSavePng(button, fileName) {
-    button.disabled = true;
     const element = document.getElementById("main-content-gallery");
-    const restoreDom = prepareImagesForScreenshot(element);
-    html2canvas(element, {
-        scale: 3
+    const scale = parseInt(button.getAttribute("data-scale"), 10);
+    const dropdown = button && button.closest ? button.closest(".btn-group") : null;
+    if (!element || typeof snapdom !== "function" || typeof snapdom.toCanvas !== "function" || isNaN(scale) || scale < 1 || scale > 5 || (dropdown && dropdown.getAttribute("data-exporting") === "true")) {
+        return;
+    }
+    setSavePngExportDisabled(button, true);
+    snapdom.toCanvas(element, {
+        backgroundColor: "#FFF",
+        dpr: 1,
+        scale: scale
     }).then(canvas => {
-        restoreDom();
         canvas.toBlob(function (blob) {
             const link = document.createElement("a");
-            link.download = fileName + ".png";
+            link.download = fileName + "_" + scale + "x.png";
             link.href = URL.createObjectURL(blob);
             link.click();
             URL.revokeObjectURL(link.href);
-            button.disabled = false;
+            setSavePngExportDisabled(button, false);
         }, "image/png", 1.0);
     }).catch(error => {
+        setSavePngExportDisabled(button, false);
         console.error(error);
         logFilmException(error);
-        restoreDom();
-        button.disabled = false;
     });
 }
 
 function initializeGalleryControlHandlers() {
+    var oSavePngDragDropdown = null;
+    var blSavePngMenuWasOpen = false;
+    var blSuppressSavePngMenuClick = false;
+
+    function suppressSavePngMenuClick() {
+        blSuppressSavePngMenuClick = true;
+        window.setTimeout(function () {
+            blSuppressSavePngMenuClick = false;
+        }, 0);
+    }
+
     document.addEventListener("change", function (event) {
         var selectElement = event.target.closest ? event.target.closest(".js-gallery-select") : null;
         var setSelectElement;
@@ -437,13 +448,78 @@ function initializeGalleryControlHandlers() {
         onMetadataSubmit(form);
     }, true);
 
+    document.addEventListener("mousedown", function (event) {
+        var toggle = event.target.closest ? event.target.closest(".dropdown-toggle") : null;
+        var dropdown = toggle ? toggle.closest(".btn-group") : null;
+        if (!dropdown || !dropdown.querySelector(".js-save-png") || dropdown.getAttribute("data-exporting") === "true" || (typeof event.button != "undefined" && event.button !== 0)) {
+            return;
+        }
+        oSavePngDragDropdown = dropdown;
+        blSavePngMenuWasOpen = dropdown.classList.contains("open");
+        if (!blSavePngMenuWasOpen) {
+            dropdown.classList.add("open");
+            toggle.setAttribute("aria-expanded", "true");
+        }
+        event.preventDefault();
+        event.stopPropagation();
+    }, true);
+
+    document.addEventListener("mouseup", function (event) {
+        var dropdown = oSavePngDragDropdown;
+        var button = event.target.closest ? event.target.closest(".js-save-png") : null;
+        var toggle = event.target.closest ? event.target.closest(".dropdown-toggle") : null;
+        if (!dropdown) {
+            return;
+        }
+        oSavePngDragDropdown = null;
+        if (typeof event.button != "undefined" && event.button !== 0) {
+            return;
+        }
+        if (toggle && dropdown.contains(toggle)) {
+            if (blSavePngMenuWasOpen) {
+                dropdown.classList.remove("open");
+                toggle.setAttribute("aria-expanded", "false");
+            }
+            suppressSavePngMenuClick();
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
+        dropdown.classList.remove("open");
+        dropdown.querySelector(".dropdown-toggle").setAttribute("aria-expanded", "false");
+        if (!button || !dropdown.contains(button)) {
+            return;
+        }
+        suppressSavePngMenuClick();
+        event.preventDefault();
+        event.stopPropagation();
+        onSavePng(button, button.getAttribute("data-file-name") || "gallery");
+    }, true);
+
     document.addEventListener("click", function (event) {
         var button = event.target.closest ? event.target.closest(".js-save-png") : null;
+        var toggle = event.target.closest ? event.target.closest(".dropdown-toggle") : null;
+        var dropdown;
+        if (button && button.getAttribute("aria-disabled") === "true") {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
+        if (blSuppressSavePngMenuClick && (button || (toggle && toggle.closest(".btn-group") && toggle.closest(".btn-group").querySelector(".js-save-png")))) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
         if (!button) {
             return;
         }
         event.preventDefault();
         event.stopPropagation();
+        dropdown = button.closest(".btn-group");
+        if (dropdown) {
+            dropdown.classList.remove("open");
+            dropdown.querySelector(".dropdown-toggle").setAttribute("aria-expanded", "false");
+        }
         onSavePng(button, button.getAttribute("data-file-name") || "gallery");
     }, true);
 }

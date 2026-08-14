@@ -415,7 +415,16 @@ if ($oPdo) {
               <button class="btn btn-default" type="submit" aria-label="Save TXT">Save TXT</button>
             </form>
             <form method="get" action="<?php echo $sBaseUrl; ?>" enctype="application/x-www-form-urlencoded">
-              <button class="btn btn-default js-save-png" type="button" data-file-name="<?php echo html($sFileName); ?>" aria-label="Save PNG">Save PNG</button>
+              <div class="btn-group">
+                <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Save PNG <span class="caret" aria-hidden="true"></span></button>
+                <ul class="dropdown-menu">
+                  <li><a class="js-save-png" href="#" data-file-name="<?php echo html($sFileName); ?>" data-scale="1">Scale 1:1</a></li>
+                  <li><a class="js-save-png" href="#" data-file-name="<?php echo html($sFileName); ?>" data-scale="2">Scale 2:1</a></li>
+                  <li><a class="js-save-png" href="#" data-file-name="<?php echo html($sFileName); ?>" data-scale="3">Scale 3:1</a></li>
+                  <li><a class="js-save-png" href="#" data-file-name="<?php echo html($sFileName); ?>" data-scale="4">Scale 4:1</a></li>
+                  <li><a class="js-save-png" href="#" data-file-name="<?php echo html($sFileName); ?>" data-scale="5">Scale 5:1</a></li>
+                </ul>
+              </div>
             </form>
 <?php
 
@@ -610,7 +619,7 @@ if ($oPdo) {
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/headroom-0.11.0/headroom.min.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jstree-3.3.10/jstree.min.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/interactjs-1.10.27/interact.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/html2canvas-1.4.1/html2canvas.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/snapdom-2.23.1/snapdom.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/hndsd.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/hndse.min.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/app.min.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/app.min.js")); ?>"></script>

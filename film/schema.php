@@ -70,7 +70,16 @@ $iTime = sendPageHeaders();
 renderMenu();
 
 ?>
-    <button type="button" class="button-link js-schema-save-png" data-file-name="film_database_schema" aria-label="Save PNG">Save PNG</button>
+    <span class="menu png-export-menu js-schema-save-png-menu" data-menu>
+      <button type="button" class="button-link png-export-menu-button" data-menu-button aria-haspopup="true" aria-expanded="false">Save PNG<span class="png-export-menu-arrow" aria-hidden="true"><?php echo $sCalendarToggleEmoji; ?></span></button>
+      <span class="menu-panel png-export-menu-panel" data-menu-panel hidden>
+        <button type="button" class="menu-link png-export-menu-option js-schema-save-png" data-file-name="film_database_schema" data-scale="1">Scale 1:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-schema-save-png" data-file-name="film_database_schema" data-scale="2">Scale 2:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-schema-save-png" data-file-name="film_database_schema" data-scale="3">Scale 3:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-schema-save-png" data-file-name="film_database_schema" data-scale="4">Scale 4:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-schema-save-png" data-file-name="film_database_schema" data-scale="5">Scale 5:1</button>
+      </span>
+    </span>
   </p>
   <p class="schema-unavailable-message"><strong>Database Schema: </strong>The database schema cannot be displayed on this device.</p>
   <div class="schema-diagram" id="schema-diagram">
@@ -200,7 +209,7 @@ if (!$aRelations) {
 }
 
 ?>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/html2canvas-1.4.1/html2canvas.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/snapdom-2.23.1/snapdom.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

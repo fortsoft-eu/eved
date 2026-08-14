@@ -52,6 +52,23 @@ Source project:
 https://github.com/tinymce/tinymce
 
 
+vendors/snapdom-2.23.1/
+-------------------------
+
+SnapDOM 2.23.1
+
+Copyright (c) 2025 ZumerLab
+
+SnapDOM is licensed under the MIT License.
+
+See the bundled SnapDOM license:
+
+vendors/snapdom-2.23.1/LICENSE
+
+Source project:
+https://github.com/zumerlab/snapdom
+
+
 ex/lib/phone_metadata.xml
 -------------------------
 

@@ -692,6 +692,27 @@ function flashMenuLink(oMenuLink) {
     }
 }
 
+function setPngExportMenuDisabled(oMenuItem, blDisabled) {
+    var oMenu = oMenuItem && oMenuItem.closest ? oMenuItem.closest("[data-menu]") : null;
+    var aButtons = oMenu ? oMenu.querySelectorAll("button") : null;
+    var iI;
+
+    function applyDisabledState() {
+        for (iI = 0; iI < aButtons.length; iI += 1) {
+            aButtons[iI].disabled = blDisabled;
+        }
+    }
+
+    if (!aButtons) {
+        return;
+    }
+    if (blDisabled) {
+        applyDisabledState();
+        return;
+    }
+    window.setTimeout(applyDisabledState, 1000);
+}
+
 function isMenuActivating(oMenu) {
     return oMenu && oMenu.classList && oMenu.classList.contains("menu-activating");
 }
@@ -785,6 +806,17 @@ function setupMenu() {
                 return;
             }
             if (iButton !== 0) {
+                return;
+            }
+            if (oMenuLink.classList.contains("png-export-menu-option")) {
+                closeMenu(oMenu);
+                oMenuLink.click();
+                blSuppressNextMenuLinkClick = true;
+                window.setTimeout(function () {
+                    blSuppressNextMenuLinkClick = false;
+                }, 0);
+                oEvent.preventDefault();
+                oEvent.stopPropagation();
                 return;
             }
             blSuppressNextMenuLinkClick = true;
@@ -4278,34 +4310,108 @@ document.addEventListener("DOMContentLoaded", function () {
     setupIbanCalculator();
 });
 
+function getSchemaSnapdomLayoutPlugin() {
+    var oSource = null;
+
+    function cleanup() {
+        if (oSource && oSource.parentNode) {
+            oSource.parentNode.removeChild(oSource);
+        }
+        oSource = null;
+    }
+
+    return {
+        name: "schema-export-layout",
+        beforeSnap: function (oContext) {
+            var oDiagram = document.getElementById("schema-diagram");
+            var oRelations = document.querySelector(".schema-relations");
+            var oDiagramClone;
+            var oRelationsClone;
+            if (!oDiagram || !document.body) {
+                return;
+            }
+            cleanup();
+            oSource = document.createElement("div");
+            oSource.style.backgroundColor = "#FFF";
+            oSource.style.boxSizing = "border-box";
+            oSource.style.left = "-100000px";
+            oSource.style.padding = "6px";
+            oSource.style.pointerEvents = "none";
+            oSource.style.position = "fixed";
+            oSource.style.top = "0";
+            oSource.style.width = "1920px";
+            oDiagramClone = oDiagram.cloneNode(true);
+            oDiagramClone.style.display = "block";
+            oDiagramClone.style.overflow = "visible";
+            oDiagramClone.style.width = "100%";
+            oSource.appendChild(oDiagramClone);
+            if (oRelations) {
+                oRelationsClone = oRelations.cloneNode(true);
+                oRelationsClone.style.display = "table";
+                oSource.appendChild(oRelationsClone);
+            }
+            document.body.appendChild(oSource);
+            if (typeof window.drawSchemaRelationsForExport == "function") {
+                window.drawSchemaRelationsForExport(oSource);
+            }
+            oContext.element = oSource;
+        },
+        afterClone: function (oContext) {
+            var oClone = oContext && oContext.clone ? oContext.clone : null;
+            if (!oClone) {
+                return;
+            }
+            oClone.style.left = "0";
+            oClone.style.position = "relative";
+            oClone.style.top = "0";
+        },
+        afterRender: cleanup,
+        cleanup: cleanup
+    };
+}
+
 function setupSchemaSavePngButton() {
-    var oButton = document.querySelector(".js-schema-save-png");
-    if (!oButton) {
+    var aButtons = document.querySelectorAll(".js-schema-save-png");
+    var iI;
+    if (aButtons.length === 0) {
         return;
     }
-    oButton.addEventListener("click", function () {
-        var oElement = document.querySelector(".schema-grid");
-        var sFileName = oButton.getAttribute("data-file-name") || "database_schema";
-        if (!oElement || typeof html2canvas != "function") {
-            return;
-        }
-        oButton.disabled = true;
-        html2canvas(oElement, {
-            scale: 3
-        }).then(function (oCanvas) {
-            oCanvas.toBlob(function (oBlob) {
-                var oLink = document.createElement("a");
-                oLink.download = sFileName + ".png";
-                oLink.href = URL.createObjectURL(oBlob);
-                oLink.click();
-                URL.revokeObjectURL(oLink.href);
-                oButton.disabled = false;
-            }, "image/png", 1.0);
-        }).catch(function (oError) {
-            console.error(oError);
-            oButton.disabled = false;
-        });
-    });
+    for (iI = 0; iI < aButtons.length; iI += 1) {
+        (function (oButton) {
+            oButton.addEventListener("click", function () {
+                var iScale = parseInt(oButton.getAttribute("data-scale"), 10);
+                var oElement = document.body;
+                var oLayoutPlugin;
+                var sFileName = oButton.getAttribute("data-file-name") || "database_schema";
+                if (!oElement || typeof snapdom != "function" || typeof snapdom.toCanvas != "function" || isNaN(iScale) || iScale < 1 || iScale > 5) {
+                    return;
+                }
+                setPngExportMenuDisabled(oButton, true);
+                flashMenuLink(oButton);
+                oLayoutPlugin = getSchemaSnapdomLayoutPlugin();
+                snapdom.toCanvas(oElement, {
+                    backgroundColor: "#FFF",
+                    dpr: 1,
+                    plugins: [oLayoutPlugin],
+                    scale: iScale,
+                    width: 1920
+                }).then(function (oCanvas) {
+                    oCanvas.toBlob(function (oBlob) {
+                        var oLink = document.createElement("a");
+                        oLink.download = sFileName + "_" + iScale + "x.png";
+                        oLink.href = URL.createObjectURL(oBlob);
+                        oLink.click();
+                        URL.revokeObjectURL(oLink.href);
+                        setPngExportMenuDisabled(oButton, false);
+                    }, "image/png", 1.0);
+                }).catch(function (oError) {
+                    oLayoutPlugin.cleanup();
+                    console.error(oError);
+                    setPngExportMenuDisabled(oButton, false);
+                });
+            });
+        })(aButtons[iI]);
+    }
 }
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -4465,29 +4571,38 @@ document.addEventListener("DOMContentLoaded", function () {
         return sPath;
     }
 
-    function removeSchemaRelationElements() {
-        var aElements = oSvg.querySelectorAll(".schema-relation, .schema-relation-source, .schema-relation-target");
+    function removeSchemaRelationElements(oDrawSvg) {
+        var aElements = oDrawSvg.querySelectorAll(".schema-relation, .schema-relation-source, .schema-relation-target");
         for (var iI = 0; iI < aElements.length; iI += 1) {
             aElements[iI].parentNode.removeChild(aElements[iI]);
         }
     }
 
-    function drawRelations() {
-        var oCanvasRect = oCanvas.getBoundingClientRect();
-        var aSchemaTables = oCanvas.querySelectorAll(".schema-table");
+    function drawRelations(oRoot) {
+        var oDrawRoot = oRoot && typeof oRoot.querySelector == "function" ? oRoot : null;
+        var oDrawCanvas = oDrawRoot ? oDrawRoot.querySelector("#schema-canvas") : oCanvas;
+        var oDrawSvg = oDrawRoot ? oDrawRoot.querySelector("#schema-lines") : oSvg;
+        var aDrawRelations = oDrawRoot ? oDrawRoot.querySelectorAll(".schema-relations tbody tr") : aRelations;
+        var oCanvasRect;
+        var aSchemaTables;
         var iTablesBottom = 0;
         var iI;
-        removeSchemaRelationElements();
-        oSvg.setAttribute("width", oCanvas.scrollWidth);
-        oSvg.setAttribute("height", oCanvas.scrollHeight);
-        oSvg.setAttribute("viewBox", "0 0 " + oCanvas.scrollWidth + " " + oCanvas.scrollHeight);
+        if (!oDrawCanvas || !oDrawSvg) {
+            return;
+        }
+        oCanvasRect = oDrawCanvas.getBoundingClientRect();
+        aSchemaTables = oDrawCanvas.querySelectorAll(".schema-table");
+        removeSchemaRelationElements(oDrawSvg);
+        oDrawSvg.setAttribute("width", oDrawCanvas.scrollWidth);
+        oDrawSvg.setAttribute("height", oDrawCanvas.scrollHeight);
+        oDrawSvg.setAttribute("viewBox", "0 0 " + oDrawCanvas.scrollWidth + " " + oDrawCanvas.scrollHeight);
         for (iI = 0; iI < aSchemaTables.length; iI += 1) {
             iTablesBottom = Math.max(iTablesBottom, aSchemaTables[iI].getBoundingClientRect().bottom - oCanvasRect.top);
         }
-        for (iI = 0; iI < aRelations.length; iI += 1) {
-            var oRelation = aRelations[iI];
-            var oSource = document.getElementById(getColumnId(oRelation.getAttribute("data-source-table"), oRelation.getAttribute("data-source-column")));
-            var oTarget = document.getElementById(getColumnId(oRelation.getAttribute("data-target-table"), oRelation.getAttribute("data-target-column")));
+        for (iI = 0; iI < aDrawRelations.length; iI += 1) {
+            var oRelation = aDrawRelations[iI];
+            var oSource = (oDrawRoot || document).querySelector("#" + getColumnId(oRelation.getAttribute("data-source-table"), oRelation.getAttribute("data-source-column")));
+            var oTarget = (oDrawRoot || document).querySelector("#" + getColumnId(oRelation.getAttribute("data-target-table"), oRelation.getAttribute("data-target-column")));
             if (!oSource || !oTarget) {
                 continue;
             }
@@ -4589,11 +4704,13 @@ document.addEventListener("DOMContentLoaded", function () {
             oTargetCircle.setAttribute("cx", oEnd.x);
             oTargetCircle.setAttribute("cy", oEnd.y);
             oTargetCircle.setAttribute("r", "3");
-            oSvg.appendChild(oPath);
-            oSvg.appendChild(oCircle);
-            oSvg.appendChild(oTargetCircle);
+            oDrawSvg.appendChild(oPath);
+            oDrawSvg.appendChild(oCircle);
+            oDrawSvg.appendChild(oTargetCircle);
         }
     }
+
+    window.drawSchemaRelationsForExport = drawRelations;
 
     window.setTimeout(drawRelations, 0);
     window.addEventListener("load", drawRelations);

@@ -144,7 +144,7 @@ renderMenu();
     <dt>Downloads and Rendering</dt>
     <dd>
       <p>On desktop, <strong>Save TXT</strong> posts the current film id and downloads the same metadata fields as the visible metadata table. The file name is based on the lab roll code from the folder name and ends with <code>_RAW.txt</code>; if the code cannot be derived, it falls back to <code>film_&lt;archive_no&gt;_RAW.txt</code>.</p>
-      <p><strong>Save PNG</strong> captures the gallery content area in the browser at scale 3. Before capture, images using Cover or Contain fitting are temporarily represented as CSS backgrounds so the saved PNG matches the visible thumbnail layout. The button is disabled during capture and re-enabled after the PNG is created or after an error. The generated file name includes the subdirectory, thumbnail fitting mode, allowed-IP status mode when applicable, <code>gallery</code>, and <code>with_metadata</code> when metadata is visible.</p>
+      <p><strong>Save PNG</strong> offers scales 1 through 5 and captures the gallery content area in the browser with SnapDOM at the selected scale. The original page DOM is not modified during capture. The generated file name includes the subdirectory, thumbnail fitting mode, allowed-IP status mode when applicable, <code>gallery</code>, and <code>with_metadata</code> when metadata is visible.</p>
       <ul>
         <li><strong>TXT:</strong> Server-side metadata download for the selected roll.</li>
         <li><strong>PNG:</strong> Browser-side screenshot of <code>main-content-gallery</code>.</li>
@@ -386,7 +386,7 @@ renderMenu();
     <dt>Stahování a renderování</dt>
     <dd>
       <p>Na desktopu <strong>Save TXT</strong> odešle aktuální id filmu a stáhne stejná metadata jako viditelná tabulka metadat. Název souboru vychází z laboratorního kódu z názvu složky a končí <code>_RAW.txt</code>; pokud kód nejde odvodit, použije se fallback <code>film_&lt;archive_no&gt;_RAW.txt</code>.</p>
-      <p><strong>Save PNG</strong> zachytí v prohlížeči obsahovou oblast galerie ve scale 3. Před zachycením se obrázky s režimem Cover nebo Contain dočasně reprezentují jako CSS background, aby uložené PNG odpovídalo viditelnému layoutu miniatur. Tlačítko je během renderování vypnuté a po vytvoření PNG nebo po chybě se znovu zapne. Název generovaného souboru obsahuje podadresář, režim napasování miniatur, status mode u povolené IP, <code>gallery</code> a <code>with_metadata</code>, pokud jsou metadata viditelná.</p>
+      <p><strong>Save PNG</strong> nabízí scale 1 až 5 a zachytí v prohlížeči obsahovou oblast galerie pomocí SnapDOM ve zvoleném scale. Původní DOM stránky se během zachycení nemění. Název generovaného souboru obsahuje podadresář, režim napasování miniatur, status mode u povolené IP, <code>gallery</code> a <code>with_metadata</code>, pokud jsou metadata viditelná.</p>
       <ul>
         <li><strong>TXT:</strong> Serverové stažení metadat pro vybraný film.</li>
         <li><strong>PNG:</strong> Browser-side screenshot prvku <code>main-content-gallery</code>.</li>

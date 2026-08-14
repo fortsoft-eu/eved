@@ -94,7 +94,22 @@ echo "    </select>\n";
     <button type="submit" class="button-link calendar-year-link" form="calendar-previous-year-form" title="Previous year">Prev</button>
     <button type="submit" class="button-link calendar-year-link" form="calendar-next-year-form" title="Next year">Next</button>
     <button type="button" class="button-link calendar-year-link js-calendar-current-year" data-calendar-url="<?php echo $sScriptUrl . "?iCal=" . $iCal . "&amp;iYear=" . $iCurrentYear; ?>" title="Current year">Today</button>
-    <button type="button" class="button-link calendar-year-link js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" aria-label="Save PNG">Save PNG</button>
+    <span class="menu png-export-menu" data-menu>
+      <button type="button" class="button-link calendar-year-link png-export-menu-button" data-menu-button aria-haspopup="true" aria-expanded="false">Save PNG<span class="png-export-menu-arrow" aria-hidden="true"><?php echo $sCalendarToggleEmoji; ?></span></button>
+      <span class="menu-panel png-export-menu-panel" data-menu-panel hidden>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="1">4 columns, Scale 1:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="2">4 columns, Scale 2:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="3">4 columns, Scale 3:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="4">4 columns, Scale 4:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="5">4 columns, Scale 5:1</button>
+        <span class="menu-separator"></span>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="1">3 columns, Scale 1:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="2">3 columns, Scale 2:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="3">3 columns, Scale 3:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="4">3 columns, Scale 4:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="5">3 columns, Scale 5:1</button>
+      </span>
+    </span>
   </p>
   <form id="calendar-year-form" method="get" action="<?php echo $sScriptUrl; ?>" enctype="application/x-www-form-urlencoded" hidden></form>
   <form id="calendar-previous-year-form" method="get" action="<?php echo $sScriptUrl; ?>" enctype="application/x-www-form-urlencoded" hidden>
@@ -105,14 +120,13 @@ echo "    </select>\n";
     <input type="hidden" name="iCal" value="<?php echo $iCal; ?>">
     <input type="hidden" name="iYear" value="<?php echo $iNextYear; ?>">
   </form>
-  <div class="holiday-calendar-export">
-    <p class="holiday-legend">
-      <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-state"></span>Státní svátek</span>
-      <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-other"></span>Ostatní svátek</span>
-      <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-moving"></span>Pohyblivý svátek</span>
-      <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-external"></span>Furry event</span>
-    </p>
-    <div class="holiday-calendar-grid">
+  <p class="holiday-legend">
+    <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-state"></span>Státní svátek</span>
+    <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-other"></span>Ostatní svátek</span>
+    <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-moving"></span>Pohyblivý svátek</span>
+    <span class="holiday-legend-item"><span class="holiday-legend-swatch holiday-legend-external"></span>Furry event</span>
+  </p>
+  <div class="holiday-calendar-grid">
 <?php
 
 for ($iMonth = 1; $iMonth <= 12; $iMonth += 1) {
@@ -120,9 +134,8 @@ for ($iMonth = 1; $iMonth <= 12; $iMonth += 1) {
 }
 
 ?>
-    </div>
   </div>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/html2canvas-1.4.1/html2canvas.min.js"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/snapdom-2.23.1/snapdom.js"></script>
   <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
 </body>
 </html>

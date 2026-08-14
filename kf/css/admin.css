@@ -340,6 +340,44 @@ table {
     z-index: 7;
 }
 
+.admin-controls .png-export-menu {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+.admin-controls .png-export-menu-button {
+    flex: 0 0 auto;
+    padding-bottom: 4px;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 1px;
+    white-space: nowrap;
+    width: auto;
+}
+
+.png-export-menu-arrow {
+    margin-left: 6px;
+}
+
+.admin-controls .png-export-menu-option {
+    background: #F0F0F0;
+    border: 0;
+    box-sizing: border-box;
+    cursor: default;
+    display: block;
+    font-size: 14px;
+    height: auto;
+    margin: 0;
+    padding: 6px 40px 6px 10px;
+    text-align: left;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.admin-controls .png-export-menu-option:hover {
+    background: #DCDCE4;
+}
+
 .menu-link {
     align-items: center;
     color: #000;
@@ -628,7 +666,7 @@ tr:nth-child(even) {
     .menu-panel {
         max-width: calc(100vw - 16px);
     }
-    .schema-diagram, .schema-relations, .admin-controls .js-schema-save-png {
+    .schema-diagram, .schema-relations {
         display: none;
     }
     .schema-unavailable-message {

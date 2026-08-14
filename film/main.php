@@ -6,6 +6,7 @@ $sDirectory                     = "./img";
 $sExtension                     = ".avif";
 $sFilterFocusEmoji              = "&#128269;";
 $sMenuEmoji                     = "&#9776;";
+$sCalendarToggleEmoji           = "&#9662;";
 $sFilmMenuEmoji                 = "&#127902;&#65039;";
 $sEquipmentLinkEmoji            = "&#128279;";
 
