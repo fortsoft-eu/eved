@@ -1722,6 +1722,12 @@ function renderCopyAction($mValue, $sTitle = "Copy") {
     return "<a class=\"copy-action\" href=\"#\" data-copy-value=\"" . html($sValue) . "\" title=\"" . html($sTitle) . "\" aria-label=\"" . html($sTitle) . "\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
 }
 
+function renderDeferredCopyAction($sClass, $sTitle = "Copy") {
+    global $sCopyEmoji;
+
+    return "<a class=\"copy-action " . html($sClass) . "\" href=\"#\" title=\"" . html($sTitle) . "\" aria-label=\"" . html($sTitle) . "\"><span class=\"copy-action-box\">" . $sCopyEmoji . "</span></a>";
+}
+
 function phoneContactTypes() {
     return array(
         "landline" => true,

@@ -1708,7 +1708,7 @@ function renderAddressCopyText($aAddress, $sSubjectName = "", $aSettings = null)
     return implode("\n", $aLines);
 }
 
-function renderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0, $sSubjectName = "", $blHasHiddenInactive = false, $aAddressDisplaySettings = null, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true) {
+function renderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0, $sSubjectName = "", $blHasHiddenInactive = false, $aAddressDisplaySettings = null, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true, $blDeferData = false) {
     global $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji, $sPrimaryEmoji, $sInactiveEmoji;
 
     if (!$aAddresses) {
@@ -1716,12 +1716,19 @@ function renderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0, 
     }
     $sHtml = "<div class=\"subject-item-list\">";
     $aCellCopyValues = array();
+    $iCellCopyValueCount = 0;
     $sHiddenInactiveAction = $blHasHiddenInactive ? renderHiddenInactiveIndicator() : "";
     foreach ($aAddresses as $aAddress) {
         $sText = renderAddressText($aAddress, $aAddressDisplaySettings);
         $sNote = trim((string)$aAddress["note"]);
-        $sCopyText = renderAddressCopyText($aAddress, $sSubjectName, $aAddressDisplaySettings);
-        $aCellCopyValues[] = $sText . ($sNote != "" ? " (" . $sNote . ")" : "");
+        $sCopyText = $blDeferData ? "" : renderAddressCopyText($aAddress, $sSubjectName, $aAddressDisplaySettings);
+        $sCellCopyValue = $sText . ($sNote != "" ? " (" . $sNote . ")" : "");
+        if (trim($sCellCopyValue) != "") {
+            $iCellCopyValueCount++;
+            if (!$blDeferData) {
+                $aCellCopyValues[] = $sCellCopyValue;
+            }
+        }
         $blIsPrimary = (int)$aAddress["is_primary"] == 1;
         $blIsActive = (int)$aAddress["is_active"] == 1;
         $sValueClass = (string)$aAddress["address_type"] == "main" ? " subject-address-main-value" : "";
@@ -1734,35 +1741,37 @@ function renderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0, 
                 . "<a href=\"#\" class=\"item-action js-delete-subject-address\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>"
                 . "</span>";
         }
-        $sHtml .= "<div class=\"subject-item list-item subject-address-item" . ($blIsActive ? "" : " subject-item-inactive") . "\""
-            . " data-address-id=\"" . html($aAddress["id"]) . "\""
-            . " data-subject-id=\"" . html($aAddress["subject_id"]) . "\""
-            . " data-address-type=\"" . html($aAddress["address_type"]) . "\""
-            . " data-organization-name=\"" . html($aAddress["organization_name"]) . "\""
-            . " data-department-name=\"" . html($aAddress["department_name"]) . "\""
-            . " data-care-of=\"" . html($aAddress["care_of"]) . "\""
-            . " data-street-name=\"" . html($aAddress["street_name"]) . "\""
-            . " data-house-number=\"" . html($aAddress["house_number"]) . "\""
-            . " data-evidence-number=\"" . html($aAddress["evidence_number"]) . "\""
-            . " data-orientation-number=\"" . html($aAddress["orientation_number"]) . "\""
-            . " data-orientation-suffix=\"" . html($aAddress["orientation_suffix"]) . "\""
-            . " data-address-line2=\"" . html($aAddress["address_line2"]) . "\""
-            . " data-city=\"" . html($aAddress["city"]) . "\""
-            . " data-city-part=\"" . html($aAddress["city_part"]) . "\""
-            . " data-postal-code=\"" . html(postalCodeDisplayValue($aAddress["country"], $aAddress["postal_code"])) . "\""
-            . " data-region=\"" . html($aAddress["region"]) . "\""
-            . " data-country=\"" . html($aAddress["country"]) . "\""
-            . " data-note=\"" . html($sNote) . "\""
-            . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
-            . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
+        $sDataAttributes = " data-address-id=\"" . html($aAddress["id"]) . "\"";
+        if (!$blDeferData) {
+            $sDataAttributes .= " data-subject-id=\"" . html($aAddress["subject_id"]) . "\""
+                . " data-address-type=\"" . html($aAddress["address_type"]) . "\""
+                . " data-organization-name=\"" . html($aAddress["organization_name"]) . "\""
+                . " data-department-name=\"" . html($aAddress["department_name"]) . "\""
+                . " data-care-of=\"" . html($aAddress["care_of"]) . "\""
+                . " data-street-name=\"" . html($aAddress["street_name"]) . "\""
+                . " data-house-number=\"" . html($aAddress["house_number"]) . "\""
+                . " data-evidence-number=\"" . html($aAddress["evidence_number"]) . "\""
+                . " data-orientation-number=\"" . html($aAddress["orientation_number"]) . "\""
+                . " data-orientation-suffix=\"" . html($aAddress["orientation_suffix"]) . "\""
+                . " data-address-line2=\"" . html($aAddress["address_line2"]) . "\""
+                . " data-city=\"" . html($aAddress["city"]) . "\""
+                . " data-city-part=\"" . html($aAddress["city_part"]) . "\""
+                . " data-postal-code=\"" . html(postalCodeDisplayValue($aAddress["country"], $aAddress["postal_code"])) . "\""
+                . " data-region=\"" . html($aAddress["region"]) . "\""
+                . " data-country=\"" . html($aAddress["country"]) . "\""
+                . " data-note=\"" . html($sNote) . "\""
+                . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
+                . " data-active=\"" . ($blIsActive ? "1" : "0") . "\"";
+        }
+        $sHtml .= "<div class=\"subject-item list-item subject-address-item" . ($blDeferData ? " subject-address-data-deferred" : "") . ($blIsActive ? "" : " subject-item-inactive") . "\"" . $sDataAttributes . ">"
             . "<span class=\"subject-item-value" . $sValueClass . "\"" . $sTimestampTooltipAttribute . ">" . ($sText != "" ? html($sText) : $sEmptyValueEmoji) . "</span>"
-            . renderCopyAction($sCopyText)
+            . ($blDeferData ? renderDeferredCopyAction("js-copy-subject-address") : renderCopyAction($sCopyText))
             . "<span class=\"subject-item-note\">" . ($sNote != "" ? "(" . html($sNote) . ")" : "") . "</span>"
             . "<span class=\"subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
             . $sActions
             . "</div>";
     }
-    $sCellCopyAction = $blShowCellCopyAction ? renderSubjectCellCopyAction($aCellCopyValues, true) : "";
+    $sCellCopyAction = $blShowCellCopyAction ? ($blDeferData && $iCellCopyValueCount > 0 ? renderDeferredCopyAction("js-copy-subject-addresses", "Copy items") : renderSubjectCellCopyAction($aCellCopyValues, true)) : "";
     if ($blShowActions && $blShowAddAction) {
         $sHtml .= renderAddSubjectItemAction("js-add-subject-address", "New address", $iSubjectId, ($blCellCopyBeforeAddAction ? $sCellCopyAction : "") . $sHiddenInactiveAction, $blCellCopyBeforeAddAction ? "" : $sCellCopyAction);
     } else {
@@ -1816,10 +1825,13 @@ function renderNoteList($aNotes, $blShowActions = true, $iSubjectId = 0, $blHasH
         return renderEmptySubjectItemCell($blShowActions, "js-add-subject-note", "New note", $iSubjectId, $blHasHiddenInactive, $blShowAddAction);
     }
     $sHtml = "<div class=\"subject-item-list\">";
-    $aCellCopyValues = array();
+    $iCellCopyValueCount = 0;
     $sHiddenInactiveAction = $blHasHiddenInactive ? renderHiddenInactiveIndicator() : "";
     foreach ($aNotes as $aNote) {
-        $aCellCopyValues[] = $aNote["note_text"];
+        $sNoteText = trim((string)$aNote["note_text"]);
+        if ($sNoteText != "") {
+            $iCellCopyValueCount++;
+        }
         $blIsActive = (int)$aNote["is_active"] == 1;
         $blIsPrimary = (int)$aNote["is_primary"] == 1;
         $sTimestampTooltipText = timestampTooltipText($aNote);
@@ -1837,12 +1849,12 @@ function renderNoteList($aNotes, $blShowActions = true, $iSubjectId = 0, $blHasH
             . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
             . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
             . "<span class=\"subject-item-value\"" . $sTimestampTooltipAttribute . ">" . htmlMultiline($aNote["note_text"]) . "</span>"
-            . renderCopyAction($aNote["note_text"])
+            . ($sNoteText != "" ? renderDeferredCopyAction("js-copy-subject-note") : "")
             . "<span class=\"subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
             . $sActions
             . "</div>";
     }
-    $sCellCopyAction = $blShowCellCopyAction ? renderSubjectCellCopyAction($aCellCopyValues) : "";
+    $sCellCopyAction = $blShowCellCopyAction && $iCellCopyValueCount > 1 ? renderDeferredCopyAction("js-copy-subject-notes", "Copy items") : "";
     if ($blShowActions && $blShowAddAction) {
         $sHtml .= renderAddSubjectItemAction("js-add-subject-note", "New note", $iSubjectId, ($blCellCopyBeforeAddAction ? $sCellCopyAction : "") . $sHiddenInactiveAction, $blCellCopyBeforeAddAction ? "" : $sCellCopyAction);
     } else {
@@ -3258,6 +3270,82 @@ function fetchSubjectAddresses($oPdo, $iSubjectId = 0) {
     return $aAddresses;
 }
 
+function subjectAddressData($aAddress, $sSubjectName, $aDisplaySettings = null) {
+    $aFields = array(
+        "address_type",
+        "organization_name",
+        "department_name",
+        "care_of",
+        "street_name",
+        "house_number",
+        "evidence_number",
+        "orientation_number",
+        "orientation_suffix",
+        "address_line2",
+        "city",
+        "city_part",
+        "postal_code",
+        "region",
+        "country",
+        "note"
+    );
+    $aData = array(
+        "id" => (int)$aAddress["id"],
+        "subject_id" => (int)$aAddress["subject_id"],
+        "is_primary" => (int)$aAddress["is_primary"],
+        "is_active" => (int)$aAddress["is_active"]
+    );
+    foreach ($aFields as $sField) {
+        $aData[$sField] = isset($aAddress[$sField]) ? (string)$aAddress[$sField] : "";
+    }
+    $aData["postal_code"] = postalCodeDisplayValue($aData["country"], $aData["postal_code"]);
+    $aData["copy_value"] = renderAddressCopyText($aAddress, $sSubjectName, $aDisplaySettings);
+    $sText = renderAddressText($aAddress, $aDisplaySettings);
+    $sNote = trim((string)$aAddress["note"]);
+    $aData["cell_copy_value"] = $sText . ($sNote != "" ? " (" . $sNote . ")" : "");
+    return $aData;
+}
+
+function handleSubjectAddressDataRequest($oPdo, $aDisplaySettings = null) {
+    if ($_SERVER["REQUEST_METHOD"] != "POST" || !isset($_POST["action"]) || $_POST["action"] != "get_subject_addresses") {
+        return;
+    }
+    $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
+    $sSubjectName = getPostedValue("subject_name");
+    $aPostedAddressIds = isset($_POST["address_ids"]) && is_array($_POST["address_ids"]) ? $_POST["address_ids"] : array();
+    $aAddressIds = array();
+    $aUsedAddressIds = array();
+    foreach ($aPostedAddressIds as $mAddressId) {
+        $iAddressId = (int)$mAddressId;
+        if ($iAddressId > 0 && !isset($aUsedAddressIds[$iAddressId])) {
+            $aAddressIds[] = $iAddressId;
+            $aUsedAddressIds[$iAddressId] = true;
+        }
+    }
+    if ($iSubjectId < 1 || !$aAddressIds) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid address request."), 400);
+    }
+    try {
+        $aAddresses = fetchSubjectAddresses($oPdo, $iSubjectId);
+        $aSubjectAddresses = isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array();
+        $aAddressesById = array();
+        foreach ($aSubjectAddresses as $aAddress) {
+            $aAddressesById[(int)$aAddress["id"]] = $aAddress;
+        }
+        $aData = array();
+        foreach ($aAddressIds as $iAddressId) {
+            if (!isset($aAddressesById[$iAddressId])) {
+                sendJsonAndExit(array("success" => false, "message" => "Address was not found."), 404);
+            }
+            $aData[] = subjectAddressData($aAddressesById[$iAddressId], $sSubjectName, $aDisplaySettings);
+        }
+        sendJsonAndExit(array("success" => true, "addresses" => $aData));
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
 function fetchSubjectGroups($oPdo, $iSubjectId = 0) {
     $aGroups = array();
     $sSql = "SELECT sg.subject_id, sg.group_id, g.name, g.created_at, g.updated_at FROM ex_group_subject AS sg INNER JOIN ex_groups AS g ON g.id = sg.group_id";
@@ -3718,7 +3806,7 @@ function applySubjectVisibilitySettings(&$aRows, &$aContacts, &$aNicknames, &$aA
     }
 }
 
-function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions = true, $aHiddenInactive = array(), $aDisplaySettings = null) {
+function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions = true, $aHiddenInactive = array(), $aDisplaySettings = null, $blDeferAddressData = false) {
     global $sEditEmoji, $sDeleteEmoji, $sPortalEmoji;
 
     $iSubjectId = (int)$aRow["subject_id"];
@@ -3743,7 +3831,7 @@ function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups,
     }
     return "      <tr class=\"subject-row subject-row-type-" . html($sSubjectType) . ($blIsActive ? " subject-row-active" : " subject-row-inactive") . "\" data-subject-id=\"" . html($iSubjectId) . "\" data-subject-type=\"" . html($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
         . "        <td class=\"subject-type-column\">" . html($aRow["subject_type"]) . "</td>\n"
-        . "        <td><span class=\"subject-item-value\"" . $sTimestampTooltipAttribute . ">" . htmlValue($aRow["subject_name"]) . "</span>"
+        . "        <td><span class=\"subject-item-value subject-name-value\"" . $sTimestampTooltipAttribute . ">" . htmlValue($aRow["subject_name"]) . "</span>"
         . renderCopyAction($aRow["subject_name"])
         . $sActions . "</td>\n"
         . "        <td>" . htmlValue($aRow["first_name"]) . "</td>\n"
@@ -3753,7 +3841,7 @@ function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups,
         . "        <td" . $sBirthDateClassAttribute . ">" . renderSubjectDateValue($aRow["birth_date"], $sBirthDateAgeLabel) . "</td>\n"
         . "        <td>" . renderSubjectDateValue($aRow["death_date"], $sDeathDateAgeLabel) . "</td>\n"
         . "        <td>" . renderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true, true, true) . "</td>\n"
-        . "        <td>" . renderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, true, true, true) . "</td>\n"
+        . "        <td>" . renderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, true, true, true, $blDeferAddressData) . "</td>\n"
         . "        <td>" . renderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true, true, true) . "</td>\n"
         . "        <td>" . renderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, true) . "</td>\n"
         . "        <td>" . renderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true, true, true) . "</td>\n"
@@ -3799,7 +3887,7 @@ function renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses,
         }
     }
     $sHtml .= renderSubjectTableCell(
-            "<span class=\"subject-item-value\"" . $sTimestampTooltipAttribute . ">" . htmlValue($aRow["subject_name"]) . "</span>"
+            "<span class=\"subject-item-value subject-name-value\"" . $sTimestampTooltipAttribute . ">" . htmlValue($aRow["subject_name"]) . "</span>"
             . renderCopyAction($aRow["subject_name"])
             . subjectRowOption($aOptions, "name_actions", ""),
             subjectRowOption($aOptions, "name_class", ""),
@@ -3812,7 +3900,7 @@ function renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses,
         . renderSubjectTableCell(renderSubjectDateValue($aRow["birth_date"], $sBirthDateAgeLabel), $sBirthDateClass, subjectRowOption($aOptions, "birth_date_style", $sNoWrapStyle))
         . renderSubjectTableCell(renderSubjectDateValue($aRow["death_date"], $sDeathDateAgeLabel), $sDeathDateClass, subjectRowOption($aOptions, "death_date_style", ""))
         . renderSubjectTableCell(renderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), subjectRowOption($aOptions, "nickname_show_add_action", false), subjectRowOption($aOptions, "nickname_show_cell_copy_action", true), subjectRowOption($aOptions, "nickname_cell_copy_before_add_action", true)), subjectRowOption($aOptions, "nickname_class", "column-step-one"), subjectRowOption($aOptions, "nickname_style", ""))
-        . renderSubjectTableCell(renderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, subjectRowOption($aOptions, "address_show_add_action", false), subjectRowOption($aOptions, "address_show_cell_copy_action", true), subjectRowOption($aOptions, "address_cell_copy_before_add_action", true)), subjectRowOption($aOptions, "address_class", ""), subjectRowOption($aOptions, "address_style", ""))
+        . renderSubjectTableCell(renderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, subjectRowOption($aOptions, "address_show_add_action", false), subjectRowOption($aOptions, "address_show_cell_copy_action", true), subjectRowOption($aOptions, "address_cell_copy_before_add_action", true), subjectRowOption($aOptions, "address_defer_data", false)), subjectRowOption($aOptions, "address_class", ""), subjectRowOption($aOptions, "address_style", ""))
         . renderSubjectTableCell(renderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), subjectRowOption($aOptions, "contact_show_add_action", false), subjectRowOption($aOptions, "contact_show_cell_copy_action", true), subjectRowOption($aOptions, "contact_cell_copy_before_add_action", true)), subjectRowOption($aOptions, "contact_class", ""), subjectRowOption($aOptions, "contact_style", ""))
         . renderSubjectTableCell(renderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, subjectRowOption($aOptions, "group_show_add_action", false), subjectRowOption($aOptions, "group_show_cell_copy_action", true), subjectRowOption($aOptions, "group_cell_copy_before_add_action", true)), subjectRowOption($aOptions, "group_class", "column-step-three"), subjectRowOption($aOptions, "group_style", ""))
         . renderSubjectTableCell(renderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), subjectRowOption($aOptions, "note_show_add_action", false), subjectRowOption($aOptions, "note_show_cell_copy_action", true), subjectRowOption($aOptions, "note_cell_copy_before_add_action", true)), subjectRowOption($aOptions, "note_class", "column-step-three"), subjectRowOption($aOptions, "note_style", ""))
@@ -3847,7 +3935,8 @@ function renderUpdatedSubjectRow($oPdo, $iSubjectId, $aVisibilitySettings = null
         $aNotes,
         true,
         $aHiddenInactive,
-        is_array($aVisibilitySettings) ? $aVisibilitySettings : null
+        is_array($aVisibilitySettings) ? $aVisibilitySettings : null,
+        true
     );
 }
 

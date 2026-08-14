@@ -94,6 +94,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     header("Location: " . $sBaseUrl . basename($_SERVER["SCRIPT_NAME"]), true, 303);
     exit;
 }
+handleSubjectAddressDataRequest($oPdo, $aFullListSettings);
 if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] == "POST") {
     sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
@@ -1242,7 +1243,7 @@ if (!$aRows) {
 <?php
 
     foreach ($aRows as $aRow) {
-        echo renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aFullListSettings);
+        echo renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aFullListSettings, true);
     }
     echo "    </tbody>\n",
         "  </table>\n";

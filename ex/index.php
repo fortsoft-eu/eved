@@ -100,6 +100,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     header("Location: " . $sBaseUrl, true, 303);
     exit;
 }
+handleSubjectAddressDataRequest($oPdo, $aIndexSettings);
 
 
 $aRows = array();
@@ -224,6 +225,8 @@ foreach (getAddressTypes() as $sAddressType) {
 
 $blRenderPageThrobber = count($aRows) > $iRenderThrobberRowLimit;
 $sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes($blRenderPageThrobber);
+$aIndexRenderOptions = $aIndexSettings;
+$aIndexRenderOptions["address_defer_data"] = true;
 $iTime = sendPageHeaders();
 
 ?>
@@ -384,7 +387,7 @@ if (!$aRows) {
 <?php
 
     foreach ($aRows as $aRow) {
-        echo renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aIndexSettings);
+        echo renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive, $aIndexSettings, $aIndexRenderOptions);
     }
 
 ?>

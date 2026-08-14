@@ -2996,15 +2996,144 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+function getAdminMultilineElementText(oElement) {
+    var oClone;
+    var aBreaks;
+    var iI;
+    if (!oElement) {
+        return "";
+    }
+    oClone = oElement.cloneNode(true);
+    aBreaks = oClone.querySelectorAll("br");
+    for (iI = 0; iI < aBreaks.length; iI += 1) {
+        aBreaks[iI].parentNode.replaceChild(document.createTextNode("\n"), aBreaks[iI]);
+    }
+    return oClone.textContent || "";
+}
+
+function getAdminCopyActionValue(oButton) {
+    var sValue = oButton ? (oButton.getAttribute("data-copy-value") || "") : "";
+    var sClass = oButton ? " " + oButton.className + " " : "";
+    var oItem;
+    var oList;
+    var oValue;
+    var aValues;
+    var aTexts;
+    var iI;
+    if (sValue != "") {
+        return sValue;
+    }
+    if (sClass.indexOf(" js-copy-subject-note ") !== -1) {
+        oItem = oButton.closest ? oButton.closest(".subject-note-item") : null;
+        oValue = oItem ? oItem.querySelector(".subject-item-value") : null;
+        return getAdminMultilineElementText(oValue);
+    }
+    if (sClass.indexOf(" js-copy-subject-notes ") !== -1) {
+        oList = oButton.closest ? oButton.closest(".subject-item-list") : null;
+        aValues = oList ? oList.querySelectorAll(".subject-note-item .subject-item-value") : [];
+        aTexts = [];
+        for (iI = 0; iI < aValues.length; iI += 1) {
+            sValue = getAdminMultilineElementText(aValues[iI]);
+            if (sValue != "") {
+                aTexts.push(sValue);
+            }
+        }
+        return aTexts.join("\n");
+    }
+    return "";
+}
+
+function getAdminDeferredAddressCopyItems(oButton) {
+    var sClass = oButton ? " " + oButton.className + " " : "";
+    var oItem;
+    var oList;
+    if (sClass.indexOf(" js-copy-subject-address ") !== -1) {
+        oItem = oButton.closest ? oButton.closest(".subject-address-data-deferred") : null;
+        return oItem ? [oItem] : [];
+    }
+    if (sClass.indexOf(" js-copy-subject-addresses ") !== -1) {
+        oList = oButton.closest ? oButton.closest(".subject-item-list") : null;
+        return oList ? oList.querySelectorAll(".subject-address-data-deferred") : [];
+    }
+    return null;
+}
+
+function loadAdminSubjectAddressData(aItems, fSuccess, fFailure) {
+    var aMissingItems = [];
+    var aResult = [];
+    var oRow = aItems && aItems.length > 0 && aItems[0].closest ? aItems[0].closest("tr[data-subject-id]") : null;
+    var oSubjectName = oRow ? oRow.querySelector(".subject-name-value") : null;
+    var oData;
+    var iI;
+    if (!aItems || aItems.length < 1 || !oRow || !window.fetch || !window.FormData) {
+        fFailure("Address could not be loaded.");
+        return;
+    }
+    for (iI = 0; iI < aItems.length; iI += 1) {
+        if (aItems[iI]._adminSubjectAddressData) {
+            aResult[iI] = aItems[iI]._adminSubjectAddressData;
+        } else {
+            aMissingItems.push(aItems[iI]);
+        }
+    }
+    if (aMissingItems.length < 1) {
+        fSuccess(aResult);
+        return;
+    }
+    oData = new FormData();
+    oData.append("action", "get_subject_addresses");
+    oData.append("subject_id", oRow.getAttribute("data-subject-id") || "");
+    appendAdminEncodedValue(oData, "subject_name", oSubjectName ? (oSubjectName.textContent || "") : "");
+    for (iI = 0; iI < aMissingItems.length; iI += 1) {
+        oData.append("address_ids[]", aMissingItems[iI].getAttribute("data-address-id") || "");
+    }
+    appendAdminCsrfToken(oData);
+    fetch(window.location.href, {
+        "method": "POST",
+        "body": oData,
+        "credentials": "same-origin",
+        "headers": getAdminAjaxHeaders()
+    }).then(function (oResponse) {
+        return oResponse.json();
+    }).then(function (aData) {
+        var aAddressesById = {};
+        var aAddresses = aData && aData.addresses && typeof aData.addresses.length == "number" ? aData.addresses : [];
+        var sAddressId;
+        if (!aData || !aData.success) {
+            fFailure(aData && aData.message ? aData.message : "Address could not be loaded.");
+            return;
+        }
+        for (iI = 0; iI < aAddresses.length; iI += 1) {
+            aAddressesById[String(aAddresses[iI].id || "")] = aAddresses[iI];
+        }
+        for (iI = 0; iI < aMissingItems.length; iI += 1) {
+            sAddressId = aMissingItems[iI].getAttribute("data-address-id") || "";
+            if (!aAddressesById[sAddressId]) {
+                fFailure("Address could not be loaded.");
+                return;
+            }
+            aMissingItems[iI]._adminSubjectAddressData = aAddressesById[sAddressId];
+        }
+        for (iI = 0; iI < aItems.length; iI += 1) {
+            aResult[iI] = aItems[iI]._adminSubjectAddressData;
+        }
+        fSuccess(aResult);
+    }).catch(function (oException) {
+        logAdminException(oException);
+        fFailure("Address could not be loaded.");
+    });
+}
+
 document.addEventListener("click", function (oEvent) {
     var oButton = oEvent.target.closest ? oEvent.target.closest(".copy-action") : null;
+    var aAddressItems;
     var sValue;
     if (!oButton) {
         return;
     }
     oEvent.preventDefault();
     oEvent.stopPropagation();
-    sValue = oButton.getAttribute("data-copy-value") || "";
+    aAddressItems = getAdminDeferredAddressCopyItems(oButton);
 
 
     function showCopyValueResult(blSuccess) {
@@ -3026,16 +3155,39 @@ document.addEventListener("click", function (oEvent) {
         }, 1000);
     }
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(sValue).then(function () {
-            showCopyValueResult(true);
-        }).catch(function (oException) {
-            logAdminException(oException);
-            showCopyValueResult(copyAdminTextWithTextarea(sValue));
+    function copyValue(sCopyValue) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(sCopyValue).then(function () {
+                showCopyValueResult(true);
+            }).catch(function (oException) {
+                logAdminException(oException);
+                showCopyValueResult(copyAdminTextWithTextarea(sCopyValue));
+            });
+            return;
+        }
+        showCopyValueResult(copyAdminTextWithTextarea(sCopyValue));
+    }
+
+    if (aAddressItems !== null) {
+        loadAdminSubjectAddressData(aAddressItems, function (aAddresses) {
+            var sClass = " " + oButton.className + " ";
+            var aValues = [];
+            var sName = sClass.indexOf(" js-copy-subject-addresses ") !== -1 ? "cell_copy_value" : "copy_value";
+            var iI;
+            for (iI = 0; iI < aAddresses.length; iI += 1) {
+                sValue = aAddresses[iI] && aAddresses[iI][sName] ? aAddresses[iI][sName] : "";
+                if (sValue != "") {
+                    aValues.push(sValue);
+                }
+            }
+            copyValue(aValues.join("\n"));
+        }, function () {
+            showCopyValueResult(false);
         });
         return;
     }
-    showCopyValueResult(copyAdminTextWithTextarea(sValue));
+    sValue = getAdminCopyActionValue(oButton);
+    copyValue(sValue);
 }, true);
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -4957,6 +5109,21 @@ document.addEventListener("DOMContentLoaded", function () {
         return getSubjectItemValue(oItem, sName) == "1";
     }
 
+    function getSubjectAddressValue(oItem, aAddress, sName) {
+        var sAttribute = sName == "id" ? "data-address-id" : "data-" + sName.replace(/_/g, "-");
+        if (aAddress && typeof aAddress[sName] != "undefined" && aAddress[sName] !== null) {
+            return aAddress[sName];
+        }
+        return getSubjectItemValue(oItem, sAttribute);
+    }
+
+    function getSubjectAddressFlag(oItem, aAddress, sName, sAttribute) {
+        if (aAddress && typeof aAddress[sName] != "undefined") {
+            return parseInt(aAddress[sName] || "0", 10) === 1;
+        }
+        return getSubjectItemFlag(oItem, sAttribute);
+    }
+
     function padSubjectIsoDateNumber(iValue) {
         return iValue < 10 ? "0" + iValue : "" + iValue;
     }
@@ -6079,9 +6246,9 @@ document.addEventListener("DOMContentLoaded", function () {
         finishSubjectDialog(oDialogData, oNickname);
     }
 
-    function openAddressDialog(oItem, oSubjectRow, blNewAddress) {
+    function openAddressDialog(oItem, oSubjectRow, blNewAddress, aAddress) {
         var oDialogData = createSubjectDialog(blNewAddress ? "New Address" : "Edit Address", blNewAddress ? oSubjectRow : getAdminSubjectRow(oItem));
-        var sSubjectId = blNewAddress && oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : getSubjectItemValue(oItem, "data-subject-id");
+        var sSubjectId = blNewAddress && oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : getSubjectAddressValue(oItem, aAddress, "subject_id");
         var oAddressFields = document.createElement("div");
         var oAddressType;
         var oOrganizationName;
@@ -6107,24 +6274,24 @@ document.addEventListener("DOMContentLoaded", function () {
         oDialogData.box.className += " subject-address-edit-dialog";
         oAddressFields.className = "subject-address-field-grid";
         oDialogData.form.appendChild(oAddressFields);
-        oAddressType = appendAddressTypeSelect(appendSubjectAddressField(oAddressFields), blNewAddress ? "main" : getSubjectItemValue(oItem, "data-address-type"));
-        oOrganizationName = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Organization Name", "organization_name", getSubjectItemValue(oItem, "data-organization-name"));
-        oDepartmentName = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Department Name", "department_name", getSubjectItemValue(oItem, "data-department-name"));
-        oCareOf = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Care Of", "care_of", getSubjectItemValue(oItem, "data-care-of"));
-        oStreetName = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Street", "street_name", getSubjectItemValue(oItem, "data-street-name"));
-        oHouseNumber = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "House Number", "house_number", getSubjectItemValue(oItem, "data-house-number"));
-        oEvidenceNumber = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Evidence Number", "evidence_number", getSubjectItemValue(oItem, "data-evidence-number"));
-        oOrientationNumber = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Orientation Number", "orientation_number", getSubjectItemValue(oItem, "data-orientation-number"));
-        oOrientationSuffix = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Orientation Suffix", "orientation_suffix", getSubjectItemValue(oItem, "data-orientation-suffix"));
-        oAddressLine2 = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Address Line 2", "address_line2", getSubjectItemValue(oItem, "data-address-line2"));
-        oCity = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "City", "city", getSubjectItemValue(oItem, "data-city"));
-        oCityPart = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "City Part", "city_part", getSubjectItemValue(oItem, "data-city-part"));
-        oPostalCode = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Postal Code", "postal_code", getSubjectItemValue(oItem, "data-postal-code"));
-        oRegion = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Region", "region", getSubjectItemValue(oItem, "data-region"));
-        oCountry = appendSubjectCountryField(appendSubjectAddressField(oAddressFields), getSubjectItemValue(oItem, "data-country"));
-        oNote = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Note", "note", getSubjectItemValue(oItem, "data-note"));
-        oPrimary = appendSubjectCheckbox(oDialogData.form, "Primary", "is_primary", getSubjectItemFlag(oItem, "data-primary"));
-        oActive = appendSubjectCheckbox(oDialogData.form, "Active", "is_active", blNewAddress ? true : getSubjectItemFlag(oItem, "data-active"));
+        oAddressType = appendAddressTypeSelect(appendSubjectAddressField(oAddressFields), blNewAddress ? "main" : getSubjectAddressValue(oItem, aAddress, "address_type"));
+        oOrganizationName = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Organization Name", "organization_name", getSubjectAddressValue(oItem, aAddress, "organization_name"));
+        oDepartmentName = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Department Name", "department_name", getSubjectAddressValue(oItem, aAddress, "department_name"));
+        oCareOf = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Care Of", "care_of", getSubjectAddressValue(oItem, aAddress, "care_of"));
+        oStreetName = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Street", "street_name", getSubjectAddressValue(oItem, aAddress, "street_name"));
+        oHouseNumber = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "House Number", "house_number", getSubjectAddressValue(oItem, aAddress, "house_number"));
+        oEvidenceNumber = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Evidence Number", "evidence_number", getSubjectAddressValue(oItem, aAddress, "evidence_number"));
+        oOrientationNumber = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Orientation Number", "orientation_number", getSubjectAddressValue(oItem, aAddress, "orientation_number"));
+        oOrientationSuffix = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Orientation Suffix", "orientation_suffix", getSubjectAddressValue(oItem, aAddress, "orientation_suffix"));
+        oAddressLine2 = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Address Line 2", "address_line2", getSubjectAddressValue(oItem, aAddress, "address_line2"));
+        oCity = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "City", "city", getSubjectAddressValue(oItem, aAddress, "city"));
+        oCityPart = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "City Part", "city_part", getSubjectAddressValue(oItem, aAddress, "city_part"));
+        oPostalCode = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Postal Code", "postal_code", getSubjectAddressValue(oItem, aAddress, "postal_code"));
+        oRegion = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Region", "region", getSubjectAddressValue(oItem, aAddress, "region"));
+        oCountry = appendSubjectCountryField(appendSubjectAddressField(oAddressFields), getSubjectAddressValue(oItem, aAddress, "country"));
+        oNote = appendSubjectTextField(appendSubjectAddressField(oAddressFields), "Note", "note", getSubjectAddressValue(oItem, aAddress, "note"));
+        oPrimary = appendSubjectCheckbox(oDialogData.form, "Primary", "is_primary", getSubjectAddressFlag(oItem, aAddress, "is_primary", "data-primary"));
+        oActive = appendSubjectCheckbox(oDialogData.form, "Active", "is_active", blNewAddress ? true : getSubjectAddressFlag(oItem, aAddress, "is_active", "data-active"));
         oDialogData.form.addEventListener("submit", function (oEvent) {
             var oData = new FormData();
             oEvent.preventDefault();
@@ -6132,7 +6299,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (blNewAddress) {
                 oData.append("subject_id", sSubjectId);
             } else {
-                oData.append("address_id", getSubjectItemValue(oItem, "data-address-id"));
+                oData.append("address_id", getSubjectAddressValue(oItem, aAddress, "id"));
             }
             if (oCountry._countryInput) {
                 oCountry.value = findSubjectCountryCode(oCountry._countryInput.value);
@@ -6339,6 +6506,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.addEventListener("click", function (oEvent) {
         var oButton = oEvent.target.closest ? oEvent.target.closest(".js-add-subject, .js-add-subject-nickname, .js-add-subject-address, .js-add-subject-group, .js-add-subject-note, .js-edit-subject, .js-edit-subject-portal, .js-edit-subject-nickname, .js-edit-subject-address, .js-edit-subject-group, .js-edit-subject-note, .js-delete-subject, .js-delete-subject-contact, .js-delete-subject-nickname, .js-delete-subject-address, .js-delete-subject-group, .js-delete-subject-note") : null;
+        var oAddressItem;
         if (oButton) {
             oEvent.preventDefault();
             oEvent.stopPropagation();
@@ -6357,7 +6525,16 @@ document.addEventListener("DOMContentLoaded", function () {
             } else if (oButton.className.indexOf("js-edit-subject-nickname") !== -1) {
                 openNicknameDialog(oButton.closest(".subject-nickname-item"), null, false);
             } else if (oButton.className.indexOf("js-edit-subject-address") !== -1) {
-                openAddressDialog(oButton.closest(".subject-address-item"), null, false);
+                oAddressItem = oButton.closest(".subject-address-item");
+                if (oAddressItem && (" " + oAddressItem.className + " ").indexOf(" subject-address-data-deferred ") !== -1) {
+                    loadAdminSubjectAddressData([oAddressItem], function (aAddresses) {
+                        openAddressDialog(oAddressItem, null, false, aAddresses[0]);
+                    }, function (sMessage) {
+                        showAdminMessageDialog(sMessage || "Address could not be loaded.");
+                    });
+                } else {
+                    openAddressDialog(oAddressItem, null, false);
+                }
             } else if (oButton.className.indexOf("js-edit-subject-group") !== -1) {
                 openGroupDialog(oButton.closest(".subject-group-item"));
             } else if (oButton.className.indexOf("js-edit-subject-note") !== -1) {
