@@ -3919,22 +3919,10 @@ function applySubjectVisibilitySettings(&$aRows, &$aContacts, &$aNicknames, &$aA
     }
 }
 
-function subjectRowTypeClass($sSubjectType) {
-    $aClasses = array(
-        "person" => "rp",
-        "organization" => "ro",
-        "service" => "rs",
-        "other" => "rx"
-    );
-    return isset($aClasses[$sSubjectType]) ? $aClasses[$sSubjectType] : "rx";
-}
-
-function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions = true, $aHiddenInactive = array(), $aDisplaySettings = null, $blDeferAddressData = false, $blDeferContactData = false, $blDeferNicknameData = false, $blDeferGroupData = false, $blDeferNameCopy = false) {
+function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions = true, $aHiddenInactive = array(), $aDisplaySettings = null, $blDeferAddressData = false, $blDeferContactData = false, $blDeferNicknameData = false, $blDeferGroupData = false, $blDeferNameCopy = false, $blAriaAttributes = true) {
     global $sEditEmoji, $sDeleteEmoji, $sPortalEmoji;
 
     $iSubjectId = (int)$aRow["subject_id"];
-    $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aRow["subject_type"]));
-    $sSubjectTypeClass = subjectRowTypeClass($sSubjectType);
     $blIsActive = (int)$aRow["is_active"] == 1;
     $blShowBirthNumber = !is_array($aDisplaySettings) || empty($aDisplaySettings["hide_personal_number"]);
     $sBirthNumberClass = birthNumberClass($aRow["birth_number"]);
@@ -3953,7 +3941,7 @@ function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups,
             . "<a href=\"#\" class=\"ia js-delete-subject\" data-subject-id=\"" . html($iSubjectId) . "\" data-subject-name=\"" . html($aRow["subject_name"]) . "\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>"
             . "</span>";
     }
-    return "<tr class=\"sr " . $sSubjectTypeClass . ($blIsActive ? " ra" : " ri") . "\" data-subject-id=\"" . html($iSubjectId) . "\" data-subject-type=\"" . html($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">"
+    $sHtml = "<tr class=\"sr" . ($blIsActive ? " ra" : " ri") . "\" data-subject-id=\"" . html($iSubjectId) . "\" data-subject-type=\"" . html($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">"
         . "<td class=\"tc\">" . html($aRow["subject_type"]) . "</td>"
         . "<td><span class=\"iv nv\"" . $sTimestampTooltipAttribute . ">" . htmlValue($aRow["subject_name"]) . "</span>"
         . ($blDeferNameCopy ? renderDeferredCopyAction("js-copy-subject-name") : renderCopyAction($aRow["subject_name"]))
@@ -3970,6 +3958,7 @@ function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups,
         . "<td>" . renderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, true, $blDeferGroupData) . "</td>"
         . "<td>" . renderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true, true, true) . "</td>"
         . "</tr>\n";
+    return $blAriaAttributes ? $sHtml : removeAriaAttributes($sHtml);
 }
 
 function subjectRowOption($aOptions, $sName, $mDefault) {
@@ -3989,10 +3978,9 @@ function renderSubjectTableCell($sHtml, $sClass = "", $sStyle = "") {
 
 function renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aHiddenInactive = array(), $aDisplaySettings = null, $aOptions = array()) {
     $iSubjectId = (int)$aRow["subject_id"];
-    $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aRow["subject_type"]));
-    $sSubjectTypeClass = subjectRowTypeClass($sSubjectType);
     $blIsActive = (int)$aRow["is_active"] == 1;
     $blShowActions = subjectRowOption($aOptions, "show_actions", false);
+    $blAriaAttributes = subjectRowOption($aOptions, "aria_attributes", true);
     $iItemSubjectId = (int)subjectRowOption($aOptions, "item_subject_id", 0);
     $sNoWrapStyle = "overflow-wrap: normal; white-space: nowrap; word-break: normal;";
     $sBirthNumberClass = birthNumberClass($aRow["birth_number"], subjectRowOption($aOptions, "birth_number_class", "ch"));
@@ -4004,7 +3992,7 @@ function renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses,
     $sTimestampTooltipText = timestampTooltipText($aRow);
     $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", html($sTimestampTooltipText)) . "\"" : "";
     $aBeforeNameCells = subjectRowOption($aOptions, "before_name_cells", array());
-    $sHtml = "<tr class=\"sr " . $sSubjectTypeClass . ($blIsActive ? " ra" : " ri") . "\" data-subject-id=\"" . html($iSubjectId) . "\" data-subject-type=\"" . html($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">"
+    $sHtml = "<tr class=\"sr" . ($blIsActive ? " ra" : " ri") . "\" data-subject-id=\"" . html($iSubjectId) . "\" data-subject-type=\"" . html($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">"
         . renderSubjectTableCell(html($aRow["subject_type"]), subjectRowOption($aOptions, "type_class", "ch"), subjectRowOption($aOptions, "type_style", ""));
     if (is_array($aBeforeNameCells)) {
         foreach ($aBeforeNameCells as $sCellHtml) {
@@ -4030,10 +4018,12 @@ function renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses,
         . renderSubjectTableCell(renderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, subjectRowOption($aOptions, "group_show_add_action", false), subjectRowOption($aOptions, "group_show_cell_copy_action", true), subjectRowOption($aOptions, "group_cell_copy_before_add_action", true), subjectRowOption($aOptions, "group_defer_data", false)), subjectRowOption($aOptions, "group_class", "c3"), subjectRowOption($aOptions, "group_style", ""))
         . renderSubjectTableCell(renderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), subjectRowOption($aOptions, "note_show_add_action", false), subjectRowOption($aOptions, "note_show_cell_copy_action", true), subjectRowOption($aOptions, "note_cell_copy_before_add_action", true)), subjectRowOption($aOptions, "note_class", "c3"), subjectRowOption($aOptions, "note_style", ""))
         . "</tr>\n";
-    return $sHtml;
+    return $blAriaAttributes ? $sHtml : removeAriaAttributes($sHtml);
 }
 
 function renderUpdatedSubjectRow($oPdo, $iSubjectId, $aVisibilitySettings = null, $aFilterSql = null) {
+    global $blSubjectsAriaAttributes;
+
     $aRows = fetchSubjectRows($oPdo, $iSubjectId, $aFilterSql);
     if (!$aRows) {
         return "";
@@ -4051,22 +4041,7 @@ function renderUpdatedSubjectRow($oPdo, $iSubjectId, $aVisibilitySettings = null
             return "";
         }
     }
-    return renderSubjectRow(
-        $aRows[0],
-        $aContacts,
-        $aNicknames,
-        $aAddresses,
-        $aGroups,
-        $aNotes,
-        true,
-        $aHiddenInactive,
-        is_array($aVisibilitySettings) ? $aVisibilitySettings : null,
-        true,
-        true,
-        true,
-        true,
-        true
-    );
+    return renderSubjectRow($aRows[0], $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, true, $aHiddenInactive, is_array($aVisibilitySettings) ? $aVisibilitySettings : null, true, true, true, true, true, $blSubjectsAriaAttributes);
 }
 
 function getUpdatedSubjectResponse($oPdo, $iSubjectId, $aVisibilitySettings = null, $aFilterSql = null) {
@@ -4140,22 +4115,7 @@ function addressesCompareSubjects($aFirst, $aSecond) {
 }
 
 function addressesAddressFields() {
-    return array(
-        "organization_name",
-        "department_name",
-        "care_of",
-        "street_name",
-        "house_number",
-        "evidence_number",
-        "orientation_number",
-        "orientation_suffix",
-        "address_line2",
-        "city",
-        "city_part",
-        "postal_code",
-        "region",
-        "country"
-    );
+    return array("organization_name", "department_name", "care_of", "street_name", "house_number", "evidence_number", "orientation_number", "orientation_suffix", "address_line2", "city", "city_part", "postal_code", "region", "country");
 }
 
 function addressesBuildMatch($aAddress) {

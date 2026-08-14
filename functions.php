@@ -1728,12 +1728,12 @@ function renderDeferredCopyAction($sClass, $sTitle = "Copy") {
     return "<a class=\"ca " . html($sClass) . "\" href=\"#\" title=\"" . html($sTitle) . "\" aria-label=\"" . html($sTitle) . "\"><span class=\"cb\">" . $sCopyEmoji . "</span></a>";
 }
 
+function removeAriaAttributes($sHtml) {
+    return preg_replace("/\\saria-[a-z][a-z0-9-]*=\"[^\"]*\"/", "", $sHtml);
+}
+
 function phoneContactTypes() {
-    return array(
-        "landline" => true,
-        "cell" => true,
-        "fax" => true,
-        "pager" => true
+    return array("landline" => true, "cell" => true, "fax" => true, "pager" => true
     );
 }
 

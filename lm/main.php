@@ -21,10 +21,10 @@ $sContactCellEmoji              = "&#128241;";
 $sContactTelegramEmoji          = "&#9992;&#65039;";
 $sDefaultCurrency               = "USD";
 $aEmojiData                     = array(
-    "copy" => $sCopyEmoji,
-    "copy-success" => $sCopySuccessEmoji,
-    "copy-failure" => $sCopyFailureEmoji,
-    "calendar-toggle" => $sCalendarToggleEmoji
+    "copy"                      => $sCopyEmoji,
+    "copy-success"              => $sCopySuccessEmoji,
+    "copy-failure"              => $sCopyFailureEmoji,
+    "calendar-toggle"           => $sCalendarToggleEmoji
 );
 
 

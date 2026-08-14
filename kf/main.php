@@ -19,10 +19,10 @@ $sContactCellEmoji              = "&#128241;";
 $sContactFaxEmoji               = "&#128224;";
 $sContactPagerEmoji             = "&#128223;";
 $aEmojiData                     = array(
-    "copy" => $sCopyEmoji,
-    "copy-success" => $sCopySuccessEmoji,
-    "copy-failure" => $sCopyFailureEmoji,
-    "calendar-toggle" => $sCalendarToggleEmoji
+    "copy"                      => $sCopyEmoji,
+    "copy-success"              => $sCopySuccessEmoji,
+    "copy-failure"              => $sCopyFailureEmoji,
+    "calendar-toggle"           => $sCalendarToggleEmoji
 );
 $sDefaultCurrency               = "USD";
 

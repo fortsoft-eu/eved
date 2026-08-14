@@ -1245,7 +1245,7 @@ if (!$aRows) {
 <?php
 
     foreach ($aRows as $aRow) {
-        echo renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aFullListSettings, true, true, true, true, true);
+        echo renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aFullListSettings, true, true, true, true, true, $blSubjectsAriaAttributes);
     }
 
 ?>

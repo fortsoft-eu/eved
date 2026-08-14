@@ -231,6 +231,7 @@ $aIndexRenderOptions["contact_defer_data"] = true;
 $aIndexRenderOptions["nickname_defer_data"] = true;
 $aIndexRenderOptions["group_defer_data"] = true;
 $aIndexRenderOptions["name_defer_copy"] = true;
+$aIndexRenderOptions["aria_attributes"] = $blDirectoryAriaAttributes;
 $iTime = sendPageHeaders();
 
 ?>
