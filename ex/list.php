@@ -98,6 +98,8 @@ handleSubjectAddressDataRequest($oPdo, $aFullListSettings);
 if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] == "POST") {
     sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }
+handleSubjectContactDataRequest($oPdo);
+handleSubjectNicknameDataRequest($oPdo);
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "get_subject") {
     $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
     if ($iSubjectId < 1) {
@@ -1243,7 +1245,7 @@ if (!$aRows) {
 <?php
 
     foreach ($aRows as $aRow) {
-        echo renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aFullListSettings, true);
+        echo renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blCanEdit, $aHiddenInactive, $aFullListSettings, true, true, true, true, true);
     }
     echo "    </tbody>\n",
         "  </table>\n";

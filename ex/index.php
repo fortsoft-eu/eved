@@ -227,6 +227,10 @@ $blRenderPageThrobber = count($aRows) > $iRenderThrobberRowLimit;
 $sRenderThrobberHtmlAttributes = getRenderThrobberHtmlAttributes($blRenderPageThrobber);
 $aIndexRenderOptions = $aIndexSettings;
 $aIndexRenderOptions["address_defer_data"] = true;
+$aIndexRenderOptions["contact_defer_data"] = true;
+$aIndexRenderOptions["nickname_defer_data"] = true;
+$aIndexRenderOptions["group_defer_data"] = true;
+$aIndexRenderOptions["name_defer_copy"] = true;
 $iTime = sendPageHeaders();
 
 ?>

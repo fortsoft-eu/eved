@@ -160,6 +160,21 @@ function getAdminContactNote(oItem) {
     return sNote != "" ? sNote : (oItem ? (oItem.getAttribute("data-contact-note") || "") : "");
 }
 
+function trimAdminCopyValue(sValue) {
+    return String(sValue || "").replace(/^[ \t\r\n]+|[ \t\r\n]+$/g, "");
+}
+
+function getAdminNicknameCopyValue(oItem) {
+    var oValues = oItem ? oItem.querySelector(".subject-nickname-values") : null;
+    var oNote = oItem ? oItem.querySelector(".subject-item-note") : null;
+    return trimAdminCopyValue((oValues ? (oValues.textContent || "") : "") + (oNote ? (oNote.textContent || "") : ""));
+}
+
+function getAdminGroupCopyValue(oItem) {
+    var oValue = oItem ? oItem.querySelector(".subject-item-value") : null;
+    return trimAdminCopyValue(oValue ? (oValue.textContent || "") : "");
+}
+
 function appendAdminConfirmDetail(oParent, sDetail) {
     var aLines;
     var iI;
@@ -3019,6 +3034,7 @@ function getAdminCopyActionValue(oButton) {
     var oValue;
     var aValues;
     var aTexts;
+    var sNote;
     var iI;
     if (sValue != "") {
         return sValue;
@@ -3034,6 +3050,59 @@ function getAdminCopyActionValue(oButton) {
         aTexts = [];
         for (iI = 0; iI < aValues.length; iI += 1) {
             sValue = getAdminMultilineElementText(aValues[iI]);
+            if (sValue != "") {
+                aTexts.push(sValue);
+            }
+        }
+        return aTexts.join("\n");
+    }
+    if (sClass.indexOf(" js-copy-subject-contacts ") !== -1) {
+        oList = oButton.closest ? oButton.closest(".contact-list") : null;
+        aValues = oList ? oList.querySelectorAll(".contact-item") : [];
+        aTexts = [];
+        for (iI = 0; iI < aValues.length; iI += 1) {
+            sValue = getAdminContactItemText(aValues[iI]);
+            sNote = getAdminContactNote(aValues[iI]);
+            if (sNote != "") {
+                sValue += " (" + sNote + ")";
+            }
+            if (sValue != "") {
+                aTexts.push(sValue);
+            }
+        }
+        return aTexts.join("\n");
+    }
+    if (sClass.indexOf(" js-copy-subject-name ") !== -1) {
+        oItem = oButton.closest ? oButton.closest("tr[data-subject-id]") : null;
+        oValue = oItem ? oItem.querySelector(".subject-name-value") : null;
+        return trimAdminCopyValue(oValue ? (oValue.textContent || "") : "");
+    }
+    if (sClass.indexOf(" js-copy-subject-nickname ") !== -1) {
+        oItem = oButton.closest ? oButton.closest(".subject-nickname-item") : null;
+        return getAdminNicknameCopyValue(oItem);
+    }
+    if (sClass.indexOf(" js-copy-subject-nicknames ") !== -1) {
+        oList = oButton.closest ? oButton.closest(".subject-item-list") : null;
+        aValues = oList ? oList.querySelectorAll(".subject-nickname-item") : [];
+        aTexts = [];
+        for (iI = 0; iI < aValues.length; iI += 1) {
+            sValue = getAdminNicknameCopyValue(aValues[iI]);
+            if (sValue != "") {
+                aTexts.push(sValue);
+            }
+        }
+        return aTexts.join("\n");
+    }
+    if (sClass.indexOf(" js-copy-subject-group ") !== -1) {
+        oItem = oButton.closest ? oButton.closest(".subject-group-item") : null;
+        return getAdminGroupCopyValue(oItem);
+    }
+    if (sClass.indexOf(" js-copy-subject-groups ") !== -1) {
+        oList = oButton.closest ? oButton.closest(".subject-item-list") : null;
+        aValues = oList ? oList.querySelectorAll(".subject-group-item") : [];
+        aTexts = [];
+        for (iI = 0; iI < aValues.length; iI += 1) {
+            sValue = getAdminGroupCopyValue(aValues[iI]);
             if (sValue != "") {
                 aTexts.push(sValue);
             }
@@ -3121,6 +3190,78 @@ function loadAdminSubjectAddressData(aItems, fSuccess, fFailure) {
     }).catch(function (oException) {
         logAdminException(oException);
         fFailure("Address could not be loaded.");
+    });
+}
+
+function loadAdminSubjectContactData(oItem, fSuccess, fFailure) {
+    var oRow = oItem && oItem.closest ? oItem.closest("tr[data-subject-id]") : null;
+    var oData;
+    if (oItem && oItem._adminSubjectContactData) {
+        fSuccess(oItem._adminSubjectContactData);
+        return;
+    }
+    if (!oItem || !oRow || !window.fetch || !window.FormData) {
+        fFailure("Contact could not be loaded.");
+        return;
+    }
+    oData = new FormData();
+    oData.append("action", "get_subject_contact");
+    oData.append("subject_id", oRow.getAttribute("data-subject-id") || "");
+    oData.append("subject_contact_id", oItem.getAttribute("data-subject-contact-id") || "");
+    appendAdminCsrfToken(oData);
+    fetch(window.location.href, {
+        "method": "POST",
+        "body": oData,
+        "credentials": "same-origin",
+        "headers": getAdminAjaxHeaders()
+    }).then(function (oResponse) {
+        return oResponse.json();
+    }).then(function (aData) {
+        if (!aData || !aData.success || !aData.contact) {
+            fFailure(aData && aData.message ? aData.message : "Contact could not be loaded.");
+            return;
+        }
+        oItem._adminSubjectContactData = aData.contact;
+        fSuccess(aData.contact);
+    }).catch(function (oException) {
+        logAdminException(oException);
+        fFailure("Contact could not be loaded.");
+    });
+}
+
+function loadAdminSubjectNicknameData(oItem, fSuccess, fFailure) {
+    var oRow = oItem && oItem.closest ? oItem.closest("tr[data-subject-id]") : null;
+    var oData;
+    if (oItem && oItem._adminSubjectNicknameData) {
+        fSuccess(oItem._adminSubjectNicknameData);
+        return;
+    }
+    if (!oItem || !oRow || !window.fetch || !window.FormData) {
+        fFailure("Nickname could not be loaded.");
+        return;
+    }
+    oData = new FormData();
+    oData.append("action", "get_subject_nickname");
+    oData.append("subject_id", oRow.getAttribute("data-subject-id") || "");
+    oData.append("nickname_id", oItem.getAttribute("data-nickname-id") || "");
+    appendAdminCsrfToken(oData);
+    fetch(window.location.href, {
+        "method": "POST",
+        "body": oData,
+        "credentials": "same-origin",
+        "headers": getAdminAjaxHeaders()
+    }).then(function (oResponse) {
+        return oResponse.json();
+    }).then(function (aData) {
+        if (!aData || !aData.success || !aData.nickname) {
+            fFailure(aData && aData.message ? aData.message : "Nickname could not be loaded.");
+            return;
+        }
+        oItem._adminSubjectNicknameData = aData.nickname;
+        fSuccess(aData.nickname);
+    }).catch(function (oException) {
+        logAdminException(oException);
+        fFailure("Nickname could not be loaded.");
     });
 }
 
@@ -5109,6 +5250,33 @@ document.addEventListener("DOMContentLoaded", function () {
         return getSubjectItemValue(oItem, sName) == "1";
     }
 
+    function getSubjectNicknameValue(oItem, aNickname, sName) {
+        var sAttribute = sName == "id" ? "data-nickname-id" : "data-" + sName.replace(/_/g, "-");
+        if (aNickname && typeof aNickname[sName] != "undefined" && aNickname[sName] !== null) {
+            return aNickname[sName];
+        }
+        return getSubjectItemValue(oItem, sAttribute);
+    }
+
+    function getSubjectNicknameFlag(oItem, aNickname, sName, sAttribute) {
+        if (aNickname && typeof aNickname[sName] != "undefined") {
+            return parseInt(aNickname[sName] || "0", 10) === 1;
+        }
+        return getSubjectItemFlag(oItem, sAttribute);
+    }
+
+    function getSubjectGroupName(oItem) {
+        if (oItem && oItem.hasAttribute("data-group-name")) {
+            return oItem.getAttribute("data-group-name") || "";
+        }
+        return getAdminGroupCopyValue(oItem);
+    }
+
+    function getSubjectGroupSubjectId(oItem) {
+        var oRow = getAdminSubjectRow(oItem);
+        return oRow ? (oRow.getAttribute("data-subject-id") || "") : getSubjectItemValue(oItem, "data-subject-id");
+    }
+
     function getSubjectAddressValue(oItem, aAddress, sName) {
         var sAttribute = sName == "id" ? "data-address-id" : "data-" + sName.replace(/_/g, "-");
         if (aAddress && typeof aAddress[sName] != "undefined" && aAddress[sName] !== null) {
@@ -5753,8 +5921,10 @@ document.addEventListener("DOMContentLoaded", function () {
         sTimestampTooltip = aGroup.timestamp_tooltip || "";
         aItems = document.querySelectorAll(".subject-group-item[data-group-id=\"" + aGroup.group_id + "\"]");
         for (iI = 0; iI < aItems.length; iI += 1) {
-            aItems[iI].setAttribute("data-group-name", aGroup.name || "");
-            if (sTimestampTooltip) {
+            if (aItems[iI].hasAttribute("data-group-name")) {
+                aItems[iI].setAttribute("data-group-name", aGroup.name || "");
+            }
+            if (sTimestampTooltip && aItems[iI].hasAttribute("data-timestamp-tooltip")) {
                 aItems[iI].setAttribute("data-timestamp-tooltip", sTimestampTooltip);
             }
             oValue = aItems[iI].querySelector(".subject-item-value");
@@ -6216,17 +6386,17 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function openNicknameDialog(oItem, oSubjectRow, blNewNickname) {
+    function openNicknameDialog(oItem, oSubjectRow, blNewNickname, aNickname) {
         var oDialogData = createSubjectDialog(blNewNickname ? "New Nickname" : "Edit Nickname", blNewNickname ? oSubjectRow : getAdminSubjectRow(oItem));
-        var sSubjectId = blNewNickname && oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : getSubjectItemValue(oItem, "data-subject-id");
+        var sSubjectId = blNewNickname && oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : getSubjectNicknameValue(oItem, aNickname, "subject_id");
         if (!oDialogData) {
             return;
         }
-        var oNickname = appendSubjectTextField(oDialogData.form, "Nickname", "nickname", getSubjectItemValue(oItem, "data-nickname"));
-        var oContext = appendSubjectTextField(oDialogData.form, "Context", "context", getSubjectItemValue(oItem, "data-context"));
-        var oNote = appendSubjectTextField(oDialogData.form, "Note", "note", getSubjectItemValue(oItem, "data-note"));
-        var oPrimary = appendSubjectCheckbox(oDialogData.form, "Primary", "is_primary", getSubjectItemFlag(oItem, "data-primary"));
-        var oActive = appendSubjectCheckbox(oDialogData.form, "Active", "is_active", blNewNickname ? true : getSubjectItemFlag(oItem, "data-active"));
+        var oNickname = appendSubjectTextField(oDialogData.form, "Nickname", "nickname", getSubjectNicknameValue(oItem, aNickname, "nickname"));
+        var oContext = appendSubjectTextField(oDialogData.form, "Context", "context", getSubjectNicknameValue(oItem, aNickname, "context"));
+        var oNote = appendSubjectTextField(oDialogData.form, "Note", "note", getSubjectNicknameValue(oItem, aNickname, "note"));
+        var oPrimary = appendSubjectCheckbox(oDialogData.form, "Primary", "is_primary", getSubjectNicknameFlag(oItem, aNickname, "is_primary", "data-primary"));
+        var oActive = appendSubjectCheckbox(oDialogData.form, "Active", "is_active", blNewNickname ? true : getSubjectNicknameFlag(oItem, aNickname, "is_active", "data-active"));
         oDialogData.form.addEventListener("submit", function (oEvent) {
             var oData = new FormData();
             oEvent.preventDefault();
@@ -6234,7 +6404,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (blNewNickname) {
                 oData.append("subject_id", sSubjectId);
             } else {
-                oData.append("nickname_id", getSubjectItemValue(oItem, "data-nickname-id"));
+                oData.append("nickname_id", getSubjectNicknameValue(oItem, aNickname, "id"));
             }
             appendAdminEncodedValue(oData, "nickname", oNickname.value);
             appendAdminEncodedValue(oData, "context", oContext.value);
@@ -6342,14 +6512,14 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!oDialogData) {
             return;
         }
-        var oName = appendSubjectTextField(oDialogData.form, "Name", "name", getSubjectItemValue(oItem, "data-group-name"));
+        var oName = appendSubjectTextField(oDialogData.form, "Name", "name", getSubjectGroupName(oItem));
         oSharedNote.textContent = "Name is shared by all subjects using this group.";
         oDialogData.form.insertBefore(oSharedNote, oDialogData.form.children[1]);
         oDialogData.form.addEventListener("submit", function (oEvent) {
             var oData = new FormData();
             oEvent.preventDefault();
             oData.append("action", "update_subject_group");
-            oData.append("subject_id", getSubjectItemValue(oItem, "data-subject-id"));
+            oData.append("subject_id", getSubjectGroupSubjectId(oItem));
             oData.append("group_id", getSubjectItemValue(oItem, "data-group-id"));
             appendAdminEncodedValue(oData, "name", oName.value);
             submitSubjectDialog(oDialogData, oData);
@@ -6485,12 +6655,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     "value": "delete_subject_group"
                 }, {
                     "name": "subject_id",
-                    "value": getSubjectItemValue(oItem, "data-subject-id")
+                    "value": getSubjectGroupSubjectId(oItem)
                 }, {
                     "name": "group_id",
                     "value": getSubjectItemValue(oItem, "data-group-id")
                 }
-            ], getAdminSubjectRow(oItem), getSubjectItemValue(oItem, "data-group-name"));
+            ], getAdminSubjectRow(oItem), getSubjectGroupName(oItem));
     }
 
     function openDeleteNoteDialog(oItem) {
@@ -6506,6 +6676,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.addEventListener("click", function (oEvent) {
         var oButton = oEvent.target.closest ? oEvent.target.closest(".js-add-subject, .js-add-subject-nickname, .js-add-subject-address, .js-add-subject-group, .js-add-subject-note, .js-edit-subject, .js-edit-subject-portal, .js-edit-subject-nickname, .js-edit-subject-address, .js-edit-subject-group, .js-edit-subject-note, .js-delete-subject, .js-delete-subject-contact, .js-delete-subject-nickname, .js-delete-subject-address, .js-delete-subject-group, .js-delete-subject-note") : null;
+        var oNicknameItem;
         var oAddressItem;
         if (oButton) {
             oEvent.preventDefault();
@@ -6523,7 +6694,16 @@ document.addEventListener("DOMContentLoaded", function () {
             } else if (oButton.className.indexOf("js-edit-subject-portal") !== -1) {
                 loadSubjectPortal(oButton);
             } else if (oButton.className.indexOf("js-edit-subject-nickname") !== -1) {
-                openNicknameDialog(oButton.closest(".subject-nickname-item"), null, false);
+                oNicknameItem = oButton.closest(".subject-nickname-item");
+                if (oNicknameItem && (" " + oNicknameItem.className + " ").indexOf(" subject-nickname-data-deferred ") !== -1) {
+                    loadAdminSubjectNicknameData(oNicknameItem, function (aNickname) {
+                        openNicknameDialog(oNicknameItem, null, false, aNickname);
+                    }, function (sMessage) {
+                        showAdminMessageDialog(sMessage || "Nickname could not be loaded.");
+                    });
+                } else {
+                    openNicknameDialog(oNicknameItem, null, false);
+                }
             } else if (oButton.className.indexOf("js-edit-subject-address") !== -1) {
                 oAddressItem = oButton.closest(".subject-address-item");
                 if (oAddressItem && (" " + oAddressItem.className + " ").indexOf(" subject-address-data-deferred ") !== -1) {
@@ -6711,7 +6891,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-    function openContactDialog(oItem, oSubjectRowParam, blNewContact) {
+    function openContactDialog(oItem, oSubjectRowParam, blNewContact, aContact) {
         var oDialog = prepareAdminReusableDialog();
         var oForm = document.createElement("form");
         var oBox = oForm;
@@ -6725,6 +6905,12 @@ document.addEventListener("DOMContentLoaded", function () {
         var oSubjectRow = blNewContact ? oSubjectRowParam : getAdminSubjectRow(oItem);
         var sSubjectId = oSubjectRow ? (oSubjectRow.getAttribute("data-subject-id") || "") : "";
         var sNewContactTypeId = blNewContact ? getNewContactDefaultTypeId() : "";
+        var sContactTypeId = blNewContact ? sNewContactTypeId : (aContact ? String(aContact.contact_type_id || "") : (oItem.getAttribute("data-contact-type-id") || ""));
+        var sContactType = blNewContact && !sNewContactTypeId ? "cell" : (blNewContact ? "" : (aContact ? (aContact.contact_type || "") : (oItem.getAttribute("data-contact-type") || "")));
+        var sContactValue = blNewContact ? "" : (aContact ? (aContact.contact_value || "") : getAdminContactValue(oItem));
+        var sContactNote = blNewContact ? "" : (aContact ? (aContact.note || "") : getAdminContactNote(oItem));
+        var blContactPrimary = blNewContact ? false : (aContact ? parseInt(aContact.is_primary || "0", 10) === 1 : oItem.getAttribute("data-contact-primary") == "1");
+        var blContactActive = blNewContact ? true : (aContact ? parseInt(aContact.is_active || "0", 10) === 1 : oItem.getAttribute("data-contact-active") == "1");
         var blClosed = false;
         var closeOnEscape = function (oEvent) {
             if (oEvent.key == "Escape") {
@@ -6775,11 +6961,11 @@ document.addEventListener("DOMContentLoaded", function () {
         var oSharedNote = document.createElement("p");
         oSharedNote.textContent = "Shared contact values used by other subjects are preserved.";
         oForm.appendChild(oSharedNote);
-        var oType = appendContactTypeSelect(oForm, blNewContact ? sNewContactTypeId : (oItem.getAttribute("data-contact-type-id") || ""), blNewContact && !sNewContactTypeId ? "cell" : (blNewContact ? "" : (oItem.getAttribute("data-contact-type") || "")));
-        var oValue = appendTextField(oForm, "Value", "contact_value", blNewContact ? "" : getAdminContactValue(oItem));
-        var oNote = appendTextField(oForm, "Note", "note", blNewContact ? "" : getAdminContactNote(oItem));
-        var oPrimary = appendCheckbox(oForm, "Primary", "is_primary", blNewContact ? false : oItem.getAttribute("data-contact-primary") == "1");
-        var oActive = appendCheckbox(oForm, "Active", "is_active", blNewContact ? true : oItem.getAttribute("data-contact-active") == "1");
+        var oType = appendContactTypeSelect(oForm, sContactTypeId, sContactType);
+        var oValue = appendTextField(oForm, "Value", "contact_value", sContactValue);
+        var oNote = appendTextField(oForm, "Note", "note", sContactNote);
+        var oPrimary = appendCheckbox(oForm, "Primary", "is_primary", blContactPrimary);
+        var oActive = appendCheckbox(oForm, "Active", "is_active", blContactActive);
         oForm.appendChild(oError);
         oActions.appendChild(oSave);
         oActions.appendChild(oCancel);
@@ -6864,13 +7050,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.addEventListener("click", function (oEvent) {
         var oButton = oEvent.target.closest ? oEvent.target.closest(".js-add-subject-contact, .js-edit-subject-contact") : null;
+        var oContactItem;
         if (oButton) {
             oEvent.preventDefault();
             oEvent.stopPropagation();
             if (oButton.className.indexOf("js-add-subject-contact") !== -1) {
                 openContactDialog(null, getAdminSubjectRow(oButton), true);
             } else {
-                openContactDialog(oButton.closest(".contact-item"), null, false);
+                oContactItem = oButton.closest(".contact-item");
+                if (oContactItem && (" " + oContactItem.className + " ").indexOf(" contact-data-deferred ") !== -1) {
+                    loadAdminSubjectContactData(oContactItem, function (aContact) {
+                        openContactDialog(oContactItem, null, false, aContact);
+                    }, function (sMessage) {
+                        showAdminMessageDialog(sMessage || "Contact could not be loaded.");
+                    });
+                } else {
+                    openContactDialog(oContactItem, null, false);
+                }
             }
         }
     }, true);

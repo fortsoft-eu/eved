@@ -1468,7 +1468,7 @@ function renderEmptySubjectItemCell($blShowActions, $sClass, $sTitle, $iSubjectI
     return $sHiddenInactive != "" ? $sHiddenInactive : $sEmptyValueEmoji;
 }
 
-function renderContactList($aContacts, $blShowActions = true, $iSubjectId = 0, $blShowCopy = true, $blAllowExternalLinks = true, $blHasHiddenInactive = false, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true) {
+function renderContactList($aContacts, $blShowActions = true, $iSubjectId = 0, $blShowCopy = true, $blAllowExternalLinks = true, $blHasHiddenInactive = false, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true, $blDeferData = false) {
     global $sEditEmoji, $sDeleteEmoji, $sPrimaryEmoji, $sInactiveEmoji;
 
     if (!$aContacts) {
@@ -1476,6 +1476,7 @@ function renderContactList($aContacts, $blShowActions = true, $iSubjectId = 0, $
     }
     $sHtml = "<div class=\"contact-list\">";
     $aCellCopyValues = array();
+    $iCellCopyValueCount = 0;
     $sHiddenInactiveAction = $blHasHiddenInactive ? renderHiddenInactiveIndicator() : "";
     foreach ($aContacts as $aContact) {
         $sNote = trim((string)$aContact["note"]);
@@ -1486,7 +1487,13 @@ function renderContactList($aContacts, $blShowActions = true, $iSubjectId = 0, $
         $sContactValue = contactDisplayValue($sContactType, $aContact["contact_value"]);
         $sTimestampTooltipText = timestampTooltipText($aContact);
         $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", html($sTimestampTooltipText)) . "\"" : "";
-        $aCellCopyValues[] = $sContactTypeName . ": " . $sContactValue . ($sNote != "" ? " (" . $sNote . ")" : "");
+        $sCellCopyValue = $sContactTypeName . ": " . $sContactValue . ($sNote != "" ? " (" . $sNote . ")" : "");
+        if (trim($sCellCopyValue) != "") {
+            $iCellCopyValueCount++;
+            if (!$blDeferData) {
+                $aCellCopyValues[] = $sCellCopyValue;
+            }
+        }
         $sActions = "";
         if ($blShowActions) {
             $sActions = "<span class=\"list-item-actions\">"
@@ -1494,14 +1501,19 @@ function renderContactList($aContacts, $blShowActions = true, $iSubjectId = 0, $
                 . "<a href=\"#\" class=\"item-action js-delete-subject-contact\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>"
                 . "</span>";
         }
-        $sHtml .= "<div class=\"contact-item list-item" . ($blIsActive ? "" : " contact-item-inactive") . "\""
-            . " data-subject-contact-id=\"" . html($aContact["subject_contact_id"]) . "\""
-            . " data-contact-id=\"" . html($aContact["contact_id"]) . "\""
-            . " data-contact-type-id=\"" . html(isset($aContact["contact_type_id"]) ? $aContact["contact_type_id"] : "") . "\""
-            . " data-contact-type=\"" . html($sContactType) . "\""
-            . " data-contact-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
-            . " data-contact-active=\"" . ($blIsActive ? "1" : "0") . "\""
-            . renderTimestampTooltipDataAttribute($aContact) . ">"
+        $sDataAttributes = "";
+        if (!$blDeferData || $blShowActions) {
+            $sDataAttributes = " data-subject-contact-id=\"" . html($aContact["subject_contact_id"]) . "\"";
+        }
+        if (!$blDeferData) {
+            $sDataAttributes .= " data-contact-id=\"" . html($aContact["contact_id"]) . "\""
+                . " data-contact-type-id=\"" . html(isset($aContact["contact_type_id"]) ? $aContact["contact_type_id"] : "") . "\""
+                . " data-contact-type=\"" . html($sContactType) . "\""
+                . " data-contact-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
+                . " data-contact-active=\"" . ($blIsActive ? "1" : "0") . "\""
+                . renderTimestampTooltipDataAttribute($aContact);
+        }
+        $sHtml .= "<div class=\"contact-item list-item" . ($blDeferData && $blShowActions ? " contact-data-deferred" : "") . ($blIsActive ? "" : " contact-item-inactive") . "\"" . $sDataAttributes . ">"
             . "<span class=\"contact-db-values\"" . $sTimestampTooltipAttribute . "><span class=\"contact-type\">" . html($sContactTypeName) . "</span>: "
             . renderContactValueText($sContactType, $aContact["contact_value"]) . "</span>"
             . renderContactValueActions($sContactType, $aContact["contact_value"], $blShowCopy, $blAllowExternalLinks)
@@ -1513,7 +1525,7 @@ function renderContactList($aContacts, $blShowActions = true, $iSubjectId = 0, $
             . $sActions
             . "</div>";
     }
-    $sCellCopyAction = $blShowCellCopyAction ? renderSubjectCellCopyAction($aCellCopyValues) : "";
+    $sCellCopyAction = $blShowCellCopyAction ? ($blDeferData && $iCellCopyValueCount > 1 ? renderDeferredCopyAction("js-copy-subject-contacts", "Copy items") : renderSubjectCellCopyAction($aCellCopyValues)) : "";
     if ($blShowActions && $blShowAddAction) {
         $sHtml .= renderAddSubjectItemAction("js-add-subject-contact", "New contact", $iSubjectId, ($blCellCopyBeforeAddAction ? $sCellCopyAction : "") . $sHiddenInactiveAction, $blCellCopyBeforeAddAction ? "" : $sCellCopyAction);
     } else {
@@ -1522,7 +1534,7 @@ function renderContactList($aContacts, $blShowActions = true, $iSubjectId = 0, $
     return $sHtml . "</div>";
 }
 
-function renderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 0, $blHasHiddenInactive = false, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true) {
+function renderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 0, $blHasHiddenInactive = false, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true, $blDeferData = false) {
     global $sEditEmoji, $sDeleteEmoji, $sPrimaryEmoji, $sInactiveEmoji;
 
     if (!$aNicknames) {
@@ -1530,12 +1542,18 @@ function renderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 0,
     }
     $sHtml = "<div class=\"subject-item-list\">";
     $aCellCopyValues = array();
+    $iCellCopyValueCount = 0;
     $sHiddenInactiveAction = $blHasHiddenInactive ? renderHiddenInactiveIndicator() : "";
     foreach ($aNicknames as $aNickname) {
         $sContext = trim((string)$aNickname["context"]);
         $sNote = trim((string)$aNickname["note"]);
         $sCopyText = $aNickname["nickname"] . ($sContext != "" ? " [" . $sContext . "]" : "") . ($sNote != "" ? " (" . $sNote . ")" : "");
-        $aCellCopyValues[] = $sCopyText;
+        if (trim($sCopyText) != "") {
+            $iCellCopyValueCount++;
+            if (!$blDeferData) {
+                $aCellCopyValues[] = $sCopyText;
+            }
+        }
         $blIsPrimary = (int)$aNickname["is_primary"] == 1;
         $blIsActive = (int)$aNickname["is_active"] == 1;
         $sTimestampTooltipText = timestampTooltipText($aNickname);
@@ -1547,25 +1565,32 @@ function renderNicknameList($aNicknames, $blShowActions = true, $iSubjectId = 0,
                 . "<a href=\"#\" class=\"item-action js-delete-subject-nickname\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>"
                 . "</span>";
         }
-        $sHtml .= "<div class=\"subject-item list-item subject-nickname-item" . ($blIsActive ? "" : " subject-item-inactive") . "\""
-            . " data-nickname-id=\"" . html($aNickname["id"]) . "\""
-            . " data-subject-id=\"" . html($aNickname["subject_id"]) . "\""
-            . " data-nickname=\"" . html($aNickname["nickname"]) . "\""
-            . " data-context=\"" . html($sContext) . "\""
-            . " data-note=\"" . html($sNote) . "\""
-            . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
-            . " data-active=\"" . ($blIsActive ? "1" : "0") . "\">"
+        $sDataAttributes = "";
+        if ($blDeferData) {
+            if ($blShowActions) {
+                $sDataAttributes = " data-nickname-id=\"" . html($aNickname["id"]) . "\"";
+            }
+        } else {
+            $sDataAttributes = " data-nickname-id=\"" . html($aNickname["id"]) . "\""
+                . " data-subject-id=\"" . html($aNickname["subject_id"]) . "\""
+                . " data-nickname=\"" . html($aNickname["nickname"]) . "\""
+                . " data-context=\"" . html($sContext) . "\""
+                . " data-note=\"" . html($sNote) . "\""
+                . " data-primary=\"" . ($blIsPrimary ? "1" : "0") . "\""
+                . " data-active=\"" . ($blIsActive ? "1" : "0") . "\"";
+        }
+        $sHtml .= "<div class=\"subject-item list-item subject-nickname-item" . ($blDeferData && $blShowActions ? " subject-nickname-data-deferred" : "") . ($blIsActive ? "" : " subject-item-inactive") . "\"" . $sDataAttributes . ">"
             . "<span class=\"subject-nickname-values\"" . $sTimestampTooltipAttribute . ">"
             . "<span class=\"subject-item-value\">" . html($aNickname["nickname"]) . "</span>"
             . "<span class=\"subject-item-context\">" . ($sContext != "" ? " [" . html($sContext) . "]" : "") . "</span>"
             . "</span>"
             . "<span class=\"subject-item-note\">" . ($sNote != "" ? " (" . html($sNote) . ")" : "") . "</span>"
-            . renderCopyAction($sCopyText)
+            . ($blDeferData ? (trim($sCopyText) != "" ? renderDeferredCopyAction("js-copy-subject-nickname") : "") : renderCopyAction($sCopyText))
             . "<span class=\"subject-item-flags\"><span title=\"Primary\">" . ($blIsPrimary ? $sPrimaryEmoji : "") . "</span><span title=\"Inactive\">" . ($blIsActive ? "" : $sInactiveEmoji) . "</span></span>"
             . $sActions
             . "</div>";
     }
-    $sCellCopyAction = $blShowCellCopyAction ? renderSubjectCellCopyAction($aCellCopyValues) : "";
+    $sCellCopyAction = $blShowCellCopyAction ? ($blDeferData && $iCellCopyValueCount > 1 ? renderDeferredCopyAction("js-copy-subject-nicknames", "Copy items") : renderSubjectCellCopyAction($aCellCopyValues)) : "";
     if ($blShowActions && $blShowAddAction) {
         $sHtml .= renderAddSubjectItemAction("js-add-subject-nickname", "New nickname", $iSubjectId, ($blCellCopyBeforeAddAction ? $sCellCopyAction : "") . $sHiddenInactiveAction, $blCellCopyBeforeAddAction ? "" : $sCellCopyAction);
     } else {
@@ -1780,7 +1805,7 @@ function renderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0, 
     return $sHtml . "</div>";
 }
 
-function renderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true) {
+function renderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $blShowAddAction = true, $blShowCellCopyAction = false, $blCellCopyBeforeAddAction = true, $blDeferData = false) {
     global $sEditEmoji, $sDeleteEmoji, $sEmptyValueEmoji;
 
     if (!$aGroups) {
@@ -1788,8 +1813,14 @@ function renderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $blSh
     }
     $sHtml = "<div class=\"subject-item-list\">";
     $aCellCopyValues = array();
+    $iCellCopyValueCount = 0;
     foreach ($aGroups as $aGroup) {
-        $aCellCopyValues[] = $aGroup["name"];
+        if (trim((string)$aGroup["name"]) != "") {
+            $iCellCopyValueCount++;
+            if (!$blDeferData) {
+                $aCellCopyValues[] = $aGroup["name"];
+            }
+        }
         $sTimestampTooltipText = timestampTooltipText($aGroup);
         $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", html($sTimestampTooltipText)) . "\"" : "";
         $sActions = "";
@@ -1799,17 +1830,24 @@ function renderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $blSh
                 . "<a href=\"#\" class=\"item-action js-delete-subject-group\" title=\"Delete\" aria-label=\"Delete\">" . $sDeleteEmoji . "</a>"
                 . "</span>";
         }
-        $sHtml .= "<div class=\"subject-item list-item subject-group-item\""
-            . " data-subject-id=\"" . html($aGroup["subject_id"]) . "\""
-            . " data-group-id=\"" . html($aGroup["group_id"]) . "\""
-            . " data-group-name=\"" . html($aGroup["name"]) . "\""
-            . renderTimestampTooltipDataAttribute($aGroup) . ">"
+        $sDataAttributes = "";
+        if ($blDeferData) {
+            if ($blShowActions) {
+                $sDataAttributes = " data-group-id=\"" . html($aGroup["group_id"]) . "\"";
+            }
+        } else {
+            $sDataAttributes = " data-subject-id=\"" . html($aGroup["subject_id"]) . "\""
+                . " data-group-id=\"" . html($aGroup["group_id"]) . "\""
+                . " data-group-name=\"" . html($aGroup["name"]) . "\""
+                . renderTimestampTooltipDataAttribute($aGroup);
+        }
+        $sHtml .= "<div class=\"subject-item list-item subject-group-item\"" . $sDataAttributes . ">"
             . "<span class=\"subject-item-value\"" . $sTimestampTooltipAttribute . ">" . html($aGroup["name"]) . "</span>"
-            . renderCopyAction($aGroup["name"])
+            . ($blDeferData ? (trim((string)$aGroup["name"]) != "" ? renderDeferredCopyAction("js-copy-subject-group") : "") : renderCopyAction($aGroup["name"]))
             . $sActions
             . "</div>";
     }
-    $sCellCopyAction = $blShowCellCopyAction ? renderSubjectCellCopyAction($aCellCopyValues) : "";
+    $sCellCopyAction = $blShowCellCopyAction ? ($blDeferData && $iCellCopyValueCount > 1 ? renderDeferredCopyAction("js-copy-subject-groups", "Copy items") : renderSubjectCellCopyAction($aCellCopyValues)) : "";
     if ($blShowActions && $blShowAddAction) {
         $sHtml .= renderAddSubjectItemAction("js-add-subject-group", "Assign group", $iSubjectId, $blCellCopyBeforeAddAction ? $sCellCopyAction : "", $blCellCopyBeforeAddAction ? "" : $sCellCopyAction);
     } else {
@@ -3224,6 +3262,45 @@ function fetchSubjectContacts($oPdo, $iSubjectId = 0) {
     return $aContacts;
 }
 
+function subjectContactData($aContact) {
+    $sContactType = isset($aContact["contact_type"]) ? (string)$aContact["contact_type"] : "";
+    return array(
+        "subject_contact_id" => (int)$aContact["subject_contact_id"],
+        "subject_id" => (int)$aContact["subject_id"],
+        "contact_id" => (int)$aContact["contact_id"],
+        "contact_type_id" => (int)$aContact["contact_type_id"],
+        "contact_type" => $sContactType,
+        "contact_value" => contactDisplayValue($sContactType, $aContact["contact_value"]),
+        "note" => (string)$aContact["note"],
+        "is_primary" => (int)$aContact["is_primary"],
+        "is_active" => (int)$aContact["is_active"]
+    );
+}
+
+function handleSubjectContactDataRequest($oPdo) {
+    if ($_SERVER["REQUEST_METHOD"] != "POST" || !isset($_POST["action"]) || $_POST["action"] != "get_subject_contact") {
+        return;
+    }
+    $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
+    $iSubjectContactId = isset($_POST["subject_contact_id"]) ? (int)$_POST["subject_contact_id"] : 0;
+    if ($iSubjectId < 1 || $iSubjectContactId < 1) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid contact request."), 400);
+    }
+    try {
+        $aContacts = fetchSubjectContacts($oPdo, $iSubjectId);
+        $aSubjectContacts = isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array();
+        foreach ($aSubjectContacts as $aContact) {
+            if ((int)$aContact["subject_contact_id"] == $iSubjectContactId) {
+                sendJsonAndExit(array("success" => true, "contact" => subjectContactData($aContact)));
+            }
+        }
+        sendJsonAndExit(array("success" => false, "message" => "Contact was not found."), 404);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
+}
+
 function fetchSubjectNicknames($oPdo, $iSubjectId = 0) {
     $aNicknames = array();
     $sSql = "SELECT id, subject_id, nickname, context, is_primary, is_active, note, created_at, updated_at FROM ex_subject_nicknames";
@@ -3245,6 +3322,42 @@ function fetchSubjectNicknames($oPdo, $iSubjectId = 0) {
         $aNicknames[$iCurrentSubjectId][] = $aNickname;
     }
     return $aNicknames;
+}
+
+function subjectNicknameData($aNickname) {
+    return array(
+        "id" => (int)$aNickname["id"],
+        "subject_id" => (int)$aNickname["subject_id"],
+        "nickname" => (string)$aNickname["nickname"],
+        "context" => trim((string)$aNickname["context"]),
+        "note" => trim((string)$aNickname["note"]),
+        "is_primary" => (int)$aNickname["is_primary"],
+        "is_active" => (int)$aNickname["is_active"]
+    );
+}
+
+function handleSubjectNicknameDataRequest($oPdo) {
+    if ($_SERVER["REQUEST_METHOD"] != "POST" || !isset($_POST["action"]) || $_POST["action"] != "get_subject_nickname") {
+        return;
+    }
+    $iSubjectId = isset($_POST["subject_id"]) ? (int)$_POST["subject_id"] : 0;
+    $iNicknameId = isset($_POST["nickname_id"]) ? (int)$_POST["nickname_id"] : 0;
+    if ($iSubjectId < 1 || $iNicknameId < 1) {
+        sendJsonAndExit(array("success" => false, "message" => "Invalid nickname request."), 400);
+    }
+    try {
+        $aNicknames = fetchSubjectNicknames($oPdo, $iSubjectId);
+        $aSubjectNicknames = isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array();
+        foreach ($aSubjectNicknames as $aNickname) {
+            if ((int)$aNickname["id"] == $iNicknameId) {
+                sendJsonAndExit(array("success" => true, "nickname" => subjectNicknameData($aNickname)));
+            }
+        }
+        sendJsonAndExit(array("success" => false, "message" => "Nickname was not found."), 404);
+    } catch (Exception $oException) {
+        error_log((string)$oException);
+        sendJsonAndExit(array("success" => false, "message" => "Database error: " . $oException->getMessage()), 500);
+    }
 }
 
 function fetchSubjectAddresses($oPdo, $iSubjectId = 0) {
@@ -3806,7 +3919,7 @@ function applySubjectVisibilitySettings(&$aRows, &$aContacts, &$aNicknames, &$aA
     }
 }
 
-function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions = true, $aHiddenInactive = array(), $aDisplaySettings = null, $blDeferAddressData = false) {
+function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $blShowActions = true, $aHiddenInactive = array(), $aDisplaySettings = null, $blDeferAddressData = false, $blDeferContactData = false, $blDeferNicknameData = false, $blDeferGroupData = false, $blDeferNameCopy = false) {
     global $sEditEmoji, $sDeleteEmoji, $sPortalEmoji;
 
     $iSubjectId = (int)$aRow["subject_id"];
@@ -3832,7 +3945,7 @@ function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups,
     return "      <tr class=\"subject-row subject-row-type-" . html($sSubjectType) . ($blIsActive ? " subject-row-active" : " subject-row-inactive") . "\" data-subject-id=\"" . html($iSubjectId) . "\" data-subject-type=\"" . html($aRow["subject_type"]) . "\" data-subject-active=\"" . ($blIsActive ? "1" : "0") . "\">\n"
         . "        <td class=\"subject-type-column\">" . html($aRow["subject_type"]) . "</td>\n"
         . "        <td><span class=\"subject-item-value subject-name-value\"" . $sTimestampTooltipAttribute . ">" . htmlValue($aRow["subject_name"]) . "</span>"
-        . renderCopyAction($aRow["subject_name"])
+        . ($blDeferNameCopy ? renderDeferredCopyAction("js-copy-subject-name") : renderCopyAction($aRow["subject_name"]))
         . $sActions . "</td>\n"
         . "        <td>" . htmlValue($aRow["first_name"]) . "</td>\n"
         . "        <td>" . htmlValue($aRow["last_name"]) . "</td>\n"
@@ -3840,10 +3953,10 @@ function renderSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups,
         . ($blShowBirthNumber ? "        <td" . $sBirthNumberClassAttribute . ">" . renderBirthNumberValue($aRow["birth_number"]) . "</td>\n" : "")
         . "        <td" . $sBirthDateClassAttribute . ">" . renderSubjectDateValue($aRow["birth_date"], $sBirthDateAgeLabel) . "</td>\n"
         . "        <td>" . renderSubjectDateValue($aRow["death_date"], $sDeathDateAgeLabel) . "</td>\n"
-        . "        <td>" . renderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true, true, true) . "</td>\n"
+        . "        <td>" . renderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), true, true, true, $blDeferNicknameData) . "</td>\n"
         . "        <td>" . renderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, true, true, true, $blDeferAddressData) . "</td>\n"
-        . "        <td>" . renderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true, true, true) . "</td>\n"
-        . "        <td>" . renderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, true) . "</td>\n"
+        . "        <td>" . renderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), true, true, true, $blDeferContactData) . "</td>\n"
+        . "        <td>" . renderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iSubjectId, true, true, true, $blDeferGroupData) . "</td>\n"
         . "        <td>" . renderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), true, true, true) . "</td>\n"
         . "      </tr>\n";
 }
@@ -3888,7 +4001,7 @@ function renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses,
     }
     $sHtml .= renderSubjectTableCell(
             "<span class=\"subject-item-value subject-name-value\"" . $sTimestampTooltipAttribute . ">" . htmlValue($aRow["subject_name"]) . "</span>"
-            . renderCopyAction($aRow["subject_name"])
+            . (subjectRowOption($aOptions, "name_defer_copy", false) ? renderDeferredCopyAction("js-copy-subject-name") : renderCopyAction($aRow["subject_name"]))
             . subjectRowOption($aOptions, "name_actions", ""),
             subjectRowOption($aOptions, "name_class", ""),
             subjectRowOption($aOptions, "name_style", "")
@@ -3899,10 +4012,10 @@ function renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses,
         . renderSubjectTableCell(renderBirthNumberValue($aRow["birth_number"]), $sBirthNumberClass, subjectRowOption($aOptions, "birth_number_style", ""))
         . renderSubjectTableCell(renderSubjectDateValue($aRow["birth_date"], $sBirthDateAgeLabel), $sBirthDateClass, subjectRowOption($aOptions, "birth_date_style", $sNoWrapStyle))
         . renderSubjectTableCell(renderSubjectDateValue($aRow["death_date"], $sDeathDateAgeLabel), $sDeathDateClass, subjectRowOption($aOptions, "death_date_style", ""))
-        . renderSubjectTableCell(renderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), subjectRowOption($aOptions, "nickname_show_add_action", false), subjectRowOption($aOptions, "nickname_show_cell_copy_action", true), subjectRowOption($aOptions, "nickname_cell_copy_before_add_action", true)), subjectRowOption($aOptions, "nickname_class", "column-step-one"), subjectRowOption($aOptions, "nickname_style", ""))
+        . renderSubjectTableCell(renderNicknameList(isset($aNicknames[$iSubjectId]) ? $aNicknames[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, !empty($aHiddenInactive["nicknames"][$iSubjectId]), subjectRowOption($aOptions, "nickname_show_add_action", false), subjectRowOption($aOptions, "nickname_show_cell_copy_action", true), subjectRowOption($aOptions, "nickname_cell_copy_before_add_action", true), subjectRowOption($aOptions, "nickname_defer_data", false)), subjectRowOption($aOptions, "nickname_class", "column-step-one"), subjectRowOption($aOptions, "nickname_style", ""))
         . renderSubjectTableCell(renderAddressList(isset($aAddresses[$iSubjectId]) ? $aAddresses[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, $aRow["subject_name"], !empty($aHiddenInactive["addresses"][$iSubjectId]), $aDisplaySettings, subjectRowOption($aOptions, "address_show_add_action", false), subjectRowOption($aOptions, "address_show_cell_copy_action", true), subjectRowOption($aOptions, "address_cell_copy_before_add_action", true), subjectRowOption($aOptions, "address_defer_data", false)), subjectRowOption($aOptions, "address_class", ""), subjectRowOption($aOptions, "address_style", ""))
-        . renderSubjectTableCell(renderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), subjectRowOption($aOptions, "contact_show_add_action", false), subjectRowOption($aOptions, "contact_show_cell_copy_action", true), subjectRowOption($aOptions, "contact_cell_copy_before_add_action", true)), subjectRowOption($aOptions, "contact_class", ""), subjectRowOption($aOptions, "contact_style", ""))
-        . renderSubjectTableCell(renderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, subjectRowOption($aOptions, "group_show_add_action", false), subjectRowOption($aOptions, "group_show_cell_copy_action", true), subjectRowOption($aOptions, "group_cell_copy_before_add_action", true)), subjectRowOption($aOptions, "group_class", "column-step-three"), subjectRowOption($aOptions, "group_style", ""))
+        . renderSubjectTableCell(renderContactList(isset($aContacts[$iSubjectId]) ? $aContacts[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, true, true, !empty($aHiddenInactive["contacts"][$iSubjectId]), subjectRowOption($aOptions, "contact_show_add_action", false), subjectRowOption($aOptions, "contact_show_cell_copy_action", true), subjectRowOption($aOptions, "contact_cell_copy_before_add_action", true), subjectRowOption($aOptions, "contact_defer_data", false)), subjectRowOption($aOptions, "contact_class", ""), subjectRowOption($aOptions, "contact_style", ""))
+        . renderSubjectTableCell(renderGroupList(isset($aGroups[$iSubjectId]) ? $aGroups[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, subjectRowOption($aOptions, "group_show_add_action", false), subjectRowOption($aOptions, "group_show_cell_copy_action", true), subjectRowOption($aOptions, "group_cell_copy_before_add_action", true), subjectRowOption($aOptions, "group_defer_data", false)), subjectRowOption($aOptions, "group_class", "column-step-three"), subjectRowOption($aOptions, "group_style", ""))
         . renderSubjectTableCell(renderNoteList(isset($aNotes[$iSubjectId]) ? $aNotes[$iSubjectId] : array(), $blShowActions, $iItemSubjectId, !empty($aHiddenInactive["notes"][$iSubjectId]), subjectRowOption($aOptions, "note_show_add_action", false), subjectRowOption($aOptions, "note_show_cell_copy_action", true), subjectRowOption($aOptions, "note_cell_copy_before_add_action", true)), subjectRowOption($aOptions, "note_class", "column-step-three"), subjectRowOption($aOptions, "note_style", ""))
         . "      </tr>\n";
     return $sHtml;
@@ -3936,6 +4049,10 @@ function renderUpdatedSubjectRow($oPdo, $iSubjectId, $aVisibilitySettings = null
         true,
         $aHiddenInactive,
         is_array($aVisibilitySettings) ? $aVisibilitySettings : null,
+        true,
+        true,
+        true,
+        true,
         true
     );
 }
