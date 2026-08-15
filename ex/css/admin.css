@@ -569,6 +569,15 @@ button, select {
     margin-top: 10px;
 }
 
+input[type="file"]::file-selector-button {
+    border: 1px solid #C0C0C0;
+    border-radius: 0;
+    box-shadow: none;
+    font: inherit;
+    margin: 0 8px 0 0;
+    padding: 4px;
+}
+
 input[type="date"], input[type="datetime-local"], input[type="number"], input[type="password"], input[type="text"] {
     padding-left: 0;
     padding-right: 0;
@@ -932,13 +941,13 @@ body.mail-page .admin-controls .mail-send-button {
 }
 
 .holiday-empty {
-    background: #F8F8F8;
-    border-color: #EEE;
+    background: #FFF;
+    border-color: #FFF;
     padding: 3px;
 }
 
 .holiday-day {
-    background: #FFF;
+    background: #F8F8F8;
     padding: 2px 0 2px 2px;
 }
 
@@ -1123,14 +1132,16 @@ body[data-pmd-like="1"] .calendar-tooltip {
 }
 
 .admin-controls .png-export-menu-option {
-    background: #F0F0F0;
+    background: transparent;
     border: 0;
     box-sizing: border-box;
     cursor: default;
-    display: block;
+    display: flex;
+    font-family: inherit;
     font-size: 14px;
     height: auto;
     margin: 0;
+    min-height: 29px;
     padding: 6px 40px 6px 10px;
     text-align: left;
     white-space: nowrap;

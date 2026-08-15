@@ -267,7 +267,28 @@ $iTime = sendPageHeaders();
   <link href="<?php echo $sOrigin; ?>/vendors/fancybox-6.1.14/css/fancybox.css" rel="stylesheet" type="text/css">
   <link href="<?php echo $sBaseUrl; ?>css/layout.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/layout.min.css")); ?>" rel="stylesheet" type="text/css">
   <link href="<?php echo $sBaseUrl; ?>css/effects.min.css" rel="stylesheet" type="text/css">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-light-blue.min.css" rel="stylesheet" type="text/css">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-light-blue.min.css" rel="stylesheet" type="text/css" title="Original">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-graphite.css")); ?>" rel="alternate stylesheet" type="text/css" title="Graphite">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-midnight.css")); ?>" rel="alternate stylesheet" type="text/css" title="Midnight">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-slate.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-slate.css")); ?>" rel="alternate stylesheet" type="text/css" title="Slate">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-sepia.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-sepia.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sepia">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-sand.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-sand.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sand">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-forest.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-forest.css")); ?>" rel="alternate stylesheet" type="text/css" title="Forest">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-moss.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-moss.css")); ?>" rel="alternate stylesheet" type="text/css" title="Moss">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-ocean.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-ocean.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ocean">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-ice.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-ice.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ice">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-lavender.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-lavender.css")); ?>" rel="alternate stylesheet" type="text/css" title="Lavender">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-rose.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-rose.css")); ?>" rel="alternate stylesheet" type="text/css" title="Rose">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-copper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-copper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Copper">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-burgundy.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-burgundy.css")); ?>" rel="alternate stylesheet" type="text/css" title="Burgundy">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-monochrome.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-monochrome.css")); ?>" rel="alternate stylesheet" type="text/css" title="Monochrome">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-high-contrast.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-high-contrast.css")); ?>" rel="alternate stylesheet" type="text/css" title="High Contrast">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-soft.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-soft.css")); ?>" rel="alternate stylesheet" type="text/css" title="Soft">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-paper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-paper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Paper">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-terminal.css")); ?>" rel="alternate stylesheet" type="text/css" title="Terminal">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-cobalt.css")); ?>" rel="alternate stylesheet" type="text/css" title="Cobalt">
+  <link href="<?php echo $sBaseUrl; ?>css/theme-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
+  <script type="text/javascript" src="/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
   <link href="<?php echo $sBaseUrl; ?>css/print.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/print.min.css")); ?>" rel="stylesheet" type="text/css" media="print">
   <style type="text/css">nav { width: 350px} @media screen and (min-width:769px) { body.md-nav-expanded div#main { margin-left: 350px} body.md-nav-expanded header { padding-left: 364px} }</style>
   <style type="text/css">.navigation #inline-toc { width: auto !important} .js-save-png { white-space: nowrap}</style>
@@ -562,30 +583,13 @@ if ($oPdo) {
         }
         echo "          </section>\n";
     } else {
-        $blFirefoxBrowser = false;
-        if (isset($_SERVER["HTTP_USER_AGENT"])) {
-            $sUserAgent = $_SERVER["HTTP_USER_AGENT"];
-            $blFirefoxBrowser = stripos($sUserAgent, "Firefox/") && !stripos($sUserAgent, "Seamonkey/");
-        }
-        $blEnglishLanguage = false;
-        if (isset($_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
-            $aLanguages = explode(",", $_SERVER["HTTP_ACCEPT_LANGUAGE"]);
-            if ($aLanguages) {
-                $sPrimaryLanguage = trim($aLanguages[0]);
-                $iSemicolonPosition = strpos($sPrimaryLanguage, ";");
-                if ($iSemicolonPosition) {
-                    $sPrimaryLanguage = substr($sPrimaryLanguage, 0, $iSemicolonPosition);
-                }
-                $sPrimaryLanguage = strtolower(trim($sPrimaryLanguage));
-                $blEnglishLanguage = strpos($sPrimaryLanguage, "en") === 0;
-            }
-        }
-        if ($blFirefoxBrowser && $blEnglishLanguage && isAllowedIp()) {
-            printPhpFileLinks($sBaseUrl);
-        } else {
+        $blPortalIndexAllowed = isAllowedIp() || isProjectViewAllowed("portal");
+        if ($blPortalDebugMode || !$blPortalIndexAllowed) {
             echo "          <div id=\"camera-image\">\n",
                 "            <img src=\"" . $sBaseUrl . "gfx/camera.png\" width=\"1535\" height=\"1025\" alt=\"Praktica MTL 3 — 35 mm single-lens reflex (SLR) film camera by VEB Pentacon Dresden\">\n",
                 "          </div>\n";
+        } else {
+            printPhpFileLinks($sBaseUrl);
         }
     }
 }

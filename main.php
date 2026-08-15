@@ -10,9 +10,8 @@ include "./functions.php";
 
 redirectIndexPhpToRoot();
 redirectToCanonicalUrl();
-configureErrorReporting();
-initializeSession(true);
-
-
 list($sOrigin, $sBaseUrl) = getBaseUrl();
 list($oPdo, $sError) = databaseConnect();
+loadConfiguration($oPdo);
+configureErrorReporting();
+initializeSession(true);

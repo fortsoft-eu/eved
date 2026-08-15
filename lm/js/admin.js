@@ -6361,13 +6361,65 @@ function scheduleSnippetBoardToolbarLines(oEditor, iAttempt) {
     }
 }
 
-function bindSnippetBoardTinyMce() {
+function getAdminThemeCssValue(sName, sDefaultValue) {
+    var oStyle;
+    var sValue = "";
+    if (window.getComputedStyle) {
+        oStyle = window.getComputedStyle(document.documentElement);
+        sValue = oStyle.getPropertyValue(sName).replace(/^\s+|\s+$/g, "");
+    }
+    return sValue || sDefaultValue;
+}
+
+function refreshTinyMceTheme() {
+    var aEditors = window.tinymce && typeof window.tinymce.get == "function" ? window.tinymce.get() : [];
+    var sTinyMceEditor = getAdminThemeCssValue("--admin-theme-editor", "");
+    var blTinyMceTheme = sTinyMceEditor != "";
+    var sTinyMceBackground = blTinyMceTheme ? sTinyMceEditor : "#FFFFFF";
+    var sTinyMceLink = getAdminThemeCssValue("--admin-theme-link", "#075E9E");
+    var sTinyMceText = getAdminThemeCssValue("--admin-theme-text", "#111111");
+    var sTinyMceTheme = (blTinyMceTheme ? "theme" : "original") + "|" + sTinyMceBackground + "|" + sTinyMceLink + "|" + sTinyMceText;
+    var i;
+    var oDocument;
+    var oEditor;
+    var oStyle;
+
+    for (i = 0; i < aEditors.length; i += 1) {
+        oEditor = aEditors[i];
+        if (oEditor._evedTinyMceTheme === sTinyMceTheme) {
+            continue;
+        }
+        oDocument = oEditor.getDoc();
+        if (!oDocument || !oDocument.head || !oDocument.body) {
+            continue;
+        }
+        oStyle = oDocument.getElementById("eved-tinymce-theme");
+        if (!blTinyMceTheme) {
+            if (oStyle) {
+                oStyle.parentNode.removeChild(oStyle);
+            }
+            oEditor._evedTinyMceTheme = sTinyMceTheme;
+            continue;
+        }
+        if (!oStyle) {
+            oStyle = oDocument.createElement("style");
+            oStyle.id = "eved-tinymce-theme";
+            oDocument.head.appendChild(oStyle);
+        }
+        oStyle.textContent = "html{background:" + sTinyMceBackground + " !important;}body{background:" + sTinyMceBackground + " !important;color:" + sTinyMceText + " !important;}a{color:" + sTinyMceLink + " !important;}";
+        oEditor._evedTinyMceTheme = sTinyMceTheme;
+    }
+}
+
+function bindTinyMce() {
+    var sTinyMceSkin;
     if (isSnippetBoardLocked()) {
         return;
     }
     if (!window.tinymce || typeof window.tinymce.init != "function") {
         return;
     }
+    sTinyMceSkin = getAdminThemeCssValue("--admin-theme-tinymce-skin", "tinymce-5");
     try {
         window.tinymce.init({
             selector: "textarea.js-snippet-board-textarea",
@@ -6376,7 +6428,7 @@ function bindSnippetBoardTinyMce() {
             promotion: false,
             browser_spellcheck: true,
             convert_urls: false,
-            content_css: "tinymce-5",
+            content_css: sTinyMceSkin,
             entity_encoding: "raw",
             height: 320,
             license_key: "gpl",
@@ -6384,12 +6436,12 @@ function bindSnippetBoardTinyMce() {
                 toolbar_mode: "wrap"
             },
             resize: false,
-            skin: "tinymce-5",
+            skin: sTinyMceSkin,
             statusbar: false,
             toolbar: "undo redo | blocks fontfamily fontsize lineheight | cut snippetcopy snippetcopyplain snippetpasteformatted snippetpastetext | bold italic underline strikethrough subscript superscript | forecolor backcolor | alignleft aligncenter alignright alignjustify alignnone ltr rtl | snippetbullist snippetnumlist outdent indent blockquote hr | link unlink anchor table | charmap emoticons insertdatetime nonbreaking pagebreak | searchreplace visualblocks help codesample",
             toolbar_mode: "wrap",
             plugins: "advlist anchor autolink charmap codesample directionality emoticons help insertdatetime link lists nonbreaking pagebreak searchreplace table visualblocks",
-                content_style: "html{overscroll-behavior-y:contain;}body{background:#fff;color:#111;font-family:Arial,sans-serif;font-size:14px;line-height:1.35;margin:0;overscroll-behavior-y:contain;padding:1px;}p,h1,h2,h3,h4,h5,h6{margin:0;}ul,ol{margin:0 0 0 20px;padding-left:18px;}blockquote{margin:0 0 0 24px;}a{color:#075e9e;}",
+            content_style: "html{overscroll-behavior-y:contain;}body{background:#fff;color:#111;font-family:Arial,sans-serif;font-size:14px;line-height:1.35;margin:0;overscroll-behavior-y:contain;padding:1px;}p,h1,h2,h3,h4,h5,h6{margin:0;}ul,ol{margin:0 0 0 20px;padding-left:18px;}blockquote{margin:0 0 0 24px;}a{color:#075e9e;}",
             setup: function(oEditor) {
                 oEditor.ui.registry.addIcon("snippet-copy-plain", "<svg width=\"24\" height=\"24\"><path d=\"M8 3h8l4 4v11c0 1.1-.9 2-2 2H8a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2Zm7 2H8v13h10V8h-3V5Z\"/><path d=\"M4 7H2v13c0 1.1.9 2 2 2h10v-2H4V7Zm6 2h4v1.5h-4V9Zm0 3h6v1.5h-6V12Zm0 3h6v1.5h-6V15Z\"/></svg>");
                 oEditor.ui.registry.addButton("snippetcopy", {
@@ -6491,6 +6543,7 @@ function bindSnippetBoardTinyMce() {
                 oEditor.on("change keyup undo redo input", syncSnippetBoardEditorChange);
                 oEditor.on("paste cut ExecCommand PastePostProcess SetContent", syncSnippetBoardEditorChangeAfterEvent);
                 oEditor.on("init", function() {
+                    refreshTinyMceTheme();
                     bindSnippetBoardEditorScrollLock(oEditor);
                     applySnippetBoardStoredRichTextPaste(oEditor);
                     layoutSnippetBoard();
@@ -6505,6 +6558,7 @@ function bindSnippetBoardTinyMce() {
                 });
             }
         });
+        window.setInterval(refreshTinyMceTheme, 250);
     } catch (oException) {
         logAdminException(oException);
     }
@@ -7610,7 +7664,7 @@ document.addEventListener("DOMContentLoaded", function() {
     bindSnippetBoardTabs();
     bindLmEncryptionUnlock();
     bindSnippetBoardForm();
-    bindSnippetBoardTinyMce();
+    bindTinyMce();
     layoutSnippetBoard();
     layoutMailForm();
     layoutCharacterConverter();

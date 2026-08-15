@@ -389,13 +389,14 @@ function setSavePngExportDisabled(button, blDisabled) {
 function onSavePng(button, fileName) {
     const element = document.getElementById("main-content-gallery");
     const scale = parseInt(button.getAttribute("data-scale"), 10);
+    const backgroundColor = window.getComputedStyle(document.body).backgroundColor;
     const dropdown = button && button.closest ? button.closest(".btn-group") : null;
     if (!element || typeof snapdom !== "function" || typeof snapdom.toCanvas !== "function" || isNaN(scale) || scale < 1 || scale > 5 || (dropdown && dropdown.getAttribute("data-exporting") === "true")) {
         return;
     }
     setSavePngExportDisabled(button, true);
     snapdom.toCanvas(element, {
-        backgroundColor: "#FFF",
+        backgroundColor: backgroundColor,
         dpr: 1,
         scale: scale
     }).then(canvas => {

@@ -82,13 +82,12 @@ include "../functions.php";
 
 redirectIndexPhpToRoot();
 redirectToCanonicalUrl();
+list($sOrigin, $sBaseUrl) = getBaseUrl();
+list($oPdo, $sError) = databaseConnect();
+loadConfiguration($oPdo);
 configureErrorReporting();
 initializeSession();
 handleQuickTableFilterRequest();
 
 
 include "./functions.php";
-
-
-list($sOrigin, $sBaseUrl) = getBaseUrl();
-list($oPdo, $sError) = databaseConnect();

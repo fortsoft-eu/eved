@@ -2803,7 +2803,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupHolidayCalendarTodayButton();
 });
 
-function getHolidayCalendarSnapdomCondensedPlugin(iColumns, iLayoutWidth) {
+function getHolidayCalendarSnapdomCondensedPlugin(iColumns, iLayoutWidth, sBackgroundColor) {
     var oSource = null;
 
     function applyLayout(oElement) {
@@ -2842,7 +2842,7 @@ function getHolidayCalendarSnapdomCondensedPlugin(iColumns, iLayoutWidth) {
             }
             cleanup();
             oSource = document.createElement("div");
-            oSource.style.backgroundColor = "#F8F8F8";
+            oSource.style.backgroundColor = sBackgroundColor;
             oSource.style.boxSizing = "border-box";
             oSource.style.left = "-100000px";
             oSource.style.padding = "6px";
@@ -2890,15 +2890,17 @@ function setupHolidayCalendarSavePngButton() {
                 var blValidLayout = (iColumns === 4 && iLayoutWidth === 1920) || (iColumns === 3 && iLayoutWidth === 1500);
                 var oElement = document.body;
                 var oLayoutPlugin;
+                var sBackgroundColor;
                 var sFileName = oButton.getAttribute("data-file-name") || "calendar";
                 if (!oElement || typeof snapdom != "function" || typeof snapdom.toCanvas != "function" || isNaN(iScale) || iScale < 1 || iScale > 5 || !blValidLayout) {
                     return;
                 }
                 setPngExportMenuDisabled(oButton, true);
                 flashMenuLink(oButton);
-                oLayoutPlugin = getHolidayCalendarSnapdomCondensedPlugin(iColumns, iLayoutWidth);
+                sBackgroundColor = window.getComputedStyle(oElement).backgroundColor;
+                oLayoutPlugin = getHolidayCalendarSnapdomCondensedPlugin(iColumns, iLayoutWidth, sBackgroundColor);
                 snapdom.toCanvas(oElement, {
-                    backgroundColor: "#F8F8F8",
+                    backgroundColor: sBackgroundColor,
                     dpr: 1,
                     plugins: [oLayoutPlugin],
                     scale: iScale,
@@ -2931,8 +2933,6 @@ function setupHolidayCalendarDaySelection() {
     var blDragging = false;
     var oDragStartDay = null;
     var oIgnoreClickDay = null;
-    var sHoverColor = "#fff3cd";
-    var sSelectedColor = "#cfe2ff";
 
     function getCalendarDay(oTarget) {
         if (oTarget && oTarget.nodeType == 3) {
@@ -2941,27 +2941,33 @@ function setupHolidayCalendarDaySelection() {
         return oTarget && oTarget.closest ? oTarget.closest(".holiday-day") : null;
     }
 
-    function getCurrentDayColor(oDay) {
+    function getThemeColor(sProperty, sFallback) {
+        var sColor = window.getComputedStyle(document.documentElement).getPropertyValue(sProperty);
+        return sColor ? sColor.replace(/^\s+|\s+$/g, "") : sFallback;
+    }
+
+    function getCurrentDayColors(oDay) {
         if (oDay.getAttribute("data-selected") == "1") {
-            return sSelectedColor;
+            return [getThemeColor("--admin-theme-hover", "#cfe2ff"), getThemeColor("--admin-theme-hover-text", "")];
         }
         if (oDay.getAttribute("data-hover") == "1") {
-            return sHoverColor;
+            return [getThemeColor("--admin-theme-hover", "#fff3cd"), getThemeColor("--admin-theme-hover-text", "")];
         }
-        return "";
+        return ["", ""];
     }
 
     function applyDayColor(oDay) {
         var sBackgroundImage;
-        var sColor;
+        var aColors;
         if (!oDay) {
             return;
         }
-        sColor = getCurrentDayColor(oDay);
-        oDay.style.backgroundColor = sColor;
+        aColors = getCurrentDayColors(oDay);
+        oDay.style.backgroundColor = aColors[0];
+        oDay.style.color = aColors[1];
         sBackgroundImage = oDay.getAttribute("data-calendar-background-image");
         if (sBackgroundImage) {
-            oDay.style.backgroundImage = sColor != "" ? "none" : sBackgroundImage;
+            oDay.style.backgroundImage = aColors[0] != "" ? "none" : sBackgroundImage;
         }
     }
 
@@ -9356,10 +9362,62 @@ function scheduleMailToolbarLines(oEditor, iAttempt) {
     }
 }
 
-function bindMailTinyMce() {
+function getAdminThemeCssValue(sName, sDefaultValue) {
+    var oStyle;
+    var sValue = "";
+    if (window.getComputedStyle) {
+        oStyle = window.getComputedStyle(document.documentElement);
+        sValue = oStyle.getPropertyValue(sName).replace(/^\s+|\s+$/g, "");
+    }
+    return sValue || sDefaultValue;
+}
+
+function refreshTinyMceTheme() {
+    var aEditors = window.tinymce && typeof window.tinymce.get == "function" ? window.tinymce.get() : [];
+    var sTinyMceEditor = getAdminThemeCssValue("--admin-theme-editor", "");
+    var blTinyMceTheme = sTinyMceEditor != "";
+    var sTinyMceBackground = blTinyMceTheme ? sTinyMceEditor : "#FFFFFF";
+    var sTinyMceLink = getAdminThemeCssValue("--admin-theme-link", "#075E9E");
+    var sTinyMceText = getAdminThemeCssValue("--admin-theme-text", "#111111");
+    var sTinyMceTheme = (blTinyMceTheme ? "theme" : "original") + "|" + sTinyMceBackground + "|" + sTinyMceLink + "|" + sTinyMceText;
+    var i;
+    var oDocument;
+    var oEditor;
+    var oStyle;
+
+    for (i = 0; i < aEditors.length; i += 1) {
+        oEditor = aEditors[i];
+        if (oEditor._evedTinyMceTheme === sTinyMceTheme) {
+            continue;
+        }
+        oDocument = oEditor.getDoc();
+        if (!oDocument || !oDocument.head || !oDocument.body) {
+            continue;
+        }
+        oStyle = oDocument.getElementById("eved-tinymce-theme");
+        if (!blTinyMceTheme) {
+            if (oStyle) {
+                oStyle.parentNode.removeChild(oStyle);
+            }
+            oEditor._evedTinyMceTheme = sTinyMceTheme;
+            continue;
+        }
+        if (!oStyle) {
+            oStyle = oDocument.createElement("style");
+            oStyle.id = "eved-tinymce-theme";
+            oDocument.head.appendChild(oStyle);
+        }
+        oStyle.textContent = "html{background:" + sTinyMceBackground + " !important;}body{background:" + sTinyMceBackground + " !important;color:" + sTinyMceText + " !important;}a{color:" + sTinyMceLink + " !important;}";
+        oEditor._evedTinyMceTheme = sTinyMceTheme;
+    }
+}
+
+function bindTinyMce() {
+    var sTinyMceSkin;
     if (!document.querySelector("#mail-form textarea.js-snippet-board-textarea") || !window.tinymce || typeof window.tinymce.init != "function") {
         return;
     }
+    sTinyMceSkin = getAdminThemeCssValue("--admin-theme-tinymce-skin", "tinymce-5");
     try {
         window.tinymce.init({
             selector: "#mail-form textarea.js-snippet-board-textarea",
@@ -9368,7 +9426,7 @@ function bindMailTinyMce() {
             promotion: false,
             browser_spellcheck: true,
             convert_urls: false,
-            content_css: "tinymce-5",
+            content_css: sTinyMceSkin,
             entity_encoding: "raw",
             height: 320,
             license_key: "gpl",
@@ -9376,7 +9434,7 @@ function bindMailTinyMce() {
                 toolbar_mode: "wrap"
             },
             resize: false,
-            skin: "tinymce-5",
+            skin: sTinyMceSkin,
             statusbar: false,
             toolbar: "undo redo | blocks fontfamily fontsize lineheight | cut snippetcopy snippetcopyplain snippetpasteformatted snippetpastetext | bold italic underline strikethrough subscript superscript | forecolor backcolor | alignleft aligncenter alignright alignjustify alignnone ltr rtl | snippetbullist snippetnumlist outdent indent blockquote hr | link unlink anchor table | charmap emoticons insertdatetime nonbreaking pagebreak | searchreplace visualblocks help codesample",
             toolbar_mode: "wrap",
@@ -9483,6 +9541,7 @@ function bindMailTinyMce() {
                 oEditor.on("change keyup undo redo input", syncMailEditorChange);
                 oEditor.on("paste cut ExecCommand PastePostProcess SetContent", syncMailEditorChangeAfterEvent);
                 oEditor.on("init", function() {
+                    refreshTinyMceTheme();
                     bindMailEditorScrollLock(oEditor);
                     applyMailStoredRichTextPaste(oEditor);
                     layoutMailForm();
@@ -9496,6 +9555,7 @@ function bindMailTinyMce() {
                 });
             }
         });
+        window.setInterval(refreshTinyMceTheme, 250);
     } catch (oException) {
         logAdminException(oException);
     }
@@ -9505,7 +9565,7 @@ document.addEventListener("DOMContentLoaded", function() {
     bindMailForm();
     bindMailPageScrollLock();
     bindMailPmdHoverTimeout();
-    bindMailTinyMce();
+    bindTinyMce();
     layoutMailForm();
     window.addEventListener("resize", layoutMailForm);
     if (window.visualViewport) {

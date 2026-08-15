@@ -46,105 +46,28 @@ if ($blPortalIndexAllowed) {
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title>EVED</title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <style type="text/css" nonce="<?php echo html($sStyleNonce); ?>">
-    html, body {
-        overscroll-behavior-y: none;
-    }
-    html {
-        box-sizing: border-box;
-    }
-    *, *::before, *::after {
-        box-sizing: inherit;
-    }
-    body {
-        min-height: 100vh;
-        margin: 0;
-        padding: 24px;
-        color: #1f2933;
-        background: #f6f7f9;
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 16px;
-        line-height: 1.45;
-    }
-    main {
-        width: min(920px, 100%);
-        margin: 0 auto;
-    }
-    h1 {
-        margin: 0 0 18px;
-        font-size: 28px;
-        font-weight: 700;
-    }
-    .project-list {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-    .project-link {
-        display: grid;
-        grid-template-columns: 48px 1fr;
-        gap: 10px;
-        align-items: start;
-        height: 88px;
-        padding: 12px;
-        border: 1px solid #c8d0d8;
-        border-radius: 0;
-        color: inherit;
-        background: #fff;
-        text-decoration: none;
-        overflow: hidden;
-    }
-    .project-link:hover, .project-link:focus {
-        border-color: #1a73e8;
-        outline: 2px solid #1a73e8;
-        outline-offset: 0;
-    }
-    .project-icon {
-        align-self: start;
-        font-size: 36px;
-        line-height: 1;
-        margin-top: 14px;
-        text-align: center;
-    }
-    .project-name {
-        display: block;
-        font-weight: 700;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .project-title {
-        display: block;
-        color: #52606d;
-        font-size: 14px;
-        max-height: 40px;
-        overflow: hidden;
-    }
-    hr {
-        margin: 18px 0;
-        border: 0;
-        border-top: 1px solid #c8d0d8;
-    }
-    @media (max-width: 960px) {
-        .project-list {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-    }
-    @media (max-width: 520px) {
-        body {
-            padding: 16px;
-        }
-        .project-list {
-            grid-template-columns: 1fr;
-        }
-        h1 {
-            display: none;
-        }
-    }
-  </style>
+  <link href="<?php echo $sBaseUrl; ?>css/index-original.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-original.css")); ?>" rel="stylesheet" type="text/css" title="Original">
+  <link href="<?php echo $sBaseUrl; ?>css/index-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-graphite.css")); ?>" rel="alternate stylesheet" type="text/css" title="Graphite">
+  <link href="<?php echo $sBaseUrl; ?>css/index-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-midnight.css")); ?>" rel="alternate stylesheet" type="text/css" title="Midnight">
+  <link href="<?php echo $sBaseUrl; ?>css/index-slate.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-slate.css")); ?>" rel="alternate stylesheet" type="text/css" title="Slate">
+  <link href="<?php echo $sBaseUrl; ?>css/index-sepia.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-sepia.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sepia">
+  <link href="<?php echo $sBaseUrl; ?>css/index-sand.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-sand.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sand">
+  <link href="<?php echo $sBaseUrl; ?>css/index-forest.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-forest.css")); ?>" rel="alternate stylesheet" type="text/css" title="Forest">
+  <link href="<?php echo $sBaseUrl; ?>css/index-moss.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-moss.css")); ?>" rel="alternate stylesheet" type="text/css" title="Moss">
+  <link href="<?php echo $sBaseUrl; ?>css/index-ocean.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-ocean.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ocean">
+  <link href="<?php echo $sBaseUrl; ?>css/index-ice.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-ice.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ice">
+  <link href="<?php echo $sBaseUrl; ?>css/index-lavender.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-lavender.css")); ?>" rel="alternate stylesheet" type="text/css" title="Lavender">
+  <link href="<?php echo $sBaseUrl; ?>css/index-rose.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-rose.css")); ?>" rel="alternate stylesheet" type="text/css" title="Rose">
+  <link href="<?php echo $sBaseUrl; ?>css/index-copper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-copper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Copper">
+  <link href="<?php echo $sBaseUrl; ?>css/index-burgundy.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-burgundy.css")); ?>" rel="alternate stylesheet" type="text/css" title="Burgundy">
+  <link href="<?php echo $sBaseUrl; ?>css/index-monochrome.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-monochrome.css")); ?>" rel="alternate stylesheet" type="text/css" title="Monochrome">
+  <link href="<?php echo $sBaseUrl; ?>css/index-high-contrast.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-high-contrast.css")); ?>" rel="alternate stylesheet" type="text/css" title="High Contrast">
+  <link href="<?php echo $sBaseUrl; ?>css/index-soft.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-soft.css")); ?>" rel="alternate stylesheet" type="text/css" title="Soft">
+  <link href="<?php echo $sBaseUrl; ?>css/index-paper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-paper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Paper">
+  <link href="<?php echo $sBaseUrl; ?>css/index-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-terminal.css")); ?>" rel="alternate stylesheet" type="text/css" title="Terminal">
+  <link href="<?php echo $sBaseUrl; ?>css/index-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-cobalt.css")); ?>" rel="alternate stylesheet" type="text/css" title="Cobalt">
+  <link href="<?php echo $sBaseUrl; ?>css/index-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/index-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
+  <script type="text/javascript" src="/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/style.js")); ?>"></script>
 </head>
 <body>
   <main>

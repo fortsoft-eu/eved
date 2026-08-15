@@ -8,7 +8,6 @@ var iAdminModalCount = 0;
 var sAdminBodyOverflow = "";
 var oFilmOpenDialog = null;
 
-
 function getAdminCsrfToken() {
     var oMeta = document.querySelector("meta[name=\"csrf-token\"]");
     return oMeta ? (oMeta.getAttribute("content") || "") : "";

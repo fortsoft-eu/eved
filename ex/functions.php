@@ -3005,10 +3005,10 @@ function exCalendarGetHolidayClass($aHolidayItems) {
 
 function exCalendarGetHolidayTypeBackgroundColors() {
     return array(
-        "state" => "#F8D4CC",
-        "moving" => "#D6EEF5",
-        "other" => "#FFF1BF",
-        "external" => "#DDE8FF"
+        "state" => "var(--holiday-state-background, #F8D4CC)",
+        "moving" => "var(--holiday-moving-background, #D6EEF5)",
+        "other" => "var(--holiday-other-background, #FFF1BF)",
+        "external" => "var(--holiday-external-background, #DDE8FF)"
     );
 }
 

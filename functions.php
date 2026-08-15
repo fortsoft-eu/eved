@@ -1435,7 +1435,28 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "  <link rel=\"shortcut icon\" href=\"" . $sBaseUrl . "favicon.ico\" type=\"image/x-icon\">\n",
         "  <title>Sign In</title>\n",
         "  <meta name=\"date\" content=\"" . gmdate("D, d M Y H:i:s", $iTime) . " GMT\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")) . "\" rel=\"stylesheet\" type=\"text/css\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")) . "\" rel=\"stylesheet\" type=\"text/css\" title=\"Original\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-graphite.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-graphite.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Graphite\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-midnight.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-midnight.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Midnight\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-slate.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-slate.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Slate\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-sepia.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-sepia.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Sepia\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-sand.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-sand.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Sand\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-forest.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-forest.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Forest\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-moss.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-moss.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Moss\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-ocean.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-ocean.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Ocean\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-ice.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-ice.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Ice\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-lavender.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-lavender.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Lavender\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-rose.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-rose.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Rose\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-copper.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-copper.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Copper\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-burgundy.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-burgundy.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Burgundy\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-monochrome.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-monochrome.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Monochrome\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-high-contrast.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-high-contrast.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"High Contrast\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-soft.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-soft.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Soft\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-paper.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-paper.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Paper\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-terminal.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-terminal.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Terminal\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-cobalt.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-cobalt.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Cobalt\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/admin-plum.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-plum.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Plum\">\n",
+        "  <script type=\"text/javascript\" src=\"/js/style.js?sToken=" . dechex(filemtime(__DIR__ . "/js/style.js")) . "\"></script>\n",
         "</head>\n",
         "<body class=\"login-page\">\n",
         "  <div class=\"confirm-dialog login-dialog\">\n",
@@ -2330,6 +2351,48 @@ function databaseConnect() {
         $sError = $oException->getMessage();
     }
     return array($oPdo, $sError);
+}
+
+function loadConfiguration($oPdo) {
+    global $aApiKeys, $aAllowedIpAddresses, $aTrustedUserAgents, $aTrustedAcceptLanguages, $aAWStatsAccounts, $aAdditionalSenderDomains;
+
+    $aApiKeys = array();
+    $aAllowedIpAddresses = array();
+    $aTrustedUserAgents = array();
+    $aTrustedAcceptLanguages = array();
+    $aAWStatsAccounts = array();
+    $aAdditionalSenderDomains = array();
+    if (!$oPdo) {
+        return;
+    }
+    try {
+        $oStatement = $oPdo->prepare("SELECT `type`, `name`, `value` FROM fs_configuration ORDER BY `order` ASC, id ASC");
+        $oStatement->execute();
+        while ($aRow = $oStatement->fetch()) {
+            switch ((string)$aRow["type"]) {
+                case "api_key":
+                    $aApiKeys[(string)$aRow["name"]] = (string)$aRow["value"];
+                    break;
+                case "allowed_ip":
+                    $aAllowedIpAddresses[] = (string)$aRow["value"];
+                    break;
+                case "trusted_user_agent":
+                    $aTrustedUserAgents[] = (string)$aRow["value"];
+                    break;
+                case "trusted_accept_language":
+                    $aTrustedAcceptLanguages[] = (string)$aRow["value"];
+                    break;
+                case "awstats_account":
+                    $aAWStatsAccounts[(string)$aRow["name"]] = (string)$aRow["value"];
+                    break;
+                case "additional_sender_domain":
+                    $aAdditionalSenderDomains[] = (string)$aRow["value"];
+                    break;
+            }
+        }
+    } catch (PDOException $oException) {
+        error_log((string)$oException);
+    }
 }
 
 function configureErrorReporting() {
