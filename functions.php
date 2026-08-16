@@ -31,6 +31,11 @@ function isDesktop() {
     return !preg_match("/(?:Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|FxiOS)/i", $sUserAgent);
 }
 
+function isChromiumBased() {
+    $sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "";
+    return preg_match("/(?:Chrome|Chromium|CriOS|EdgA|SamsungBrowser|OPR|Opera)/i", $sUserAgent) === 1;
+}
+
 function getCondensedTableClass() {
     return isDesktop() ? "" : " condensed-table";
 }
@@ -1460,7 +1465,7 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "      <input type=\"hidden\" name=\"login_token\" value=\"" . getLoginToken() . "\">\n",
         "      <div class=\"confirm-dialog-header\">\n",
         "        <strong>Sign In</strong>\n",
-        "        <button type=\"button\" class=\"confirm-dialog-close js-login-cancel\" aria-label=\"Close\">&times;</button>\n",
+        "        <button type=\"submit\" name=\"action\" value=\"cancel\" class=\"confirm-dialog-close\" aria-label=\"Close\" formnovalidate>&times;</button>\n",
         "      </div>\n",
         "      <div class=\"login-fields\">\n",
         "        <label for=\"login-user\">User Name</label>\n",

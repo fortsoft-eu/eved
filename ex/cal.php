@@ -16,7 +16,14 @@ try {
 }
 $aCalendarGroups = exCalendarGetCalendarGroups($aExternalCalendars, $aNameDayGroups);
 $aCalendarNames = exCalendarGetCalendars($aCalendarGroups);
-$iCal = exCalendarGetICal($aCalendarNames);
+$blCanViewPersons = isTrustedClient() || isProjectViewAllowed("ex");
+$aAvailableCalendarNames = $aCalendarNames;
+if (!$blCanViewPersons) {
+    unset($aAvailableCalendarNames[1], $aAvailableCalendarNames[2]);
+}
+$aAvailableCalendarIds = array_keys($aAvailableCalendarNames);
+$iDefaultCal = $aAvailableCalendarIds ? (int)$aAvailableCalendarIds[0] : 0;
+$iCal = exCalendarGetICal($aCalendarNames, $iDefaultCal);
 $iYear = exCalendarGetYear();
 $iPreviousYear = $iYear > 1583 ? $iYear - 1 : $iYear;
 $iNextYear = $iYear < 9999 ? $iYear + 1 : $iYear;
@@ -27,7 +34,6 @@ $_SESSION["ex_calendar"] = array(
     "iCal" => $iCal,
     "iYear" => $iYear
 );
-$blCanViewPersons = isTrustedClient() || isProjectViewAllowed("ex");
 session_write_close();
 $sPageTitle = getPageTitleText();
 $aHolidays = exCalendarGetHolidays($iYear);
@@ -92,7 +98,7 @@ $iTime = sendPageHeaders("", "cs-CZ");
   <link href="<?php echo $sBaseUrl; ?>css/style-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
   <script type="text/javascript" src="/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
 </head>
-<body class="calendar-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>">
+<body class="calendar-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>" data-chromium="<?php echo isChromiumBased() ? "1" : "0"; ?>">
   <p class="admin-controls">
 <?php
 
@@ -117,17 +123,17 @@ echo "    </select>\n";
     <span class="menu png-export-menu" data-menu>
       <button type="button" class="button-link calendar-year-link png-export-menu-button" data-menu-button aria-haspopup="true" aria-expanded="false">Save PNG<span class="png-export-menu-arrow" aria-hidden="true"><?php echo $sCalendarToggleEmoji; ?></span></button>
       <span class="menu-panel png-export-menu-panel" data-menu-panel hidden>
-        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="1">4 columns, Scale 1:1</button>
-        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="2">4 columns, Scale 2:1</button>
-        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="3">4 columns, Scale 3:1</button>
-        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="4">4 columns, Scale 4:1</button>
-        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="5">4 columns, Scale 5:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="1">4 columns &mdash; scale 1:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="2">4 columns &mdash; scale 2:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="3">4 columns &mdash; scale 3:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="4">4 columns &mdash; scale 4:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="4" data-layout-width="1920" data-scale="5">4 columns &mdash; scale 5:1</button>
         <span class="menu-separator"></span>
-        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="1">3 columns, Scale 1:1</button>
-        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="2">3 columns, Scale 2:1</button>
-        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="3">3 columns, Scale 3:1</button>
-        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="4">3 columns, Scale 4:1</button>
-        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="5">3 columns, Scale 5:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="1">3 columns &mdash; scale 1:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="2">3 columns &mdash; scale 2:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="3">3 columns &mdash; scale 3:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="4">3 columns &mdash; scale 4:1</button>
+        <button type="button" class="menu-link png-export-menu-option js-calendar-save-png" data-file-name="<?php echo html($sCalendarPngFileName); ?>" data-columns="3" data-layout-width="1500" data-scale="5">3 columns &mdash; scale 5:1</button>
       </span>
     </span>
   </p>

@@ -846,7 +846,6 @@ body.mail-page .admin-controls .mail-send-button {
     height: 27px;
     margin-top: 0;
     min-width: 0;
-    padding: 3px 4px 5px 4px;
     width: 154px;
 }
 
@@ -1127,12 +1126,26 @@ body[data-pmd-like="1"] .calendar-tooltip {
 
 .admin-controls .png-export-menu-button {
     flex: 0 0 auto;
-    padding-bottom: 4px;
     padding-left: 8px;
     padding-right: 8px;
-    padding-top: 1px;
     white-space: nowrap;
     width: auto;
+}
+
+@supports (-moz-appearance: none) {
+    body[data-pmd-like="0"] .admin-controls .calendar-type {
+        padding: 3px 4px 5px 4px;
+    }
+
+    body[data-pmd-like="0"] .admin-controls .png-export-menu-button {
+        padding-bottom: 4px;
+        padding-top: 1px;
+    }
+}
+
+body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-button {
+    padding-bottom: 2px;
+    padding-top: 3px;
 }
 
 .png-export-menu-arrow {

@@ -1173,7 +1173,6 @@ function setupLoginDialogEscape() {
     var oDialog = document.querySelector(".login-dialog");
     var oLogin = oDialog ? oDialog.querySelector("button[type=\"submit\"][name=\"action\"][value=\"login\"]") : null;
     var oCancel = oDialog ? oDialog.querySelector("button[type=\"submit\"][name=\"action\"][value=\"cancel\"]") : null;
-    var aCancelTriggers = oDialog ? oDialog.querySelectorAll(".js-login-cancel") : [];
     var aLoginInputs = oDialog ? oDialog.querySelectorAll(".login-fields input") : [];
     var iI;
     if (!oDialog || !oLogin || !oCancel) {
@@ -1197,9 +1196,6 @@ function setupLoginDialogEscape() {
                 submitLogin(oEvent);
             }
         });
-    }
-    for (iI = 0; iI < aCancelTriggers.length; iI += 1) {
-        aCancelTriggers[iI].addEventListener("click", cancelLogin);
     }
     document.addEventListener("keydown", function (oEvent) {
         if (oEvent.key == "Escape") {

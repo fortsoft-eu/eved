@@ -2410,10 +2410,13 @@ function exCalendarGetCalendars($aCalendarGroups) {
     return $aCalendars;
 }
 
-function exCalendarGetICal($aCalendars) {
-    $iCal = isset($_SESSION["ex_calendar"]) && is_array($_SESSION["ex_calendar"]) && isset($_SESSION["ex_calendar"]["iCal"]) ? (int)$_SESSION["ex_calendar"]["iCal"] : 1;
+function exCalendarGetICal($aCalendars, $iDefaultCal) {
+    if (!isset($aCalendars[$iDefaultCal])) {
+        send404AndExit();
+    }
+    $iCal = isset($_SESSION["ex_calendar"]) && is_array($_SESSION["ex_calendar"]) && isset($_SESSION["ex_calendar"]["iCal"]) ? (int)$_SESSION["ex_calendar"]["iCal"] : $iDefaultCal;
     if (!isset($aCalendars[$iCal])) {
-        $iCal = 1;
+        $iCal = $iDefaultCal;
     }
     if (isset($_GET["iCal"])) {
         $sCal = trim((string)$_GET["iCal"]);

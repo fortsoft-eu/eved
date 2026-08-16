@@ -227,7 +227,7 @@ renderMenu();
         <li><strong>Editing:</strong> Existing visible subject data can be maintained; new subjects are blocked.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo html($aMenuItemUrls["addresses.php"]); ?>">Addresses</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["addr.php"]); ?>">Addresses</a></dt>
     <dd>
       <p>Addresses groups exact shared postal address forms and lists every subject that uses each form. It is useful for finding households, shared service addresses, duplicated addresses, and address rows that differ only because of a small formatting or field difference.</p>
       <p>The Address column represents the postal fields that make up the shared address form. It uses the normal one-line display in the table, while copy actions use the multiline postal form. Editing the Address cell changes the address fields of all exact matching rows while preserving subject-specific flags such as address type, primary, active, and note.</p>
@@ -520,7 +520,7 @@ renderMenu();
         <li><strong>Editace:</strong> Existující viditelný subjekt lze udržovat; nové subjekty jsou blokované.</li>
       </ul>
     </dd>
-    <dt><a href="<?php echo html($aMenuItemUrls["addresses.php"]); ?>">Addresses</a></dt>
+    <dt><a href="<?php echo html($aMenuItemUrls["addr.php"]); ?>">Addresses</a></dt>
     <dd>
       <p>Addresses seskupuje exaktně shodné poštovní adresní tvary a vypisuje každý subjekt, který daný tvar používá. Hodí se pro hledání domácností, sdílených servisních adres, duplicitních adres a adresních řádků, které se liší jen drobným formátováním nebo jedním polem.</p>
       <p>Sloupec Address představuje poštovní pole tvořící sdílený adresní tvar. V tabulce používá běžný jednořádkový výpis, zatímco kopírovací akce používají víceřádkový poštovní tvar. Editace buňky Address změní adresní pole všech exaktně shodných řádků a zachová subjektové příznaky jako typ adresy, primary, active a poznámku.</p>

@@ -408,7 +408,12 @@ body.mail-page .admin-controls .mail-send-button {
 
 .admin-controls .fancy-text-style {
     height: 27px;
-    padding: 3px 4px 5px 4px;
+}
+
+@supports (-moz-appearance: none) {
+    body[data-pmd-like="0"] .admin-controls .fancy-text-style {
+        padding: 3px 4px 5px 4px;
+    }
 }
 
 .admin-controls .js-filter-operator, .admin-controls .js-filter-reset, .admin-controls .js-index-settings-open, .admin-controls .js-add-menu-item, .admin-controls .js-add-email-domain, .admin-controls .js-add-issue, .admin-controls .js-add-phone-account, .admin-controls .js-add-business-hours, .admin-controls .js-fancy-text-convert, .admin-controls .table-record-count {
