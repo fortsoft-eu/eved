@@ -1459,7 +1459,7 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "  <link href=\"" . $sBaseUrl . "css/style-plum.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-plum.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Plum\">\n",
         "  <script type=\"text/javascript\" src=\"/js/style.js?sToken=" . dechex(filemtime(__DIR__ . "/js/style.js")) . "\"></script>\n",
         "</head>\n",
-        "<body class=\"login-page\">\n",
+        "<body class=\"login-page\" data-chromium=\"" . (isChromiumBased() ? "1" : "0") . "\">\n",
         "  <div class=\"confirm-dialog login-dialog\">\n",
         "    <form class=\"confirm-dialog-box login-form\" method=\"post\" action=\"" . html(getCurrentUrlWithoutAuthActionForToken($sTokenName)) . "\" enctype=\"application/x-www-form-urlencoded\">\n",
         "      <input type=\"hidden\" name=\"login_token\" value=\"" . getLoginToken() . "\">\n",

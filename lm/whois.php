@@ -130,7 +130,7 @@ $iTime = sendPageHeaders();
   <link href="<?php echo $sBaseUrl; ?>css/style-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
   <script type="text/javascript" src="/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
 </head>
-<body>
+<body data-chromium="<?php echo isChromiumBased() ? "1" : "0"; ?>">
   <form action="<?php echo html($sBaseUrl . basename($_SERVER["SCRIPT_NAME"])); ?>" method="get" id="domain-lookup-form" hidden>
   </form>
   <p class="admin-controls">

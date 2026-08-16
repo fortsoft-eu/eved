@@ -599,7 +599,7 @@ $iTime = sendPageHeaders();
   <link href="<?php echo $sBaseUrl; ?>css/style-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
   <script type="text/javascript" src="/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
 </head>
-<body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-hide-subject-birth-number="1">
+<body data-calendar-first-day="<?php echo html($iCalendarFirstDay); ?>" data-hide-subject-birth-number="1" data-chromium="<?php echo isChromiumBased() ? "1" : "0"; ?>">
   <p class="admin-controls">
 <?php
 

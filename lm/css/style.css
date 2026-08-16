@@ -220,8 +220,8 @@ input:not([type]), input[type="date"], input[type="datetime-local"], input[type=
     color: #000;
 }
 
-body[data-chromium="1"] input[type="text"], body[data-chromium="1"] textarea:not(.js-snippet-board-textarea) {
-    padding: 1px;
+body[data-chromium="1"] input[type="password"], body[data-chromium="1"] input[type="text"], body[data-chromium="1"] textarea:not(.js-snippet-board-textarea) {
+    padding: 2px;
 }
 
 input[type="date"], input[type="datetime-local"], input[type="email"], input[type="number"], input[type="password"], input[type="text"] {

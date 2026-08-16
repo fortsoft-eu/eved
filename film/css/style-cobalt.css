@@ -305,8 +305,8 @@ input[type="date"], input[type="datetime-local"], input[type="number"], input[ty
     padding-right: 0;
 }
 
-body[data-chromium="1"] input[type="text"], body[data-chromium="1"] textarea:not(.js-snippet-board-textarea) {
-    padding: 1px;
+body[data-chromium="1"] input[type="password"], body[data-chromium="1"] input[type="text"], body[data-chromium="1"] textarea:not(.js-snippet-board-textarea) {
+    padding: 2px;
 }
 
 .button-link {

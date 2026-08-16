@@ -202,7 +202,7 @@ $iTime = sendPageHeaders();
   <link href="<?php echo $sBaseUrl; ?>css/style-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
   <script type="text/javascript" src="/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
 </head>
-<body class="snippet-board-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>" data-snippet-board-revision="<?php echo html($sBoardRevision); ?>" data-snippet-board-locked="<?php echo $blLmEncryptionUnlocked ? "0" : "1"; ?>" data-lm-encryption-configured="<?php echo $blLmEncryptionConfigured ? "1" : "0"; ?>">
+<body class="snippet-board-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>" data-snippet-board-revision="<?php echo html($sBoardRevision); ?>" data-snippet-board-locked="<?php echo $blLmEncryptionUnlocked ? "0" : "1"; ?>" data-lm-encryption-configured="<?php echo $blLmEncryptionConfigured ? "1" : "0"; ?>" data-chromium="<?php echo isChromiumBased() ? "1" : "0"; ?>">
   <p class="admin-controls">
 <?php
 
