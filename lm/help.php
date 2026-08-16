@@ -68,6 +68,11 @@ renderMenu();
     <dd>
       <p>Dashboard pages use the shared hamburger menu rendered from active <code>fs_menu</code> rows whose path belongs to the Dashboard section. The menu opens beside the button and marks the current page when its path matches the active row.</p>
     </dd>
+    <dt>Alternate Styles</dt>
+    <dd>
+      <p>Dashboard pages provide the Original style and twenty named alternate styles. Firefox exposes them through <strong>View &gt; Page Style</strong>; the selected title is stored in browser <code>localStorage</code> and restored on later pages with the same style title.</p>
+      <p>Changing the style affects presentation only. The Snippet Board editor follows the selected colors without requiring a page reload.</p>
+    </dd>
     <dt>Access</dt>
     <dd>
       <p>Read-only help uses portal view access. Runtime diagnostics, database export, and menu administration require portal full access because they expose server configuration, request data, session values, cookies, database metadata, database content, or can edit global menu rows.</p>
@@ -317,6 +322,11 @@ renderMenu();
     <dt>Menu</dt>
     <dd>
       <p>Stránky Dashboardu používají společné hamburger menu z aktivních řádků <code>fs_menu</code>, které patří do sekce Dashboard. Menu se otevře u tlačítka a označí aktuální stránku, pokud její cesta odpovídá aktivnímu řádku.</p>
+    </dd>
+    <dt>Alternativní styly</dt>
+    <dd>
+      <p>Stránky Dashboardu nabízejí styl Original a dvacet pojmenovaných alternativních stylů. Firefox je zpřístupňuje přes <strong>Zobrazit &gt; Styl stránky</strong>; vybraný název se ukládá do <code>localStorage</code> prohlížeče a obnovuje se na dalších stránkách se stejným názvem stylu.</p>
+      <p>Změna stylu ovlivňuje pouze vzhled. Editor Snippet Board přebírá vybrané barvy bez nutnosti znovu načíst stránku.</p>
     </dd>
     <dt>Přístup</dt>
     <dd>

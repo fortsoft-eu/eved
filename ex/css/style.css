@@ -591,6 +591,10 @@ input[type="date"], input[type="datetime-local"], input[type="number"], input[ty
     padding-right: 0;
 }
 
+body[data-chromium="1"] input[type="text"], body[data-chromium="1"] textarea:not(.js-snippet-board-textarea) {
+    padding: 1px;
+}
+
 .button-link {
     border: 1px solid #C0C0C0;
     margin-left: 8px;

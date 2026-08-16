@@ -73,6 +73,16 @@ renderMenu();
         <li><strong>Session:</strong> Sign-in, logout, CSRF token, filters, and settings are session-backed.</li>
       </ul>
     </dd>
+    <dt>Alternate Styles</dt>
+    <dd>
+      <p>Kesef pages provide the Original style and twenty named alternate styles. Firefox exposes them through <strong>View &gt; Page Style</strong>. Changing the style affects presentation only and does not modify finance data, filters, or session settings.</p>
+      <p>The selected style title is stored in browser <code>localStorage</code> and restored on later pages that provide the same title.</p>
+      <ul>
+        <li><strong>Selection:</strong> Firefox <strong>View &gt; Page Style</strong>.</li>
+        <li><strong>Persistence:</strong> Browser <code>localStorage</code>.</li>
+        <li><strong>Scope:</strong> Presentation only; stored finance data is unchanged.</li>
+      </ul>
+    </dd>
     <dt>Quick Filter</dt>
     <dd>
       <p>The quick filter searches the rendered text already present in the current table. It is a client-side narrowing tool and does not change the SQL query or stored finance data.</p>
@@ -213,6 +223,7 @@ renderMenu();
       <ul>
         <li><strong>Access:</strong> Full access only.</li>
         <li><strong>Metadata:</strong> Columns, keys, indexes, and relations.</li>
+        <li><strong>PNG export:</strong> Captures the schema diagram including relation lines at scales 1 through 5.</li>
         <li><strong>Purpose:</strong> Visual review of the Kesef data model.</li>
       </ul>
     </dd>
@@ -238,6 +249,16 @@ renderMenu();
         <li><strong>View přístup:</strong> Měsíční přehled, transakce, dluhy, předplatná, typy, kurzy a tato nápověda.</li>
         <li><strong>Full přístup:</strong> Vytváření, editace, mazání a databázová diagnostika.</li>
         <li><strong>Session:</strong> Přihlášení, odhlášení, CSRF token, filtry a nastavení používají session.</li>
+      </ul>
+    </dd>
+    <dt>Alternativní styly</dt>
+    <dd>
+      <p>Stránky Kesef nabízejí styl Original a dvacet pojmenovaných alternativních stylů. Firefox je zpřístupňuje přes <strong>Zobrazit &gt; Styl stránky</strong>. Změna stylu ovlivňuje pouze vzhled a neupravuje finanční data, filtry ani nastavení v session.</p>
+      <p>Název vybraného stylu se ukládá do <code>localStorage</code> prohlížeče a obnovuje se na dalších stránkách, které nabízejí stejný název.</p>
+      <ul>
+        <li><strong>Výběr:</strong> Firefox <strong>Zobrazit &gt; Styl stránky</strong>.</li>
+        <li><strong>Uložení:</strong> <code>localStorage</code> prohlížeče.</li>
+        <li><strong>Rozsah:</strong> Pouze vzhled; uložená finanční data se nemění.</li>
       </ul>
     </dd>
     <dt>Rychlý filtr</dt>
@@ -380,6 +401,7 @@ renderMenu();
       <ul>
         <li><strong>Přístup:</strong> Pouze full přístup.</li>
         <li><strong>Metadata:</strong> Sloupce, klíče, indexy a relace.</li>
+        <li><strong>PNG export:</strong> Zachytí diagram schématu včetně spojnic v měřítku 1 až 5.</li>
         <li><strong>Účel:</strong> Vizuální kontrola datového modelu Kesef.</li>
       </ul>
     </dd>

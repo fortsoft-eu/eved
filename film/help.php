@@ -64,6 +64,16 @@ renderMenu();
         <li><strong>Behavior:</strong> The menu opens next to its button and scrolls away with the page.</li>
       </ul>
     </dd>
+    <dt>Alternate Styles</dt>
+    <dd>
+      <p>Film pages provide the Original style and twenty named alternate styles. Firefox exposes them through <strong>View &gt; Page Style</strong>. The public gallery and the film menu pages use separate complete style files, but they offer the same style titles.</p>
+      <p>The selected style title is stored in browser <code>localStorage</code> and restored on later pages that provide the same title. Changing the style affects presentation only and does not change gallery state, access status, or database data.</p>
+      <ul>
+        <li><strong>Selection:</strong> Firefox <strong>View &gt; Page Style</strong>.</li>
+        <li><strong>Persistence:</strong> Browser <code>localStorage</code>.</li>
+        <li><strong>Separation:</strong> Public-gallery and menu-page styles are separate complete files.</li>
+      </ul>
+    </dd>
     <dt>Access</dt>
     <dd>
       <p>The public gallery entry point and Photographic Equipment are public read-only pages. Other menu pages require either a trusted client or a signed-in user with the matching permission. Read-only administrative overviews use view access, while sensitive diagnostics and write-capable tools require full access.</p>
@@ -280,6 +290,7 @@ renderMenu();
         <li><strong>Tables:</strong> Film, photo, and Flickr-prefixed tables.</li>
         <li><strong>Diagram:</strong> Shows columns, keys, and foreign-key relation lines.</li>
         <li><strong>Relations:</strong> Also listed in a table below the diagram.</li>
+        <li><strong>PNG export:</strong> Captures the schema diagram including relation lines at scales 1 through 5.</li>
         <li><strong>Safety:</strong> Read-only schema inspection.</li>
       </ul>
     </dd>
@@ -304,6 +315,16 @@ renderMenu();
         <li><strong>Pevná položka:</strong> Film Scans Gallery otevírá veřejný vstup galerie.</li>
         <li><strong>Foto skupina:</strong> Photographic Equipment, Assign Film to Lab Bag, Film Scans Overview, Photo Lab Orders a Film Access Log.</li>
         <li><strong>Chování:</strong> Menu se otevře u svého tlačítka a odjede se stránkou při rolování.</li>
+      </ul>
+    </dd>
+    <dt>Alternativní styly</dt>
+    <dd>
+      <p>Filmové stránky nabízejí styl Original a dvacet pojmenovaných alternativních stylů. Firefox je zpřístupňuje přes <strong>Zobrazit &gt; Styl stránky</strong>. Veřejná galerie a stránky filmového menu používají samostatné kompletní soubory stylů, ale nabízejí stejné názvy stylů.</p>
+      <p>Název vybraného stylu se ukládá do <code>localStorage</code> prohlížeče a obnovuje se na dalších stránkách, které nabízejí stejný název. Změna stylu ovlivňuje pouze vzhled a nemění stav galerie, přístup ani databázová data.</p>
+      <ul>
+        <li><strong>Výběr:</strong> Firefox <strong>Zobrazit &gt; Styl stránky</strong>.</li>
+        <li><strong>Uložení:</strong> <code>localStorage</code> prohlížeče.</li>
+        <li><strong>Oddělení:</strong> Styly veřejné galerie a stránek menu jsou v samostatných kompletních souborech.</li>
       </ul>
     </dd>
     <dt>Přístup</dt>
@@ -522,6 +543,7 @@ renderMenu();
         <li><strong>Tabulky:</strong> Tabulky s prefixem film, photo a Flickr.</li>
         <li><strong>Diagram:</strong> Ukazuje sloupce, klíče a vazby cizích klíčů.</li>
         <li><strong>Vazby:</strong> Jsou vypsané také v tabulce pod diagramem.</li>
+        <li><strong>PNG export:</strong> Zachytí diagram schématu včetně spojnic v měřítku 1 až 5.</li>
         <li><strong>Bezpečnost:</strong> Pouze čtecí kontrola schématu.</li>
       </ul>
     </dd>

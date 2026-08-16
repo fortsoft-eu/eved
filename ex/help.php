@@ -69,6 +69,16 @@ renderMenu();
         <li><strong>Links:</strong> Menu and help links open the portal pages in the current window.</li>
       </ul>
     </dd>
+    <dt>Alternate Styles</dt>
+    <dd>
+      <p>Portal pages provide the Original style and twenty named alternate styles. Firefox exposes them through <strong>View &gt; Page Style</strong>. Changing the style affects presentation only and does not modify portal data or session settings.</p>
+      <p>The selected style title is stored in browser <code>localStorage</code> and restored on later pages that provide the same title. The Mail editor also follows the selected colors without requiring a page reload.</p>
+      <ul>
+        <li><strong>Selection:</strong> Firefox <strong>View &gt; Page Style</strong>.</li>
+        <li><strong>Persistence:</strong> Browser <code>localStorage</code>, shared by pages with the same style title.</li>
+        <li><strong>Mail editor:</strong> The editable area follows style changes without a reload.</li>
+      </ul>
+    </dd>
     <dt>Access and Sign-in</dt>
     <dd>
       <p>Normal data pages require portal view access. Editing controls are displayed only to users with full access, and several diagnostic pages require full access because they expose database structure, SQL exports, PHP configuration, or filesystem metadata.</p>
@@ -266,6 +276,17 @@ renderMenu();
         <li><strong>Deletion:</strong> Types with existing contacts must be merged first.</li>
       </ul>
     </dd>
+    <dt><a href="<?php echo html($aMenuItemUrls["cal.php"]); ?>">Calendar</a></dt>
+    <dd>
+      <p>Calendar renders the selected calendar and year as a twelve-month grid. The selector contains person birthdays and name days for trusted clients or users with portal view access, configured external calendars, and configured name-day groups.</p>
+      <p>The selected calendar and year are stored in the session. Show applies an entered year, Prev and Next move by one year, and Today returns to the current year. <strong>Save PNG</strong> exports the legend and calendar in a three- or four-column layout at scales 1 through 5.</p>
+      <ul>
+        <li><strong>Calendars:</strong> Person events, configured external calendars, and configured name-day groups.</li>
+        <li><strong>Year:</strong> Direct entry, previous year, next year, or current year.</li>
+        <li><strong>Persistence:</strong> Selected calendar and year are stored in the session.</li>
+        <li><strong>PNG export:</strong> Three or four columns at scales 1 through 5.</li>
+      </ul>
+    </dd>
     <dt><a href="<?php echo html($aMenuItemUrls["db.php"]); ?>">Database Structure</a></dt>
     <dd>
       <p>Database Structure is the full-access SQL structure and export page for portal tables. It inspects the current database, lists <code>ex_*</code> tables in dependency-aware order, and shows normalized <code>SHOW CREATE TABLE</code> output for review.</p>
@@ -287,6 +308,7 @@ renderMenu();
         <li><strong>Tables:</strong> Shows key markers, columns, shortened types, nullability, and extra attributes.</li>
         <li><strong>Relations:</strong> Lists foreign keys and renders relation lines when available.</li>
         <li><strong>Scope:</strong> Reads metadata for <code>ex_*</code> tables.</li>
+        <li><strong>PNG export:</strong> Captures the schema diagram including relation lines at scales 1 through 5.</li>
         <li><strong>Safety:</strong> Read-only schema inspection.</li>
       </ul>
     </dd>
@@ -360,6 +382,16 @@ renderMenu();
         <li><strong>Zdroj:</strong> Aktivní položky z tabulky <code>fs_menu</code>.</li>
         <li><strong>Aktuální stránka:</strong> Název aktivní stránky musí existovat v menu.</li>
         <li><strong>Odkazy:</strong> Odkazy v menu i nápovědě otevírají portálové stránky ve stejném okně.</li>
+      </ul>
+    </dd>
+    <dt>Alternativní styly</dt>
+    <dd>
+      <p>Portálové stránky nabízejí styl Original a dvacet pojmenovaných alternativních stylů. Firefox je zpřístupňuje přes <strong>Zobrazit &gt; Styl stránky</strong>. Změna stylu ovlivňuje pouze vzhled a neupravuje portálová data ani nastavení v session.</p>
+      <p>Název vybraného stylu se ukládá do <code>localStorage</code> prohlížeče a obnovuje se na dalších stránkách, které nabízejí stejný název. Také editor Mail přebírá vybrané barvy bez nutnosti znovu načíst stránku.</p>
+      <ul>
+        <li><strong>Výběr:</strong> Firefox <strong>Zobrazit &gt; Styl stránky</strong>.</li>
+        <li><strong>Uložení:</strong> <code>localStorage</code> prohlížeče, společné pro stránky se stejným názvem stylu.</li>
+        <li><strong>Editor Mail:</strong> Editační plocha přebírá změny stylu bez reloadu.</li>
       </ul>
     </dd>
     <dt>Přístup a přihlášení</dt>
@@ -559,6 +591,17 @@ renderMenu();
         <li><strong>Smazání:</strong> Typy s existujícími kontakty je nejprve nutné sloučit.</li>
       </ul>
     </dd>
+    <dt><a href="<?php echo html($aMenuItemUrls["cal.php"]); ?>">Calendar</a></dt>
+    <dd>
+      <p>Calendar vykresluje vybraný kalendář a rok jako mřížku dvanácti měsíců. Výběr obsahuje narozeniny a svátky osob pro trusted klienty nebo uživatele s portálovým přístupem pro čtení, nakonfigurované externí kalendáře a nakonfigurované skupiny svátků.</p>
+      <p>Vybraný kalendář a rok se ukládají do session. Show použije zadaný rok, Prev a Next přejdou o jeden rok a Today se vrátí na aktuální rok. <strong>Save PNG</strong> exportuje legendu a kalendář v rozložení se třemi nebo čtyřmi sloupci v měřítku 1 až 5.</p>
+      <ul>
+        <li><strong>Kalendáře:</strong> Události osob, nakonfigurované externí kalendáře a nakonfigurované skupiny svátků.</li>
+        <li><strong>Rok:</strong> Přímé zadání, předchozí rok, následující rok nebo aktuální rok.</li>
+        <li><strong>Uložení:</strong> Vybraný kalendář a rok se ukládají do session.</li>
+        <li><strong>PNG export:</strong> Tři nebo čtyři sloupce v měřítku 1 až 5.</li>
+      </ul>
+    </dd>
     <dt><a href="<?php echo html($aMenuItemUrls["db.php"]); ?>">Database Structure</a></dt>
     <dd>
       <p>Database Structure je stránka s plným přístupem pro SQL strukturu a export portálových tabulek. Kontroluje aktuální databázi, vypisuje tabulky <code>ex_*</code> v pořadí podle závislostí a ukazuje normalizovaný výstup <code>SHOW CREATE TABLE</code> pro revizi.</p>
@@ -580,6 +623,7 @@ renderMenu();
         <li><strong>Tabulky:</strong> Značky klíčů, sloupce, zkrácené typy, nullabilita a extra atributy.</li>
         <li><strong>Vazby:</strong> Vypisuje cizí klíče a vykresluje spojnice, pokud je diagram dostupný.</li>
         <li><strong>Rozsah:</strong> Čte metadata tabulek <code>ex_*</code>.</li>
+        <li><strong>PNG export:</strong> Zachytí diagram schématu včetně spojnic v měřítku 1 až 5.</li>
         <li><strong>Bezpečnost:</strong> Pouze čtecí kontrola schématu.</li>
       </ul>
     </dd>
