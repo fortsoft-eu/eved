@@ -218,10 +218,9 @@ function saveNewContactDefaultTypeId($iContactTypeId) {
 }
 
 function contactTypeLabel($sType, $oPdo = null) {
-    $sType = (string)$sType;
     foreach (fetchContactTypes($oPdo, false) as $aType) {
-        if ((string)$aType["contact_type"] == $sType) {
-            return (string)$aType["name"];
+        if ($aType["contact_type"] == $sType) {
+            return $aType["name"];
         }
     }
     if ($sType == "phone") {
@@ -241,18 +240,18 @@ function originalContactTypeMap() {
     }
     $aMap = array();
     foreach (getDefaultContactTypeRows() as $aType) {
-        $aMap[(string)$aType["contact_type"]] = true;
+        $aMap[$aType["contact_type"]] = true;
     }
     return $aMap;
 }
 
 function isOriginalContactType($sContactType) {
     $aMap = originalContactTypeMap();
-    return isset($aMap[(string)$sContactType]);
+    return isset($aMap[$sContactType]);
 }
 
 function buildContactTypeKeyBase($sName) {
-    $sKey = trim((string)$sName);
+    $sKey = trim($sName);
     if (function_exists("iconv")) {
         $sConverted = @iconv("UTF-8", "ASCII//TRANSLIT//IGNORE", $sKey);
         if ($sConverted !== false) {
@@ -395,7 +394,7 @@ function mergeContactTypeContacts($oPdo, $iTargetContactTypeId, $iSourceContactT
 }
 
 function normalizeYouTubeContactValue($sValue, $blRejectNonYouTubeLink = false) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $aParts = array();
     $sPath = "";
     $sHost = "";
@@ -409,8 +408,8 @@ function normalizeYouTubeContactValue($sValue, $blRejectNonYouTubeLink = false) 
     $blLooksLikeUrl = preg_match("#^https?://#i", $sText) || preg_match("#^www\\.#i", $sText) || preg_match("#^(?:youtube\\.com|www\\.youtube\\.com)(?:[/:?\\#].*)?$#i", $sText) || preg_match("#^[A-Za-z0-9.-]+\\.[A-Za-z]{2,}[/:?\\#].*$#", $sText);
     if ($blLooksLikeUrl) {
         $aParts = parse_url(preg_match("#^https?://#i", $sText) ? $sText : "https://" . $sText);
-        $sHost = isset($aParts["host"]) ? strtolower((string)$aParts["host"]) : "";
-        $sPath = isset($aParts["path"]) ? trim((string)$aParts["path"], "/") : "";
+        $sHost = isset($aParts["host"]) ? strtolower($aParts["host"]) : "";
+        $sPath = isset($aParts["path"]) ? trim($aParts["path"], "/") : "";
         if ($sHost != "youtube.com" && $sHost != "www.youtube.com") {
             if ($blRejectNonYouTubeLink) {
                 return false;
@@ -441,7 +440,7 @@ function normalizeYouTubeContactValue($sValue, $blRejectNonYouTubeLink = false) 
 }
 
 function normalizeIcqContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $sDigits = "";
     if ($sText == "") {
         return "";
@@ -461,11 +460,11 @@ function normalizeIcqContactValue($sValue) {
     } else {
         $sText = substr($sDigits, 0, -6) . "-" . substr($sDigits, -6, 3) . "-" . substr($sDigits, -3);
     }
-    return strpos((string)$sValue, "-") === false || trim((string)$sValue) == $sText ? $sText : false;
+    return strpos($sValue, "-") === false || trim($sValue) == $sText ? $sText : false;
 }
 
 function normalizeEmailContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     if ($sText == "") {
         return "";
     }
@@ -473,7 +472,7 @@ function normalizeEmailContactValue($sValue) {
 }
 
 function normalizeIddsContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     if ($sText == "") {
         return "";
     }
@@ -481,7 +480,7 @@ function normalizeIddsContactValue($sValue) {
 }
 
 function normalizeSkypeContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     if ($sText == "") {
         return "";
     }
@@ -500,29 +499,29 @@ function normalizeContactInputForStorage($sContactType, $sContactValue) {
     if (isPhoneContactType($sContactType)) {
         return normalizePhoneContactValue($sContactValue);
     }
-    if ((string)$sContactType == "youtube") {
+    if ($sContactType == "youtube") {
         return normalizeYouTubeContactValue($sContactValue, true);
     }
-    if ((string)$sContactType == "telegram") {
+    if ($sContactType == "telegram") {
         return normalizeTelegramContactValue($sContactValue);
     }
-    if ((string)$sContactType == "email") {
+    if ($sContactType == "email") {
         return normalizeEmailContactValue($sContactValue);
     }
-    if ((string)$sContactType == "idds") {
+    if ($sContactType == "idds") {
         return normalizeIddsContactValue($sContactValue);
     }
-    if ((string)$sContactType == "icq") {
+    if ($sContactType == "icq") {
         return normalizeIcqContactValue($sContactValue);
     }
-    if ((string)$sContactType == "skype") {
+    if ($sContactType == "skype") {
         return normalizeSkypeContactValue($sContactValue);
     }
     $mKnownValue = normalizeKnownContactValue($sContactType, $sContactValue);
     if ($mKnownValue !== null) {
         return $mKnownValue;
     }
-    return trim((string)$sContactValue);
+    return trim($sContactValue);
 }
 
 function contactCanonicalValue($sContactType, $sContactValue) {
@@ -530,37 +529,37 @@ function contactCanonicalValue($sContactType, $sContactValue) {
     $sContactType = contactTypeKey($sContactType);
     if (isPhoneContactType($sContactType)) {
         $mKnownValue = normalizePhoneContactValue($sContactValue);
-        return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
+        return $mKnownValue !== false ? (string)$mKnownValue : $sContactValue;
     }
-    if ((string)$sContactType == "youtube") {
+    if ($sContactType == "youtube") {
         $mKnownValue = normalizeYouTubeContactValue($sContactValue, true);
-        return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
+        return $mKnownValue !== false ? (string)$mKnownValue : $sContactValue;
     }
-    if ((string)$sContactType == "telegram") {
+    if ($sContactType == "telegram") {
         $mKnownValue = normalizeTelegramContactValue($sContactValue);
-        return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
+        return $mKnownValue !== false ? (string)$mKnownValue : $sContactValue;
     }
-    if ((string)$sContactType == "email") {
+    if ($sContactType == "email") {
         $mKnownValue = normalizeEmailContactValue($sContactValue);
-        return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
+        return $mKnownValue !== false ? (string)$mKnownValue : $sContactValue;
     }
-    if ((string)$sContactType == "idds") {
+    if ($sContactType == "idds") {
         $mKnownValue = normalizeIddsContactValue($sContactValue);
-        return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
+        return $mKnownValue !== false ? (string)$mKnownValue : $sContactValue;
     }
-    if ((string)$sContactType == "icq") {
+    if ($sContactType == "icq") {
         $mKnownValue = normalizeIcqContactValue($sContactValue);
-        return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
+        return $mKnownValue !== false ? (string)$mKnownValue : $sContactValue;
     }
-    if ((string)$sContactType == "skype") {
+    if ($sContactType == "skype") {
         $mKnownValue = normalizeSkypeContactValue($sContactValue);
-        return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
+        return $mKnownValue !== false ? (string)$mKnownValue : $sContactValue;
     }
     $mKnownValue = normalizeKnownContactValue($sContactType, $sContactValue);
     if ($mKnownValue !== null) {
-        return $mKnownValue !== false ? (string)$mKnownValue : (string)$sContactValue;
+        return $mKnownValue !== false ? (string)$mKnownValue : $sContactValue;
     }
-    return (string)$sContactValue;
+    return $sContactValue;
 }
 
 function contactInputErrorMessage($sContactType) {
@@ -568,22 +567,22 @@ function contactInputErrorMessage($sContactType) {
     if (isPhoneContactType($sContactType)) {
         return "Phone number must be a valid international number.";
     }
-    if ((string)$sContactType == "youtube") {
+    if ($sContactType == "youtube") {
         return "YouTube contact must be a YouTube link or handle.";
     }
-    if ((string)$sContactType == "telegram") {
+    if ($sContactType == "telegram") {
         return "Telegram contact must be a valid Telegram link, handle, invite link, sticker set or language link.";
     }
-    if ((string)$sContactType == "email") {
+    if ($sContactType == "email") {
         return "E-mail address is invalid.";
     }
-    if ((string)$sContactType == "idds") {
+    if ($sContactType == "idds") {
         return "IDDS must have exactly 7 letters or digits.";
     }
-    if ((string)$sContactType == "icq") {
+    if ($sContactType == "icq") {
         return "ICQ must have 5 to 9 digits, either without hyphens or grouped from the right.";
     }
-    if ((string)$sContactType == "skype") {
+    if ($sContactType == "skype") {
         return "Skype name must start with a letter and have 6 to 32 valid characters, or use a valid live: name.";
     }
     if (normalizeKnownContactValue($sContactType, "") !== null) {
@@ -595,28 +594,28 @@ function contactInputErrorMessage($sContactType) {
 function contactValueIsInvalid($sType, $sValue) {
     $mKnownValue = null;
     $sType = contactTypeKey($sType);
-    if (trim((string)$sValue) == "") {
+    if (trim($sValue) == "") {
         return false;
     }
     if (isPhoneContactType($sType)) {
         return normalizePhoneContactValue($sValue) === false;
     }
-    if ((string)$sType == "youtube") {
+    if ($sType == "youtube") {
         return normalizeYouTubeContactValue($sValue, true) === false;
     }
-    if ((string)$sType == "telegram") {
+    if ($sType == "telegram") {
         return normalizeTelegramContactValue($sValue) === false;
     }
-    if ((string)$sType == "email") {
+    if ($sType == "email") {
         return normalizeEmailContactValue($sValue) === false;
     }
-    if ((string)$sType == "idds") {
+    if ($sType == "idds") {
         return normalizeIddsContactValue($sValue) === false;
     }
-    if ((string)$sType == "icq") {
+    if ($sType == "icq") {
         return normalizeIcqContactValue($sValue) === false;
     }
-    if ((string)$sType == "skype") {
+    if ($sType == "skype") {
         return normalizeSkypeContactValue($sValue) === false;
     }
     $mKnownValue = normalizeKnownContactValue($sType, $sValue);
@@ -627,7 +626,7 @@ function contactValueIsInvalid($sType, $sValue) {
 }
 
 function youTubeContactHref($sValue) {
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     if ($sValue == "") {
         return "";
     }
@@ -636,7 +635,7 @@ function youTubeContactHref($sValue) {
 }
 
 function normalizeWebContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $aParts = array();
     $sScheme = "";
     $sHost = "";
@@ -653,8 +652,8 @@ function normalizeWebContactValue($sValue) {
     if (!is_array($aParts) || empty($aParts["scheme"]) || empty($aParts["host"])) {
         return false;
     }
-    $sScheme = strtolower((string)$aParts["scheme"]);
-    $sHost = strtolower((string)$aParts["host"]);
+    $sScheme = strtolower($aParts["scheme"]);
+    $sHost = strtolower($aParts["host"]);
     if ($sScheme != "http" && $sScheme != "https") {
         return false;
     }
@@ -666,13 +665,13 @@ function normalizeWebContactValue($sValue) {
         $sUrl .= ":" . (int)$aParts["port"];
     }
     if (isset($aParts["path"])) {
-        $sUrl .= (string)$aParts["path"];
+        $sUrl .= $aParts["path"];
     }
     if (isset($aParts["query"])) {
-        $sUrl .= "?" . (string)$aParts["query"];
+        $sUrl .= "?" . $aParts["query"];
     }
     if (isset($aParts["fragment"])) {
-        $sUrl .= "#" . (string)$aParts["fragment"];
+        $sUrl .= "#" . $aParts["fragment"];
     }
     return $sUrl;
 }
@@ -713,20 +712,20 @@ function contactProfileRules() {
 
 function normalizeProfileContactValue($sContactType, $sValue) {
     $aRules = contactProfileRules();
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $aParts = array();
     $sHost = "";
     $sPath = "";
     $sHandle = "";
     $sPrefix = "";
     $blLooksLikeUrl = false;
-    if (!isset($aRules[(string)$sContactType])) {
+    if (!isset($aRules[$sContactType])) {
         return null;
     }
     if ($sText == "") {
         return "";
     }
-    $aRule = $aRules[(string)$sContactType];
+    $aRule = $aRules[$sContactType];
     if (preg_match("#^//#", $sText)) {
         $sText = "https:" . $sText;
     }
@@ -738,16 +737,16 @@ function normalizeProfileContactValue($sContactType, $sValue) {
     }
     if ($blLooksLikeUrl) {
         $aParts = parse_url(preg_match("#^https?://#i", $sText) ? $sText : "https://" . $sText);
-        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", (string)$aParts["host"])) : "";
+        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", $aParts["host"])) : "";
         if (!in_array($sHost, $aRule["hosts"], true)) {
             return false;
         }
-        $sPath = isset($aParts["path"]) ? trim((string)$aParts["path"], "/") : "";
+        $sPath = isset($aParts["path"]) ? trim($aParts["path"], "/") : "";
         if (!$sPath) {
             return false;
         }
         $aSegments = explode("/", $sPath);
-        $sPrefix = isset($aRule["prefix"]) ? (string)$aRule["prefix"] : "";
+        $sPrefix = isset($aRule["prefix"]) ? $aRule["prefix"] : "";
         if ($sPrefix == "~") {
             $sHandle = preg_replace("/^~/", "", rawurldecode($aSegments[0]));
         } elseif ($sPrefix == "@") {
@@ -766,11 +765,11 @@ function normalizeProfileContactValue($sContactType, $sValue) {
     if (!empty($aRule["strip_at"])) {
         $sHandle = preg_replace("/^@+/", "", $sHandle);
     }
-    return preg_match($aRule["pattern"], $sHandle) ? (string)$aRule["base"] . rawurlencode($sHandle) : false;
+    return preg_match($aRule["pattern"], $sHandle) ? $aRule["base"] . rawurlencode($sHandle) : false;
 }
 
 function normalizeLinkedInContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $aParts = array();
     $sHost = "";
     $sPath = "";
@@ -784,11 +783,11 @@ function normalizeLinkedInContactValue($sValue) {
     }
     if (preg_match("#^https?://#i", $sText) || preg_match("#^(?:www\\.)?linkedin\\.com(?:[/:?\\#].*)?$#i", $sText)) {
         $aParts = parse_url(preg_match("#^https?://#i", $sText) ? $sText : "https://" . $sText);
-        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", (string)$aParts["host"])) : "";
+        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", $aParts["host"])) : "";
         if ($sHost != "linkedin.com") {
             return false;
         }
-        $sPath = isset($aParts["path"]) ? trim((string)$aParts["path"], "/") : "";
+        $sPath = isset($aParts["path"]) ? trim($aParts["path"], "/") : "";
         if (!preg_match("#^(in|company)/([^/]+)$#i", $sPath, $aMatches)) {
             return false;
         }
@@ -806,7 +805,7 @@ function normalizeLinkedInContactValue($sValue) {
 }
 
 function normalizeStackOverflowContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $aParts = array();
     $sHost = "";
     $sPath = "";
@@ -819,8 +818,8 @@ function normalizeStackOverflowContactValue($sValue) {
     }
     if (preg_match("#^https?://#i", $sText) || preg_match("#^(?:www\\.)?stackoverflow\\.com(?:[/:?\\#].*)?$#i", $sText)) {
         $aParts = parse_url(preg_match("#^https?://#i", $sText) ? $sText : "https://" . $sText);
-        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", (string)$aParts["host"])) : "";
-        $sPath = isset($aParts["path"]) ? trim((string)$aParts["path"], "/") : "";
+        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", $aParts["host"])) : "";
+        $sPath = isset($aParts["path"]) ? trim($aParts["path"], "/") : "";
         if ($sHost != "stackoverflow.com" || !preg_match("#^users/([0-9]+)(?:/.*)?$#i", $sPath, $aMatches)) {
             return false;
         }
@@ -832,7 +831,7 @@ function normalizeStackOverflowContactValue($sValue) {
 }
 
 function normalizeSteamContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $aParts = array();
     $sHost = "";
     $sPath = "";
@@ -846,8 +845,8 @@ function normalizeSteamContactValue($sValue) {
     }
     if (preg_match("#^https?://#i", $sText) || preg_match("#^(?:www\\.)?steamcommunity\\.com(?:[/:?\\#].*)?$#i", $sText)) {
         $aParts = parse_url(preg_match("#^https?://#i", $sText) ? $sText : "https://" . $sText);
-        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", (string)$aParts["host"])) : "";
-        $sPath = isset($aParts["path"]) ? trim((string)$aParts["path"], "/") : "";
+        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", $aParts["host"])) : "";
+        $sPath = isset($aParts["path"]) ? trim($aParts["path"], "/") : "";
         if ($sHost != "steamcommunity.com" || !preg_match("#^(id|profiles)/([^/]+)$#i", $sPath, $aMatches)) {
             return false;
         }
@@ -864,7 +863,7 @@ function normalizeSteamContactValue($sValue) {
 }
 
 function normalizeGoodreadsContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $aParts = array();
     $sHost = "";
     $sPath = "";
@@ -876,8 +875,8 @@ function normalizeGoodreadsContactValue($sValue) {
     }
     if (preg_match("#^https?://#i", $sText) || preg_match("#^(?:www\\.)?goodreads\\.com(?:[/:?\\#].*)?$#i", $sText)) {
         $aParts = parse_url(preg_match("#^https?://#i", $sText) ? $sText : "https://" . $sText);
-        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", (string)$aParts["host"])) : "";
-        $sPath = isset($aParts["path"]) ? trim((string)$aParts["path"], "/") : "";
+        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", $aParts["host"])) : "";
+        $sPath = isset($aParts["path"]) ? trim($aParts["path"], "/") : "";
         if ($sHost != "goodreads.com" || !preg_match("#^user/show/([0-9]+)(?:[.-].*)?$#i", $sPath, $aMatches)) {
             return false;
         }
@@ -887,7 +886,7 @@ function normalizeGoodreadsContactValue($sValue) {
 }
 
 function normalizeFederatedContactValue($sValue, $sPathPrefix) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $aParts = array();
     $sHost = "";
     $sPath = "";
@@ -901,8 +900,8 @@ function normalizeFederatedContactValue($sValue, $sPathPrefix) {
     }
     if (preg_match("#^https?://#i", $sText)) {
         $aParts = parse_url($sText);
-        $sHost = isset($aParts["host"]) ? strtolower((string)$aParts["host"]) : "";
-        $sPath = isset($aParts["path"]) ? trim((string)$aParts["path"], "/") : "";
+        $sHost = isset($aParts["host"]) ? strtolower($aParts["host"]) : "";
+        $sPath = isset($aParts["path"]) ? trim($aParts["path"], "/") : "";
         if ($sPathPrefix == "@" && preg_match("#^@([^/]+)$#", $sPath, $aMatches)) {
             $sUser = rawurldecode($aMatches[1]);
         } elseif ($sPathPrefix != "@" && preg_match("#^" . preg_quote($sPathPrefix, "#") . "/([^/]+)$#i", $sPath, $aMatches)) {
@@ -924,11 +923,11 @@ function normalizeFederatedContactValue($sValue, $sPathPrefix) {
 }
 
 function isAtprotoHandle($sHandle) {
-    return preg_match("/^([A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/", (string)$sHandle);
+    return preg_match("/^([A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/", $sHandle);
 }
 
 function normalizeBlueskyContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $aParts = array();
     $sHost = "";
     $sPath = "";
@@ -941,8 +940,8 @@ function normalizeBlueskyContactValue($sValue) {
     }
     if (preg_match("#^https?://#i", $sText) || preg_match("#^(?:www\\.)?bsky\\.app(?:[/:?\\#].*)?$#i", $sText)) {
         $aParts = parse_url(preg_match("#^https?://#i", $sText) ? $sText : "https://" . $sText);
-        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", (string)$aParts["host"])) : "";
-        $sPath = isset($aParts["path"]) ? trim((string)$aParts["path"], "/") : "";
+        $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", $aParts["host"])) : "";
+        $sPath = isset($aParts["path"]) ? trim($aParts["path"], "/") : "";
         if ($sHost != "bsky.app" || !preg_match("#^profile/([^/]+)$#i", $sPath, $aMatches)) {
             return false;
         }
@@ -954,7 +953,7 @@ function normalizeBlueskyContactValue($sValue) {
 }
 
 function normalizeMatrixContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     if ($sText == "") {
         return "";
     }
@@ -965,7 +964,7 @@ function normalizeMatrixContactValue($sValue) {
 }
 
 function normalizeJabberContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     if ($sText == "") {
         return "";
     }
@@ -983,7 +982,7 @@ function orcidCheckDigit($sDigits) {
 }
 
 function normalizeOrcidContactValue($sValue) {
-    $sText = strtoupper(trim((string)$sValue));
+    $sText = strtoupper(trim($sValue));
     $sId = "";
     if ($sText == "") {
         return "";
@@ -1000,7 +999,7 @@ function normalizeOrcidContactValue($sValue) {
 }
 
 function normalizeMessagingPhoneContactValue($sValue, $sContactType) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $aParts = array();
     $sHost = "";
     $sPath = "";
@@ -1008,17 +1007,17 @@ function normalizeMessagingPhoneContactValue($sValue, $sContactType) {
     if ($sText == "") {
         return "";
     }
-    if ((string)$sContactType == "whatsapp") {
+    if ($sContactType == "whatsapp") {
         if (preg_match("#^//#", $sText)) {
             $sText = "https:" . $sText;
         }
         if (preg_match("#^https?://#i", $sText)) {
             $aParts = parse_url($sText);
-            $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", (string)$aParts["host"])) : "";
-            $sPath = isset($aParts["path"]) ? trim((string)$aParts["path"], "/") : "";
+            $sHost = isset($aParts["host"]) ? strtolower(preg_replace("/^www\\./", "", $aParts["host"])) : "";
+            $sPath = isset($aParts["path"]) ? trim($aParts["path"], "/") : "";
             if ($sHost == "wa.me" && preg_match("/^[0-9]+$/", $sPath)) {
                 $sText = "+" . $sPath;
-            } elseif (($sHost == "api.whatsapp.com" || $sHost == "whatsapp.com") && isset($aParts["query"]) && preg_match("/(?:^|&)phone=([0-9]+)/", (string)$aParts["query"], $aMatches)) {
+            } elseif (($sHost == "api.whatsapp.com" || $sHost == "whatsapp.com") && isset($aParts["query"]) && preg_match("/(?:^|&)phone=([0-9]+)/", $aParts["query"], $aMatches)) {
                 $sText = "+" . $aMatches[1];
             }
         }
@@ -1033,46 +1032,46 @@ function normalizeKnownContactValue($sContactType, $sContactValue) {
     if (!isOriginalContactType($sContactType)) {
         return null;
     }
-    if ((string)$sContactType == "telegram") {
+    if ($sContactType == "telegram") {
         return normalizeTelegramContactValue($sContactValue);
     }
     if ($mProfileValue !== null) {
         return $mProfileValue;
     }
-    if ((string)$sContactType == "web") {
+    if ($sContactType == "web") {
         return normalizeWebContactValue($sContactValue);
     }
-    if ((string)$sContactType == "jabber") {
+    if ($sContactType == "jabber") {
         return normalizeJabberContactValue($sContactValue);
     }
-    if ((string)$sContactType == "matrix") {
+    if ($sContactType == "matrix") {
         return normalizeMatrixContactValue($sContactValue);
     }
-    if ((string)$sContactType == "mastodon") {
+    if ($sContactType == "mastodon") {
         return normalizeFederatedContactValue($sContactValue, "@");
     }
-    if ((string)$sContactType == "lemmy") {
+    if ($sContactType == "lemmy") {
         return normalizeFederatedContactValue($sContactValue, "u");
     }
-    if ((string)$sContactType == "bluesky") {
+    if ($sContactType == "bluesky") {
         return normalizeBlueskyContactValue($sContactValue);
     }
-    if ((string)$sContactType == "linkedin") {
+    if ($sContactType == "linkedin") {
         return normalizeLinkedInContactValue($sContactValue);
     }
-    if ((string)$sContactType == "stackoverflow") {
+    if ($sContactType == "stackoverflow") {
         return normalizeStackOverflowContactValue($sContactValue);
     }
-    if ((string)$sContactType == "steam") {
+    if ($sContactType == "steam") {
         return normalizeSteamContactValue($sContactValue);
     }
-    if ((string)$sContactType == "goodreads") {
+    if ($sContactType == "goodreads") {
         return normalizeGoodreadsContactValue($sContactValue);
     }
-    if ((string)$sContactType == "orcid") {
+    if ($sContactType == "orcid") {
         return normalizeOrcidContactValue($sContactValue);
     }
-    if ((string)$sContactType == "whatsapp" || (string)$sContactType == "viber") {
+    if ($sContactType == "whatsapp" || $sContactType == "viber") {
         return normalizeMessagingPhoneContactValue($sContactValue, $sContactType);
     }
     return null;
@@ -1134,7 +1133,7 @@ function contactTypeHasKnownLink($sType) {
 function contactDisplayValue($sType, $sValue) {
     $sType = contactTypeKey($sType);
     $sCanonicalValue = contactCanonicalValue($sType, $sValue);
-    if (isPhoneContactType($sType) || (string)$sType == "whatsapp" || (string)$sType == "viber") {
+    if (isPhoneContactType($sType) || $sType == "whatsapp" || $sType == "viber") {
         return phoneContactDisplayValue($sCanonicalValue);
     }
     return $sCanonicalValue;
@@ -1142,7 +1141,7 @@ function contactDisplayValue($sType, $sValue) {
 
 function contactHref($sType, $sValue, $blAllowExternalLinks = false) {
     $sType = contactTypeKey($sType);
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $mKnownValue = normalizeKnownContactValue($sType, $sValue);
     if (isPhoneContactType($sType)) {
         return phoneContactHref($sValue);
@@ -1310,7 +1309,7 @@ function postalCodeMetadata() {
     $aMetadata = array();
     if (is_file($sFile)) {
         $sJson = file_get_contents($sFile);
-        $sJson = preg_replace("/^\\xEF\\xBB\\xBF/", "", (string)$sJson);
+        $sJson = preg_replace("/^\\xEF\\xBB\\xBF/", "", $sJson);
         $aDecoded = json_decode($sJson, true);
         if (is_array($aDecoded)) {
             $aMetadata = $aDecoded;
@@ -1320,25 +1319,25 @@ function postalCodeMetadata() {
 }
 
 function postalCodePatternMatches($sPattern, $sPostalCode) {
-    $sPattern = trim((string)$sPattern);
+    $sPattern = trim($sPattern);
     if ($sPattern == "") {
         return true;
     }
-    return @preg_match("~^(?:" . str_replace("~", "\\~", $sPattern) . ")$~i", (string)$sPostalCode);
+    return @preg_match("~^(?:" . str_replace("~", "\\~", $sPattern) . ")$~i", $sPostalCode);
 }
 
 function postalCodeAlnum($sPostalCode) {
-    return preg_replace("/[^A-Z0-9]/", "", strtoupper((string)$sPostalCode));
+    return preg_replace("/[^A-Z0-9]/", "", strtoupper($sPostalCode));
 }
 
 function addressCountryCode($sCountry) {
-    $sCountry = strtoupper(trim((string)$sCountry));
+    $sCountry = strtoupper(trim($sCountry ?? ""));
     return $sCountry == "CS" ? "CZ" : $sCountry;
 }
 
 function postalCodeFormatByExample($sPostalCode, $sExamples) {
     $sAlnum = postalCodeAlnum($sPostalCode);
-    $aExamples = explode(",", (string)$sExamples);
+    $aExamples = explode(",", $sExamples);
     $sExample = "";
     $sFormatted = "";
     $iIndex = 0;
@@ -1347,12 +1346,12 @@ function postalCodeFormatByExample($sPostalCode, $sExamples) {
     }
     foreach ($aExamples as $sExampleCandidate) {
         if (strlen(postalCodeAlnum($sExampleCandidate)) == strlen($sAlnum)) {
-            $sExample = trim((string)$sExampleCandidate);
+            $sExample = trim($sExampleCandidate);
             break;
         }
     }
     if ($sExample == "") {
-        return strtoupper(trim((string)$sPostalCode));
+        return strtoupper(trim($sPostalCode));
     }
     for ($iChar = 0; $iChar < strlen($sExample); $iChar++) {
         $sChar = substr($sExample, $iChar, 1);
@@ -1370,7 +1369,7 @@ function postalCodeFormatByExample($sPostalCode, $sExamples) {
 
 function analyzePostalCode($sCountry, $sPostalCode) {
     $sCountry = addressCountryCode($sCountry);
-    $sText = strtoupper(trim((string)$sPostalCode));
+    $sText = strtoupper(trim($sPostalCode ?? ""));
     $aMetadata = postalCodeMetadata();
     $sPattern = isset($aMetadata[$sCountry]["zip"]) ? (string)$aMetadata[$sCountry]["zip"] : "";
     $sExamples = isset($aMetadata[$sCountry]["zipex"]) ? (string)$aMetadata[$sCountry]["zipex"] : "";
@@ -1394,7 +1393,7 @@ function analyzePostalCode($sCountry, $sPostalCode) {
     $aCandidates[] = postalCodeAlnum($sText);
     $aCandidates[] = postalCodeFormatByExample($sText, $sExamples);
     foreach ($aCandidates as $sCandidate) {
-        $sCandidate = trim((string)$sCandidate);
+        $sCandidate = trim($sCandidate);
         if ($sCandidate != "" && postalCodePatternMatches($sPattern, $sCandidate)) {
             return array("valid" => true, "value" => postalCodeFormatByExample($sCandidate, $sExamples));
         }
@@ -1404,12 +1403,12 @@ function analyzePostalCode($sCountry, $sPostalCode) {
 
 function normalizePostalCode($sCountry, $sPostalCode) {
     $aPostalCode = analyzePostalCode($sCountry, $sPostalCode);
-    return !empty($aPostalCode["valid"]) ? (string)$aPostalCode["value"] : false;
+    return !empty($aPostalCode["valid"]) ? $aPostalCode["value"] : false;
 }
 
 function postalCodeDisplayValue($sCountry, $sPostalCode) {
     $aPostalCode = analyzePostalCode($sCountry, $sPostalCode);
-    return !empty($aPostalCode["valid"]) ? (string)$aPostalCode["value"] : (string)$sPostalCode;
+    return !empty($aPostalCode["valid"]) ? $aPostalCode["value"] : $sPostalCode;
 }
 
 function getPostedValues($sName) {
@@ -1482,8 +1481,8 @@ function renderContactList($aContacts, $blShowActions = true, $iSubjectId = 0, $
         $sNote = trim((string)$aContact["note"]);
         $blIsPrimary = (int)$aContact["is_primary"] == 1;
         $blIsActive = (int)$aContact["is_active"] == 1;
-        $sContactType = isset($aContact["contact_type"]) ? (string)$aContact["contact_type"] : "";
-        $sContactTypeName = isset($aContact["contact_type_name"]) && trim((string)$aContact["contact_type_name"]) != "" ? (string)$aContact["contact_type_name"] : contactTypeLabel($sContactType);
+        $sContactType = isset($aContact["contact_type"]) ? $aContact["contact_type"] : "";
+        $sContactTypeName = isset($aContact["contact_type_name"]) && trim($aContact["contact_type_name"]) != "" ? $aContact["contact_type_name"] : contactTypeLabel($sContactType);
         $sContactValue = contactDisplayValue($sContactType, $aContact["contact_value"]);
         $sTimestampTooltipText = timestampTooltipText($aContact);
         $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", html($sTimestampTooltipText)) . "\"" : "";
@@ -1607,20 +1606,20 @@ function appendAddressCopyLine(&$aLines, $mValue) {
 }
 
 function cleanAddressLine($sLine) {
-    $sLine = preg_replace("/[ \\t]+/", " ", trim((string)$sLine));
+    $sLine = preg_replace("/[ \\t]+/", " ", trim($sLine));
     $sLine = preg_replace("/\\s+,/", ",", $sLine);
     $sLine = preg_replace("/,\\s*,+/", ",", $sLine);
     return trim($sLine, " ,");
 }
 
 function appendAddressTemplateValue(&$aLines, $sValue) {
-    $aValueLines = preg_split("/\\r\\n|\\r|\\n/", (string)$sValue);
+    $aValueLines = preg_split("/\\r\\n|\\r|\\n/", $sValue);
     $iIndex = 0;
     if (!$aLines) {
         $aLines[] = "";
     }
     foreach ($aValueLines as $sValueLine) {
-        $sValueLine = trim((string)$sValueLine);
+        $sValueLine = trim($sValueLine);
         if ($iIndex == 0) {
             $aLines[count($aLines) - 1] .= $sValueLine;
         } else {
@@ -1686,7 +1685,7 @@ function buildAddressLines($aAddress, $sSubjectName = "", $aSettings = null, $bl
     $sCity = trim((string)$aAddress["city"]);
     $sCityPart = trim((string)$aAddress["city_part"]);
     $aFields = array(
-        "N" => trim((string)$sSubjectName),
+        "N" => trim($sSubjectName),
         "O" => addressOrganizationLine($aAddress),
         "A" => addressAddressLine($aAddress, $sCountryCode),
         "C" => strpos($sFormat, "%D") !== false ? $sCity : addressCityLine($aAddress),
@@ -1756,7 +1755,7 @@ function renderAddressList($aAddresses, $blShowActions = true, $iSubjectId = 0, 
         }
         $blIsPrimary = (int)$aAddress["is_primary"] == 1;
         $blIsActive = (int)$aAddress["is_active"] == 1;
-        $sValueClass = (string)$aAddress["address_type"] == "main" ? " am" : "";
+        $sValueClass = $aAddress["address_type"] == "main" ? " am" : "";
         $sTimestampTooltipText = timestampTooltipText($aAddress);
         $sTimestampTooltipAttribute = $sTimestampTooltipText != "" ? " title=\"" . str_replace("\n", "&#10;", html($sTimestampTooltipText)) . "\"" : "";
         $sActions = "";
@@ -1815,7 +1814,7 @@ function renderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $blSh
     $aCellCopyValues = array();
     $iCellCopyValueCount = 0;
     foreach ($aGroups as $aGroup) {
-        if (trim((string)$aGroup["name"]) != "") {
+        if (trim($aGroup["name"]) != "") {
             $iCellCopyValueCount++;
             if (!$blDeferData) {
                 $aCellCopyValues[] = $aGroup["name"];
@@ -1843,7 +1842,7 @@ function renderGroupList($aGroups, $blShowActions = true, $iSubjectId = 0, $blSh
         }
         $sHtml .= "<div class=\"si li gi\"" . $sDataAttributes . ">"
             . "<span class=\"iv\"" . $sTimestampTooltipAttribute . ">" . html($aGroup["name"]) . "</span>"
-            . ($blDeferData ? (trim((string)$aGroup["name"]) != "" ? renderDeferredCopyAction("js-copy-subject-group") : "") : renderCopyAction($aGroup["name"]))
+            . ($blDeferData ? (trim($aGroup["name"]) != "" ? renderDeferredCopyAction("js-copy-subject-group") : "") : renderCopyAction($aGroup["name"]))
             . $sActions
             . "</div>";
     }
@@ -1866,7 +1865,7 @@ function renderNoteList($aNotes, $blShowActions = true, $iSubjectId = 0, $blHasH
     $iCellCopyValueCount = 0;
     $sHiddenInactiveAction = $blHasHiddenInactive ? renderHiddenInactiveIndicator() : "";
     foreach ($aNotes as $aNote) {
-        $sNoteText = trim((string)$aNote["note_text"]);
+        $sNoteText = trim($aNote["note_text"]);
         if ($sNoteText != "") {
             $iCellCopyValueCount++;
         }
@@ -1948,7 +1947,7 @@ function getCountryNames() {
 }
 
 function countryCodeToName($sCountry) {
-    $sCountry = strtoupper(trim((string)$sCountry));
+    $sCountry = strtoupper(trim($sCountry ?? ""));
     $aCountryNames = getCountryNames();
     return isset($aCountryNames[$sCountry]) ? $aCountryNames[$sCountry] : $sCountry;
 }
@@ -1958,7 +1957,7 @@ function countryDashPattern() {
 }
 
 function normalizeCountrySearchText($sCountry) {
-    $sCountry = html_entity_decode((string)$sCountry, ENT_QUOTES | ENT_HTML5, "UTF-8");
+    $sCountry = html_entity_decode($sCountry, ENT_QUOTES | ENT_HTML5, "UTF-8");
     $sCountry = str_replace(array("\xc2\xa0", "\xe2\x80\x8b", "&"), array(" ", "", " and "), $sCountry);
     $sCountry = preg_replace("/" . countryDashPattern() . "/u", " ", $sCountry);
     $aCzechChars = array(
@@ -2102,13 +2101,13 @@ function countryAliasToCode($sCountry) {
 
 function delimitedCountryCode($sCountry, $aCountryCodes) {
     $sPattern = countryDashPattern();
-    if (preg_match("/^\\s*([A-Za-z]{2})\\s*" . $sPattern . "\\s*(.*?)\\s*$/u", (string)$sCountry, $aMatches)) {
+    if (preg_match("/^\\s*([A-Za-z]{2})\\s*" . $sPattern . "\\s*(.*?)\\s*$/u", $sCountry, $aMatches)) {
         $sCountryCode = strtoupper($aMatches[1]);
         if (in_array($sCountryCode, $aCountryCodes, true)) {
             return $sCountryCode;
         }
     }
-    if (preg_match("/^\\s*(.*?)\\s*" . $sPattern . "\\s*([A-Za-z]{2})\\s*$/u", (string)$sCountry, $aMatches)) {
+    if (preg_match("/^\\s*(.*?)\\s*" . $sPattern . "\\s*([A-Za-z]{2})\\s*$/u", $sCountry, $aMatches)) {
         $sCountryCode = strtoupper($aMatches[2]);
         if (in_array($sCountryCode, $aCountryCodes, true)) {
             return $sCountryCode;
@@ -2118,7 +2117,7 @@ function delimitedCountryCode($sCountry, $aCountryCodes) {
 }
 
 function countryNameToCode($sCountry) {
-    $sCountry = trim((string)$sCountry);
+    $sCountry = trim($sCountry);
     $sCountryUpper = strtoupper($sCountry);
     $sCountryNormalized = normalizeCountrySearchText($sCountry);
     $aCountryCodes = getCountryCodes();
@@ -2155,7 +2154,7 @@ function renderCountryDatalist($sId = "country-list") {
 }
 
 function countryCodeToDisplayName($sCountry, $aSettings = null) {
-    $sCountry = strtoupper(trim((string)$sCountry));
+    $sCountry = strtoupper(trim($sCountry ?? ""));
     if ($sCountry == "") {
         return "";
     }
@@ -2320,7 +2319,7 @@ function isInvalidBirthNumber($mValue) {
 }
 
 function birthNumberClass($mValue, $sClass = "") {
-    $sClass = trim((string)$sClass);
+    $sClass = trim($sClass);
     if (isInvalidBirthNumber($mValue)) {
         $sClass = trim($sClass . " bx");
     }
@@ -2328,7 +2327,7 @@ function birthNumberClass($mValue, $sClass = "") {
 }
 
 function birthDateClass($mBirthNumber, $mBirthDate, $sClass = "") {
-    $sClass = trim((string)$sClass);
+    $sClass = trim($sClass);
     $sBirthDate = trim((string)$mBirthDate);
     $sBirthNumberDate = birthNumberBirthDate($mBirthNumber);
     if ($sBirthDate != "" && $sBirthNumberDate != "" && $sBirthDate != $sBirthNumberDate) {
@@ -2591,7 +2590,7 @@ function exCalendarFetchExternalCalendarResponse($sUrl) {
         return array(
             "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
             "status_code" => $iStatusCode,
-            "body" => $sBody !== false ? (string)$sBody : "",
+            "body" => $sBody !== false ? $sBody : "",
             "error" => $sError
         );
     }
@@ -2613,14 +2612,14 @@ function exCalendarFetchExternalCalendarResponse($sUrl) {
     return array(
         "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
         "status_code" => $iStatusCode,
-        "body" => $sBody !== false ? (string)$sBody : "",
+        "body" => $sBody !== false ? $sBody : "",
         "error" => $sBody !== false ? "" : (isset($aError["message"]) ? (string)$aError["message"] : "HTTP request failed.")
     );
 }
 
 function exCalendarUnfoldICalContent($sContent) {
     $aLines = array();
-    $aRawLines = explode("\n", str_replace(array("\r\n", "\r"), "\n", (string)$sContent));
+    $aRawLines = explode("\n", str_replace(array("\r\n", "\r"), "\n", $sContent));
     foreach ($aRawLines as $sLine) {
         if ($sLine != "" && preg_match("/^[ \t]/", $sLine) && $aLines) {
             $aLines[count($aLines) - 1] .= substr($sLine, 1);
@@ -2653,13 +2652,13 @@ function exCalendarParseICalLine($sLine) {
 }
 
 function exCalendarDecodeICalText($sValue) {
-    $sValue = str_replace(array('\n', '\N'), "\n", (string)$sValue);
+    $sValue = str_replace(array('\n', '\N'), "\n", $sValue);
     $sValue = str_replace(array('\,', '\;'), array(",", ";"), $sValue);
     return str_replace('\\\\', '\\', $sValue);
 }
 
 function exCalendarParseICalDateTimeValue($sValue, $aParams) {
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     if ($sValue == "") {
         return null;
     }
@@ -2796,7 +2795,7 @@ function exCalendarGetExternalCalendarEventSourceKey($aRow) {
     if ($sUid != "") {
         return hash("sha256", "uid\n" . $sUid . "\n" . trim((string)$aRow["recurrence_id_raw"]));
     }
-    return hash("sha256", "raw\n" . (string)$aRow["raw_event"]);
+    return hash("sha256", "raw\n" . $aRow["raw_event"]);
 }
 
 function reserveExternalCalendarFetchAttempt($oPdo, $iCalendarFetchId) {
@@ -2829,7 +2828,7 @@ function reserveExternalCalendarFetchAttempt($oPdo, $iCalendarFetchId) {
 }
 
 function recordExternalCalendarFetchError($oPdo, $iCalendarFetchId, $iHttpStatusCode, $sErrorMessage) {
-    $sErrorMessage = substr((string)$sErrorMessage, 0, 1000);
+    $sErrorMessage = substr($sErrorMessage, 0, 1000);
     $oStatement = $oPdo->prepare("UPDATE ex_calendar_fetches SET status = 'error', http_status_code = :http_status_code, error_message = :error_message WHERE id = :id");
     $oStatement->execute(array(
         "http_status_code" => $iHttpStatusCode > 0 ? $iHttpStatusCode : null,
@@ -3037,7 +3036,6 @@ function exCalendarGetHolidayBackgroundImage($aHolidayItems) {
 }
 
 function exCalendarUcfirst($sText) {
-    $sText = (string)$sText;
     if ($sText == "" || !preg_match("/^(.)(.*)$/us", $sText, $aMatches)) {
         return $sText;
     }
@@ -3063,14 +3061,14 @@ function exCalendarUcfirst($sText) {
 }
 
 function exCalendarBoxName($sName) {
-    $sName = preg_replace("/[\x{FE00}-\x{FE0F}\x{200D}\x{20E3}\x{E0100}-\x{E01EF}]/u", "", (string)$sName);
+    $sName = preg_replace("/[\x{FE00}-\x{FE0F}\x{200D}\x{20E3}\x{E0100}-\x{E01EF}]/u", "", $sName);
     $sName = preg_replace("/[\x{1F000}-\x{1FAFF}\x{1FC00}-\x{1FFFF}]/u", "", $sName);
     $sName = trim(preg_replace("/\s+/u", " ", $sName));
     return exCalendarUcfirst($sName);
 }
 
 function exCalendarGetHolidayLabelLength($sName) {
-    preg_match_all("/./u", (string)$sName, $aMatches);
+    preg_match_all("/./u", $sName, $aMatches);
     return count($aMatches[0]);
 }
 
@@ -3178,7 +3176,7 @@ function subjectAgeLabel($iAge, $sPrefix = "") {
     if ($iAge === null) {
         return "";
     }
-    return ($sPrefix != "" ? $sPrefix . " " : "") . ((int)$iAge == 1 ? "1 year" : (string)(int)$iAge . " years");
+    return ($sPrefix != "" ? $sPrefix . " " : "") . ((int)$iAge == 1 ? "1 year" : (int)$iAge . " years");
 }
 
 function renderSubjectDateValue($mDate, $sAgeLabel = "") {
@@ -3263,7 +3261,7 @@ function fetchSubjectContacts($oPdo, $iSubjectId = 0) {
 }
 
 function subjectContactData($aContact) {
-    $sContactType = isset($aContact["contact_type"]) ? (string)$aContact["contact_type"] : "";
+    $sContactType = isset($aContact["contact_type"]) ? $aContact["contact_type"] : "";
     return array(
         "subject_contact_id" => (int)$aContact["subject_contact_id"],
         "subject_id" => (int)$aContact["subject_id"],
@@ -3328,7 +3326,7 @@ function subjectNicknameData($aNickname) {
     return array(
         "id" => (int)$aNickname["id"],
         "subject_id" => (int)$aNickname["subject_id"],
-        "nickname" => (string)$aNickname["nickname"],
+        "nickname" => $aNickname["nickname"],
         "context" => trim((string)$aNickname["context"]),
         "note" => trim((string)$aNickname["note"]),
         "is_primary" => (int)$aNickname["is_primary"],
@@ -3494,7 +3492,7 @@ function fetchGroupAjaxData($oPdo, $iGroupId, $sName = "") {
     }
     return array(
         "group_id" => (int)$aGroup["group_id"],
-        "name" => (string)$aGroup["name"],
+        "name" => $aGroup["name"],
         "timestamp_tooltip" => timestampTooltipText($aGroup)
     );
 }
@@ -3543,21 +3541,21 @@ function fetchSubjectPortalUser($oPdo, $iSubjectId) {
         return $aPortalUser;
     }
     $aPortalUser["has_user"] = 1;
-    $aPortalUser["user_name"] = (string)$aUser["user_name"];
+    $aPortalUser["user_name"] = $aUser["user_name"];
     $aPortalUser["is_active"] = (int)$aUser["is_active"];
     $aPortalUser["session_timeout"] = (int)$aUser["session_timeout"];
-    $aPortalUser["created_at"] = (string)$aUser["created_at"];
-    $aPortalUser["updated_at"] = (string)$aUser["updated_at"];
+    $aPortalUser["created_at"] = $aUser["created_at"];
+    $aPortalUser["updated_at"] = $aUser["updated_at"];
     $aPortalUser["timestamp_tooltip"] = timestampTooltipText($aUser);
     $oStatement = $oPdo->prepare("SELECT p.permission_key FROM ex_user_permission AS up INNER JOIN ex_permissions AS p ON p.id = up.permission_id WHERE up.user_id = :user_id AND up.is_allowed = 1 AND p.is_active = 1 ORDER BY p.permission_key ASC");
     $oStatement->execute(array("user_id" => (int)$aUser["id"]));
     while ($sPermissionKey = $oStatement->fetchColumn()) {
-        $aPortalUser["direct_permission_keys"][] = (string)$sPermissionKey;
+        $aPortalUser["direct_permission_keys"][] = $sPermissionKey;
     }
     $aEffectivePermissions = fetchUserEffectivePermissions($oPdo, (int)$aUser["id"], $iSubjectId);
     foreach ($aEffectivePermissions as $sPermissionKey => $blAllowed) {
         if ($blAllowed) {
-            $aPortalUser["effective_permission_keys"][] = (string)$sPermissionKey;
+            $aPortalUser["effective_permission_keys"][] = $sPermissionKey;
         }
     }
     sort($aPortalUser["effective_permission_keys"]);
@@ -3571,7 +3569,7 @@ function normalizePortalPermissionKeys($oPdo, $aPermissionKeys) {
         return $aNormalizedKeys;
     }
     foreach ($aPermissionKeys as $sPermissionKey) {
-        $sPermissionKey = trim((string)$sPermissionKey);
+        $sPermissionKey = trim($sPermissionKey);
         if ($sPermissionKey != "" && !isset($aKeys[$sPermissionKey])) {
             $aKeys[$sPermissionKey] = true;
         }
@@ -3986,7 +3984,7 @@ function renderResponsiveSubjectRow($aRow, $aContacts, $aNicknames, $aAddresses,
     $sBirthNumberClass = birthNumberClass($aRow["birth_number"], subjectRowOption($aOptions, "birth_number_class", "ch"));
     $sBirthDateClass = birthDateClass($aRow["birth_number"], $aRow["birth_date"], subjectRowOption($aOptions, "birth_date_class", "c2"));
     $sDeathDateClass = subjectRowOption($aOptions, "death_date_class", "ch");
-    $blDeathDateHidden = strpos(" " . trim((string)$sDeathDateClass) . " ", " ch ") !== false;
+    $blDeathDateHidden = strpos(" " . trim($sDeathDateClass) . " ", " ch ") !== false;
     $sBirthDateAgeLabel = trim((string)$aRow["death_date"]) == "" ? subjectAgeLabel(ageInYears($aRow["birth_date"]), "*") : ($blDeathDateHidden ? subjectAgeLabel(ageInYears($aRow["birth_date"], $aRow["death_date"]), "†") : "");
     $sDeathDateAgeLabel = trim((string)$aRow["death_date"]) != "" && !$blDeathDateHidden ? subjectAgeLabel(ageInYears($aRow["birth_date"], $aRow["death_date"]), "†") : "";
     $sTimestampTooltipText = timestampTooltipText($aRow);
@@ -4071,7 +4069,7 @@ function fetchSubjectEditorData($oPdo, $iSubjectId) {
         return null;
     }
     $aSubjectRows = fetchSubjectRows($oPdo, $iSubjectId);
-    $aSubject["subject_name"] = $aSubjectRows ? (string)$aSubjectRows[0]["subject_name"] : "";
+    $aSubject["subject_name"] = $aSubjectRows ? $aSubjectRows[0]["subject_name"] : "";
     return $aSubject;
 }
 
@@ -4082,15 +4080,15 @@ function fetchSubjectPortalEditorData($oPdo, $iSubjectId) {
     }
     return array(
         "subject_id" => (int)$aRows[0]["subject_id"],
-        "subject_name" => (string)$aRows[0]["subject_name"],
-        "subject_type" => (string)$aRows[0]["subject_type"],
+        "subject_name" => $aRows[0]["subject_name"],
+        "subject_type" => $aRows[0]["subject_type"],
         "portal_user" => fetchSubjectPortalUser($oPdo, $iSubjectId),
         "portal_permissions" => fetchPortalPermissions($oPdo)
     );
 }
 
 function addressesNormalizeKey($sValue) {
-    $sValue = str_replace("\r\n", "\n", (string)$sValue);
+    $sValue = str_replace("\r\n", "\n", $sValue);
     $sValue = str_replace("\r", "\n", $sValue);
     if (function_exists("mb_strtolower")) {
         return mb_strtolower($sValue, "UTF-8");
@@ -4099,15 +4097,15 @@ function addressesNormalizeKey($sValue) {
 }
 
 function addressesCompareRows($aFirst, $aSecond) {
-    $iResult = strcmp((string)$aFirst["address_sort"], (string)$aSecond["address_sort"]);
+    $iResult = strcmp($aFirst["address_sort"], $aSecond["address_sort"]);
     if ($iResult !== 0) {
         return $iResult;
     }
-    return strcmp((string)$aFirst["address_text"], (string)$aSecond["address_text"]);
+    return strcmp($aFirst["address_text"], $aSecond["address_text"]);
 }
 
 function addressesCompareSubjects($aFirst, $aSecond) {
-    $iResult = strcmp((string)$aFirst["subject_name"], (string)$aSecond["subject_name"]);
+    $iResult = strcmp($aFirst["subject_name"], $aSecond["subject_name"]);
     if ($iResult !== 0) {
         return $iResult;
     }
@@ -4127,7 +4125,7 @@ function addressesBuildMatch($aAddress) {
 }
 
 function addressesDecodeMatch($sMatch) {
-    $sJson = base64_decode((string)$sMatch, true);
+    $sJson = base64_decode($sMatch, true);
     $aMatch = $sJson !== false ? json_decode($sJson, true) : null;
     $aFields = addressesAddressFields();
     if (!is_array($aMatch)) {
@@ -4149,7 +4147,7 @@ function addressesSubjectAddressFields() {
 }
 
 function addressesNullValue($sField, $sValue) {
-    return in_array($sField, array("country"), true) || $sValue != "" ? (string)$sValue : null;
+    return in_array($sField, array("country"), true) || $sValue != "" ? $sValue : null;
 }
 
 function addressesMatchSql($sPrefix) {
@@ -4266,7 +4264,7 @@ function addressesRenderSubjectDataAttributes($aSubject) {
 }
 
 function addressesSubjectCellClass($aSubject) {
-    $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aSubject["subject_type"]));
+    $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower($aSubject["subject_type"]));
     return "address-subject-cell address-subject-type-" . $sSubjectType . (!empty($aSubject["is_active"]) && (int)$aSubject["address_is_active"] == 1 ? " address-subject-active" : " address-subject-inactive");
 }
 
@@ -4314,12 +4312,12 @@ function addressesFetchRows($oPdo, $aAddressSettings) {
         }
         $aSubjectNames[(int)$aSubjectRow["subject_id"]] = array(
             "subject_id" => (int)$aSubjectRow["subject_id"],
-            "subject_name" => (string)$aSubjectRow["subject_name"],
+            "subject_name" => $aSubjectRow["subject_name"],
             "subject_filter_text" => subjectFilterText($aSubjectRow),
-            "subject_type" => (string)$aSubjectRow["subject_type"],
+            "subject_type" => $aSubjectRow["subject_type"],
             "is_active" => (int)$aSubjectRow["is_active"] == 1,
-            "created_at" => (string)$aSubjectRow["created_at"],
-            "updated_at" => (string)$aSubjectRow["updated_at"]
+            "created_at" => $aSubjectRow["created_at"],
+            "updated_at" => $aSubjectRow["updated_at"]
         );
     }
     $aSubjectAddresses = fetchSubjectAddresses($oPdo);
@@ -4352,7 +4350,7 @@ function addressesFetchRows($oPdo, $aAddressSettings) {
             $aRows[$sAddressKey]["subjects"][] = array_merge($aSubjectNames[$iSubjectId], array(
                 "address_id" => (int)$aAddress["id"],
                 "address_values" => array(
-                    "address_type" => (string)$aAddress["address_type"],
+                    "address_type" => $aAddress["address_type"],
                     "organization_name" => $aAddress["organization_name"],
                     "department_name" => $aAddress["department_name"],
                     "care_of" => $aAddress["care_of"],
@@ -4378,8 +4376,8 @@ function addressesFetchRows($oPdo, $aAddressSettings) {
     }
     foreach ($aRows as $sKey => $aRow) {
         if (count($aRows[$sKey]["subjects"]) == 1) {
-            $aRows[$sKey]["created_at"] = (string)$aRows[$sKey]["subjects"][0]["address_created_at"];
-            $aRows[$sKey]["updated_at"] = (string)$aRows[$sKey]["subjects"][0]["address_updated_at"];
+            $aRows[$sKey]["created_at"] = $aRows[$sKey]["subjects"][0]["address_created_at"];
+            $aRows[$sKey]["updated_at"] = $aRows[$sKey]["subjects"][0]["address_updated_at"];
         }
         usort($aRows[$sKey]["subjects"], "addressesCompareSubjects");
     }
@@ -4390,7 +4388,7 @@ function addressesFetchRows($oPdo, $aAddressSettings) {
 function bdGetBirthdayInfo($sBirthDate) {
     global $iBirthdayDisplayMinDays, $iBirthdayDisplayMaxDays;
 
-    $sBirthDate = trim((string)$sBirthDate);
+    $sBirthDate = trim($sBirthDate);
     if ($sBirthDate == "" || $sBirthDate == "0000-00-00") {
         return null;
     }
@@ -4469,7 +4467,7 @@ function bdIsBirthdayServed($aServedRows, $iSubjectId, $sBirthdayDate) {
     }
     try {
         $oServedAt = new DateTimeImmutable($sServedAt);
-        $oBirthday = new DateTimeImmutable((string)$sBirthdayDate . " 00:00:00");
+        $oBirthday = new DateTimeImmutable($sBirthdayDate . " 00:00:00");
     } catch (Exception $oException) {
         error_log((string)$oException);
         return false;
@@ -4481,11 +4479,11 @@ function servedCompareRows($aFirst, $aSecond) {
     $iFirstCountdown = isset($aFirst["days_to_served"]) ? (int)$aFirst["days_to_served"] : 0;
     $iSecondCountdown = isset($aSecond["days_to_served"]) ? (int)$aSecond["days_to_served"] : 0;
     if ($iFirstCountdown === $iSecondCountdown) {
-        $iResult = strcmp((string)(isset($aFirst["subject_sort_name"]) ? $aFirst["subject_sort_name"] : $aFirst["subject_name"]), (string)(isset($aSecond["subject_sort_name"]) ? $aSecond["subject_sort_name"] : $aSecond["subject_name"]));
+        $iResult = strcmp(isset($aFirst["subject_sort_name"]) ? $aFirst["subject_sort_name"] : $aFirst["subject_name"], isset($aSecond["subject_sort_name"]) ? $aSecond["subject_sort_name"] : $aSecond["subject_name"]);
         if ($iResult !== 0) {
             return $iResult;
         }
-        $iResult = strcmp((string)$aFirst["subject_type"], (string)$aSecond["subject_type"]);
+        $iResult = strcmp($aFirst["subject_type"], $aSecond["subject_type"]);
         if ($iResult !== 0) {
             return $iResult;
         }
@@ -4570,7 +4568,7 @@ function getUpdatedServedSubjectResponse($oPdo, $iSubjectId, $aDisplaySettings, 
     $aNotes = fetchSubjectNotes($oPdo, $iSubjectId);
     $aHiddenInactive = getHiddenInactiveSubjectItems($aContacts, $aNicknames, $aAddresses, $aNotes, $aDisplaySettings);
     applySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $aNotes, $aDisplaySettings);
-    if (!$aRows || (string)$aRows[0]["subject_type"] != "person") {
+    if (!$aRows || $aRows[0]["subject_type"] != "person") {
         return array("success" => true, "subject_id" => $iSubjectId, "subject_deleted" => true);
     }
     $aServedInfo = $sInfoFunction($oPdo, $iSubjectId, $aRows[0]);
@@ -4598,7 +4596,7 @@ function cardDavSendCommonHeaders() {
 }
 
 function cardDavSendTextAndExit($iStatusCode, $sText) {
-    $sBody = (string)$sText . "\r\n";
+    $sBody = $sText . "\r\n";
     http_response_code($iStatusCode);
     header("Content-Type: text/plain; charset=utf-8", true);
     header("Content-Length: " . strlen($sBody), true);
@@ -4642,8 +4640,8 @@ function cardDavHeaderValue($sName) {
         $aHeaders = apache_request_headers();
         if (is_array($aHeaders)) {
             foreach ($aHeaders as $sHeaderName => $sHeaderValue) {
-                if (strtolower((string)$sHeaderName) == strtolower($sName)) {
-                    return (string)$sHeaderValue;
+                if (strtolower($sHeaderName) == strtolower($sName)) {
+                    return $sHeaderValue;
                 }
             }
         }
@@ -4687,7 +4685,7 @@ function cardDavRequireUser($oPdo) {
         error_log((string)$oException);
         cardDavSendTextAndExit(500, "Database error.");
     }
-    if (!$aUser || (int)$aUser["is_active"] != 1 || (int)$aUser["subject_active"] != 1 || !in_array((string)$aUser["subject_type"], array("person", "service"), true) || !password_verify($sPassword, (string)$aUser["password_hash"])) {
+    if (!$aUser || (int)$aUser["is_active"] != 1 || (int)$aUser["subject_active"] != 1 || !in_array($aUser["subject_type"], array("person", "service"), true) || !password_verify($sPassword, $aUser["password_hash"])) {
         cardDavSendAuthChallengeAndExit();
     }
     if (!permissionArrayAllowsProjectView(fetchUserEffectivePermissions($oPdo, (int)$aUser["id"], (int)$aUser["subject_id"]), "ex")) {
@@ -4754,11 +4752,11 @@ function cardDavHref($aQuery) {
 }
 
 function cardDavIsAddressBookPath($sPath) {
-    return (string)$sPath == "/addressbook" || (string)$sPath == "/addressbook/";
+    return $sPath == "/addressbook" || $sPath == "/addressbook/";
 }
 
 function cardDavIsPrincipalCollectionPath($sPath) {
-    return (string)$sPath == "/principals" || (string)$sPath == "/principals/";
+    return $sPath == "/principals" || $sPath == "/principals/";
 }
 
 function cardDavXml($mValue) {
@@ -4779,7 +4777,7 @@ function cardDavVCardEscape($mValue) {
 function cardDavVCardList($aValues) {
     $aEscaped = array();
     foreach ($aValues as $sValue) {
-        $sValue = trim((string)$sValue);
+        $sValue = trim($sValue);
         if ($sValue != "") {
             $aEscaped[] = cardDavVCardEscape($sValue);
         }
@@ -4788,22 +4786,21 @@ function cardDavVCardList($aValues) {
 }
 
 function cardDavVCardLine($sName, $mValue, $sParams = "") {
-    $sLine = strtoupper((string)$sName) . (trim((string)$sParams) != "" ? ";" . trim((string)$sParams) : "") . ":" . cardDavVCardEscape($mValue);
+    $sLine = strtoupper($sName) . (trim($sParams) != "" ? ";" . trim($sParams) : "") . ":" . cardDavVCardEscape($mValue);
     return $sLine;
 }
 
 function cardDavVCardRawLine($sName, $mValue, $sParams = "") {
-    return strtoupper((string)$sName) . (trim((string)$sParams) != "" ? ";" . trim((string)$sParams) : "") . ":" . (string)$mValue;
+    return strtoupper($sName) . (trim($sParams) != "" ? ";" . trim($sParams) : "") . ":" . (string)$mValue;
 }
 
 function cardDavCleanTypeToken($sValue) {
-    $sValue = strtoupper(preg_replace("/[^A-Za-z0-9\\-]/", "-", (string)$sValue));
+    $sValue = strtoupper(preg_replace("/[^A-Za-z0-9\\-]/", "-", $sValue));
     $sValue = trim($sValue, "-");
     return $sValue != "" ? $sValue : "OTHER";
 }
 
 function cardDavAddressType($sAddressType) {
-    $sAddressType = (string)$sAddressType;
     if ($sAddressType == "home" || $sAddressType == "cottage" || $sAddressType == "temporary") {
         return "HOME";
     }
@@ -4820,7 +4817,6 @@ function cardDavAddressType($sAddressType) {
 }
 
 function cardDavPhoneType($sContactType) {
-    $sContactType = (string)$sContactType;
     if ($sContactType == "cell" || $sContactType == "mobile" || $sContactType == "whatsapp" || $sContactType == "viber") {
         return "CELL";
     }
@@ -4892,7 +4888,7 @@ function cardDavAddressLabel($aAddress) {
     }
     $aResult = array();
     foreach ($aLines as $sLine) {
-        $sLine = trim((string)$sLine);
+        $sLine = trim($sLine);
         if ($sLine != "") {
             $aResult[] = $sLine;
         }
@@ -4901,8 +4897,8 @@ function cardDavAddressLabel($aAddress) {
 }
 
 function cardDavAddVCardContactLines(&$aLines, $aContact) {
-    $sType = (string)$aContact["contact_type"];
-    $sTypeName = trim((string)$aContact["contact_type_name"]);
+    $sType = $aContact["contact_type"];
+    $sTypeName = trim($aContact["contact_type_name"]);
     $sValue = contactDisplayValue($sType, $aContact["contact_value"]);
     $sHref = contactHref($sType, $aContact["contact_value"], true);
     $sPref = (int)$aContact["is_primary"] == 1 ? ",PREF" : "";
@@ -4935,8 +4931,8 @@ function cardDavAddVCardContactLines(&$aLines, $aContact) {
 
 function cardDavBuildCard($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes) {
     $iSubjectId = (int)$aRow["subject_id"];
-    $sSubjectType = (string)$aRow["subject_type"];
-    $sFullName = trim((string)$aRow["subject_name"]);
+    $sSubjectType = $aRow["subject_type"];
+    $sFullName = trim($aRow["subject_name"]);
     $aLines = array();
     $aActiveNicknames = array();
     $aActiveGroups = array();
@@ -4970,8 +4966,8 @@ function cardDavBuildCard($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups,
         $aLines[] = cardDavVCardLine("ORG", $sFullName);
     }
     foreach ($aNicknames as $aNickname) {
-        if ((int)$aNickname["is_active"] == 1 && trim((string)$aNickname["nickname"]) != "") {
-            $aActiveNicknames[] = (string)$aNickname["nickname"];
+        if ((int)$aNickname["is_active"] == 1 && trim($aNickname["nickname"]) != "") {
+            $aActiveNicknames[] = $aNickname["nickname"];
         }
     }
     if (count($aActiveNicknames) > 0) {
@@ -4999,16 +4995,16 @@ function cardDavBuildCard($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups,
         $aLines[] = cardDavVCardLine("LABEL", cardDavAddressLabel($aAddress), "TYPE=" . $sAdrType);
     }
     foreach ($aGroups as $aGroup) {
-        if (trim((string)$aGroup["name"]) != "") {
-            $aActiveGroups[] = (string)$aGroup["name"];
+        if (trim($aGroup["name"]) != "") {
+            $aActiveGroups[] = $aGroup["name"];
         }
     }
     if (count($aActiveGroups) > 0) {
         $aLines[] = cardDavVCardRawLine("CATEGORIES", cardDavVCardList($aActiveGroups));
     }
     foreach ($aNotes as $aNote) {
-        if ((int)$aNote["is_active"] == 1 && trim((string)$aNote["note_text"]) != "") {
-            $aActiveNotes[] = (string)$aNote["note_text"];
+        if ((int)$aNote["is_active"] == 1 && trim($aNote["note_text"]) != "") {
+            $aActiveNotes[] = $aNote["note_text"];
         }
     }
     if (count($aActiveNotes) > 0) {
@@ -5051,11 +5047,11 @@ function cardDavFetchCards($oPdo) {
         );
         $aCards[$iSubjectId] = array(
             "subject_id" => $iSubjectId,
-            "display_name" => (string)$aRow["subject_name"],
+            "display_name" => $aRow["subject_name"],
             "href" => cardDavHref(array("card" => (int)$iSubjectId)),
             "body" => $sBody,
             "etag" => "\"" . sha1($sBody) . "\"",
-            "last_modified" => trim((string)$aRow["created_at"]) != "" ? strtotime((string)$aRow["created_at"]) : time()
+            "last_modified" => trim($aRow["created_at"]) != "" ? strtotime($aRow["created_at"]) : time()
         );
     }
     return $aCards;
@@ -5086,7 +5082,7 @@ function cardDavResponseEnd() {
 
 function cardDavCollectionPropsXml($aCards, $aUser) {
     $sHomeHref = cardDavHref(array());
-    $sPrincipalHref = cardDavHref(array("principal" => (string)$aUser["user_name"]));
+    $sPrincipalHref = cardDavHref(array("principal" => $aUser["user_name"]));
     $sPrincipalCollectionHref = cardDavHref(array("principals" => "1"));
     $sCollectionHref = cardDavHref(array());
     return "        <d:resourcetype><d:collection/><card:addressbook/></d:resourcetype>\r\n"
@@ -5109,7 +5105,7 @@ function cardDavCollectionPropsXml($aCards, $aUser) {
 
 function cardDavPrincipalPropsXml($aUser) {
     $sHomeHref = cardDavHref(array());
-    $sPrincipalHref = cardDavHref(array("principal" => (string)$aUser["user_name"]));
+    $sPrincipalHref = cardDavHref(array("principal" => $aUser["user_name"]));
     $sPrincipalCollectionHref = cardDavHref(array("principals" => "1"));
     return "        <d:resourcetype><d:collection/><d:principal/></d:resourcetype>\r\n"
         . "        <d:displayname>" . cardDavXml($aUser["user_name"]) . "</d:displayname>\r\n"
@@ -5120,7 +5116,7 @@ function cardDavPrincipalPropsXml($aUser) {
 }
 
 function cardDavPrincipalCollectionPropsXml($aUser) {
-    $sPrincipalHref = cardDavHref(array("principal" => (string)$aUser["user_name"]));
+    $sPrincipalHref = cardDavHref(array("principal" => $aUser["user_name"]));
     $sPrincipalCollectionHref = cardDavHref(array("principals" => "1"));
     return "        <d:resourcetype><d:collection/></d:resourcetype>\r\n"
         . "        <d:displayname>EVED Principals</d:displayname>\r\n"
@@ -5159,17 +5155,17 @@ function cardDavSubjectIdFromPath($sPath) {
 }
 
 function cardDavSubjectIdFromHref($sHref) {
-    $sPath = (string)$sHref;
+    $sPath = $sHref;
     $aParts = parse_url($sPath);
     $aQuery = array();
     if (is_array($aParts) && isset($aParts["query"])) {
-        parse_str((string)$aParts["query"], $aQuery);
+        parse_str($aParts["query"], $aQuery);
         if (isset($aQuery["card"])) {
             return (int)$aQuery["card"];
         }
     }
     if (is_array($aParts) && isset($aParts["path"])) {
-        $sPath = (string)$aParts["path"];
+        $sPath = $aParts["path"];
     }
     $sPath = rawurldecode($sPath);
     if (strpos($sPath, cardDavScriptPath()) === 0) {
@@ -5202,7 +5198,7 @@ function cardDavRequestHrefs($sBody) {
     }
     $oNodes = $oDom->getElementsByTagNameNS("DAV:", "href");
     foreach ($oNodes as $oNode) {
-        $aHrefs[] = (string)$oNode->textContent;
+        $aHrefs[] = $oNode->textContent;
     }
     return $aHrefs;
 }
@@ -5210,7 +5206,7 @@ function cardDavRequestHrefs($sBody) {
 function cardDavSendPropfindAndExit($aCards, $aUser, $sPath) {
     $sDepth = isset($_SERVER["HTTP_DEPTH"]) ? (string)$_SERVER["HTTP_DEPTH"] : "infinity";
     $sXml = "";
-    if ((string)$sPath == "/") {
+    if ($sPath == "/") {
         $sXml .= cardDavResponseStart(cardDavHref(array()))
             . cardDavCollectionPropsXml($aCards, $aUser)
             . cardDavResponseEnd();
@@ -5241,14 +5237,14 @@ function cardDavSendPropfindAndExit($aCards, $aUser, $sPath) {
             . cardDavPrincipalCollectionPropsXml($aUser)
             . cardDavResponseEnd();
         if ($sDepth != "0") {
-            $sXml .= cardDavResponseStart(cardDavHref(array("principal" => (string)$aUser["user_name"])))
+            $sXml .= cardDavResponseStart(cardDavHref(array("principal" => $aUser["user_name"])))
                 . cardDavPrincipalPropsXml($aUser)
                 . cardDavResponseEnd();
         }
         cardDavMultistatusAndExit($sXml);
     }
     if (preg_match("#^/principals/[^/]+/?$#", $sPath)) {
-        $sXml .= cardDavResponseStart(cardDavHref(array("principal" => (string)$aUser["user_name"])))
+        $sXml .= cardDavResponseStart(cardDavHref(array("principal" => $aUser["user_name"])))
             . cardDavPrincipalPropsXml($aUser)
             . cardDavResponseEnd();
         cardDavMultistatusAndExit($sXml);
@@ -5269,7 +5265,7 @@ function cardDavSendReportAndExit($aCards, $sPath) {
     $aWantedIds = array();
     $sXml = "";
     $blIncludeAddressData = stripos($sBody, "address-data") !== false;
-    if ((string)$sPath != "/" && !cardDavIsAddressBookPath($sPath)) {
+    if ($sPath != "/" && !cardDavIsAddressBookPath($sPath)) {
         cardDavSendTextAndExit(404, "Not found.");
     }
     foreach ($aHrefs as $sHref) {
@@ -5292,7 +5288,7 @@ function cardDavSendReportAndExit($aCards, $sPath) {
 function cardDavSendGetAndExit($aCards, $sPath, $blHeadOnly) {
     $iSubjectId = cardDavSubjectIdFromPath($sPath);
     $aCard = null;
-    if ((string)$sPath == "/" || cardDavIsAddressBookPath($sPath)) {
+    if ($sPath == "/" || cardDavIsAddressBookPath($sPath)) {
         cardDavSendCollectionGetAndExit($aCards, $sPath, $blHeadOnly);
     }
     if ($iSubjectId < 1 || !isset($aCards[$iSubjectId])) {
@@ -5333,13 +5329,13 @@ function cardDavSendCollectionGetAndExit($aCards, $sPath, $blHeadOnly) {
 
 function contactsNormalizeKey($sValue) {
     if (function_exists("mb_strtolower")) {
-        return mb_strtolower((string)$sValue, "UTF-8");
+        return mb_strtolower($sValue, "UTF-8");
     }
-    return strtolower((string)$sValue);
+    return strtolower($sValue);
 }
 
 function contactsCompareRows($aFirst, $aSecond) {
-    $iResult = strcmp((string)$aFirst["contact_sort"], (string)$aSecond["contact_sort"]);
+    $iResult = strcmp($aFirst["contact_sort"], $aSecond["contact_sort"]);
     if ($iResult !== 0) {
         return $iResult;
     }
@@ -5347,7 +5343,7 @@ function contactsCompareRows($aFirst, $aSecond) {
     if ($iResult !== 0) {
         return $iResult;
     }
-    $iResult = strcmp((string)$aFirst["contact_type_sort"], (string)$aSecond["contact_type_sort"]);
+    $iResult = strcmp($aFirst["contact_type_sort"], $aSecond["contact_type_sort"]);
     if ($iResult !== 0) {
         return $iResult;
     }
@@ -5355,7 +5351,7 @@ function contactsCompareRows($aFirst, $aSecond) {
 }
 
 function contactsCompareSubjects($aFirst, $aSecond) {
-    $iResult = strcmp((string)$aFirst["subject_name"], (string)$aSecond["subject_name"]);
+    $iResult = strcmp($aFirst["subject_name"], $aSecond["subject_name"]);
     if ($iResult !== 0) {
         return $iResult;
     }
@@ -5363,7 +5359,7 @@ function contactsCompareSubjects($aFirst, $aSecond) {
 }
 
 function contactsSubjectCellClass($aSubject) {
-    $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower((string)$aSubject["subject_type"]));
+    $sSubjectType = preg_replace("/[^a-z0-9_-]/", "-", strtolower($aSubject["subject_type"]));
     return "contact-subject-cell contact-subject-type-" . $sSubjectType . (!empty($aSubject["is_active"]) && (int)$aSubject["contact_is_active"] == 1 ? " contact-subject-active" : " contact-subject-inactive");
 }
 
@@ -5433,7 +5429,7 @@ function phoneBookSubjectDisplayName($aRow) {
     if (trim((string)$aRow["person_display_name"]) == "" && trim((string)$aRow["subject_name_value"]) == "" && trim((string)$aRow["contact_value"]) != "") {
         return contactDisplayValue($aRow["contact_type"], $aRow["contact_value"]);
     }
-    return (string)$aRow["subject_name"];
+    return $aRow["subject_name"];
 }
 
 function fetchPhoneBookRows($oPdo, $iPhoneBook = 0) {
@@ -5477,12 +5473,12 @@ function contactsFetchRows($oPdo, $aContactSettings) {
         }
         $aSubjectNames[(int)$aSubjectRow["subject_id"]] = array(
             "subject_id" => (int)$aSubjectRow["subject_id"],
-            "subject_name" => (string)$aSubjectRow["subject_name"],
+            "subject_name" => $aSubjectRow["subject_name"],
             "subject_filter_text" => subjectFilterText($aSubjectRow),
-            "subject_type" => (string)$aSubjectRow["subject_type"],
+            "subject_type" => $aSubjectRow["subject_type"],
             "is_active" => (int)$aSubjectRow["is_active"] == 1,
-            "created_at" => (string)$aSubjectRow["created_at"],
-            "updated_at" => (string)$aSubjectRow["updated_at"]
+            "created_at" => $aSubjectRow["created_at"],
+            "updated_at" => $aSubjectRow["updated_at"]
         );
     }
     $sSql = "SELECT c.id AS contact_id, c.contact_type_id, c.contact_value, c.created_at, c.updated_at, COALESCE(ct.contact_type, '') AS contact_type, COALESCE(ct.name, '') AS contact_type_name, COALESCE(ct.`order`, 999999) AS contact_type_order, sc.id AS subject_contact_id, sc.subject_id, sc.is_primary, sc.is_active AS contact_is_active, sc.note, IF(pbc.subject_contact_id IS NULL, 0, 1) AS phone_book_contact FROM ex_contacts AS c LEFT JOIN ex_contact_types AS ct ON ct.id = c.contact_type_id LEFT JOIN ex_subject_contacts AS sc ON sc.contact_id = c.id LEFT JOIN ex_phone_book AS pbc ON pbc.subject_contact_id = sc.id AND pbc.phone_book = 0 ORDER BY c.contact_value ASC, COALESCE(ct.`order`, 999999) ASC, COALESCE(ct.name, '') ASC, c.id ASC, sc.is_active DESC, sc.is_primary DESC, sc.id ASC";
@@ -5491,17 +5487,17 @@ function contactsFetchRows($oPdo, $aContactSettings) {
     while ($aContact = $oStatement->fetch()) {
         $iSubjectId = (int)$aContact["subject_id"];
         $iContactId = (int)$aContact["contact_id"];
-        $sContactType = (string)$aContact["contact_type"];
+        $sContactType = $aContact["contact_type"];
         $sContactDisplayValue = contactDisplayValue($sContactType, $aContact["contact_value"]);
         if (!isset($aRows[$iContactId])) {
             $aRows[$iContactId] = array(
                 "contact_id" => $iContactId,
                 "contact_type_id" => (int)$aContact["contact_type_id"],
                 "contact_type" => $sContactType,
-                "contact_type_name" => (string)$aContact["contact_type_name"],
+                "contact_type_name" => $aContact["contact_type_name"],
                 "contact_type_order" => (int)$aContact["contact_type_order"],
-                "contact_type_sort" => contactsNormalizeKey((string)$aContact["contact_type_name"]),
-                "contact_value" => (string)$aContact["contact_value"],
+                "contact_type_sort" => contactsNormalizeKey($aContact["contact_type_name"]),
+                "contact_value" => $aContact["contact_value"],
                 "contact_display_value" => $sContactDisplayValue,
                 "contact_sort" => contactsNormalizeKey($sContactDisplayValue),
                 "created_at" => (string)$aContact["created_at"],
@@ -5525,8 +5521,8 @@ function contactsFetchRows($oPdo, $aContactSettings) {
             "contact_id" => $iContactId,
             "contact_type_id" => (int)$aContact["contact_type_id"],
             "contact_type" => $sContactType,
-            "contact_type_name" => (string)$aContact["contact_type_name"],
-            "contact_value" => (string)$aContact["contact_value"],
+            "contact_type_name" => $aContact["contact_type_name"],
+            "contact_value" => $aContact["contact_value"],
             "contact_display_value" => $sContactDisplayValue,
             "note" => (string)$aContact["note"],
             "is_primary" => (int)$aContact["is_primary"],
@@ -5597,13 +5593,13 @@ function getDemoFullListComplexFilterFields() {
 }
 
 function demoFullListLower($sValue) {
-    return function_exists("mb_strtolower") ? mb_strtolower((string)$sValue, "UTF-8") : strtolower((string)$sValue);
+    return function_exists("mb_strtolower") ? mb_strtolower($sValue, "UTF-8") : strtolower($sValue);
 }
 
 function demoFullListJoinContacts($aContacts) {
     $aValues = array();
     foreach ($aContacts as $aContact) {
-        $sValue = contactTypeLabel($aContact["contact_type"]) . ": " . (string)$aContact["contact_value"];
+        $sValue = contactTypeLabel($aContact["contact_type"]) . ": " . $aContact["contact_value"];
         if (isset($aContact["note"]) && $aContact["note"] != "") {
             $sValue .= " (" . (string)$aContact["note"] . ")";
         }
@@ -5615,7 +5611,7 @@ function demoFullListJoinContacts($aContacts) {
 function demoFullListJoinNicknames($aNicknames) {
     $aValues = array();
     foreach ($aNicknames as $aNickname) {
-        $sValue = (string)$aNickname["nickname"];
+        $sValue = $aNickname["nickname"];
         if (isset($aNickname["context"]) && $aNickname["context"] != "") {
             $sValue .= " [" . (string)$aNickname["context"] . "]";
         }
@@ -5638,7 +5634,7 @@ function demoFullListJoinAddresses($aAddresses, $aSettings) {
 function demoFullListJoinGroups($aGroups) {
     $aValues = array();
     foreach ($aGroups as $aGroup) {
-        $aValues[] = (string)$aGroup["name"];
+        $aValues[] = $aGroup["name"];
     }
     return implode("\n", $aValues);
 }
@@ -5646,7 +5642,7 @@ function demoFullListJoinGroups($aGroups) {
 function demoFullListJoinNotes($aNotes) {
     $aValues = array();
     foreach ($aNotes as $aNote) {
-        $aValues[] = (string)$aNote["note_text"];
+        $aValues[] = $aNote["note_text"];
     }
     return implode("\n", $aValues);
 }
@@ -5682,30 +5678,30 @@ function demoFullListComplexFilterAddressValues($aAddresses, $sColumn) {
 }
 
 function normalizeDemoFullListComplexFilterValue($aField, $sValue) {
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "boolean") {
-        $sNormalized = strtolower(trim((string)$sValue));
+    if (isset($aField["value_type"]) && $aField["value_type"] == "boolean") {
+        $sNormalized = strtolower(trim($sValue));
         if ($sNormalized == "0" || $sNormalized == "false" || $sNormalized == "no" || $sNormalized == "off") {
             return "0";
         }
         return "1";
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "birth_number") {
+    if (isset($aField["value_type"]) && $aField["value_type"] == "birth_number") {
         $sNormalized = normalizeBirthNumber($sValue);
-        return $sNormalized === false ? (string)$sValue : $sNormalized;
+        return $sNormalized === false ? $sValue : $sNormalized;
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "date") {
+    if (isset($aField["value_type"]) && $aField["value_type"] == "date") {
         $sNormalized = normalizeInputDate($sValue);
-        return $sNormalized === false ? (string)$sValue : $sNormalized;
+        return $sNormalized === false ? $sValue : $sNormalized;
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "datetime") {
+    if (isset($aField["value_type"]) && $aField["value_type"] == "datetime") {
         $sNormalized = normalizeInputDateTime($sValue);
-        return $sNormalized === false ? (string)$sValue : $sNormalized;
+        return $sNormalized === false ? $sValue : $sNormalized;
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "country") {
+    if (isset($aField["value_type"]) && $aField["value_type"] == "country") {
         return countryNameToCode($sValue);
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "subject_type") {
-        $sNormalized = strtolower(trim((string)$sValue));
+    if (isset($aField["value_type"]) && $aField["value_type"] == "subject_type") {
+        $sNormalized = strtolower(trim($sValue));
         foreach (getSubjectTypes() as $sSubjectType) {
             if ($sNormalized == $sSubjectType || $sNormalized == strtolower(ucfirst($sSubjectType))) {
                 return $sSubjectType;
@@ -5713,8 +5709,8 @@ function normalizeDemoFullListComplexFilterValue($aField, $sValue) {
         }
         return $sNormalized;
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "address_type") {
-        $sNormalized = strtolower(trim((string)$sValue));
+    if (isset($aField["value_type"]) && $aField["value_type"] == "address_type") {
+        $sNormalized = strtolower(trim($sValue));
         foreach (getAddressTypes() as $sAddressType) {
             if ($sNormalized == $sAddressType || $sNormalized == strtolower(addressTypeLabel($sAddressType))) {
                 return $sAddressType;
@@ -5722,7 +5718,7 @@ function normalizeDemoFullListComplexFilterValue($aField, $sValue) {
         }
         return $sNormalized;
     }
-    return (string)$sValue;
+    return $sValue;
 }
 
 function demoFullListComplexFilterAddressConditionMatches($aValues, $blHasAddressRows, $aCondition, $aField) {
@@ -5899,7 +5895,7 @@ function applyDemoFullListComplexFilter($aRows, $aContacts, $aNicknames, $aAddre
             if (isset($aFields[$sField]["address_column"])) {
                 $aSubjectAddresses = isset($aAddresses[(int)$aRow["subject_id"]]) ? $aAddresses[(int)$aRow["subject_id"]] : array();
                 $blConditionMatched = demoFullListComplexFilterAddressConditionMatches(demoFullListComplexFilterAddressValues($aSubjectAddresses, $aFields[$sField]["address_column"]), count($aSubjectAddresses) > 0, $aCondition, $aFields[$sField]);
-            } elseif (isset($aFields[$sField]["scope_type"]) && (string)$aFields[$sField]["scope_type"] == "person" && (string)$aRow["subject_type"] != "person") {
+            } elseif (isset($aFields[$sField]["scope_type"]) && $aFields[$sField]["scope_type"] == "person" && $aRow["subject_type"] != "person") {
                 $blConditionMatched = false;
             } else {
                 $sValue = demoFullListComplexFilterValue($aRow, $aContacts, $aNicknames, $aAddresses, $aGroups, $aNotes, $aSettings, $sField);
@@ -6017,10 +6013,10 @@ function getFullListComplexFilterFields($aContactTypes) {
     );
     foreach ($aContactTypes as $aContactType) {
         $iContactTypeId = isset($aContactType["id"]) ? (int)$aContactType["id"] : 0;
-        $sContactType = trim((string)(isset($aContactType["contact_type"]) ? $aContactType["contact_type"] : ""));
-        $sContactTypeName = trim((string)(isset($aContactType["name"]) ? $aContactType["name"] : ""));
+        $sContactType = trim(isset($aContactType["contact_type"]) ? $aContactType["contact_type"] : "");
+        $sContactTypeName = trim(isset($aContactType["name"]) ? $aContactType["name"] : "");
         if ($sContactTypeName == "") {
-            $sContactTypeName = trim((string)(isset($aContactType["contact_type"]) ? $aContactType["contact_type"] : ""));
+            $sContactTypeName = trim(isset($aContactType["contact_type"]) ? $aContactType["contact_type"] : "");
         }
         if ($iContactTypeId > 0 && $sContactTypeName != "") {
             $aFields["contact_type_" . $iContactTypeId] = array("label" => "Contact: " . $sContactTypeName, "contact_type_id" => $iContactTypeId, "contact_type" => $sContactType);
@@ -6075,20 +6071,20 @@ function getDefaultFullListComplexFilterDraft() {
 }
 
 function isFullListComplexFilterOperatorAllowed($aField, $sOperator) {
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "group") {
+    if (isset($aField["value_type"]) && $aField["value_type"] == "group") {
         return in_array($sOperator, array("equals", "not_equals", "contains", "not_contains", "empty", "not_empty"), true);
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "country") {
+    if (isset($aField["value_type"]) && $aField["value_type"] == "country") {
         return in_array($sOperator, array("equals", "not_equals", "contains", "not_contains", "empty", "not_empty"), true);
     }
-    if (isset($aField["value_type"]) && ((string)$aField["value_type"] == "address_type" || (string)$aField["value_type"] == "subject_type")) {
+    if (isset($aField["value_type"]) && ($aField["value_type"] == "address_type" || $aField["value_type"] == "subject_type")) {
         return in_array($sOperator, array("equals", "not_equals", "contains", "not_contains", "empty", "not_empty"), true);
     }
     return true;
 }
 
 function getFullListComplexFilterDefaultOperator($aField) {
-    if (isset($aField["value_type"]) && ((string)$aField["value_type"] == "boolean" || (string)$aField["value_type"] == "country")) {
+    if (isset($aField["value_type"]) && ($aField["value_type"] == "boolean" || $aField["value_type"] == "country")) {
         return "equals";
     }
     return "contains";
@@ -6096,15 +6092,15 @@ function getFullListComplexFilterDefaultOperator($aField) {
 
 function normalizeFullListComplexFilterInputValue($aField, $sValue) {
     $sNormalized = false;
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "date") {
+    if (isset($aField["value_type"]) && $aField["value_type"] == "date") {
         $sNormalized = normalizeInputDate($sValue);
-        return $sNormalized !== false ? $sNormalized : (string)$sValue;
+        return $sNormalized !== false ? $sNormalized : $sValue;
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "datetime") {
+    if (isset($aField["value_type"]) && $aField["value_type"] == "datetime") {
         $sNormalized = normalizeInputDateTime($sValue);
-        return $sNormalized !== false ? $sNormalized : (string)$sValue;
+        return $sNormalized !== false ? $sNormalized : $sValue;
     }
-    return (string)$sValue;
+    return $sValue;
 }
 
 function normalizeFullListComplexFilter($aPayload, $aFields, $aOperators) {
@@ -6126,7 +6122,7 @@ function normalizeFullListComplexFilter($aPayload, $aFields, $aOperators) {
             if (!isset($aFields[$sField])) {
                 continue;
             }
-            if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
+            if (isset($aFields[$sField]["value_type"]) && $aFields[$sField]["value_type"] == "boolean") {
                 $sOperator = "equals";
             } elseif (!isset($aOperators[$sOperator])) {
                 continue;
@@ -6159,7 +6155,7 @@ function normalizeFullListComplexFilter($aPayload, $aFields, $aOperators) {
         if (!isset($aFields[$sField])) {
             continue;
         }
-        if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
+        if (isset($aFields[$sField]["value_type"]) && $aFields[$sField]["value_type"] == "boolean") {
             $sOperator = "equals";
         } elseif (!isset($aOperators[$sOperator])) {
             continue;
@@ -6210,7 +6206,7 @@ function normalizeFullListComplexFilterDraft($aPayload, $aFields, $aOperators) {
             if (!isset($aFields[$sField])) {
                 $sField = "subject_name";
             }
-            if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
+            if (isset($aFields[$sField]["value_type"]) && $aFields[$sField]["value_type"] == "boolean") {
                 $sOperator = "equals";
             } elseif (!isset($aOperators[$sOperator])) {
                 $sOperator = getFullListComplexFilterDefaultOperator($aFields[$sField]);
@@ -6250,7 +6246,7 @@ function normalizeFullListComplexFilterDraft($aPayload, $aFields, $aOperators) {
             if (!isset($aFields[$sField])) {
                 $sField = "subject_name";
             }
-            if (isset($aFields[$sField]["value_type"]) && (string)$aFields[$sField]["value_type"] == "boolean") {
+            if (isset($aFields[$sField]["value_type"]) && $aFields[$sField]["value_type"] == "boolean") {
                 $sOperator = "equals";
             } elseif (!isset($aOperators[$sOperator])) {
                 $sOperator = getFullListComplexFilterDefaultOperator($aFields[$sField]);
@@ -6281,22 +6277,22 @@ function escapeFullListComplexFilterLike($sValue) {
 }
 
 function normalizeFullListComplexFilterSqlValue($aField, $sValue) {
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "boolean") {
-        $sNormalized = strtolower(trim((string)$sValue));
+    if (isset($aField["value_type"]) && $aField["value_type"] == "boolean") {
+        $sNormalized = strtolower(trim($sValue));
         if ($sNormalized == "0" || $sNormalized == "false" || $sNormalized == "no" || $sNormalized == "off") {
             return "0";
         }
         return "1";
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "birth_number") {
+    if (isset($aField["value_type"]) && $aField["value_type"] == "birth_number") {
         $sNormalized = normalizeBirthNumber($sValue);
-        return $sNormalized === false ? (string)$sValue : $sNormalized;
+        return $sNormalized === false ? $sValue : $sNormalized;
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "country") {
+    if (isset($aField["value_type"]) && $aField["value_type"] == "country") {
         return countryNameToCode($sValue);
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "subject_type") {
-        $sNormalized = strtolower(trim((string)$sValue));
+    if (isset($aField["value_type"]) && $aField["value_type"] == "subject_type") {
+        $sNormalized = strtolower(trim($sValue));
         foreach (getSubjectTypes() as $sSubjectType) {
             if ($sNormalized == $sSubjectType) {
                 return $sSubjectType;
@@ -6304,8 +6300,8 @@ function normalizeFullListComplexFilterSqlValue($aField, $sValue) {
         }
         return $sNormalized;
     }
-    if (isset($aField["value_type"]) && (string)$aField["value_type"] == "address_type") {
-        $sNormalized = strtolower(trim((string)$sValue));
+    if (isset($aField["value_type"]) && $aField["value_type"] == "address_type") {
+        $sNormalized = strtolower(trim($sValue));
         foreach (getAddressTypes() as $sAddressType) {
             if ($sNormalized == $sAddressType || $sNormalized == strtolower(addressTypeLabel($sAddressType))) {
                 return $sAddressType;
@@ -6316,7 +6312,7 @@ function normalizeFullListComplexFilterSqlValue($aField, $sValue) {
     if (isset($aField["contact_type"])) {
         return contactCanonicalValue($aField["contact_type"], $sValue);
     }
-    return (string)$sValue;
+    return $sValue;
 }
 
 function buildFullListComplexAddressFilterSql($sColumn, $sOperator, $sParam, $sValue) {
@@ -6440,7 +6436,7 @@ function buildFullListComplexContactTypeFilterSql($iContactTypeId, $sOperator, $
 
 function applyFullListComplexFilterScopeSql($sSql, $aField) {
     if ($sSql != "" && isset($aField["scope_sql"]) && $aField["scope_sql"] != "") {
-        return "(" . (string)$aField["scope_sql"] . " AND " . $sSql . ")";
+        return "(" . $aField["scope_sql"] . " AND " . $sSql . ")";
     }
     return $sSql;
 }
@@ -6574,14 +6570,14 @@ function renderFullListComplexFilterFieldOptions($aFields, $sSelected) {
     $aGroupedOptions = array();
     $aGroupOrder = array();
     foreach ($aFields as $sField => $aField) {
-        $sLabel = (string)$aField["label"];
+        $sLabel = $aField["label"];
         $sOptionLabel = $sLabel;
         $sGroup = "";
         $iColonPosition = strpos($sLabel, ":");
         if ($iColonPosition !== false) {
             $sGroup = trim(substr($sLabel, 0, $iColonPosition));
         }
-        $sValueType = isset($aField["value_type"]) ? (string)$aField["value_type"] : "text";
+        $sValueType = isset($aField["value_type"]) ? $aField["value_type"] : "text";
         $sOptionHtml = "<option value=\"" . html($sField) . "\" data-value-type=\"" . html($sValueType) . "\"" . ($sSelected == $sField ? " selected" : "") . ">" . html($sOptionLabel) . "</option>";
         if ($sGroup == "") {
             $aUngroupedOptions[] = $sOptionHtml;
@@ -6624,7 +6620,7 @@ function getFullListComplexFilterPostPayload() {
 }
 
 function interGetCommunicationInfo($sCommunicationServedAt) {
-    $sCommunicationServedAt = trim((string)$sCommunicationServedAt);
+    $sCommunicationServedAt = trim($sCommunicationServedAt);
     $iTodayTimestamp = strtotime("today 12:00:00");
     if ($iTodayTimestamp === false) {
         return null;
@@ -6703,7 +6699,7 @@ function diffParseSqlIdentifierList($sSql) {
 }
 
 function diffNormalizeCreateSql($sSql) {
-    $sSql = trim((string)$sSql);
+    $sSql = trim($sSql);
     $sSql = preg_replace("/\s+AUTO_INCREMENT=\d+\b/i", "", $sSql);
     return preg_replace("/\r\n|\r|\n/", "\n", $sSql);
 }
@@ -6806,7 +6802,7 @@ function diffDecodeSqlString($sValue) {
 }
 
 function diffDecodeSqlValue($sToken) {
-    $sToken = trim((string)$sToken);
+    $sToken = trim($sToken);
     if (strcasecmp($sToken, "NULL") === 0) {
         return null;
     }
@@ -7389,11 +7385,11 @@ function isThrobberLockTarget($sUserAgent) {
 }
 
 function mailFormStripHeaderBreaks($sValue) {
-    return trim(preg_replace("/[\r\n]+/", " ", (string)$sValue));
+    return trim(preg_replace("/[\r\n]+/", " ", $sValue));
 }
 
 function mailFormNormalizeEmailAddress($sValue) {
-    $sEmail = trim((string)$sValue);
+    $sEmail = trim($sValue);
     if ($sEmail == "") {
         return "";
     }
@@ -7483,12 +7479,12 @@ function mailFormFindUnquotedCharBeforeListSeparator($sValue, $sFind, $iOffset) 
 }
 
 function mailFormCleanDisplayName($sValue) {
-    $sName = trim((string)$sValue);
+    $sName = trim($sValue);
     $iLength = strlen($sName);
     if ($sName == "") {
         return "";
     }
-    if (preg_match("/[\x00-\x1F\x7F]/", (string)$sName) || strpos($sName, "<") !== false || strpos($sName, ">") !== false) {
+    if (preg_match("/[\x00-\x1F\x7F]/", $sName) || strpos($sName, "<") !== false || strpos($sName, ">") !== false) {
         return false;
     }
     if ($iLength >= 2 && $sName[0] == "\"" && $sName[$iLength - 1] == "\"") {
@@ -7568,7 +7564,7 @@ function mailFormParseMailbox($sValue, $iOffset, &$iNextOffset) {
 }
 
 function mailFormEncodeDisplayName($sValue) {
-    $sName = trim(preg_replace("/[ \t]+/", " ", (string)$sValue));
+    $sName = trim(preg_replace("/[ \t]+/", " ", $sValue));
     if ($sName == "") {
         return "";
     }
@@ -7590,13 +7586,12 @@ function mailFormFormatMailbox($aMailbox) {
 function mailFormNormalizeEmailList($sValue) {
     $aMailboxes = array();
     $aHeaderMailboxes = array();
-    $sValue = (string)$sValue;
     $iLength = strlen($sValue);
     $iOffset = 0;
     $iNextOffset = 0;
     $aMailbox = array();
 
-    if (preg_match("/[\x00-\x1F\x7F]/", (string)$sValue)) {
+    if (preg_match("/[\x00-\x1F\x7F]/", $sValue)) {
         return false;
     }
     while ($iOffset < $iLength) {
@@ -7635,17 +7630,17 @@ function mailFormNormalizeSingleEmail($sValue) {
 }
 
 function mailFormEmailDomain($sEmail) {
-    $iAt = strrpos((string)$sEmail, "@");
+    $iAt = strrpos($sEmail, "@");
     if ($iAt === false) {
         return "";
     }
-    return strtolower(substr((string)$sEmail, $iAt + 1));
+    return strtolower(substr($sEmail, $iAt + 1));
 }
 
 function mailFormAllowedSenderDomainMap($aAllowedDomains) {
     $aDomainMap = array();
     foreach ($aAllowedDomains as $sDomain) {
-        $sDomain = strtolower(trim((string)$sDomain));
+        $sDomain = strtolower(trim($sDomain));
         if ($sDomain != "") {
             $aDomainMap[$sDomain] = true;
         }
@@ -7704,7 +7699,7 @@ function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowe
     $sDomainSql = "";
     $sParam = "";
     $iDomain = 0;
-    $sTerm = trim(preg_replace("/[<>]+/", " ", (string)$sTerm));
+    $sTerm = trim(preg_replace("/[<>]+/", " ", $sTerm));
     if (strlen($sTerm) < 3) {
         return $aSuggestions;
     }
@@ -7738,7 +7733,7 @@ function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowe
     while ($aRow = $oStatement->fetch()) {
         $sName = mailFormCleanDisplayName($aRow["subject_name"]);
         $sEmail = mailFormNormalizeEmailAddress($aRow["email"]);
-        $sKey = strtolower((string)$sEmail) . "\n" . strtolower((string)$sName);
+        $sKey = strtolower($sEmail) . "\n" . strtolower($sName);
         if ($sName === false || $sEmail === false || $sEmail == "" || isset($aSeen[$sKey])) {
             continue;
         }
@@ -7759,7 +7754,7 @@ function mailFormFetchRecipientSuggestions($oPdo, $sTerm, $iLimit = 12, $aAllowe
             break;
         }
         $sEmail = mailFormNormalizeEmailAddress($sAdditionalAddress);
-        $sEmailKey = strtolower((string)$sEmail);
+        $sEmailKey = strtolower($sEmail);
         if ($sEmail === false || $sEmail == "" || isset($aSeenEmails[$sEmailKey]) || stripos($sEmail, $sTerm) === false) {
             continue;
         }
@@ -7800,7 +7795,7 @@ function mailFormEncodeMimeParameter($sValue) {
 }
 
 function mailFormHtmlBodyIsEmpty($sValue) {
-    $sHtml = preg_replace("/<\s*(script|style)[^>]*>.*?<\s*\/\s*\\1\s*>/is", "", (string)$sValue);
+    $sHtml = preg_replace("/<\s*(script|style)[^>]*>.*?<\s*\/\s*\\1\s*>/is", "", $sValue);
     if (preg_match("/<\s*img\b/i", $sHtml)) {
         return false;
     }
@@ -7847,11 +7842,11 @@ function mailFormUploadedAttachments($sFieldName, &$aErrors) {
 }
 
 function mailFormNormalizeBodyLineEndings($sValue) {
-    return preg_replace("/\r\n|\r|\n/", "\r\n", (string)$sValue);
+    return preg_replace("/\r\n|\r|\n/", "\r\n", $sValue);
 }
 
 function mailFormBuildPlainTextMessage($sBody) {
-    $sText = (string)$sBody;
+    $sText = $sBody;
     $sText = preg_replace("/<\s*(script|style)[^>]*>.*?<\s*\/\s*\\1\s*>/is", "", $sText);
     $sText = preg_replace("/<\s*br\s*\/?\s*>/i", "\n", $sText);
     $sText = preg_replace("/<\s*\/\s*(p|div|h[1-6]|li|tr|blockquote|pre|table|ul|ol)\s*>/i", "\n", $sText);

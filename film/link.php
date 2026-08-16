@@ -163,7 +163,6 @@ $iTime = sendPageHeaders();
 <html lang="en-US" dir="ltr">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -171,27 +170,27 @@ $iTime = sendPageHeaders();
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title><?php echo html(getPageTitleText()); ?></title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo $sBaseUrl; ?>css/admin.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin.css")); ?>" rel="stylesheet" type="text/css" title="Original">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-graphite.css")); ?>" rel="alternate stylesheet" type="text/css" title="Graphite">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-midnight.css")); ?>" rel="alternate stylesheet" type="text/css" title="Midnight">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-slate.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-slate.css")); ?>" rel="alternate stylesheet" type="text/css" title="Slate">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-sepia.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-sepia.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sepia">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-sand.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-sand.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sand">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-forest.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-forest.css")); ?>" rel="alternate stylesheet" type="text/css" title="Forest">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-moss.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-moss.css")); ?>" rel="alternate stylesheet" type="text/css" title="Moss">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-ocean.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-ocean.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ocean">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-ice.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-ice.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ice">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-lavender.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-lavender.css")); ?>" rel="alternate stylesheet" type="text/css" title="Lavender">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-rose.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-rose.css")); ?>" rel="alternate stylesheet" type="text/css" title="Rose">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-copper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-copper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Copper">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-burgundy.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-burgundy.css")); ?>" rel="alternate stylesheet" type="text/css" title="Burgundy">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-monochrome.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-monochrome.css")); ?>" rel="alternate stylesheet" type="text/css" title="Monochrome">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-high-contrast.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-high-contrast.css")); ?>" rel="alternate stylesheet" type="text/css" title="High Contrast">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-soft.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-soft.css")); ?>" rel="alternate stylesheet" type="text/css" title="Soft">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-paper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-paper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Paper">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-terminal.css")); ?>" rel="alternate stylesheet" type="text/css" title="Terminal">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-cobalt.css")); ?>" rel="alternate stylesheet" type="text/css" title="Cobalt">
-  <link href="<?php echo $sBaseUrl; ?>css/admin-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/admin-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
+  <link href="<?php echo $sBaseUrl; ?>css/style.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style.css")); ?>" rel="stylesheet" type="text/css" title="Original">
+  <link href="<?php echo $sBaseUrl; ?>css/style-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-graphite.css")); ?>" rel="alternate stylesheet" type="text/css" title="Graphite">
+  <link href="<?php echo $sBaseUrl; ?>css/style-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-midnight.css")); ?>" rel="alternate stylesheet" type="text/css" title="Midnight">
+  <link href="<?php echo $sBaseUrl; ?>css/style-slate.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-slate.css")); ?>" rel="alternate stylesheet" type="text/css" title="Slate">
+  <link href="<?php echo $sBaseUrl; ?>css/style-sepia.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-sepia.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sepia">
+  <link href="<?php echo $sBaseUrl; ?>css/style-sand.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-sand.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sand">
+  <link href="<?php echo $sBaseUrl; ?>css/style-forest.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-forest.css")); ?>" rel="alternate stylesheet" type="text/css" title="Forest">
+  <link href="<?php echo $sBaseUrl; ?>css/style-moss.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-moss.css")); ?>" rel="alternate stylesheet" type="text/css" title="Moss">
+  <link href="<?php echo $sBaseUrl; ?>css/style-ocean.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-ocean.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ocean">
+  <link href="<?php echo $sBaseUrl; ?>css/style-ice.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-ice.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ice">
+  <link href="<?php echo $sBaseUrl; ?>css/style-lavender.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-lavender.css")); ?>" rel="alternate stylesheet" type="text/css" title="Lavender">
+  <link href="<?php echo $sBaseUrl; ?>css/style-rose.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-rose.css")); ?>" rel="alternate stylesheet" type="text/css" title="Rose">
+  <link href="<?php echo $sBaseUrl; ?>css/style-copper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-copper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Copper">
+  <link href="<?php echo $sBaseUrl; ?>css/style-burgundy.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-burgundy.css")); ?>" rel="alternate stylesheet" type="text/css" title="Burgundy">
+  <link href="<?php echo $sBaseUrl; ?>css/style-monochrome.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-monochrome.css")); ?>" rel="alternate stylesheet" type="text/css" title="Monochrome">
+  <link href="<?php echo $sBaseUrl; ?>css/style-high-contrast.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-high-contrast.css")); ?>" rel="alternate stylesheet" type="text/css" title="High Contrast">
+  <link href="<?php echo $sBaseUrl; ?>css/style-soft.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-soft.css")); ?>" rel="alternate stylesheet" type="text/css" title="Soft">
+  <link href="<?php echo $sBaseUrl; ?>css/style-paper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-paper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Paper">
+  <link href="<?php echo $sBaseUrl; ?>css/style-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-terminal.css")); ?>" rel="alternate stylesheet" type="text/css" title="Terminal">
+  <link href="<?php echo $sBaseUrl; ?>css/style-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-cobalt.css")); ?>" rel="alternate stylesheet" type="text/css" title="Cobalt">
+  <link href="<?php echo $sBaseUrl; ?>css/style-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
   <script type="text/javascript" src="/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
 </head>
 <body class="film-link-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>">
@@ -215,7 +214,7 @@ if ($sMessage) {
 <?php
 
 foreach ($aFilms as $aFilm) {
-    echo "        <option value=\"" . html((string)$aFilm["id"]) . "\">" . formatFilmOptionLabel($aFilm) . "</option>\n";
+    echo "        <option value=\"" . html($aFilm["id"]) . "\">" . formatFilmOptionLabel($aFilm) . "</option>\n";
 }
 
 ?>
@@ -228,7 +227,7 @@ foreach ($aFilms as $aFilm) {
 foreach ($aOrders as $aOrder) {
     $sLabel = formatOrderOptionLabel($aOrder);
     $blSelected = $iLastBagId !== null && $aOrder["id"] === $iLastBagId;
-    echo "        <option value=\"" . html((string)$aOrder["id"]) . "\"" . ($blSelected ? " selected" : "") . ">" . $sLabel . "</option>\n";
+    echo "        <option value=\"" . html($aOrder["id"]) . "\"" . ($blSelected ? " selected" : "") . ">" . $sLabel . "</option>\n";
 }
 
 ?>
@@ -276,18 +275,18 @@ foreach ($aOrders as $aOrder) {
 <?php
 
 foreach ($aLinks as $aLink) {
-    $sOrderDate = substr((string)($aLink["ordered_at"] ?? ""), 0, 16);
+    $sOrderDate = substr($aLink["ordered_at"] ?? "", 0, 16);
     $sOrderDate = substr($sOrderDate, 0, 10) == "0000-00-00" ? "" : $sOrderDate;
-    $sScanDate = substr((string)$aLink["scanned_at"], 0, 16);
+    $sScanDate = substr($aLink["scanned_at"], 0, 16);
     $sScanDate = substr($sScanDate, 0, 10) == "0000-00-00" ? "" : $sScanDate;
-    $sReturnDate = substr((string)($aLink["returned_at"] ?? ""), 0, 10);
+    $sReturnDate = substr($aLink["returned_at"] ?? "", 0, 10);
     $sReturnDate = substr($sReturnDate, 0, 10) == "0000-00-00" ? "" : $sReturnDate;
-    $sInvoiceDate = substr((string)($aLink["invoice"] ?? ""), 0, 16);
+    $sInvoiceDate = substr($aLink["invoice"] ?? "", 0, 16);
     $sInvoiceDate = substr($sInvoiceDate, 0, 10) == "0000-00-00" ? "" : $sInvoiceDate;
     $sOrderDetailDate = substr($sOrderDate, 0, 10);
     $sReturnDetailDate = substr($sReturnDate, 0, 10);
     $sInvoiceDetailDate = substr($sInvoiceDate, 0, 10);
-    $sScanDetailDates = (string)($aLink["scan_dates"] ?? "");
+    $sScanDetailDates = $aLink["scan_dates"] ?? "";
     $sOrderDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sOrderDate));
     $sScanDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sScanDate));
     $sFilmLabel = formatFilmOptionLabel($aLink);
@@ -295,11 +294,11 @@ foreach ($aLinks as $aLink) {
     $sPrice = $aLink["price_vat"] === null ? "" : number_format((float)$aLink["price_vat"], 2, ".", "");
 
 ?>
-      <tr data-order-id="<?php echo html((string)($aLink["lab_order_id"] ?? "")); ?>" data-order-no="<?php echo html((string)($aLink["order_no"] ?? "")); ?>" data-lab="<?php echo html((string)($aLink["lab"] ?? "")); ?>" data-bag-no="<?php echo html((string)($aLink["bag_no"] ?? "")); ?>" data-price="<?php echo html($sPrice); ?>" data-currency="<?php echo html((string)($aLink["currency"] ?? "")); ?>" data-order-date="<?php echo html($sOrderDetailDate); ?>" data-return-date="<?php echo html($sReturnDetailDate); ?>" data-invoice-date="<?php echo html($sInvoiceDetailDate); ?>" data-film-scan-dates="<?php echo html((string)($aLink["film_scan_dates"] ?? "")); ?>" data-lab-scan-dates="<?php echo html($sScanDetailDates); ?>">
-        <td style="text-align: right;"><?php echo html((string)$aLink["archive_no"]); ?></td>
-        <td><?php echo html((string)$aLink["folder_name"]); ?></td>
-        <td><?php echo html((string)($aLink["bag_no"] ?? "")); ?></td>
-        <td><?php echo html((string)($aLink["order_no"] ?? "")); ?></td>
+      <tr data-order-id="<?php echo html($aLink["lab_order_id"] ?? ""); ?>" data-order-no="<?php echo html($aLink["order_no"] ?? ""); ?>" data-lab="<?php echo html($aLink["lab"] ?? ""); ?>" data-bag-no="<?php echo html($aLink["bag_no"] ?? ""); ?>" data-price="<?php echo html($sPrice); ?>" data-currency="<?php echo html($aLink["currency"] ?? ""); ?>" data-order-date="<?php echo html($sOrderDetailDate); ?>" data-return-date="<?php echo html($sReturnDetailDate); ?>" data-invoice-date="<?php echo html($sInvoiceDetailDate); ?>" data-film-scan-dates="<?php echo html($aLink["film_scan_dates"] ?? ""); ?>" data-lab-scan-dates="<?php echo html($sScanDetailDates); ?>">
+        <td style="text-align: right;"><?php echo html($aLink["archive_no"]); ?></td>
+        <td><?php echo html($aLink["folder_name"]); ?></td>
+        <td><?php echo html($aLink["bag_no"] ?? ""); ?></td>
+        <td><?php echo html($aLink["order_no"] ?? ""); ?></td>
         <td><?php echo $sOrderDateDisplay; ?></td>
         <td><?php echo $sScanDateDisplay; ?></td>
         <td><?php echo html($sReturnDate); ?></td>

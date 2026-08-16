@@ -276,7 +276,7 @@ function renderFilmScanHtml($oPdo, $aRow) {
         "Push/Pull"           => formatPushPull($aRow["push_pull"]),
         "Lab"                 => $aRow["lab"],
         "Exposure date"       => $sDates,
-        "Scan date"           => substr((string)$aRow["scanned_at"], 0, 16),
+        "Scan date"           => substr($aRow["scanned_at"], 0, 16),
         "Scan format"         => $aRow["scan_format"],
         "Scan resolution"     => sprintf("%d × %d", (int)$aRow["scan_width"], (int)$aRow["scan_height"]),
         "Archive format"      => $aRow["archive_format"],
@@ -309,7 +309,7 @@ function sendFilmMetadataTxt($oPdo, $aRow) {
         sprintf("Lab roll number:     %s", $sLabRoll),
         sprintf("Film stock:          %s", $aRow["film_stock"] ?? ""),
         sprintf("Expiration date:     %s", formatExpirationDate($aRow["expiration_date"] ?? null)),
-        sprintf("Exposure index:      %s", (string)$iValue),
+        sprintf("Exposure index:      %s", $iValue),
         sprintf("Exposure correction: %s", $aRow["exposure_correction"] ?? "None"),
         sprintf("Camera:              %s", $aRow["camera"] ?? ""),
         sprintf("Lens:                %s", $aRow["lens"] ?? ""),
@@ -318,7 +318,7 @@ function sendFilmMetadataTxt($oPdo, $aRow) {
         sprintf("Push/Pull:           %s", formatPushPull($aRow["push_pull"])),
         sprintf("Lab:                 %s", $aRow["lab"] ?? ""),
         sprintf("Exposure date:       %s", $sDates),
-        sprintf("Scan date:           %s", substr((string)($aRow["scanned_at"] ?? ""), 0, 16)),
+        sprintf("Scan date:           %s", substr($aRow["scanned_at"] ?? "", 0, 16)),
         sprintf("Scan format:         %s", $aRow["scan_format"] ?? ""),
         sprintf("Scan resolution:     %d × %d", (int)$aRow["scan_width"], (int)$aRow["scan_height"]),
         sprintf("Archive format:      %s", $aRow["archive_format"] ?? ""),
@@ -351,7 +351,7 @@ function sendFilmMetadataTxt($oPdo, $aRow) {
 }
 
 function renderCell($mValue, $blError) {
-    $sValue = html((string)$mValue);
+    $sValue = html($mValue);
     if ($blError) {
         echo "      <td class=\"error-cell\">" . $sValue . "</td>\n";
     } else {
@@ -360,7 +360,7 @@ function renderCell($mValue, $blError) {
 }
 
 function formatFilmOptionLabel($aFilm) {
-    return html((string)$aFilm["archive_no"] . " – " . $aFilm["folder_name"]);
+    return html($aFilm["archive_no"] . " – " . $aFilm["folder_name"]);
 }
 
 function formatOrderOptionLabel($aOrder) {
@@ -375,25 +375,16 @@ function formatOrderOptionLabel($aOrder) {
 }
 
 function formatEquipmentOptionLabel($aEquipment) {
-    return html(ucfirst((string)$aEquipment["equip_type"]) . ": " . (string)$aEquipment["equip_name"]);
+    return html(ucfirst($aEquipment["equip_type"]) . ": " . $aEquipment["equip_name"]);
 }
 
 function filmEquipmentTypeOrder($sType) {
-    $aTypeOrder = array(
-        "camera" => 10,
-        "lens" => 20,
-        "filter" => 30,
-        "hood" => 40,
-        "case" => 50,
-        "bag" => 60,
-        "tripod" => 70,
-        "level" => 80
-    );
+    $aTypeOrder = array("camera" => 10, "lens" => 20, "filter" => 30, "hood" => 40, "case" => 50, "bag" => 60, "tripod" => 70, "level" => 80);
     return isset($aTypeOrder[$sType]) ? $aTypeOrder[$sType] : 999;
 }
 
 function filmEquipmentDateSortValue($sValue) {
-    return $sValue !== null && $sValue != "" ? substr((string)$sValue, 0, 10) : "9999-12-31";
+    return $sValue !== null && $sValue != "" ? substr($sValue, 0, 10) : "9999-12-31";
 }
 
 function filmEquipmentMemberCompare($aFirst, $aSecond) {

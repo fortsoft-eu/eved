@@ -1,0 +1,23 @@
+html, body {
+    overscroll-behavior-y: none;
+}
+
+body {
+    background-color: #EDF2FC;
+    font-family: Arial, sans-serif;
+    color: #1F3457;
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+    flex-direction: column;
+    transform: translateY(-8vh);
+}
+
+h1, h2 {
+    margin: 10px 0;
+    color: #112443;
+}

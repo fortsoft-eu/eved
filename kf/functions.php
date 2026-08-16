@@ -51,7 +51,7 @@ function saveNewSubscriptionDefaults($iFinanceTypeId, $sCurrency, $sBillingPerio
     }
     $_SESSION["kf_new_subscription_defaults"]["finance_type_id"] = (int)$iFinanceTypeId;
     $_SESSION["kf_new_subscription_defaults"]["currency"] = normalizeStoredCurrency($sCurrency);
-    $_SESSION["kf_new_subscription_defaults"]["billing_period"] = (string)$sBillingPeriod;
+    $_SESSION["kf_new_subscription_defaults"]["billing_period"] = $sBillingPeriod;
 }
 
 function getSettings() {
@@ -142,7 +142,7 @@ function renderSettingsModal($aSettings = null) {
     $aCurrencyOptions = getCurrencyOptions($oPdo, $aSettings["display_currency"]);
     $sCurrencyOptionsHtml = "          <option value=\"\"" . ($aSettings["display_currency"] == "" ? " selected" : "") . ">As entered</option>\n";
     foreach ($aCurrencyOptions as $aCurrencyOption) {
-        $sCurrency = (string)$aCurrencyOption["currency"];
+        $sCurrency = $aCurrencyOption["currency"];
         $sCurrencyOptionsHtml .= "          <option value=\"" . html($sCurrency) . "\"" . ($aSettings["display_currency"] == $sCurrency ? " selected" : "") . ">" . html($aCurrencyOption["label"]) . "</option>\n";
     }
     return "  <div class=\"confirm-dialog index-settings-dialog\" id=\"index-settings-dialog\" hidden>\n"
@@ -318,7 +318,7 @@ function getFinanceTypes($blIncludeGroups = false) {
 }
 
 function fetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
-    $sTerm = trim((string)$sTerm);
+    $sTerm = trim($sTerm);
     if ($sTerm == "") {
         return array();
     }
@@ -338,7 +338,7 @@ function fetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
 }
 
 function fetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
-    $sTerm = trim((string)$sTerm);
+    $sTerm = trim($sTerm);
     if (strlen($sTerm) < 3) {
         return array();
     }
@@ -360,13 +360,13 @@ function fetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
 }
 
 function fetchSingleSubjectInputRow($oPdo, $sTerm) {
-    $sTerm = trim((string)$sTerm);
+    $sTerm = trim($sTerm);
     if ($sTerm == "") {
         return null;
     }
     if (preg_match('/^(.*) \(#([1-9][0-9]*)\)$/', $sTerm, $aMatches)) {
         $aRow = fetchSubjectNameRow($oPdo, (int)$aMatches[2]);
-        if ($aRow && (string)$aRow["subject_name"] == trim((string)$aMatches[1])) {
+        if ($aRow && $aRow["subject_name"] == trim($aMatches[1])) {
             return $aRow;
         }
         return null;
@@ -774,7 +774,7 @@ function getSubscriptionNextDueAt($sNextDueAt, $sBillingPeriod, $iBillingDay = 0
 }
 
 function formatSubscriptionDueInDays($sNextDueAt) {
-    $sNextDueAt = trim((string)$sNextDueAt);
+    $sNextDueAt = trim($sNextDueAt ?? "");
     if ($sNextDueAt == "") {
         return "&mdash;";
     }
@@ -862,7 +862,7 @@ function formatExchangeRateValue($mRate) {
 }
 
 function formatExchangeRateDateTime($sDateTime) {
-    $iTime = strtotime((string)$sDateTime);
+    $iTime = strtotime($sDateTime);
     return $iTime ? date("Y-m-d H:i:s", $iTime) : "";
 }
 
@@ -952,7 +952,7 @@ function fetchExchangeRateApiResponse($sRequestedFor) {
         return array(
             "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
             "status_code" => $iStatusCode,
-            "body" => $sBody !== false ? (string)$sBody : "",
+            "body" => $sBody !== false ? $sBody : "",
             "error" => $sError
         );
     }
@@ -970,7 +970,7 @@ function fetchExchangeRateApiResponse($sRequestedFor) {
     return array(
         "success" => $sBody !== false && $iStatusCode >= 200 && $iStatusCode < 300,
         "status_code" => $iStatusCode,
-        "body" => $sBody !== false ? (string)$sBody : "",
+        "body" => $sBody !== false ? $sBody : "",
         "error" => $sBody !== false ? "" : (isset($aError["message"]) ? (string)$aError["message"] : "HTTP request failed.")
     );
 }
@@ -991,7 +991,7 @@ function normalizeExchangeRateDecimal($mValue) {
 }
 
 function parseExchangeRateApiResponse($sBody, &$sError) {
-    $aData = json_decode((string)$sBody, true);
+    $aData = json_decode($sBody, true);
     if (!is_array($aData) || !isset($aData["rates"]) || !is_array($aData["rates"]) || !count($aData["rates"])) {
         $sError = "CNB response does not contain rates.";
         return false;
@@ -1048,7 +1048,7 @@ function getExchangeRateApiErrorMessage($aResponse) {
 }
 
 function recordExchangeRateFetchError($oPdo, $sRequestedFor, $iHttpStatusCode, $sErrorMessage) {
-    $sErrorMessage = substr((string)$sErrorMessage, 0, 1000);
+    $sErrorMessage = substr($sErrorMessage, 0, 1000);
     $oStatement = $oPdo->prepare("UPDATE kf_exrates_fetches SET status = 'error', http_status_code = :http_status_code, error_message = :error_message WHERE requested_for = :requested_for");
     $oStatement->execute(array(
         "http_status_code" => $iHttpStatusCode > 0 ? $iHttpStatusCode : null,
@@ -1058,7 +1058,7 @@ function recordExchangeRateFetchError($oPdo, $sRequestedFor, $iHttpStatusCode, $
 }
 
 function saveExchangeRates($oPdo, $sRequestedFor, $aRows, $iHttpStatusCode) {
-    $sResponseValidFor = (string)$aRows[0]["valid_for"];
+    $sResponseValidFor = $aRows[0]["valid_for"];
     $oPdo->beginTransaction();
     try {
         $oStatement = $oPdo->prepare("SELECT id FROM kf_exrates_fetches WHERE requested_for = :requested_for FOR UPDATE");
@@ -1133,7 +1133,7 @@ function renderFinanceTypeAdminRows($aRows, $blShowActions = true) {
 }
 
 function kfNormalizeEmailContactValue($sValue) {
-    $sText = strtolower(trim((string)$sValue));
+    $sText = strtolower(trim($sValue ?? ""));
     if ($sText == "") {
         return "";
     }
@@ -1143,13 +1143,13 @@ function kfNormalizeEmailContactValue($sValue) {
 
 function kfContactValueIsInvalid($sType, $sValue) {
     $sType = contactTypeKey($sType);
-    if (trim((string)$sValue) == "") {
+    if (trim($sValue) == "") {
         return false;
     }
     if (isPhoneContactType($sType)) {
         return normalizePhoneContactValue($sValue) === false;
     }
-    if ((string)$sType == "email") {
+    if ($sType == "email") {
         return kfNormalizeEmailContactValue($sValue) === false;
     }
     return false;
@@ -1160,11 +1160,11 @@ function kfContactDisplayValue($sType, $sValue) {
     if (isPhoneContactType($sType)) {
         return phoneContactDisplayValue($sValue);
     }
-    if ((string)$sType == "email") {
+    if ($sType == "email") {
         $mEmail = kfNormalizeEmailContactValue($sValue);
-        return $mEmail !== false ? (string)$mEmail : (string)$sValue;
+        return $mEmail !== false ? (string)$mEmail : $sValue;
     }
-    return (string)$sValue;
+    return $sValue;
 }
 
 function kfContactHref($sType, $sValue, $blAllowExternalLinks = false) {
@@ -1250,7 +1250,7 @@ function kfRenderContactValueActions($sType, $sValue, $blShowCopy = false, $blAl
 function renderDebtNoteValue($sNote) {
     global $sEmptyValueEmoji;
 
-    $sNote = trim((string)$sNote);
+    $sNote = trim($sNote ?? "");
     if ($sNote == "") {
         return $sEmptyValueEmoji;
     }
@@ -1261,8 +1261,8 @@ function renderDebtContactValue($sType, $sValue, $sNote, $blIsPrimary = false) {
     global $sEmptyValueEmoji, $sPrimaryEmoji;
 
     $sDisplayValue = kfContactDisplayValue($sType, $sValue);
-    $sNote = trim((string)$sNote);
-    if (trim($sDisplayValue) == "") {
+    $sNote = trim($sNote ?? "");
+    if (trim($sDisplayValue ?? "") == "") {
         return $sEmptyValueEmoji;
     }
     return "<span class=\"ci\" data-contact-value=\"" . html($sDisplayValue) . "\">"

@@ -1,0 +1,23 @@
+html, body {
+    overscroll-behavior-y: none;
+}
+
+body {
+    background-color: #0F1724;
+    font-family: "Times New Roman", Times, serif;
+    color: #D7E4F2;
+    font-size: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+    flex-direction: column;
+    transform: translateY(-8vh);
+}
+
+h1, h2 {
+    margin: 10px 0;
+    color: #F4F8FC;
+}

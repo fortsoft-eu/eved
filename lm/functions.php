@@ -23,7 +23,7 @@ function getPhpGeneratedSelectedFlags($sName, $aTypes, $iDefaultValue) {
         $aValues = is_array($_GET[$sName]) ? $_GET[$sName] : array($_GET[$sName]);
     }
     foreach ($aValues as $sValue) {
-        if (ctype_digit((string)$sValue)) {
+        if (ctype_digit($sValue)) {
             $iValue = (int)$sValue;
             if (in_array($iValue, $aTypes, true)) {
                 $iSelected |= $iValue;
@@ -96,8 +96,8 @@ function encryptTextMessage($sText, $sPassword) {
         throw new RuntimeException("OpenSSL extension is required.");
     }
     $iOptions = defined("OPENSSL_RAW_DATA") ? constant("OPENSSL_RAW_DATA") : 1;
-    $sPayload = (string)$sText . md5((string)$sText, true);
-    $sEncrypted = openssl_encrypt($sPayload, "AES-128-CBC", md5((string)$sPassword, true), $iOptions, str_repeat("\0", 16));
+    $sPayload = $sText . md5($sText, true);
+    $sEncrypted = openssl_encrypt($sPayload, "AES-128-CBC", md5($sPassword, true), $iOptions, str_repeat("\0", 16));
     if ($sEncrypted === false) {
         throw new RuntimeException("Text encryption failed.");
     }
@@ -108,12 +108,12 @@ function decryptTextMessage($sText, $sPassword) {
     if (!function_exists("openssl_decrypt")) {
         throw new RuntimeException("OpenSSL extension is required.");
     }
-    $sBytes = base64_decode((string)$sText, true);
+    $sBytes = base64_decode($sText, true);
     if ($sBytes === false) {
         throw new RuntimeException("Invalid encrypted text.");
     }
     $iOptions = defined("OPENSSL_RAW_DATA") ? constant("OPENSSL_RAW_DATA") : 1;
-    $sPayload = openssl_decrypt($sBytes, "AES-128-CBC", md5((string)$sPassword, true), $iOptions, str_repeat("\0", 16));
+    $sPayload = openssl_decrypt($sBytes, "AES-128-CBC", md5($sPassword, true), $iOptions, str_repeat("\0", 16));
     if ($sPayload === false) {
         throw new RuntimeException("Text decryption failed.");
     }
@@ -130,7 +130,7 @@ function decryptTextMessage($sText, $sPassword) {
 }
 
 function deriveLmEncryptionKey($sHash) {
-    $sHash = trim((string)$sHash);
+    $sHash = trim($sHash);
     if ($sHash == "") {
         throw new RuntimeException("Encryption hash is required.");
     }
@@ -138,10 +138,10 @@ function deriveLmEncryptionKey($sHash) {
 }
 
 function setLmEncryptionSessionKey($sKey) {
-    if (strlen((string)$sKey) != 32) {
+    if (strlen($sKey) != 32) {
         throw new RuntimeException("Encryption key is invalid.");
     }
-    $_SESSION["lm_encryption_key"] = base64_encode((string)$sKey);
+    $_SESSION["lm_encryption_key"] = base64_encode($sKey);
 }
 
 function getLmEncryptionSessionKey() {
@@ -161,8 +161,6 @@ function clearLmEncryptionSessionKey() {
 }
 
 function encryptLmSecretText($sText, $sKey) {
-    $sText = (string)$sText;
-    $sKey = (string)$sKey;
     if (strlen($sKey) != 32) {
         throw new RuntimeException("Encryption key is invalid.");
     }
@@ -174,8 +172,6 @@ function encryptLmSecretText($sText, $sKey) {
 }
 
 function decryptLmSecretText($sText, $sKey) {
-    $sText = (string)$sText;
-    $sKey = (string)$sKey;
     if ($sText == "") {
         return "";
     }
@@ -264,14 +260,14 @@ function requireLmEncryptionSessionKey($oPdo, $blJsonResponse) {
 }
 
 function unlockLmEncryptionFromPostedHash($oPdo) {
-    $sLmEncryptionHash = trim((string)getPostedValue("lm_encryption_hash"));
+    $sLmEncryptionHash = trim(getPostedValue("lm_encryption_hash"));
     $sLmEncryptionKey = deriveLmEncryptionKey($sLmEncryptionHash);
     if (getLmEncryptionVerifier($oPdo) != "") {
         if (!verifyLmEncryptionKey($oPdo, $sLmEncryptionKey)) {
             throw new RuntimeException("Encryption hash is invalid.");
         }
     } else {
-        if (!hash_equals($sLmEncryptionHash, trim((string)getPostedValue("lm_encryption_hash_confirm")))) {
+        if (!hash_equals($sLmEncryptionHash, trim(getPostedValue("lm_encryption_hash_confirm")))) {
             throw new RuntimeException("Hash confirmation does not match.");
         }
         saveLmEncryptionVerifier($oPdo, $sLmEncryptionKey);
@@ -292,7 +288,7 @@ function menuAdminPathIsValid($sPath) {
 }
 
 function menuAdminTargetIsValid($sTarget) {
-    $sTarget = trim((string)$sTarget);
+    $sTarget = trim($sTarget);
     return $sTarget == "" || preg_match("/^(_blank|_self|_parent|_top|[A-Za-z][A-Za-z0-9_\\-]*)$/", $sTarget);
 }
 
@@ -489,7 +485,7 @@ function menuAdminFetchRows($oPdo, $iMenuId = 0) {
             "id" => (int)$aRow["id"],
             "path" => $sPath,
             "icon" => $aRow["icon"] === null ? null : (string)$aRow["icon"],
-            "name" => $aRow["name"] === null ? null : (string)$aRow["name"],
+            "name" => $aRow["name"] === null ? null : $aRow["name"],
             "title" => $aRow["title"] === null ? null : (string)$aRow["title"],
             "target" => $aRow["target"] === null ? null : (string)$aRow["target"],
             "is_active" => (int)$aRow["is_active"],
@@ -744,21 +740,9 @@ function menuAdminCreateOrUpdate($oPdo, $iMenuId) {
     }
 }
 
-function businessHoursDayLabels() {
-    return array(
-        "mon" => "Mon",
-        "tue" => "Tue",
-        "wed" => "Wed",
-        "thu" => "Thu",
-        "fri" => "Fri",
-        "sat" => "Sat",
-        "sun" => "Sun"
-    );
-}
-
 function businessHoursDefaultHours() {
     $aHours = array();
-    foreach (businessHoursDayLabels() as $sDay => $sLabel) {
+    foreach (array("mon", "tue", "wed", "thu", "fri", "sat", "sun") as $sDay) {
         $aHours[$sDay] = array(
             "closed" => $sDay == "sat" || $sDay == "sun" ? 1 : 0,
             "open" => $sDay == "sat" || $sDay == "sun" ? "" : "08:00",
@@ -771,7 +755,7 @@ function businessHoursDefaultHours() {
 }
 
 function businessHoursNormalizeTime($sValue) {
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     if ($sValue == "") {
         return "";
     }
@@ -795,7 +779,7 @@ function businessHoursNormalizeTime($sValue) {
 }
 
 function businessHoursTimeToMinutes($sValue) {
-    $aParts = explode(":", (string)$sValue);
+    $aParts = explode(":", $sValue);
     return ((int)$aParts[0] * 60) + (int)$aParts[1];
 }
 
@@ -857,8 +841,8 @@ function businessHoursReadPostedDay($sDay, $sLabel) {
 
 function businessHoursReadPostedHoursJson() {
     $aHours = array();
-    foreach (businessHoursDayLabels() as $sDay => $sLabel) {
-        $aHours[$sDay] = businessHoursReadPostedDay($sDay, $sLabel);
+    foreach (array("mon", "tue", "wed", "thu", "fri", "sat", "sun") as $sDay) {
+        $aHours[$sDay] = businessHoursReadPostedDay($sDay, ucfirst($sDay));
     }
     $sJson = json_encode($aHours);
     if ($sJson === false) {
@@ -869,7 +853,7 @@ function businessHoursReadPostedHoursJson() {
 
 function businessHoursNormalizeHours($sJson) {
     $aDefaults = businessHoursDefaultHours();
-    $aData = json_decode((string)$sJson, true);
+    $aData = json_decode($sJson, true);
     if (!is_array($aData)) {
         return $aDefaults;
     }
@@ -900,7 +884,7 @@ function businessHoursEncodeHours($aHours) {
 }
 
 function businessHoursFetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
-    $sTerm = trim((string)$sTerm);
+    $sTerm = trim($sTerm);
     if ($sTerm == "") {
         return array();
     }
@@ -920,7 +904,7 @@ function businessHoursFetchSubjectExactMatches($oPdo, $sTerm, $iLimit = 2) {
 }
 
 function businessHoursFetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
-    $sTerm = trim((string)$sTerm);
+    $sTerm = trim($sTerm);
     if (strlen($sTerm) < 3) {
         return array();
     }
@@ -941,13 +925,13 @@ function businessHoursFetchSubjectSuggestions($oPdo, $sTerm, $iLimit = 12) {
 }
 
 function businessHoursFetchSingleSubjectInputRow($oPdo, $sTerm) {
-    $sTerm = trim((string)$sTerm);
+    $sTerm = trim($sTerm);
     if ($sTerm == "") {
         return null;
     }
     if (preg_match('/^(.*) \(#([1-9][0-9]*)\)$/', $sTerm, $aMatches)) {
         $aRow = fetchSubjectNameRow($oPdo, (int)$aMatches[2]);
-        if ($aRow && (string)$aRow["subject_name"] == trim((string)$aMatches[1])) {
+        if ($aRow && $aRow["subject_name"] == trim($aMatches[1])) {
             return $aRow;
         }
         return null;
@@ -1014,7 +998,7 @@ function businessHoursFetchAddressRows($oPdo, $iSubjectId, $iAddressId = 0, $sTe
         $aParams["address_id"] = (int)$iAddressId;
     }
     $oStatement->execute($aParams);
-    $sTerm = trim((string)$sTerm);
+    $sTerm = trim($sTerm);
     $iLimit = (int)$iLimit;
     if ($iLimit < 1) {
         $iLimit = 30;
@@ -1039,13 +1023,13 @@ function businessHoursFetchAddressRow($oPdo, $iSubjectId, $iAddressId) {
 }
 
 function businessHoursFetchSingleAddressInputRow($oPdo, $iSubjectId, $sTerm) {
-    $sTerm = trim((string)$sTerm);
+    $sTerm = trim($sTerm);
     if ((int)$iSubjectId < 1 || $sTerm == "") {
         return null;
     }
     if (preg_match('/^(.*) \(#([1-9][0-9]*)\)$/', $sTerm, $aMatches)) {
         $aRow = businessHoursFetchAddressRow($oPdo, $iSubjectId, (int)$aMatches[2]);
-        if ($aRow && (string)$aRow["address_text"] == trim((string)$aMatches[1])) {
+        if ($aRow && (string)$aRow["address_text"] == trim($aMatches[1])) {
             return $aRow;
         }
         return null;
@@ -1076,7 +1060,7 @@ function businessHoursFetchRows($oPdo, $iId = 0) {
         $aAddress = array(
             "id" => (int)$aRow["address_id"],
             "subject_id" => (int)$aRow["subject_id"],
-            "address_type" => (string)$aRow["address_type"],
+            "address_type" => $aRow["address_type"],
             "organization_name" => (string)$aRow["organization_name"],
             "department_name" => (string)$aRow["department_name"],
             "care_of" => (string)$aRow["care_of"],
@@ -1100,7 +1084,7 @@ function businessHoursFetchRows($oPdo, $iId = 0) {
             "id" => (int)$aRow["id"],
             "subject_id" => (int)$aRow["subject_id"],
             "address_id" => (int)$aRow["address_id"],
-            "subject_name" => (string)$aRow["subject_name"] != "" ? (string)$aRow["subject_name"] : "Subject #" . (int)$aRow["subject_id"],
+            "subject_name" => $aRow["subject_name"] != "" ? $aRow["subject_name"] : "Subject #" . (int)$aRow["subject_id"],
             "organization_name" => trim((string)$aAddress["organization_name"]),
             "address_text" => businessHoursAddressText($aAddress),
             "address_display_text" => businessHoursAddressText($aAddress, false),
@@ -1118,7 +1102,7 @@ function businessHoursFetchRows($oPdo, $iId = 0) {
 
 function businessHoursRenderHours($aHours) {
     $blHasBreak = false;
-    foreach (businessHoursDayLabels() as $sDay => $sLabel) {
+    foreach (array("mon", "tue", "wed", "thu", "fri", "sat", "sun") as $sDay) {
         $aDay = isset($aHours[$sDay]) && is_array($aHours[$sDay]) ? $aHours[$sDay] : array();
         if (empty($aDay["closed"]) && (string)$aDay["break_start"] != "" && (string)$aDay["break_end"] != "") {
             $blHasBreak = true;
@@ -1130,22 +1114,22 @@ function businessHoursRenderHours($aHours) {
     } else {
         $sHtml = "<table class=\"business-hours-table business-hours-table-plain\"><colgroup><col class=\"business-hours-col-day\"><col class=\"business-hours-col-hours\"></colgroup><tbody>";
     }
-    foreach (businessHoursDayLabels() as $sDay => $sLabel) {
+    foreach (array("mon", "tue", "wed", "thu", "fri", "sat", "sun") as $sDay) {
         $aDay = isset($aHours[$sDay]) && is_array($aHours[$sDay]) ? $aHours[$sDay] : array();
-        $sHtml .= "<tr><th scope=\"row\">" . html($sLabel) . "</th>";
+        $sHtml .= "<tr><th scope=\"row\">" . html(ucfirst($sDay)) . "</th>";
         if (!empty($aDay["closed"])) {
             $sHtml .= "<td class=\"business-hours-closed\"" . ($blHasBreak ? " colspan=\"3\"" : "") . ">Closed</td>";
         } elseif (!$blHasBreak) {
-            $sHtml .= "<td class=\"business-hours-hours\">" . html((string)$aDay["open"]) . "&mdash;" . html((string)$aDay["close"]) . "</td>";
+            $sHtml .= "<td class=\"business-hours-hours\">" . html($aDay["open"]) . "&mdash;" . html($aDay["close"]) . "</td>";
         } else {
             if ((string)$aDay["break_start"] != "" && (string)$aDay["break_end"] != "") {
-                $sHtml .= "<td class=\"business-hours-time-range\">" . html((string)$aDay["open"]) . "&mdash;" . html((string)$aDay["break_start"]) . "</td>";
+                $sHtml .= "<td class=\"business-hours-time-range\">" . html($aDay["open"]) . "&mdash;" . html($aDay["break_start"]) . "</td>";
                 $sHtml .= "<td></td>";
-                $sHtml .= "<td class=\"business-hours-time-range business-hours-time-range-second\">" . html((string)$aDay["break_end"]) . "&mdash;" . html((string)$aDay["close"]) . "</td>";
+                $sHtml .= "<td class=\"business-hours-time-range business-hours-time-range-second\">" . html($aDay["break_end"]) . "&mdash;" . html($aDay["close"]) . "</td>";
             } else {
-                $sHtml .= "<td class=\"business-hours-time-open\">" . html((string)$aDay["open"]) . "</td>";
+                $sHtml .= "<td class=\"business-hours-time-open\">" . html($aDay["open"]) . "</td>";
                 $sHtml .= "<td class=\"business-hours-divider\">&mdash;</td>";
-                $sHtml .= "<td class=\"business-hours-time-close\">" . html((string)$aDay["close"]) . "</td>";
+                $sHtml .= "<td class=\"business-hours-time-close\">" . html($aDay["close"]) . "</td>";
             }
         }
         $sHtml .= "</tr>";
@@ -1393,7 +1377,7 @@ function dashboardServiceCheckTypeLabels() {
 }
 
 function dashboardServiceNormalizeCheckType($sValue) {
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     $aLabels = dashboardServiceCheckTypeLabels();
     return isset($aLabels[$sValue]) ? $sValue : "auto";
 }
@@ -1406,7 +1390,7 @@ function dashboardServiceMatchLabels() {
 }
 
 function dashboardServiceNormalizeMatch($sValue) {
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     $aLabels = dashboardServiceMatchLabels();
     return isset($aLabels[$sValue]) ? $sValue : "contains";
 }
@@ -1437,23 +1421,23 @@ function dashboardServiceDefaultPort($sScheme) {
         "ssh" => 22,
         "telnet" => 23
     );
-    $sScheme = strtolower((string)$sScheme);
+    $sScheme = strtolower($sScheme);
     return isset($aPorts[$sScheme]) ? (int)$aPorts[$sScheme] : 0;
 }
 
 function dashboardServiceParseEndpoint($sUrl) {
-    $aUrl = parse_url((string)$sUrl);
+    $aUrl = parse_url($sUrl);
     if (!is_array($aUrl) || !isset($aUrl["scheme"]) || !isset($aUrl["host"])) {
         return null;
     }
-    $sScheme = strtolower((string)$aUrl["scheme"]);
+    $sScheme = strtolower($aUrl["scheme"]);
     $iPort = isset($aUrl["port"]) ? (int)$aUrl["port"] : dashboardServiceDefaultPort($sScheme);
     if ($iPort < 1 || $iPort > 65535) {
         return null;
     }
     return array(
         "scheme" => $sScheme,
-        "host" => (string)$aUrl["host"],
+        "host" => $aUrl["host"],
         "port" => $iPort
     );
 }
@@ -1495,7 +1479,7 @@ function dashboardServiceFetchRows($oPdo, $iServiceId = 0) {
     while ($aRow = $oStatement->fetch()) {
         $aRows[] = array(
             "id" => (int)$aRow["id"],
-            "name" => (string)$aRow["name"],
+            "name" => $aRow["name"],
             "url" => (string)$aRow["url"],
             "check_type" => dashboardServiceNormalizeCheckType($aRow["check_type"]),
             "http_code" => (int)$aRow["http_code"],
@@ -1797,7 +1781,7 @@ function dashboardServiceFetchUrl($sUrl) {
         $sError = curl_errno($oCurl) ? curl_error($oCurl) : "";
         return array(
             "status_code" => $iStatusCode,
-            "body" => $sBody !== false ? (string)$sBody : "",
+            "body" => $sBody !== false ? $sBody : "",
             "error" => $sError
         );
     }
@@ -1820,7 +1804,7 @@ function dashboardServiceFetchUrl($sUrl) {
     $aError = error_get_last();
     return array(
         "status_code" => $iStatusCode,
-        "body" => $sBody !== false ? (string)$sBody : "",
+        "body" => $sBody !== false ? $sBody : "",
         "error" => $sBody !== false ? "" : (isset($aError["message"]) ? (string)$aError["message"] : "HTTP request failed.")
     );
 }
@@ -1886,7 +1870,7 @@ function dashboardServiceCheckStreamEndpoint($aEndpoint, $sUrl) {
         $sLine = fgets($oSocket, 512);
         $aInfo = stream_get_meta_data($oSocket);
         fclose($oSocket);
-        if (preg_match("#^RTSP/\\S+\\s+([0-9]{3})\\b#i", (string)$sLine, $aMatches)) {
+        if (preg_match("#^RTSP/\\S+\\s+([0-9]{3})\\b#i", $sLine, $aMatches)) {
             $iCode = (int)$aMatches[1];
             return array(
                 "ok" => $iCode > 0 && $iCode < 500,
@@ -2034,7 +2018,7 @@ function dashboardServiceFetchRowForUpdate($oPdo, $iServiceId) {
     while ($aRow = $oStatement->fetch()) {
         $aRows[] = array(
             "id" => (int)$aRow["id"],
-            "name" => (string)$aRow["name"],
+            "name" => $aRow["name"],
             "url" => (string)$aRow["url"],
             "check_type" => dashboardServiceNormalizeCheckType($aRow["check_type"]),
             "http_code" => (int)$aRow["http_code"],
@@ -2142,7 +2126,7 @@ function issueTrackerPriorityLabels() {
 }
 
 function issueTrackerNormalizeOption($sValue, $aLabels, $sDefault) {
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     return isset($aLabels[$sValue]) ? $sValue : $sDefault;
 }
 
@@ -2201,7 +2185,7 @@ function issueTrackerFetchRows($oPdo) {
 }
 
 function issueTrackerDueDateIsOverdue($sDueDate) {
-    $sDueDate = trim((string)$sDueDate);
+    $sDueDate = trim($sDueDate);
     if ($sDueDate == "") {
         return false;
     }
@@ -2533,7 +2517,7 @@ function phoneAccountsRenderPhoneNumber($sValue) {
 function phoneAccountsRenderTelegramAccount($sValue) {
     global $sEmptyValueEmoji, $sContactTelegramEmoji;
 
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     $sHref = normalizeTelegramContactValue($sValue);
     $sHtml = "";
     if ($sValue == "") {
@@ -2549,7 +2533,7 @@ function phoneAccountsRenderTelegramAccount($sValue) {
 function phoneAccountsRenderTextValue($sValue) {
     global $sEmptyValueEmoji;
 
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     return $sValue != "" ? html($sValue) : $sEmptyValueEmoji;
 }
 
@@ -2818,7 +2802,7 @@ function emailOverviewAccountTypeLabels() {
 }
 
 function emailOverviewNormalizeAccountType($sValue) {
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     $aLabels = emailOverviewAccountTypeLabels();
     return isset($aLabels[$sValue]) ? $sValue : "mailbox";
 }
@@ -2840,7 +2824,7 @@ function emailOverviewSaveAccountType() {
 }
 
 function emailOverviewNormalizeLocalPart($sValue) {
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     if ($sValue == "") {
         return "";
     }
@@ -2858,7 +2842,7 @@ function emailOverviewNormalizeLocalPart($sValue) {
 }
 
 function emailOverviewAppendLocalPart(&$aLocalParts, &$aSeenLocalParts, &$aInvalidTokens, $sToken) {
-    $sToken = trim((string)$sToken);
+    $sToken = trim($sToken);
     if ($sToken == "") {
         return;
     }
@@ -2877,7 +2861,6 @@ function emailOverviewParseLocalParts($sValue) {
     $aLocalParts = array();
     $aSeenLocalParts = array();
     $aInvalidTokens = array();
-    $sValue = (string)$sValue;
     $aLines = preg_split("/\r\n|\r|\n/", $sValue);
     $aNonEmptyLines = array();
 
@@ -3031,7 +3014,7 @@ function emailOverviewCreateDomain($oPdo) {
 }
 
 function domainLookupNormalizeDomain($sValue) {
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     if ($sValue == "") {
         return "";
     }
@@ -3061,7 +3044,7 @@ function domainLookupNormalizeDomain($sValue) {
 }
 
 function domainLookupNormalizeValue($sValue) {
-    $sValue = trim((string)$sValue);
+    $sValue = trim($sValue);
     if ($sValue == "") {
         return "";
     }
@@ -3090,7 +3073,7 @@ function domainLookupNormalizeValue($sValue) {
 }
 
 function domainLookupIpAddressIsValid($sValue) {
-    return filter_var(trim((string)$sValue), FILTER_VALIDATE_IP) !== false;
+    return filter_var(trim($sValue), FILTER_VALIDATE_IP) !== false;
 }
 
 function domainLookupSupportedTlds() {
@@ -3172,7 +3155,7 @@ function domainLookupSupportedTlds() {
 }
 
 function domainLookupDomainShapeIsValid($sDomain) {
-    $sDomain = trim((string)$sDomain);
+    $sDomain = trim($sDomain);
     if ($sDomain == "" || strlen($sDomain) > 253 || strpos($sDomain, ".") === false) {
         return false;
     }
@@ -3189,11 +3172,11 @@ function domainLookupDomainShapeIsValid($sDomain) {
 }
 
 function domainLookupDomainTldIsSupported($sDomain) {
-    $iPosition = strrpos((string)$sDomain, ".");
+    $iPosition = strrpos($sDomain, ".");
     if ($iPosition === false) {
         return false;
     }
-    $sTld = substr((string)$sDomain, $iPosition + 1);
+    $sTld = substr($sDomain, $iPosition + 1);
     $aSupportedTlds = domainLookupSupportedTlds();
     return isset($aSupportedTlds[$sTld]);
 }
@@ -3470,11 +3453,11 @@ function domainLookupExtractApiErrorMessage($aData, $iHttpCode) {
             if (is_array($mDetailValue)) {
                 foreach ($mDetailValue as $mDetailLine) {
                     if (is_scalar($mDetailLine) && (string)$mDetailLine != "") {
-                        return (string)$sDetailName . ": " . (string)$mDetailLine;
+                        return $sDetailName . ": " . (string)$mDetailLine;
                     }
                 }
             } elseif (is_scalar($mDetailValue) && (string)$mDetailValue != "") {
-                return (string)$sDetailName . ": " . (string)$mDetailValue;
+                return $sDetailName . ": " . (string)$mDetailValue;
             }
         }
     }
@@ -3506,10 +3489,10 @@ function domainLookupExtractApiErrorMessage($aData, $iHttpCode) {
 function domainLookupBuildErrorResult($sDomain, $sMessage, $sRawResponse = "", $iHttpCode = null, $iCurlErrno = null, $sCurlError = null) {
     $aResult = domainLookupEmptyResult($sDomain);
     $aResult["message"] = $sMessage;
-    $aResult["raw_response"] = (string)$sRawResponse;
+    $aResult["raw_response"] = $sRawResponse;
     $aResult["http_code"] = $iHttpCode === null ? null : (int)$iHttpCode;
     $aResult["curl_errno"] = $iCurlErrno === null ? null : (int)$iCurlErrno;
-    $aResult["curl_error"] = $sCurlError === null ? null : (string)$sCurlError;
+    $aResult["curl_error"] = $sCurlError === null ? null : $sCurlError;
     return $aResult;
 }
 
@@ -3569,7 +3552,7 @@ function domainLookupCallIpApi($sIpAddress, $sApiKey) {
     if (!function_exists("curl_init")) {
         return domainLookupBuildErrorResult($sIpAddress, "PHP cURL extension is not available.");
     }
-    if (trim((string)$sApiKey) == "") {
+    if (trim($sApiKey) == "") {
         return domainLookupBuildErrorResult($sIpAddress, "API key is missing.");
     }
     $oCurl = curl_init();
@@ -3664,7 +3647,6 @@ function domainLookupDisableDnsLookup($oPdo, $sDomain) {
 }
 
 function domainLookupRenderStoredList($sJson) {
-    $sJson = (string)$sJson;
     if ($sJson == "") {
         return "";
     }
@@ -3806,7 +3788,7 @@ function domainLookupKnownWhoisFields() {
 }
 
 function domainLookupWhoisFieldLabel($sName) {
-    $sLabel = ucwords(str_replace("_", " ", (string)$sName));
+    $sLabel = ucwords(str_replace("_", " ", $sName));
     return strtr($sLabel, array(
         "DNSSEC" => "DNSSEC",
         "Dnssec" => "DNSSEC",
@@ -3901,10 +3883,10 @@ function aresLookupBuildErrorResult($sMessage, $sRawResponse = "", $iHttpCode = 
         "success" => false,
         "message" => $sMessage,
         "data" => null,
-        "raw_response" => (string)$sRawResponse,
+        "raw_response" => $sRawResponse,
         "http_code" => $iHttpCode === null ? null : (int)$iHttpCode,
         "curl_errno" => $iCurlErrno === null ? null : (int)$iCurlErrno,
-        "curl_error" => $sCurlError === null ? null : (string)$sCurlError
+        "curl_error" => $sCurlError === null ? null : $sCurlError
     );
 }
 
@@ -3998,7 +3980,7 @@ function aresLookupTextValue($mValue) {
 }
 
 function aresLookupFieldLabel($sName) {
-    $sLabel = preg_replace("/([a-z])([A-Z])/", "$1 $2", (string)$sName);
+    $sLabel = preg_replace("/([a-z])([A-Z])/", "$1 $2", $sName);
     $sLabel = ucwords(str_replace("_", " ", $sLabel));
     return strtr($sLabel, array(
         "Ico" => "Company ID",

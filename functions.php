@@ -57,7 +57,6 @@ function parseInputDateTimeFromParts($iYear, $iMonth, $iDay, $iHour = 0, $iMinut
 }
 
 function parseInputCompactTime($sDigits) {
-    $sDigits = (string)$sDigits;
     if (!preg_match("/^[0-9]{4}([0-9]{2})?$/", $sDigits)) {
         return null;
     }
@@ -69,7 +68,6 @@ function parseInputCompactTime($sDigits) {
 }
 
 function parseInputCompactDateTime($sDigits) {
-    $sDigits = (string)$sDigits;
     if (!preg_match("/^[0-9]{8}([0-9]{4}([0-9]{2})?)?$/", $sDigits)) {
         return null;
     }
@@ -81,8 +79,8 @@ function parseInputCompactDateTime($sDigits) {
 }
 
 function parseInputDateTimeNumeric($sValue) {
-    $sNormalized = trim(preg_replace("/[^0-9]+/", " ", (string)$sValue));
-    $sDigits = preg_replace("/[^0-9]+/", "", (string)$sValue);
+    $sNormalized = trim(preg_replace("/[^0-9]+/", " ", $sValue));
+    $sDigits = preg_replace("/[^0-9]+/", "", $sValue);
     $aParts = $sNormalized == "" ? array() : preg_split("/ +/", $sNormalized);
     $iHour = 0;
     $iMinute = 0;
@@ -210,7 +208,7 @@ function normalizeInputDateTimeForDatabase($mValue) {
 }
 
 function normalizeCurrency($sCurrency) {
-    $sCurrency = strtoupper(trim((string)$sCurrency));
+    $sCurrency = strtoupper(trim($sCurrency));
     return preg_match("/^[A-Z]{3}$/", $sCurrency) ? $sCurrency : "";
 }
 
@@ -233,7 +231,7 @@ function getCurrencyOptions($oPdo, $sSelectedCurrency = "") {
             if ($sCurrency == "") {
                 continue;
             }
-            $sCurrencyName = trim((string)$aRow["currency_name"]);
+            $sCurrencyName = trim($aRow["currency_name"]);
             $aCurrencies[$sCurrency] = array(
                 "currency" => $sCurrency,
                 "label" => $sCurrencyName != "" ? $sCurrency . $sCurrencySeparator . $sCurrencyName : $sCurrency
@@ -270,7 +268,7 @@ function isCurrencyAvailable($oPdo, $sCurrency) {
 
 function parseAmount($sValue) {
     $sMinus = html_entity_decode("&#8722;", ENT_QUOTES, "UTF-8");
-    $sValue = str_replace(array(" ", "\xc2\xa0", $sMinus), array("", "", "-"), trim((string)$sValue));
+    $sValue = str_replace(array(" ", "\xc2\xa0", $sMinus), array("", "", "-"), trim($sValue));
     $iCommaPosition = strrpos($sValue, ",");
     $iDotPosition = strrpos($sValue, ".");
     if ($iCommaPosition !== false && $iDotPosition !== false) {
@@ -298,7 +296,7 @@ function getHttpStatusCode($aHeaders) {
     $iStatusCode = 0;
     if ($aHeaders) {
         foreach ($aHeaders as $sHeader) {
-            if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", (string)$sHeader, $aMatches)) {
+            if (preg_match("#^HTTP/\\S+\\s+([0-9]{3})\\b#i", $sHeader, $aMatches)) {
                 $iStatusCode = (int)$aMatches[1];
             }
         }
@@ -438,7 +436,7 @@ function sendEvedUaFingerprintResponse($oPdo) {
 }
 
 function formatUaCountryFlag($sCountryCode) {
-    $sCountryCode = strtoupper(trim((string)$sCountryCode));
+    $sCountryCode = strtoupper(trim($sCountryCode));
     if (strlen($sCountryCode) != 2 || !ctype_alpha($sCountryCode)) {
         return "";
     }
@@ -446,7 +444,7 @@ function formatUaCountryFlag($sCountryCode) {
 }
 
 function formatUaUserAgent($sUserAgent) {
-    $sUserAgent = trim((string)$sUserAgent);
+    $sUserAgent = trim($sUserAgent);
     $sBrowser = "Unknown browser";
     $sOperatingSystem = "Unknown operating system";
     $sArchitecture = "";
@@ -492,7 +490,7 @@ function formatUaUserAgent($sUserAgent) {
 }
 
 function formatUaGpu($sGpuInfo) {
-    $sGpuInfo = trim((string)$sGpuInfo);
+    $sGpuInfo = trim($sGpuInfo);
     if ($sGpuInfo == "") {
         return "";
     }
@@ -569,7 +567,6 @@ function sendPageHeaders($sStyleNonce = "", $sContentLanguage = "en-US") {
     header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0", true);
     header("Cache-Control: post-check=0, pre-check=0", false);
     header("Pragma: no-cache", true);
-    header("X-UA-Compatible: IE=edge", true);
     header("X-Robots-Tag: noindex, nofollow", true);
     sendSecurityHeaders($sStyleNonce);
     return $iTime;
@@ -886,7 +883,7 @@ function send500AndExit($sMessage) {
         . "<h1>Internal Server Error</h1>\n"
         . "<p>" . html($sMessage) . "</p>\n"
         . "</body></html>\n";
-    error_log("500 Internal Server Error: " . (string)$sMessage . " [" . $_SERVER["REQUEST_METHOD"] . " " . $_SERVER["REQUEST_URI"] . "]");
+    error_log("500 Internal Server Error: " . $sMessage . " [" . $_SERVER["REQUEST_METHOD"] . " " . $_SERVER["REQUEST_URI"] . "]");
     http_response_code(500);
     header("Content-Type: text/html; charset=utf-8", true);
     header("Content-Language: en-US", true);
@@ -965,7 +962,7 @@ function renderMenu() {
 }
 
 function normalizeMenuPath($sPath) {
-    $sPath = str_replace("\\", "/", trim((string)$sPath));
+    $sPath = str_replace("\\", "/", trim($sPath));
     $sPath = preg_replace("#/+#", "/", $sPath);
     $sPath = preg_replace("#^/+#", "", $sPath);
     return $sPath;
@@ -1015,7 +1012,7 @@ function getMenuItemsFromDatabase($oPdo, $blOnlyActive = true) {
         if (!$blSeparator && (strpos($sRelativePath, "..") !== false || preg_match("#(^|/)\\.#", $sRelativePath) || preg_match("#[^A-Za-z0-9/_\\.\\-]#", $sRelativePath))) {
             continue;
         }
-        $sName = $blSeparator ? "" : trim((string)$aRow["name"]);
+        $sName = $blSeparator ? "" : trim($aRow["name"]);
         if (!$blSeparator && $sName == "") {
             $sName = $sRelativePath;
         }
@@ -1035,7 +1032,7 @@ function getMenuItemsFromDatabase($oPdo, $blOnlyActive = true) {
 }
 
 function getQuickTableFilterId($sFilterId) {
-    $sFilterId = trim((string)$sFilterId);
+    $sFilterId = trim($sFilterId);
     $sFilterId = preg_replace("/[^A-Za-z0-9_\\-]/", "", $sFilterId);
     if ($sFilterId == "") {
         $sFilterId = "table-filter";
@@ -1077,7 +1074,7 @@ function handleQuickTableFilterRequest() {
         if (!isset($_SESSION["quick_table_filters"][$sScriptName]) || !is_array($_SESSION["quick_table_filters"][$sScriptName])) {
             $_SESSION["quick_table_filters"][$sScriptName] = array();
         }
-        $_SESSION["quick_table_filters"][$sScriptName][$sFilterId] = (string)$sValue;
+        $_SESSION["quick_table_filters"][$sScriptName][$sFilterId] = $sValue;
         session_write_close();
         sendJsonAndExit(array("success" => true));
     } elseif ($sAction == "reset") {
@@ -1096,7 +1093,7 @@ function handleQuickTableFilterRequest() {
 }
 
 function getAdminAutoRefreshId($sControlId) {
-    $sControlId = trim((string)$sControlId);
+    $sControlId = trim($sControlId);
     $sControlId = preg_replace("/[^A-Za-z0-9_\\-]/", "", $sControlId);
     if ($sControlId == "") {
         $sControlId = "auto-refresh";
@@ -1181,7 +1178,7 @@ function fetchUserEffectivePermissions($oPdo, $iUserId, $iSubjectId) {
         "subject_id" => $iSubjectId
     ));
     while ($sPermissionKey = $oStatement->fetchColumn()) {
-        $aPermissions[(string)$sPermissionKey] = true;
+        $aPermissions[$sPermissionKey] = true;
     }
     return $aPermissions;
 }
@@ -1207,7 +1204,7 @@ function setAuthSession($aUser, $aPermissions) {
     $_SESSION["auth"] = true;
     $_SESSION["auth_user_id"] = (int)$aUser["id"];
     $_SESSION["auth_subject_id"] = (int)$aUser["subject_id"];
-    $_SESSION["auth_user"] = (string)$aUser["user_name"];
+    $_SESSION["auth_user"] = $aUser["user_name"];
     $_SESSION["permissions"] = $aPermissions;
     $_SESSION["auth_time"] = time();
 }
@@ -1256,7 +1253,7 @@ function refreshAuthSession() {
     }
     try {
         $aUser = fetchPortalSessionUser($oPdo, (int)$_SESSION["auth_user_id"]);
-        if (!$aUser || (int)$aUser["is_active"] != 1 || (int)$aUser["subject_active"] != 1 || !in_array((string)$aUser["subject_type"], array("person", "service"), true)) {
+        if (!$aUser || (int)$aUser["is_active"] != 1 || (int)$aUser["subject_active"] != 1 || !in_array($aUser["subject_type"], array("person", "service"), true)) {
             clearAuthSession();
             return false;
         }
@@ -1299,8 +1296,8 @@ function getPageTitleText() {
         $oStatement = $oPdo->prepare("SELECT name FROM fs_menu WHERE path = :path AND icon IS NOT NULL AND name IS NOT NULL AND is_active = 1 ORDER BY `order` ASC, id ASC LIMIT 1");
         $oStatement->execute(array("path" => getCurrentMenuPath()));
         $sMenuName = $oStatement->fetchColumn();
-        if ($sMenuName !== false && trim((string)$sMenuName) != "") {
-            $sTitle = trim((string)$sMenuName);
+        if ($sMenuName !== false && trim($sMenuName) != "") {
+            $sTitle = trim($sMenuName);
         }
     } catch (Exception $oException) {
         error_log((string)$oException);
@@ -1427,7 +1424,6 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "<html lang=\"en-US\" dir=\"ltr\">\n",
         "<head>\n",
         "  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n",
-        "  <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n",
         "  <meta name=\"author\" content=\"Petr Červinka &lt;cervinka@fortsoft.cz&gt;\">\n",
         "  <meta name=\"contact\" content=\"cervinka@fortsoft.cz\">\n",
         "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n",
@@ -1435,27 +1431,27 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "  <link rel=\"shortcut icon\" href=\"" . $sBaseUrl . "favicon.ico\" type=\"image/x-icon\">\n",
         "  <title>Sign In</title>\n",
         "  <meta name=\"date\" content=\"" . gmdate("D, d M Y H:i:s", $iTime) . " GMT\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin.css")) . "\" rel=\"stylesheet\" type=\"text/css\" title=\"Original\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-graphite.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-graphite.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Graphite\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-midnight.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-midnight.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Midnight\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-slate.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-slate.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Slate\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-sepia.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-sepia.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Sepia\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-sand.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-sand.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Sand\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-forest.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-forest.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Forest\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-moss.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-moss.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Moss\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-ocean.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-ocean.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Ocean\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-ice.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-ice.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Ice\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-lavender.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-lavender.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Lavender\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-rose.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-rose.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Rose\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-copper.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-copper.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Copper\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-burgundy.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-burgundy.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Burgundy\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-monochrome.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-monochrome.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Monochrome\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-high-contrast.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-high-contrast.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"High Contrast\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-soft.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-soft.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Soft\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-paper.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-paper.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Paper\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-terminal.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-terminal.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Terminal\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-cobalt.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-cobalt.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Cobalt\">\n",
-        "  <link href=\"" . $sBaseUrl . "css/admin-plum.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/admin-plum.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Plum\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style.css")) . "\" rel=\"stylesheet\" type=\"text/css\" title=\"Original\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-graphite.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-graphite.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Graphite\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-midnight.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-midnight.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Midnight\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-slate.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-slate.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Slate\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-sepia.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-sepia.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Sepia\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-sand.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-sand.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Sand\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-forest.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-forest.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Forest\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-moss.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-moss.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Moss\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-ocean.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-ocean.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Ocean\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-ice.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-ice.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Ice\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-lavender.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-lavender.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Lavender\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-rose.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-rose.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Rose\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-copper.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-copper.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Copper\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-burgundy.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-burgundy.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Burgundy\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-monochrome.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-monochrome.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Monochrome\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-high-contrast.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-high-contrast.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"High Contrast\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-soft.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-soft.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Soft\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-paper.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-paper.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Paper\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-terminal.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-terminal.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Terminal\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-cobalt.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-cobalt.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Cobalt\">\n",
+        "  <link href=\"" . $sBaseUrl . "css/style-plum.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-plum.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Plum\">\n",
         "  <script type=\"text/javascript\" src=\"/js/style.js?sToken=" . dechex(filemtime(__DIR__ . "/js/style.js")) . "\"></script>\n",
         "</head>\n",
         "<body class=\"login-page\">\n",
@@ -1505,8 +1501,8 @@ function handleLoginPost($sTokenName) {
     $blValidLogin = $aUser
         && (int)$aUser["is_active"] == 1
         && (int)$aUser["subject_active"] == 1
-        && in_array((string)$aUser["subject_type"], array("person", "service"), true)
-        && password_verify($sPassword, (string)$aUser["password_hash"]);
+        && in_array($aUser["subject_type"], array("person", "service"), true)
+        && password_verify($sPassword, $aUser["password_hash"]);
     if ($blValidLogin) {
         $aPermissions = fetchUserEffectivePermissions($oPdo, (int)$aUser["id"], (int)$aUser["subject_id"]);
     }
@@ -1647,12 +1643,12 @@ function renderEmojiData() {
 }
 
 function isShortNoBreakWord($sWord, $iMaxLength = 3) {
-    $sLetters = preg_replace('/[^\p{L}\p{N}]+/u', '', (string)$sWord);
+    $sLetters = preg_replace('/[^\p{L}\p{N}]+/u', '', $sWord);
     return $sLetters != "" && preg_match('/^[\p{L}\p{N}]{1,' . (int)$iMaxLength . '}$/u', $sLetters);
 }
 
 function htmlNoShortWordBreaks($sText, $iMaxLength = 3) {
-    $aLines = preg_split('/(\r\n|\r|\n)/', (string)$sText, -1, PREG_SPLIT_DELIM_CAPTURE);
+    $aLines = preg_split('/(\r\n|\r|\n)/', $sText, -1, PREG_SPLIT_DELIM_CAPTURE);
     $sHtml = "";
     $iLine;
     $iLineCount = is_array($aLines) ? count($aLines) : 0;
@@ -1684,7 +1680,7 @@ function htmlNoShortWordBreaks($sText, $iMaxLength = 3) {
 }
 
 function htmlTooltip($sText) {
-    $sText = str_replace(array(" - ", " \xe2\x80\x93 "), " \xe2\x80\x94 ", (string)$sText);
+    $sText = str_replace(array(" - ", " \xe2\x80\x93 "), " \xe2\x80\x94 ", $sText);
     $sText = preg_replace_callback('/(^|\r\n|\r|\n)([ \t]*(?:[0-9]{1,2}:[0-9]{2}(?::[0-9]{2})?[ \t]+)?)(\p{L})/u', function ($aMatches) {
         $sFirst = strtoupper($aMatches[3]);
         $sFirst = strtr($sFirst, array(
@@ -1760,11 +1756,11 @@ function phoneContactTypes() {
 
 function isPhoneContactType($sContactType) {
     $aPhoneTypes = phoneContactTypes();
-    return isset($aPhoneTypes[(string)$sContactType]);
+    return isset($aPhoneTypes[$sContactType]);
 }
 
 function phoneMetadataRegex($sPattern) {
-    return preg_replace("/\\s+/", "", trim((string)$sPattern));
+    return preg_replace("/\\s+/", "", trim($sPattern));
 }
 
 function phonePatternMatches($sPattern, $sValue, $blFullMatch = true, &$aMatches = null) {
@@ -1774,7 +1770,7 @@ function phonePatternMatches($sPattern, $sValue, $blFullMatch = true, &$aMatches
         return false;
     }
     $sRegex = $blFullMatch ? "~^(?:" . str_replace("~", "\\~", $sPattern) . ")$~" : "~^(?:" . str_replace("~", "\\~", $sPattern) . ")~";
-    return @preg_match($sRegex, (string)$sValue, $aMatches);
+    return @preg_match($sRegex, $sValue, $aMatches);
 }
 
 function phoneMetadata() {
@@ -1790,7 +1786,7 @@ function phoneMetadata() {
     $sFile = __DIR__ . "/ex/lib/phone_metadata.xml";
     $blPreviousLibxmlState = libxml_use_internal_errors(true);
     $sXml = is_file($sFile) ? file_get_contents($sFile) : "";
-    $sXml = preg_replace("/^\\xEF\\xBB\\xBF/", "", (string)$sXml);
+    $sXml = preg_replace("/^\\xEF\\xBB\\xBF/", "", $sXml);
     $oXml = $sXml != "" ? simplexml_load_string($sXml) : false;
     libxml_clear_errors();
     libxml_use_internal_errors($blPreviousLibxmlState);
@@ -1833,13 +1829,13 @@ function phoneMetadata() {
 
 function findPhoneTerritory($sDigits) {
     $aMetadata = phoneMetadata();
-    $iMaxCountryCodeLength = min(3, strlen((string)$sDigits) - 1);
+    $iMaxCountryCodeLength = min(3, strlen($sDigits) - 1);
     for ($iLength = $iMaxCountryCodeLength; $iLength >= 1; $iLength--) {
-        $sCountryCode = substr((string)$sDigits, 0, $iLength);
+        $sCountryCode = substr($sDigits, 0, $iLength);
         if (!isset($aMetadata["codes"][$sCountryCode])) {
             continue;
         }
-        $sNationalNumber = substr((string)$sDigits, $iLength);
+        $sNationalNumber = substr($sDigits, $iLength);
         foreach ($aMetadata["codes"][$sCountryCode] as $aTerritory) {
             $aNationalNumbers = array($sNationalNumber);
             if ($aTerritory["national_prefix"] != "" && strpos($sNationalNumber, (string)$aTerritory["national_prefix"]) === 0) {
@@ -1866,10 +1862,10 @@ function findPhoneTerritory($sDigits) {
 function phoneDefaultFormats($sCountryCode) {
     $aMetadata = phoneMetadata();
     $aFallbackFormats = array();
-    if (!isset($aMetadata["codes"][(string)$sCountryCode])) {
+    if (!isset($aMetadata["codes"][$sCountryCode])) {
         return array();
     }
-    foreach ($aMetadata["codes"][(string)$sCountryCode] as $aTerritory) {
+    foreach ($aMetadata["codes"][$sCountryCode] as $aTerritory) {
         if (count($aTerritory["formats"]) > 0 && !empty($aTerritory["main"])) {
             return $aTerritory["formats"];
         }
@@ -1882,7 +1878,7 @@ function phoneDefaultFormats($sCountryCode) {
 
 function applyPhoneNumberFormat($sPattern, $sFormat, $sNationalNumber) {
     $aMatches = array();
-    $sFormatted = (string)$sFormat;
+    $sFormatted = $sFormat;
     if ($sFormatted == "" || !phonePatternMatches($sPattern, $sNationalNumber, true, $aMatches)) {
         return "";
     }
@@ -1899,16 +1895,16 @@ function formatPhoneContactDisplayValue($sCountryCode, $sNationalNumber, $aTerri
         if (count($aLeadingDigits) > 0 && !phonePatternMatches($aLeadingDigits[count($aLeadingDigits) - 1], $sNationalNumber, false)) {
             continue;
         }
-        $sFormatted = applyPhoneNumberFormat((string)$aFormat["pattern"], (string)$aFormat["format"], $sNationalNumber);
+        $sFormatted = applyPhoneNumberFormat($aFormat["pattern"], $aFormat["format"], $sNationalNumber);
         if ($sFormatted != "") {
-            return "+" . (string)$sCountryCode . " " . $sFormatted;
+            return "+" . $sCountryCode . " " . $sFormatted;
         }
     }
-    return "+" . (string)$sCountryCode . " " . (string)$sNationalNumber;
+    return "+" . $sCountryCode . " " . $sNationalNumber;
 }
 
 function analyzePhoneContactValue($sValue) {
-    $sText = trim((string)$sValue);
+    $sText = trim($sValue);
     $sDigits = "";
     $aPhone = array();
     if ($sText == "") {
@@ -1935,8 +1931,8 @@ function analyzePhoneContactValue($sValue) {
     }
     return array(
         "valid" => true,
-        "canonical" => "+" . (string)$aPhone["country_code"] . "." . (string)$aPhone["national_number"],
-        "display" => formatPhoneContactDisplayValue((string)$aPhone["country_code"], (string)$aPhone["national_number"], $aPhone["territory"])
+        "canonical" => "+" . $aPhone["country_code"] . "." . $aPhone["national_number"],
+        "display" => formatPhoneContactDisplayValue($aPhone["country_code"], $aPhone["national_number"], $aPhone["territory"])
     );
 }
 
@@ -1945,24 +1941,24 @@ function normalizePhoneContactValue($sValue) {
     if (empty($aPhone["valid"])) {
         return false;
     }
-    if (strpos((string)$aPhone["canonical"], "00") === 0) {
-        return "+" . substr((string)$aPhone["canonical"], 2);
+    if (strpos($aPhone["canonical"], "00") === 0) {
+        return "+" . substr($aPhone["canonical"], 2);
     }
-    return (string)$aPhone["canonical"];
+    return $aPhone["canonical"];
 }
 
 function phoneContactDisplayValue($sValue) {
     $aPhone = analyzePhoneContactValue($sValue);
-    return !empty($aPhone["valid"]) ? (string)$aPhone["display"] : (string)$sValue;
+    return !empty($aPhone["valid"]) ? $aPhone["display"] : $sValue;
 }
 
 function phoneContactHref($sValue) {
     $aPhone = analyzePhoneContactValue($sValue);
-    return !empty($aPhone["valid"]) && $aPhone["canonical"] != "" ? "tel:" . str_replace(".", "", (string)$aPhone["canonical"]) : "";
+    return !empty($aPhone["valid"]) && $aPhone["canonical"] != "" ? "tel:" . str_replace(".", "", $aPhone["canonical"]) : "";
 }
 
 function telegramContactHost($sHost) {
-    $sHost = strtolower(preg_replace("/^www\\./", "", (string)$sHost));
+    $sHost = strtolower(preg_replace("/^www\\./", "", $sHost));
     if ($sHost == "t.me" || $sHost == "telegram.me" || $sHost == "telegram.dog") {
         return $sHost;
     }
@@ -1970,7 +1966,7 @@ function telegramContactHost($sHost) {
 }
 
 function telegramInviteToken($sValue, $blRequireMarker = false) {
-    $sText = rawurldecode((string)$sValue);
+    $sText = rawurldecode($sValue);
     $blMarked = false;
     if (substr($sText, 0, 1) == "+") {
         $sText = substr($sText, 1);
@@ -1990,7 +1986,7 @@ function telegramInviteToken($sValue, $blRequireMarker = false) {
 }
 
 function telegramSlug($sValue) {
-    $sText = trim(rawurldecode((string)$sValue));
+    $sText = trim(rawurldecode($sValue));
     if (!preg_match("/^[A-Za-z0-9_]{1,128}$/", $sText)) {
         return false;
     }
@@ -1999,7 +1995,7 @@ function telegramSlug($sValue) {
 
 function normalizeTelegramContactPath($sHost, $sPath) {
     $sHost = telegramContactHost($sHost);
-    $sPath = trim((string)$sPath, "/");
+    $sPath = trim($sPath, "/");
     $aSegments = !$sPath ? array() : explode("/", $sPath);
     $sHandle = "";
     $sKind = "";
@@ -2031,7 +2027,7 @@ function normalizeTelegramContactPath($sHost, $sPath) {
 }
 
 function normalizeTelegramContactValue($sValue) {
-    $sRawText = (string)$sValue;
+    $sRawText = $sValue;
     $sText = trim($sRawText);
     $aParts = array();
     $sHost = "";
@@ -2047,7 +2043,7 @@ function normalizeTelegramContactValue($sValue) {
     if (preg_match("#^https?://#i", $sText) || preg_match("#^(?:www\\.)?(?:t\\.me|telegram\\.me|telegram\\.dog)(?:[/:?\\#].*)?$#i", $sText)) {
         $aParts = parse_url(preg_match("#^https?://#i", $sText) ? $sText : "https://" . $sText);
         $sHost = isset($aParts["host"]) ? telegramContactHost($aParts["host"]) : false;
-        $sPath = isset($aParts["path"]) ? (string)$aParts["path"] : "";
+        $sPath = isset($aParts["path"]) ? $aParts["path"] : "";
         return $sHost !== false ? normalizeTelegramContactPath($sHost, $sPath) : false;
     }
     if (preg_match("#^(joinchat|addstickers|setlanguage)/(.+)$#i", $sText, $aMatches)) {
@@ -2065,12 +2061,12 @@ function normalizeTelegramContactValue($sValue) {
 }
 
 function contactTypeKey($sContactType) {
-    return strtolower(trim((string)$sContactType));
+    return strtolower(trim($sContactType ?? ""));
 }
 
 function decodePostedBase64Value($sValue) {
-    $sDecoded = base64_decode((string)$sValue, true);
-    return $sDecoded !== false ? $sDecoded : (string)$sValue;
+    $sDecoded = base64_decode($sValue, true);
+    return $sDecoded !== false ? $sDecoded : $sValue;
 }
 
 function getPostedValue($sName, $sDefault = "") {
@@ -2081,7 +2077,7 @@ function getPostedValue($sName, $sDefault = "") {
     if (isset($_POST[$sName]) && !is_array($_POST[$sName])) {
         return (string)$_POST[$sName];
     }
-    return (string)$sDefault;
+    return $sDefault;
 }
 
 function getPostedTrimmedValue($sName, $sDefault = "") {
@@ -2089,7 +2085,6 @@ function getPostedTrimmedValue($sName, $sDefault = "") {
 }
 
 function schemaColumnTypeDisplay($sColumnType, $blShorten = true) {
-    $sColumnType = (string)$sColumnType;
     if (preg_match("/^enum\\((.*)\\)$/i", $sColumnType, $aMatches)) {
         preg_match_all("/'((?:''|[^'])*)'/", $aMatches[1], $aEnumValues);
         $aDisplayValues = array();
@@ -2125,12 +2120,12 @@ function formatDumpVarValue($mVar, $iLevel) {
         return "<span style=\"color: #808 !important; font-weight: bold !important; font-style: italic !important;\">null</span>";
     }
     if (is_int($mVar)) {
-        return "<span style=\"color: #888 !important;\">int:</span> <span style=\"color: #088 !important; font-weight: bold !important;\">" . html((string)$mVar) . "</span>";
+        return "<span style=\"color: #888 !important;\">int:</span> <span style=\"color: #088 !important; font-weight: bold !important;\">" . html($mVar) . "</span>";
     }
     if (is_float($mVar)) {
-        return "<span style=\"color: #888 !important;\">float:</span> <span style=\"color: #080 !important; font-weight: bold !important;\">" . html((string)$mVar) . "</span>";
+        return "<span style=\"color: #888 !important;\">float:</span> <span style=\"color: #080 !important; font-weight: bold !important;\">" . html($mVar) . "</span>";
     }
-    return "<span style=\"color: #080 !important;\">\"" . html((string)$mVar) . "\"</span>";
+    return "<span style=\"color: #080 !important;\">\"" . html($mVar) . "\"</span>";
 }
 
 function formatDumpVarArray($aArray, $iLevel) {
@@ -2172,7 +2167,7 @@ function formatDumpVarObject($oObject, $iLevel) {
 }
 
 function formatDumpVarKey($mKey) {
-    $sKey = html((string)$mKey);
+    $sKey = html($mKey);
     if ($sKey != "" && $sKey[0] == "_") {
         return "<span style=\"color: #BBB !important;\">[" . $sKey . "] => </span>";
     }
@@ -2353,8 +2348,37 @@ function databaseConnect() {
     return array($oPdo, $sError);
 }
 
-function loadConfiguration($oPdo) {
-    global $aApiKeys, $aAllowedIpAddresses, $aTrustedUserAgents, $aTrustedAcceptLanguages, $aAWStatsAccounts, $aAdditionalSenderDomains;
+function getConfigurationCipherAdditionalData($sType, $sName) {
+    return "fs_configuration\0" . $sType . "\0" . $sName;
+}
+
+function decodeConfigurationCipherKey($sEncodedKey) {
+    if (!extension_loaded("sodium")) {
+        throw new RuntimeException("The Sodium extension is not loaded.");
+    }
+    $sKey = base64_decode(trim($sEncodedKey), true);
+    if ($sKey === false || strlen($sKey) != SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES) {
+        throw new RuntimeException("The configuration cipher key is invalid.");
+    }
+    return $sKey;
+}
+
+function decryptConfigurationCipherValue($sType, $sName, $sValue, $sKey) {
+    $sEncryptedBytes = base64_decode($sValue, true);
+    if ($sEncryptedBytes === false || strlen($sEncryptedBytes) < SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES + SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_ABYTES) {
+        throw new RuntimeException("The encrypted configuration value is invalid.");
+    }
+    $sNonce = substr($sEncryptedBytes, 0, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
+    $sEncryptedValue = substr($sEncryptedBytes, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
+    $sValue = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($sEncryptedValue, getConfigurationCipherAdditionalData($sType, $sName), $sNonce, $sKey);
+    if ($sValue === false) {
+        throw new RuntimeException("The encrypted configuration value cannot be decrypted.");
+    }
+    return $sValue;
+}
+
+function loadConfiguration() {
+    global $oPdo, $aApiKeys, $aAllowedIpAddresses, $aTrustedUserAgents, $aTrustedAcceptLanguages, $aAWStatsAccounts, $aAdditionalSenderDomains, $sConfigurationCipherKey;
 
     $aApiKeys = array();
     $aAllowedIpAddresses = array();
@@ -2366,32 +2390,39 @@ function loadConfiguration($oPdo) {
         return;
     }
     try {
+        $sKey = decodeConfigurationCipherKey($sConfigurationCipherKey);
         $oStatement = $oPdo->prepare("SELECT `type`, `name`, `value` FROM fs_configuration ORDER BY `order` ASC, id ASC");
         $oStatement->execute();
         while ($aRow = $oStatement->fetch()) {
-            switch ((string)$aRow["type"]) {
+            if ($aRow["name"] != "" && $aRow["type"] != "deploy_credential") {
+                $aRow["value"] = decryptConfigurationCipherValue($aRow["type"], $aRow["name"], $aRow["value"], $sKey);
+            }
+            switch ($aRow["type"]) {
                 case "api_key":
-                    $aApiKeys[(string)$aRow["name"]] = (string)$aRow["value"];
+                    $aApiKeys[$aRow["name"]] = $aRow["value"];
                     break;
                 case "allowed_ip":
-                    $aAllowedIpAddresses[] = (string)$aRow["value"];
+                    $aAllowedIpAddresses[] = $aRow["value"];
                     break;
                 case "trusted_user_agent":
-                    $aTrustedUserAgents[] = (string)$aRow["value"];
+                    $aTrustedUserAgents[] = $aRow["value"];
                     break;
                 case "trusted_accept_language":
-                    $aTrustedAcceptLanguages[] = (string)$aRow["value"];
+                    $aTrustedAcceptLanguages[] = $aRow["value"];
                     break;
                 case "awstats_account":
-                    $aAWStatsAccounts[(string)$aRow["name"]] = (string)$aRow["value"];
+                    $aAWStatsAccounts[$aRow["name"]] = $aRow["value"];
                     break;
                 case "additional_sender_domain":
-                    $aAdditionalSenderDomains[] = (string)$aRow["value"];
+                    $aAdditionalSenderDomains[] = $aRow["value"];
                     break;
             }
         }
     } catch (PDOException $oException) {
         error_log((string)$oException);
+    } catch (Throwable $oException) {
+        error_log((string)$oException);
+        throw $oException;
     }
 }
 
@@ -2423,9 +2454,9 @@ function initializeSession($blStartOnlyIfExists = false) {
     }
     session_set_cookie_params(array(
         "lifetime" => $iSessionLifetime,
-        "path" => "/",
-        "domain" => "",
-        "secure" => true,
+        "path"     => "/",
+        "domain"   => "",
+        "secure"   => true,
         "httponly" => true,
         "samesite" => "Lax"
     ));
