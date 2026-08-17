@@ -289,10 +289,25 @@ body.film-link-page[data-pmd-like="0"] .film-link-table-scroll {
 }
 
 button, select {
+    background-color: #F0F0F0;
     border: 1px solid #C0C0C0;
+    border-radius: 0;
+    box-shadow: none;
+    color: #000000;
     width: 100%;
     padding: 4px;
     margin-top: 10px;
+}
+
+select {
+    box-sizing: border-box;
+    height: 27px;
+}
+
+select option:focus, select option:hover {
+    background-color: #D4D4D4;
+    box-shadow: 0 0 0 100px #D4D4D4 inset;
+    color: #000000;
 }
 
 input[type="date"], input[type="datetime-local"], input[type="number"], input[type="password"], input[type="text"] {
@@ -547,6 +562,11 @@ table {
 }
 
 @supports (-moz-appearance: none) {
+    body:not([data-pmd-like="1"]) select {
+        padding-bottom: 5px;
+        padding-top: 3px;
+    }
+
     body[data-pmd-like="0"] .admin-controls .png-export-menu-button {
         padding-bottom: 4px;
         padding-top: 1px;
@@ -1269,7 +1289,7 @@ form {
     box-shadow: none;
 }
 
-button, select, .button-link, .menu-button, .filter-focus-button, .subject-date-button, .complex-filter-date-button, .subject-date-calendar-day, .admin-controls .png-export-menu-option, .snippet-board-form .tox .tox-tbtn, .snippet-board-form .tox .tox-tbtn--select, .snippet-board-form .tox .tox-tbtn--bespoke {
+button, select, .button-link, .menu-button, .filter-focus-button, .subject-date-button, .complex-filter-date-button, .subject-date-calendar-day, .admin-controls .png-export-menu-option, .admin-controls .png-export-menu-panel, .snippet-board-form .tox .tox-tbtn, .snippet-board-form .tox .tox-tbtn--select, .snippet-board-form .tox .tox-tbtn--bespoke {
     background-color: #E8E8E8;
     border-color: #A5A5A5;
     border-radius: 0;

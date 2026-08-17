@@ -114,10 +114,25 @@ form {
 }
 
 button, select {
+    background-color: #F0F0F0;
     border: 1px solid #C0C0C0;
+    border-radius: 0;
+    box-shadow: none;
+    color: #000000;
     margin-top: 10px;
     padding: 4px;
     width: 100%;
+}
+
+select {
+    box-sizing: border-box;
+    height: 27px;
+}
+
+select option:focus, select option:hover {
+    background-color: #DCDCE4;
+    box-shadow: 0 0 0 100px #DCDCE4 inset;
+    color: #000000;
 }
 
 .currency-select, .currency-select option, .iban-result-input {
@@ -366,6 +381,11 @@ table {
 }
 
 @supports (-moz-appearance: none) {
+    body:not([data-pmd-like="1"]) select {
+        padding-bottom: 5px;
+        padding-top: 3px;
+    }
+
     body[data-pmd-like="0"] .admin-controls .png-export-menu-button {
         padding-bottom: 4px;
         padding-top: 1px;

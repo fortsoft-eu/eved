@@ -563,10 +563,25 @@ body[data-pmd-like="1"] .snippet-board-form .tox .tox-toolbar--scrolling .tox-to
 }
 
 button, select {
+    background-color: #F0F0F0;
     border: 1px solid #C0C0C0;
+    border-radius: 0;
+    box-shadow: none;
+    color: #000000;
     width: 100%;
     padding: 4px;
     margin-top: 10px;
+}
+
+select {
+    box-sizing: border-box;
+    height: 27px;
+}
+
+select option:focus, select option:hover {
+    background-color: #1B3B26;
+    box-shadow: 0 0 0 100px #1B3B26 inset;
+    color: #D8FFE1;
 }
 
 input[type="date"], input[type="datetime-local"], input[type="number"], input[type="password"], input[type="text"] {
@@ -1120,8 +1135,9 @@ body[data-pmd-like="1"] .calendar-tooltip {
 }
 
 @supports (-moz-appearance: none) {
-    body[data-pmd-like="0"] .admin-controls .calendar-type {
-        padding: 3px 4px 5px 4px;
+    body:not([data-pmd-like="1"]) select {
+        padding-bottom: 5px;
+        padding-top: 3px;
     }
 
     body[data-pmd-like="0"] .admin-controls .png-export-menu-button {
@@ -2393,7 +2409,7 @@ form {
     box-shadow: 0 0 12px rgba(57, 255, 98, 0.08);
 }
 
-button, select, .button-link, .menu-button, .filter-focus-button, .subject-date-button, .complex-filter-date-button, .subject-date-calendar-day, .admin-controls .png-export-menu-option, .snippet-board-form .tox .tox-tbtn, .snippet-board-form .tox .tox-tbtn--select, .snippet-board-form .tox .tox-tbtn--bespoke {
+button, select, .button-link, .menu-button, .filter-focus-button, .subject-date-button, .complex-filter-date-button, .subject-date-calendar-day, .admin-controls .png-export-menu-option, .admin-controls .png-export-menu-panel, .snippet-board-form .tox .tox-tbtn, .snippet-board-form .tox .tox-tbtn--select, .snippet-board-form .tox .tox-tbtn--bespoke {
     background-color: #122A1A;
     border-color: #2D6340;
     border-radius: 0;

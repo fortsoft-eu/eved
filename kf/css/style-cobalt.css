@@ -114,10 +114,25 @@ form {
 }
 
 button, select {
+    background-color: #F0F0F0;
     border: 1px solid #C0C0C0;
+    border-radius: 0;
+    box-shadow: none;
+    color: #000000;
     margin-top: 10px;
     padding: 4px;
     width: 100%;
+}
+
+select {
+    box-sizing: border-box;
+    height: 27px;
+}
+
+select option:focus, select option:hover {
+    background-color: #CCD9EE;
+    box-shadow: 0 0 0 100px #CCD9EE inset;
+    color: #112443;
 }
 
 .currency-select, .currency-select option, .iban-result-input {
@@ -358,6 +373,11 @@ table {
 }
 
 @supports (-moz-appearance: none) {
+    body:not([data-pmd-like="1"]) select {
+        padding-bottom: 5px;
+        padding-top: 3px;
+    }
+
     body[data-pmd-like="0"] .admin-controls .png-export-menu-button {
         padding-bottom: 4px;
         padding-top: 1px;
@@ -1174,7 +1194,7 @@ form {
     box-shadow: 0 4px 13px rgba(30, 70, 140, 0.18);
 }
 
-button, select, .button-link, .menu-button, .filter-focus-button, .subject-date-button, .complex-filter-date-button, .subject-date-calendar-day, .admin-controls .png-export-menu-option, .snippet-board-form .tox .tox-tbtn, .snippet-board-form .tox .tox-tbtn--select, .snippet-board-form .tox .tox-tbtn--bespoke {
+button, select, .button-link, .menu-button, .filter-focus-button, .subject-date-button, .complex-filter-date-button, .subject-date-calendar-day, .admin-controls .png-export-menu-option, .admin-controls .png-export-menu-panel, .snippet-board-form .tox .tox-tbtn, .snippet-board-form .tox .tox-tbtn--select, .snippet-board-form .tox .tox-tbtn--bespoke {
     background-color: #E1E9F7;
     border-color: #8FA7CC;
     border-radius: 0;

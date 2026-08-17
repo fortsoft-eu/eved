@@ -563,10 +563,25 @@ body[data-pmd-like="1"] .snippet-board-form .tox .tox-toolbar--scrolling .tox-to
 }
 
 button, select {
+    background-color: #F0F0F0;
     border: 1px solid #C0C0C0;
+    border-radius: 0;
+    box-shadow: none;
+    color: #000000;
     width: 100%;
     padding: 4px;
     margin-top: 10px;
+}
+
+select {
+    box-sizing: border-box;
+    height: 27px;
+}
+
+select option:focus, select option:hover {
+    background-color: #DCDCE4;
+    box-shadow: 0 0 0 100px #DCDCE4 inset;
+    color: #000000;
 }
 
 input[type="file"]::file-selector-button {
@@ -1137,8 +1152,9 @@ body[data-pmd-like="1"] .calendar-tooltip {
 }
 
 @supports (-moz-appearance: none) {
-    body[data-pmd-like="0"] .admin-controls .calendar-type {
-        padding: 3px 4px 5px 4px;
+    body:not([data-pmd-like="1"]) select {
+        padding-bottom: 5px;
+        padding-top: 3px;
     }
 
     body[data-pmd-like="0"] .admin-controls .png-export-menu-button {

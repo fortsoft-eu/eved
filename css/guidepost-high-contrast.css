@@ -172,6 +172,15 @@ hr {
 .project-link:active {
     background: #111111;
     border-color: #FFFFFF;
+    color: #FFFFFF;
+}
+
+.project-link:active .project-name {
+    color: #FFFFFF;
+}
+
+.project-link:active .project-title {
+    color: #D0D0D0;
 }
 
 @media (max-width: 520px) {
