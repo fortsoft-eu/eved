@@ -283,7 +283,7 @@ function setupTableRows() {
 
     function applyRowColor(oRow) {
         var sColor = getCurrentRowColor(oRow);
-        oRow.style.backgroundColor = sColor;
+        oRow.style.setProperty("--admin-row-background", sColor);
     }
 
     function isTableRowActionTarget(oTarget) {

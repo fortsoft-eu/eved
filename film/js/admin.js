@@ -827,11 +827,12 @@ document.addEventListener("DOMContentLoaded", function () {
             iHash = ((iHash << 5) - iHash) + sValue.charCodeAt(iI);
             iHash = iHash & iHash;
         }
-        return "hsl(" + (Math.abs(iHash) % 360) + ", 72%, 84%)";
+        return "hsl(" + (Math.abs(iHash) % 360) + ", var(--film-group-saturation, 72%), var(--film-group-lightness, 84%))";
     }
 
     function applyRowColor(oRow) {
-        oRow.style.backgroundColor = getCurrentColor(oRow);
+        var sColor = getCurrentColor(oRow);
+        oRow.style.setProperty("--admin-row-background", sColor);
     }
 
     function getCurrentColor(oRow) {
@@ -851,8 +852,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function applyOrderDetailColor(oRow) {
+        var oCell;
+        var oStyle;
         if (oOrderDetail) {
-            oOrderDetail.style.backgroundColor = getCurrentColor(oRow);
+            oCell = oRow.querySelector("td");
+            if (!oCell) {
+                return;
+            }
+            oStyle = window.getComputedStyle(oCell);
+            if (oRow.getAttribute("data-selected") == "1") {
+                oOrderDetail.style.backgroundColor = getGroupColor(oRow);
+                oOrderDetail.style.color = "var(--film-group-text, #000000)";
+            } else {
+                oOrderDetail.style.backgroundColor = oStyle.backgroundColor;
+                oOrderDetail.style.color = oStyle.color;
+            }
         }
     }
 
@@ -922,6 +936,7 @@ document.addEventListener("DOMContentLoaded", function () {
         setOrderDetailText("lab-scan-dates", "");
         if (oOrderDetail) {
             oOrderDetail.style.backgroundColor = "";
+            oOrderDetail.style.color = "";
         }
     }
 
@@ -1079,11 +1094,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.addEventListener("mouseout", function (oEvent) {
         var oRow = getEventTableRow(oEvent);
+        var oSelectedRow;
         if (!oRow || isInsideTableRow(oRow, oEvent.relatedTarget)) {
             return;
         }
         setRelatedRowsAttribute(oRow, "data-hover", "0");
-        if (!sLockedOrderId && hasGroupBehavior(oRow) && oOrderDetail) {
+        if (sLockedOrderId && oOrderDetail) {
+            oSelectedRow = getFirstRowByOrderId(sLockedOrderId);
+            if (oSelectedRow) {
+                updateOrderDetail(oSelectedRow);
+            }
+        } else if (hasGroupBehavior(oRow) && oOrderDetail) {
             if (oRow.getAttribute("data-selected") == "1") {
                 updateOrderDetail(oRow);
             } else {

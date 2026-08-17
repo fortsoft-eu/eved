@@ -206,7 +206,7 @@ table.film-metadata th {
 div#main > article .navigation .breadcrumb .select-like-btn, div#main > article .navigation .breadcrumb .btn-default {
     height: 32px;
 }
-div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default, div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default:focus, div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default:hover {
+div#main > article .navigation .btn-default:active, div#main > article .navigation .btn-default:active:focus, div#main > article .navigation .btn-default:focus, div#main > article .navigation .btn-default:hover, div#main > article .navigation .dropdown-menu > li > a:active, div#main > article .navigation .dropdown-menu > li > a:focus, div#main > article .navigation .dropdown-menu > li > a:hover, div#main > article .navigation .select-like-btn:active, div#main > article .navigation .select-like-btn:focus, div#main > article .navigation .select-like-btn:hover, div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default, div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default:focus, div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default:hover {
     background-color: #583C60;
     border-color: #92709A;
     color: #FFF4FF;

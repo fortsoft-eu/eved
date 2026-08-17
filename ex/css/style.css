@@ -603,7 +603,7 @@ body[data-chromium="1"] input[type="password"], body[data-chromium="1"] input[ty
     width: auto;
 }
 
-.button-link:hover {
+.button-link:hover, .admin-controls select:focus, .admin-controls select:hover, .admin-controls .png-export-menu-button[aria-expanded="true"] {
     background: #DCDCE4;
     text-decoration: none;
 }
@@ -1173,7 +1173,7 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     width: 100%;
 }
 
-.admin-controls .png-export-menu-option:hover {
+.admin-controls .png-export-menu-option:focus, .admin-controls .png-export-menu-option:hover {
     background: #DCDCE4;
 }
 
@@ -1337,7 +1337,7 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     height: 32px;
     justify-content: center;
     overflow-wrap: normal;
-    padding: 6px;
+    padding: 4px 6px 6px 0;
     position: fixed;
     right: 16px;
     white-space: nowrap;
@@ -2065,6 +2065,10 @@ body.phpinfo-page .admin-controls {
 .portal-help-list dd {
     margin: 6px 0 20px 24px;
     max-width: 980px;
+}
+
+table tbody tr[data-saved="1"], table tbody tr[data-confirming="1"], table tbody tr[data-hover="1"], table tbody tr[data-selected="1"], table tbody tr[data-saved="1"] > td, table tbody tr[data-confirming="1"] > td, table tbody tr[data-hover="1"] > td, table tbody tr[data-selected="1"] > td {
+    background-color: var(--admin-row-background);
 }
 
 .admin-row-modal > td {

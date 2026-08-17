@@ -182,7 +182,6 @@ form {
 }
 
 .film-link-page .admin-controls {
-    background: #F8F8F8;
     position: static;
     top: auto;
     z-index: auto;
@@ -280,10 +279,6 @@ form {
     min-width: 100%;
     table-layout: auto;
     width: max-content;
-}
-
-.film-link-page .film-link-table thead th, th {
-    background: #F0F0F0;
 }
 
 body.film-link-page[data-pmd-like="0"] .film-link-table-scroll {
@@ -645,7 +640,7 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     height: 32px;
     justify-content: center;
     overflow-wrap: normal;
-    padding: 6px;
+    padding: 4px 6px 6px 0;
     position: fixed;
     right: 16px;
     white-space: nowrap;
@@ -1258,7 +1253,7 @@ a:focus, a:hover {
     color: #4D3472;
 }
 
-form, .login-panel, .admin-top, .film-link-page .admin-top, .order-detail, .film-link-page .admin-controls, .film-link-page .admin-top > form, .film-link-page .order-detail, .confirm-dialog-box, .render-throbber-box, .menu-panel, .mail-recipient-suggest-box, .character-palette-tone-popup, .subject-date-calendar, .business-hours-card, .holiday-month, .calendar-tooltip, .request-overview, table, .schema-table, .snippet-board-form .tox-tinymce, .snippet-board-form .tox .tox-editor-header {
+form, .login-panel, .admin-top, .film-link-page .admin-top, .order-detail, .film-link-page .admin-top > form, .film-link-page .order-detail, .confirm-dialog-box, .render-throbber-box, .menu-panel, .mail-recipient-suggest-box, .character-palette-tone-popup, .subject-date-calendar, .business-hours-card, .holiday-month, .calendar-tooltip, .request-overview, table, .schema-table, .snippet-board-form .tox-tinymce, .snippet-board-form .tox .tox-editor-header {
     background-color: #FCFAFE;
     border-color: #B2A0C0;
     color: #41364B;
@@ -1294,7 +1289,7 @@ td, th {
     border-radius: 3px;
 }
 
-button:hover, select:hover, .button-link:hover, .menu-button:hover, .character-palette-button:hover, .menu-link-active, .menu-link:hover, .filter-focus-button:hover, .subject-date-calendar-date:hover, .admin-controls .png-export-menu-option:hover, .mail-recipient-suggest-option:hover, .mail-recipient-suggest-active, .snippet-board-form .tox .tox-tbtn:hover {
+button:hover, select:focus, select:hover, .button-link:hover, .admin-controls .png-export-menu-button[aria-expanded="true"], .menu-button:hover, .character-palette-button:hover, .menu-link-active, .menu-link:hover, .filter-focus-button:hover, .subject-date-calendar-date:hover, .admin-controls .png-export-menu-option:focus, .admin-controls .png-export-menu-option:hover, .mail-recipient-suggest-option:hover, .mail-recipient-suggest-active, .snippet-board-form .tox .tox-tbtn:hover {
     background-color: #DED1EA;
     border-color: #947CAB;
     color: #30263A;
@@ -1393,6 +1388,9 @@ body.php-generated-output hr {
     --admin-theme-hover: #DED1EA;
     --admin-theme-hover-border: #947CAB;
     --admin-theme-hover-text: #30263A;
+    --film-group-saturation: 72%;
+    --film-group-lightness: 84%;
+    --film-group-text: var(--admin-theme-hover-text);
     --admin-theme-header: #E5DAED;
     --admin-theme-even: #F6F3FA;
     --admin-theme-inactive: #E4DDE9;
@@ -1471,14 +1469,23 @@ input::placeholder, textarea::placeholder, .cf {
     color: var(--admin-theme-text);
 }
 
-body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td, #addresses-table tbody tr:hover > td, #contacts-table tbody tr:hover > td {
+body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td, #addresses-table tbody tr:hover > td, #contacts-table tbody tr:hover > td, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td, #addresses-table tbody tr[data-hover="1"] > td, #contacts-table tbody tr[data-hover="1"] > td {
     background-color: var(--admin-theme-hover);
     border-color: var(--admin-theme-hover-border);
     color: var(--admin-theme-hover-text);
 }
 
-body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-zero {
+body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-zero, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .amount-zero {
     color: var(--admin-theme-hover-text);
+}
+
+body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"]:not([data-hover="1"]):not(:hover) > td {
+    background-color: var(--admin-row-background);
+    color: var(--film-group-text);
+}
+
+body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"]:not([data-hover="1"]):not(:hover) > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"]:not([data-hover="1"]):not(:hover) > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"]:not([data-hover="1"]):not(:hover) > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"]:not([data-hover="1"]):not(:hover) > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"]:not([data-hover="1"]):not(:hover) > td .amount-zero {
+    color: var(--film-group-text);
 }
 
 .admin-row-modal:hover > td {

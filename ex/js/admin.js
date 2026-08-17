@@ -2943,11 +2943,11 @@ function setupHolidayCalendarDaySelection() {
     }
 
     function getCurrentDayColors(oDay) {
-        if (oDay.getAttribute("data-selected") == "1") {
-            return [getThemeColor("--admin-theme-hover", "#cfe2ff"), getThemeColor("--admin-theme-hover-text", "")];
-        }
         if (oDay.getAttribute("data-hover") == "1") {
             return [getThemeColor("--admin-theme-hover", "#fff3cd"), getThemeColor("--admin-theme-hover-text", "")];
+        }
+        if (oDay.getAttribute("data-selected") == "1") {
+            return [getThemeColor("--admin-theme-selected", "#cfe2ff"), getThemeColor("--admin-theme-selected-text", "")];
         }
         return ["", ""];
     }
@@ -3476,12 +3476,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function applyRowColor(oRow) {
         var sColor = getCurrentRowColor(oRow);
-        var aCells = oRow.cells || oRow.querySelectorAll("td");
-        var iI;
-        oRow.style.backgroundColor = sColor;
-        for (iI = 0; iI < aCells.length; iI += 1) {
-            aCells[iI].style.backgroundColor = sColor;
-        }
+        oRow.style.setProperty("--admin-row-background", sColor);
     }
 
     function isTableRowActionTarget(oTarget) {

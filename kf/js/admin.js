@@ -3955,12 +3955,7 @@ function setupTableRows() {
 
     function applyRowColor(oRow) {
         var sColor = getCurrentRowColor(oRow);
-        var aCells = oRow.cells || oRow.querySelectorAll("td");
-        var iI;
-        oRow.style.backgroundColor = sColor;
-        for (iI = 0; iI < aCells.length; iI += 1) {
-            aCells[iI].style.backgroundColor = sColor;
-        }
+        oRow.style.setProperty("--admin-row-background", sColor);
     }
 
     function isTableRowActionTarget(oTarget) {

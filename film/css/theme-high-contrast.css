@@ -65,9 +65,14 @@ nav .tab-tabs > li > a, nav .tab-tabs > li.active > a, nav .tab-tabs > li.active
     color: #FFFFFF;
 }
 
-nav .tab-tabs > li.active > a, nav .tab-tabs > li > a:focus, nav .tab-tabs > li > a:hover, nav .tab-tabs > li.active > a:focus, nav .tab-tabs > li.active > a:hover {
-    background-color: #111111;
-    color: #FFFF00;
+nav .tab-tabs > li.active > a {
+    background-color: #FFFFFF;
+    color: #000000;
+}
+
+nav .tab-tabs > li > a:focus, nav .tab-tabs > li > a:hover, nav .tab-tabs > li.active > a:focus, nav .tab-tabs > li.active > a:hover {
+    background-color: #FFFDEB;
+    color: #000000;
 }
 
 nav .tab-tabs > li.tab::after {
@@ -83,12 +88,14 @@ nav #search-info {
     background-color: #333333;
     border-color: #FFFFFF;
     border-radius: 0;
+    color: #FFFFFF;
 }
 
 .jstree .jstree-node .jstree-hovered {
-    background-color: #FFFF00;
-    border-color: #FFFF00;
+    background-color: #242424;
+    border-color: #D0D0D0;
     border-radius: 0;
+    color: #FFFFFF;
 }
 
 .jstree .jstree-node.jstree-closed > .jstree-icon.jstree-ocl:before, .jstree .jstree-node.jstree-open > .jstree-icon.jstree-ocl:before {
@@ -112,7 +119,7 @@ div#main > article .navigation .nav-arrows a, div#main > article .navigation .na
 }
 
 div#main > article .navigation .nav-arrows a:hover, div#main > article .navigation .nav-arrows a:focus:hover, div#main > article .navigation .nav-arrows button:hover, div#main > article .navigation .nav-arrows button:focus:hover {
-    color: #FFFF00;
+    color: #000000;
 }
 
 .form-control, .btn-default, .dropdown-menu, .select-like-btn, .modal-content {
@@ -128,8 +135,8 @@ div#main > article .navigation .nav-arrows a:hover, div#main > article .navigati
 }
 
 .btn-default:focus, .btn-default:hover, .dropdown-menu > li > a:focus, .dropdown-menu > li > a:hover, .select-like-btn:focus, .select-like-btn:hover {
-    background-color: #FFFF00;
-    border-color: #FFFF00;
+    background-color: #FFFDEB;
+    border-color: #FFFDEB;
     color: #000000;
 }
 
@@ -206,9 +213,9 @@ table.film-metadata th {
 div#main > article .navigation .breadcrumb .select-like-btn, div#main > article .navigation .breadcrumb .btn-default {
     height: 34px;
 }
-div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default, div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default:focus, div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default:hover {
-    background-color: #FFFF00;
-    border-color: #FFFF00;
+div#main > article .navigation .btn-default:active, div#main > article .navigation .btn-default:active:focus, div#main > article .navigation .btn-default:focus, div#main > article .navigation .btn-default:hover, div#main > article .navigation .dropdown-menu > li > a:active, div#main > article .navigation .dropdown-menu > li > a:focus, div#main > article .navigation .dropdown-menu > li > a:hover, div#main > article .navigation .select-like-btn:active, div#main > article .navigation .select-like-btn:focus, div#main > article .navigation .select-like-btn:hover, div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default, div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default:focus, div#main > article .navigation .breadcrumb .open > .dropdown-toggle.btn-default:hover {
+    background-color: #FFFDEB;
+    border-color: #FFFDEB;
     color: #000000;
 }/* End film gallery toolbar coherence. */
 /* Film gallery cell coherence. */

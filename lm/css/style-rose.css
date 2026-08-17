@@ -591,7 +591,7 @@ body.mail-page .admin-controls .mail-send-button {
     height: 32px;
     justify-content: center;
     overflow-wrap: normal;
-    padding: 6px;
+    padding: 4px 6px 6px 0;
     position: fixed;
     right: 16px;
     white-space: nowrap;
@@ -2636,13 +2636,13 @@ input::placeholder, textarea::placeholder, .cf {
     color: var(--admin-theme-text);
 }
 
-body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td, #addresses-table tbody tr:hover > td, #contacts-table tbody tr:hover > td {
+body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td, #addresses-table tbody tr:hover > td, #contacts-table tbody tr:hover > td, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td, #addresses-table tbody tr[data-hover="1"] > td, #contacts-table tbody tr[data-hover="1"] > td, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td, #addresses-table tbody tr[data-selected="1"] > td, #contacts-table tbody tr[data-selected="1"] > td {
     background-color: var(--admin-theme-hover);
     border-color: var(--admin-theme-hover-border);
     color: var(--admin-theme-hover-text);
 }
 
-body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-zero {
+body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-zero, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .amount-zero, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td .amount-zero {
     color: var(--admin-theme-hover-text);
 }
 

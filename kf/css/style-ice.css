@@ -455,7 +455,7 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     height: 32px;
     justify-content: center;
     overflow-wrap: normal;
-    padding: 6px;
+    padding: 4px 6px 6px 0;
     position: fixed;
     right: 16px;
     white-space: nowrap;
@@ -1194,7 +1194,7 @@ td, th {
     border-radius: 0;
 }
 
-button:hover, select:hover, .button-link:hover, .menu-button:hover, .character-palette-button:hover, .menu-link-active, .menu-link:hover, .filter-focus-button:hover, .subject-date-calendar-date:hover, .admin-controls .png-export-menu-option:hover, .mail-recipient-suggest-option:hover, .mail-recipient-suggest-active, .snippet-board-form .tox .tox-tbtn:hover {
+button:hover, select:focus, select:hover, .button-link:hover, .admin-controls .png-export-menu-button[aria-expanded="true"], .menu-button:hover, .character-palette-button:hover, .menu-link-active, .menu-link:hover, .filter-focus-button:hover, .subject-date-calendar-date:hover, .admin-controls .png-export-menu-option:focus, .admin-controls .png-export-menu-option:hover, .mail-recipient-suggest-option:hover, .mail-recipient-suggest-active, .snippet-board-form .tox .tox-tbtn:hover {
     background-color: #DCEAF4;
     border-color: #879FAF;
     color: #162B3D;
@@ -1371,13 +1371,13 @@ input::placeholder, textarea::placeholder, .cf {
     color: var(--admin-theme-text);
 }
 
-body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td, #addresses-table tbody tr:hover > td, #contacts-table tbody tr:hover > td {
+body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td, #addresses-table tbody tr:hover > td, #contacts-table tbody tr:hover > td, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td, #addresses-table tbody tr[data-hover="1"] > td, #contacts-table tbody tr[data-hover="1"] > td, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td, #addresses-table tbody tr[data-selected="1"] > td, #contacts-table tbody tr[data-selected="1"] > td {
     background-color: var(--admin-theme-hover);
     border-color: var(--admin-theme-hover-border);
     color: var(--admin-theme-hover-text);
 }
 
-body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-zero {
+body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr:hover > td .amount-zero, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-hover="1"] > td .amount-zero, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td a, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td .cf, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td .amount-positive, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td .amount-negative, body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-selected="1"] > td .amount-zero {
     color: var(--admin-theme-hover-text);
 }
 

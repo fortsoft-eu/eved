@@ -599,7 +599,7 @@ body.mail-page .admin-controls .mail-send-button {
     height: 32px;
     justify-content: center;
     overflow-wrap: normal;
-    padding: 6px;
+    padding: 4px 6px 6px 0;
     position: fixed;
     right: 16px;
     white-space: nowrap;
@@ -1821,6 +1821,10 @@ body.fancy-text-page .admin-controls {
 
 .business-hours-hours, .business-hours-time-open, .business-hours-time-range, .business-hours-closed, .email-overview-table tr > :first-child, .email-overview-table .email-user-cell, body.php-generated-output .p {
     text-align: left;
+}
+
+table tbody tr[data-saved="1"], table tbody tr[data-confirming="1"], table tbody tr[data-hover="1"], table tbody tr[data-selected="1"], table tbody tr[data-saved="1"] > td, table tbody tr[data-confirming="1"] > td, table tbody tr[data-hover="1"] > td, table tbody tr[data-selected="1"] > td {
+    background-color: var(--admin-row-background);
 }
 
 .business-hours-card.admin-row-modal, .admin-row-modal > td {
