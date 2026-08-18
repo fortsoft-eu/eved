@@ -287,7 +287,7 @@ $iTime = sendPageHeaders();
   <link href="<?php echo $sBaseUrl; ?>css/theme-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-terminal.css")); ?>" rel="alternate stylesheet" type="text/css" title="Terminal">
   <link href="<?php echo $sBaseUrl; ?>css/theme-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-cobalt.css")); ?>" rel="alternate stylesheet" type="text/css" title="Cobalt">
   <link href="<?php echo $sBaseUrl; ?>css/theme-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
-  <script type="text/javascript" src="/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
   <link href="<?php echo $sBaseUrl; ?>css/print.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/print.min.css")); ?>" rel="stylesheet" type="text/css" media="print">
   <style type="text/css">nav { width: 350px} @media screen and (min-width:769px) { body.md-nav-expanded div#main { margin-left: 350px} body.md-nav-expanded header { padding-left: 364px} }</style>
   <style type="text/css">.navigation #inline-toc { width: auto !important} .js-save-png { white-space: nowrap}</style>

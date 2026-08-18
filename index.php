@@ -238,7 +238,7 @@ if ($blPortalIndexAllowed) {
   <link href="<?php echo $sBaseUrl; ?>css/guidepost-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-terminal.css")); ?>" rel="alternate stylesheet" type="text/css" title="Terminal">
   <link href="<?php echo $sBaseUrl; ?>css/guidepost-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-cobalt.css")); ?>" rel="alternate stylesheet" type="text/css" title="Cobalt">
   <link href="<?php echo $sBaseUrl; ?>css/guidepost-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
-  <script type="text/javascript" src="/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/style.js")); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/style.js")); ?>"></script>
 </head>
 <body>
   <main>
@@ -335,7 +335,7 @@ sendSecurityHeaders($sStyleNonce);
   <link href="<?php echo $sBaseUrl; ?>css/style-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-terminal.css")); ?>" rel="alternate stylesheet" type="text/css" title="Terminal">
   <link href="<?php echo $sBaseUrl; ?>css/style-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-cobalt.css")); ?>" rel="alternate stylesheet" type="text/css" title="Cobalt">
   <link href="<?php echo $sBaseUrl; ?>css/style-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
-  <script type="text/javascript" src="/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/style.js")); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/style.js")); ?>"></script>
 </head>
 <body>
   <h1>עֶבֶד יְהוָה</h1>

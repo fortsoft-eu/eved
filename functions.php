@@ -1457,7 +1457,7 @@ function renderLoginPageAndExit($sTokenName, $sMessage = "") {
         "  <link href=\"" . $sBaseUrl . "css/style-terminal.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-terminal.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Terminal\">\n",
         "  <link href=\"" . $sBaseUrl . "css/style-cobalt.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-cobalt.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Cobalt\">\n",
         "  <link href=\"" . $sBaseUrl . "css/style-plum.css?sToken=" . dechex(filemtime($sScriptDirectory . "/css/style-plum.css")) . "\" rel=\"alternate stylesheet\" type=\"text/css\" title=\"Plum\">\n",
-        "  <script type=\"text/javascript\" src=\"/js/style.js?sToken=" . dechex(filemtime(__DIR__ . "/js/style.js")) . "\"></script>\n",
+        "  <script type=\"text/javascript\" src=\"<?php echo $sOrigin; ?>/js/style.js?sToken=" . dechex(filemtime(__DIR__ . "/js/style.js")) . "\"></script>\n",
         "</head>\n",
         "<body class=\"login-page\" data-chromium=\"" . (isChromiumBased() ? "1" : "0") . "\">\n",
         "  <div class=\"confirm-dialog login-dialog\">\n",
