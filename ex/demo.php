@@ -7,13 +7,7 @@ if (!$oPdo) {
     send500AndExit("Database error: " . $sError);
 }
 
-$aFullListSettingsDefaults = array(
-    "show_inactive_subjects" => 1,
-    "show_inactive_nicknames" => 1,
-    "show_inactive_addresses" => 1,
-    "show_inactive_contacts" => 1,
-    "show_inactive_notes" => 1
-);
+$aFullListSettingsDefaults = array("show_inactive_subjects" => 1, "show_inactive_nicknames" => 1, "show_inactive_addresses" => 1, "show_inactive_contacts" => 1, "show_inactive_notes" => 1);
 $aFullListSettings = array();
 
 if (!isset($_SESSION["ex_demo_full_list_settings"]) || !is_array($_SESSION["ex_demo_full_list_settings"])) {
@@ -43,11 +37,9 @@ if (isset($_SESSION["ex_demo_full_list_complex_filter_draft"]) && is_array($_SES
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($aFullListComplexFilter, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
 }
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("csrf_token", true);
 }
-
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_settings") {
     foreach ($aFullListSettingsDefaults as $sFullListSettingName => $iFullListSettingDefault) {
@@ -62,7 +54,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     exit;
 }
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter") {
     $aFullListComplexFilterPayload = getFullListComplexFilterPostPayload();
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft($aFullListComplexFilterPayload, $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
@@ -75,14 +66,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
     exit;
 }
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "save_full_list_complex_filter_draft") {
     $aFullListComplexFilterDraft = normalizeFullListComplexFilterDraft(getFullListComplexFilterPostPayload(), $aFullListComplexFilterFields, $aFullListComplexFilterOperators);
     $_SESSION["ex_demo_full_list_complex_filter_draft"] = $aFullListComplexFilterDraft;
     session_write_close();
     sendJsonAndExit(array("success" => true));
 }
-
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["action"] == "reset_full_list_complex_filter") {
     $aFullListComplexFilter = getDefaultFullListComplexFilter();

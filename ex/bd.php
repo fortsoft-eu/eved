@@ -10,15 +10,7 @@ if (!$oPdo) {
 
 requireViewAccess("ex", "csrf_token", true);
 $blCanEdit = isFullAccessAllowed("ex");
-
-
-$aBirthdaySettingsDefaults = array(
-    "show_inactive_subjects" => 0,
-    "show_inactive_nicknames" => 0,
-    "show_inactive_addresses" => 0,
-    "show_inactive_contacts" => 0,
-    "show_inactive_notes" => 0
-);
+$aBirthdaySettingsDefaults = array("show_inactive_subjects" => 0, "show_inactive_nicknames" => 0, "show_inactive_addresses" => 0, "show_inactive_contacts" => 0, "show_inactive_notes" => 0);
 $aBirthdayWindowSettingsDefaults = array(
     "birthday_days_back" => abs((int)$iBirthdayDisplayMinDays),
     "birthday_days_forward" => (int)$iBirthdayDisplayMaxDays

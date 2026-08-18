@@ -10,12 +10,7 @@ if (!$oPdo) {
 
 requireViewAccess("ex", "csrf_token", true);
 $blCanEdit = isFullAccessAllowed("ex");
-
-
-$aAddressesSettingsDefaults = array(
-    "show_inactive_addresses" => 0,
-    "show_inactive_subjects" => 0
-);
+$aAddressesSettingsDefaults = array("show_inactive_addresses" => 0,"show_inactive_subjects" => 0);
 $aAddressSettings = array();
 
 if (!isset($_SESSION["ex_addresses_settings"]) || !is_array($_SESSION["ex_addresses_settings"])) {

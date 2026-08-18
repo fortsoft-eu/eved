@@ -22,7 +22,6 @@ if (isset($_GET["download"])) {
     }
 }
 
-
 $aTables = array();
 try {
     $oStatement = $oPdo->query("SHOW TABLES");

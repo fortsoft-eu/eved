@@ -33,28 +33,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } else {
                 $aBackupDump = diffParseDatabaseSql($sBackupSql);
                 $aCurrentDump = diffGetCurrentDump($oPdo);
-                $aPersonFields = array(
-                    "name" => "Name",
-                    "subject_type" => "Subject Type",
-                    "is_active" => "Active",
-                    "legacy_id" => "Legacy ID",
-                    "person_row" => "Person Row",
-                    "title_before" => "Title Before",
-                    "first_name" => "First Name",
-                    "middle_name" => "Middle Name",
-                    "last_name" => "Last Name",
-                    "title_after" => "Title After",
-                    "birth_name" => "Birth Name",
-                    "birth_number" => "Birth Number",
-                    "birth_date" => "Birth Date",
-                    "death_date" => "Death Date"
-                );
-                $aSubjectFields = array(
-                    "name" => "Name",
-                    "subject_type" => "Subject Type",
-                    "is_active" => "Active",
-                    "legacy_id" => "Legacy ID"
-                );
+                $aPersonFields = array("name" => "Name", "subject_type" => "Subject Type", "is_active" => "Active", "legacy_id" => "Legacy ID", "person_row" => "Person Row", "title_before" => "Title Before", "first_name" => "First Name",
+                    "middle_name" => "Middle Name", "last_name" => "Last Name", "title_after" => "Title After", "birth_name" => "Birth Name", "birth_number" => "Birth Number", "birth_date" => "Birth Date", "death_date" => "Death Date");
+                $aSubjectFields = array("name" => "Name", "subject_type" => "Subject Type", "is_active" => "Active", "legacy_id" => "Legacy ID");
                 $aPersonDiff = diffCompareEntityRows(diffBuildPersonRows($aBackupDump), diffBuildPersonRows($aCurrentDump), $aPersonFields);
                 $aSubjectDiff = diffCompareEntityRows(diffBuildSubjectRows($aBackupDump), diffBuildSubjectRows($aCurrentDump), $aSubjectFields);
                 $aStructureDiff = diffCompareStructure($aBackupDump, $aCurrentDump);
@@ -141,26 +122,14 @@ if ($sUploadError != "") {
 }
 
 if ($blCompared) {
-    $aEntityColumns = array(
-        "subject_id" => "Subject ID",
-        "name" => "Name",
-        "is_active" => "Active",
-        "legacy_id" => "Legacy ID",
-        "birth_date" => "Birth Date"
-    );
+    $aEntityColumns = array("subject_id" => "Subject ID", "name" => "Name", "is_active" => "Active", "legacy_id" => "Legacy ID", "birth_date" => "Birth Date");
     echo "  <h2>Persons missing from current database (" . count($aPersonDiff["missing"]) . ")</h2>\n";
     diffRenderEntityTable($aPersonDiff["missing"], $aEntityColumns);
     echo "  <h2>Persons added in current database (" . count($aPersonDiff["added"]) . ")</h2>\n";
     diffRenderEntityTable($aPersonDiff["added"], $aEntityColumns);
     echo "  <h2>Changed persons (" . count($aPersonDiff["changed"]) . ")</h2>\n";
     diffRenderChangedEntityTable($aPersonDiff["changed"]);
-    $aSubjectColumns = array(
-        "subject_id" => "Subject ID",
-        "name" => "Name",
-        "subject_type" => "Type",
-        "is_active" => "Active",
-        "legacy_id" => "Legacy ID"
-    );
+    $aSubjectColumns = array("subject_id" => "Subject ID", "name" => "Name", "subject_type" => "Type", "is_active" => "Active", "legacy_id" => "Legacy ID");
     echo "  <h2>Subjects missing from current database (" . count($aSubjectDiff["missing"]) . ")</h2>\n";
     diffRenderEntityTable($aSubjectDiff["missing"], $aSubjectColumns);
     echo "  <h2>Subjects added in current database (" . count($aSubjectDiff["added"]) . ")</h2>\n";
@@ -176,14 +145,7 @@ if ($blCompared) {
         }
     }
     echo "  <h2>Data table summary (" . count($aChangedTableRows) . ")</h2>\n";
-    diffRenderEntityTable($aChangedTableRows, array(
-        "table" => "Table",
-        "backup_rows" => "Backup Rows",
-        "current_rows" => "Current Rows",
-        "missing_rows" => "Missing",
-        "added_rows" => "Added",
-        "changed_rows" => "Changed"
-    ));
+    diffRenderEntityTable($aChangedTableRows, array("table" => "Table", "backup_rows" => "Backup Rows", "current_rows" => "Current Rows", "missing_rows" => "Missing", "added_rows" => "Added", "changed_rows" => "Changed"));
 }
 
 ?>

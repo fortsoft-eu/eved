@@ -10,8 +10,15 @@ if (!$oPdo) {
 
 $blCanEdit = isFullAccessAllowed("ex");
 requireViewAccess("ex", "csrf_token", true);
-$blSubjectsAriaAttributes = isDesktop() ? $blSubjectsDesktopAriaAttributes : $blSubjectsPmdLikeAriaAttributes;
-$aFullListSettingsDefaults = array("show_inactive_subjects" => 1, "show_inactive_nicknames" => 1, "show_inactive_addresses" => 1, "show_inactive_contacts" => 1, "show_inactive_notes" => 1);
+$blIsDesktop = isDesktop();
+$blSubjectsAriaAttributes = $blIsDesktop ? $blSubjectsDesktopAriaAttributes : $blSubjectsPmdLikeAriaAttributes;
+$aFullListSettingsDefaults = array(
+    "show_inactive_subjects" => $blIsDesktop ? 1 : 0,
+    "show_inactive_nicknames" => $blIsDesktop ? 1 : 0,
+    "show_inactive_addresses" => $blIsDesktop ? 1 : 0,
+    "show_inactive_contacts" => $blIsDesktop ? 1 : 0,
+    "show_inactive_notes" => $blIsDesktop ? 1 : 0
+);
 $aFullListSettings = array();
 if (!isset($_SESSION["ex_full_list_settings"]) || !is_array($_SESSION["ex_full_list_settings"])) {
     $_SESSION["ex_full_list_settings"] = array();
@@ -204,10 +211,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["action"]) && $_POST["a
         $sEffectiveSubjectType = $aSubjectRow["subject_type"];
 
         $oStatement = $oPdo->prepare("UPDATE ex_subjects SET is_active = :is_active WHERE id = :subject_id");
-        $oStatement->execute(array(
-            "is_active" => payloadFlag($aPayload, "is_active"),
-            "subject_id" => $iSubjectId
-        ));
+        $oStatement->execute(array("is_active" => payloadFlag($aPayload, "is_active"), "subject_id" => $iSubjectId));
         $sSubjectName = payloadValue($aPayload, "subject_name_value");
         if ($sEffectiveSubjectType == "person" || $sSubjectName == "") {
             $oStatement = $oPdo->prepare("DELETE FROM ex_subject_names WHERE subject_id = :subject_id");
@@ -1030,11 +1034,7 @@ applySubjectVisibilitySettings($aRows, $aContacts, $aNicknames, $aAddresses, $aN
 $blFullListComplexFilterActive = count($aFullListComplexFilter["conditions"]) > 0;
 $aFullListComplexFilterRows = $aFullListComplexFilterDraft["conditions"];
 while (count($aFullListComplexFilterRows) < 1) {
-    $aFullListComplexFilterRows[] = array(
-        "field" => "subject_name",
-        "operator" => "contains",
-        "value" => ""
-    );
+    $aFullListComplexFilterRows[] = array("field" => "subject_name", "operator" => "contains", "value" => "");
 }
 
 $aFullListComplexFilterGroups = array();
@@ -1044,18 +1044,12 @@ foreach ($aAllGroups as $aGroup) {
 
 $aFullListComplexFilterSubjectTypes = array();
 foreach (getSubjectTypes() as $sSubjectType) {
-    $aFullListComplexFilterSubjectTypes[] = array(
-        "value" => $sSubjectType,
-        "label" => ucfirst($sSubjectType)
-    );
+    $aFullListComplexFilterSubjectTypes[] = array("value" => $sSubjectType, "label" => ucfirst($sSubjectType));
 }
 
 $aFullListComplexFilterAddressTypes = array();
 foreach (getAddressTypes() as $sAddressType) {
-    $aFullListComplexFilterAddressTypes[] = array(
-        "value" => $sAddressType,
-        "label" => addressTypeLabel($sAddressType)
-    );
+    $aFullListComplexFilterAddressTypes[] = array("value" => $sAddressType, "label" => addressTypeLabel($sAddressType));
 }
 
 

@@ -9,12 +9,9 @@ if (!$oPdo) {
 
 $blCanEdit = isFullAccessAllowed("ex");
 requireViewAccess("ex", "csrf_token", true);
-
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     requireNamedCsrfToken("csrf_token", true);
 }
-
 if (!$blCanEdit && $_SERVER["REQUEST_METHOD"] == "POST") {
     sendJsonAndExit(array("success" => false, "message" => "Editing is not allowed from this location."), 403);
 }

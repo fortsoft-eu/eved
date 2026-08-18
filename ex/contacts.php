@@ -10,12 +10,7 @@ if (!$oPdo) {
 
 requireViewAccess("ex", "csrf_token", true);
 $blCanEdit = isFullAccessAllowed("ex");
-
-
-$aContactsSettingsDefaults = array(
-    "show_inactive_contacts" => 0,
-    "show_inactive_subjects" => 0
-);
+$aContactsSettingsDefaults = array("show_inactive_contacts" => 0, "show_inactive_subjects" => 0);
 $aContactSettings = array();
 if (!isset($_SESSION["ex_contacts_settings"]) || !is_array($_SESSION["ex_contacts_settings"])) {
     $_SESSION["ex_contacts_settings"] = array();
