@@ -12,18 +12,13 @@ function isTrustedClient() {
     if (!isAllowedIp() || !$aTrustedUserAgents || !$aTrustedAcceptLanguages) {
         return false;
     }
-    if (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) || isset($_SERVER["HTTP_CF_WORKER"])
-            || isset($_SERVER["HTTP_CF_EW_VIA"]) || isset($_SERVER["HTTP_CDN_LOOP"])
-            || isset($_SERVER["HTTP_CF_RAY"]) || isset($_SERVER["HTTP_CF_VISITOR"])
-            || isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
-
+    if (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) || isset($_SERVER["HTTP_CF_WORKER"]) || isset($_SERVER["HTTP_CF_EW_VIA"]) || isset($_SERVER["HTTP_CDN_LOOP"]) || isset($_SERVER["HTTP_CF_RAY"]) || isset($_SERVER["HTTP_CF_VISITOR"]) || isset($_SERVER["HTTP_CF_CONNECTING_IP"])) {
         return false;
     }
     if (!isset($_SERVER["HTTP_USER_AGENT"], $_SERVER["HTTP_ACCEPT_LANGUAGE"])) {
         return false;
     }
-    return in_array((string)$_SERVER["HTTP_USER_AGENT"], $aTrustedUserAgents, true)
-        && in_array((string)$_SERVER["HTTP_ACCEPT_LANGUAGE"], $aTrustedAcceptLanguages, true);
+    return in_array((string)$_SERVER["HTTP_USER_AGENT"], $aTrustedUserAgents, true) && in_array((string)$_SERVER["HTTP_ACCEPT_LANGUAGE"], $aTrustedAcceptLanguages, true);
 }
 
 function isDesktop() {
@@ -226,9 +221,7 @@ function normalizeStoredCurrency($sCurrency) {
 
 function getCurrencyOptions($oPdo, $sSelectedCurrency = "") {
     $sCurrencySeparator = " " . html_entity_decode("&#8212;", ENT_QUOTES, "UTF-8") . " ";
-    $aCurrencies = array(
-        "CZK" => array("currency" => "CZK", "label" => "CZK" . $sCurrencySeparator . "Czech koruna")
-    );
+    $aCurrencies = array("CZK" => array("currency" => "CZK", "label" => "CZK" . $sCurrencySeparator . "Czech koruna"));
     try {
         $oStatement = $oPdo->query("SELECT currency_code, MIN(currency) AS currency_name FROM kf_exchange_rates GROUP BY currency_code ORDER BY currency_code ASC");
         while ($aRow = $oStatement->fetch()) {
@@ -1178,10 +1171,7 @@ function getPortalUserSessionTimeout($aUser) {
 function fetchUserEffectivePermissions($oPdo, $iUserId, $iSubjectId) {
     $aPermissions = array();
     $oStatement = $oPdo->prepare("(SELECT p.permission_key FROM ex_user_permission AS up INNER JOIN ex_permissions AS p ON p.id = up.permission_id WHERE up.user_id = :user_id AND up.is_allowed = 1 AND p.is_active = 1) UNION (SELECT p.permission_key FROM ex_group_permissions AS gp INNER JOIN ex_permissions AS p ON p.id = gp.permission_id INNER JOIN ex_group_subject AS sg ON sg.group_id = gp.group_id WHERE sg.subject_id = :subject_id AND gp.is_allowed = 1 AND p.is_active = 1)");
-    $oStatement->execute(array(
-        "user_id" => $iUserId,
-        "subject_id" => $iSubjectId
-    ));
+    $oStatement->execute(array("user_id" => $iUserId, "subject_id" => $iSubjectId));
     while ($sPermissionKey = $oStatement->fetchColumn()) {
         $aPermissions[$sPermissionKey] = true;
     }
@@ -1503,11 +1493,7 @@ function handleLoginPost($sTokenName) {
     }
     $aUser = fetchPortalLoginUser($oPdo, $sUserName);
     $aPermissions = array();
-    $blValidLogin = $aUser
-        && (int)$aUser["is_active"] == 1
-        && (int)$aUser["subject_active"] == 1
-        && in_array($aUser["subject_type"], array("person", "service"), true)
-        && password_verify($sPassword, $aUser["password_hash"]);
+    $blValidLogin = $aUser && (int)$aUser["is_active"] == 1 && (int)$aUser["subject_active"] == 1 && in_array($aUser["subject_type"], array("person", "service"), true) && password_verify($sPassword, $aUser["password_hash"]);
     if ($blValidLogin) {
         $aPermissions = fetchUserEffectivePermissions($oPdo, (int)$aUser["id"], (int)$aUser["subject_id"]);
     }
@@ -1655,9 +1641,7 @@ function isShortNoBreakWord($sWord, $iMaxLength = 3) {
 function htmlNoShortWordBreaks($sText, $iMaxLength = 3) {
     $aLines = preg_split('/(\r\n|\r|\n)/', $sText, -1, PREG_SPLIT_DELIM_CAPTURE);
     $sHtml = "";
-    $iLine;
     $iLineCount = is_array($aLines) ? count($aLines) : 0;
-    $i;
 
     if (!is_array($aLines)) {
         return html($sText);
@@ -2119,26 +2103,26 @@ function formatDumpVarValue($mVar, $iLevel) {
         return formatDumpVarObject($mVar, $iLevel);
     }
     if (is_bool($mVar)) {
-        return "<span style=\"font-weight: bold !important;\">" . ($mVar ? "true" : "false") . "</span>";
+        return "<span class=\"dump-var-boolean\">" . ($mVar ? "true" : "false") . "</span>";
     }
     if ($mVar === null) {
-        return "<span style=\"color: #808 !important; font-weight: bold !important; font-style: italic !important;\">null</span>";
+        return "<span class=\"dump-var-null\">null</span>";
     }
     if (is_int($mVar)) {
-        return "<span style=\"color: #888 !important;\">int:</span> <span style=\"color: #088 !important; font-weight: bold !important;\">" . html($mVar) . "</span>";
+        return "<span class=\"dump-var-type\">int:</span> <span class=\"dump-var-integer\">" . html($mVar) . "</span>";
     }
     if (is_float($mVar)) {
-        return "<span style=\"color: #888 !important;\">float:</span> <span style=\"color: #080 !important; font-weight: bold !important;\">" . html($mVar) . "</span>";
+        return "<span class=\"dump-var-type\">float:</span> <span class=\"dump-var-float\">" . html($mVar) . "</span>";
     }
-    return "<span style=\"color: #080 !important;\">\"" . html($mVar) . "\"</span>";
+    return "<span class=\"dump-var-string\">\"" . html($mVar) . "\"</span>";
 }
 
 function formatDumpVarArray($aArray, $iLevel) {
     if (!$aArray) {
-        return "<span style=\"font-weight: bold !important; color: #F0F !important;\">Array</span><span style=\"color: #000 !important;\">()</span>\n";
+        return "<span class=\"dump-var-array\">Array</span><span class=\"dump-var-punctuation\">()</span>\n";
     }
-    $sOutput = "<span style=\"font-weight: bold !important; color: #F0F !important;\">Array</span><span style=\"color: #000 !important;\">(" . count($aArray) . ")</span>\n";
-    $sOutput .= getDumpVarIndentation($iLevel) . "<span style=\"color: #000 !important;\">(</span>\n";
+    $sOutput = "<span class=\"dump-var-array\">Array</span><span class=\"dump-var-punctuation\">(" . count($aArray) . ")</span>\n";
+    $sOutput .= getDumpVarIndentation($iLevel) . "<span class=\"dump-var-punctuation\">(</span>\n";
     foreach ($aArray as $mKey => $mValue) {
         $sOutput .= getDumpVarIndentation($iLevel + 1) . formatDumpVarKey($mKey);
         if (is_array($mValue) || is_object($mValue)) {
@@ -2147,7 +2131,7 @@ function formatDumpVarArray($aArray, $iLevel) {
             $sOutput .= formatDumpVarValue($mValue, $iLevel + 1) . "\n";
         }
     }
-    $sOutput .= getDumpVarIndentation($iLevel) . "<span style=\"color: #000 !important;\">)</span>\n";
+    $sOutput .= getDumpVarIndentation($iLevel) . "<span class=\"dump-var-punctuation\">)</span>\n";
     return $sOutput;
 }
 
@@ -2155,10 +2139,10 @@ function formatDumpVarObject($oObject, $iLevel) {
     $aProperties = get_object_vars($oObject);
     $sClassName = html(get_class($oObject));
     if (!$aProperties) {
-        return "<span style=\"color: #000 !important;\">" . $sClassName . " </span><span style=\"font-weight: bold !important; color: #F00 !important;\">Object</span><span style=\"color: #000 !important;\">()</span>\n";
+        return "<span class=\"dump-var-punctuation\">" . $sClassName . " </span><span class=\"dump-var-object\">Object</span><span class=\"dump-var-punctuation\">()</span>\n";
     }
-    $sOutput = "<span style=\"color: #000 !important;\">" . $sClassName . " </span><span style=\"font-weight: bold !important; color: #F00 !important;\">Object</span><span style=\"color: #000 !important;\">(" . count($aProperties) . ")</span>\n";
-    $sOutput .= getDumpVarIndentation($iLevel) . "<span style=\"color: #000 !important;\">(</span>\n";
+    $sOutput = "<span class=\"dump-var-punctuation\">" . $sClassName . " </span><span class=\"dump-var-object\">Object</span><span class=\"dump-var-punctuation\">(" . count($aProperties) . ")</span>\n";
+    $sOutput .= getDumpVarIndentation($iLevel) . "<span class=\"dump-var-punctuation\">(</span>\n";
     foreach ($aProperties as $sKey => $mValue) {
         $sOutput .= getDumpVarIndentation($iLevel + 1) . formatDumpVarKey($sKey);
         if (is_array($mValue) || is_object($mValue)) {
@@ -2167,19 +2151,19 @@ function formatDumpVarObject($oObject, $iLevel) {
             $sOutput .= formatDumpVarValue($mValue, $iLevel + 1) . "\n";
         }
     }
-    $sOutput .= getDumpVarIndentation($iLevel) . "<span style=\"color: #000 !important;\">)</span>\n";
+    $sOutput .= getDumpVarIndentation($iLevel) . "<span class=\"dump-var-punctuation\">)</span>\n";
     return $sOutput;
 }
 
 function formatDumpVarKey($mKey) {
     $sKey = html($mKey);
     if ($sKey != "" && $sKey[0] == "_") {
-        return "<span style=\"color: #BBB !important;\">[" . $sKey . "] => </span>";
+        return "<span class=\"dump-var-key-muted\">[" . $sKey . "] => </span>";
     }
     if (strpos($sKey, "__") !== false) {
-        return "<span style=\"color: #000 !important;\">[</span><span style=\"font-weight: bold !important; color: #00F !important;\">" . $sKey . "</span><span style=\"color: #000 !important;\">] => </span>";
+        return "<span class=\"dump-var-punctuation\">[</span><span class=\"dump-var-key-special\">" . $sKey . "</span><span class=\"dump-var-punctuation\">] => </span>";
     }
-    return "<span style=\"color: #000 !important;\">[" . $sKey . "] => </span>";
+    return "<span class=\"dump-var-punctuation\">[" . $sKey . "] => </span>";
 }
 
 function getDumpVarIndentation($mVar) {
@@ -2307,11 +2291,7 @@ function redirectToCanonicalUrl() {
     $sPrefix = preg_replace("/\..*$/", "", $_SERVER["HTTP_HOST"]);
     $sPattern = "#^/" . preg_quote($sPrefix, "#") . "(/.*)?$#i";
     if (preg_match($sPattern, $_SERVER["REQUEST_URI"])) {
-        $sNewUri = preg_replace(
-            "#^/" . preg_quote($sPrefix, "#") . "#i",
-            "",
-            $_SERVER["REQUEST_URI"]
-        );
+        $sNewUri = preg_replace("#^/" . preg_quote($sPrefix, "#") . "#i", "", $_SERVER["REQUEST_URI"]);
         if ($sNewUri == "" || $sNewUri[0] != "/") {
             $sNewUri = "/" . $sNewUri;
         }
@@ -2340,11 +2320,7 @@ function databaseConnect() {
             "mysql:host=" . $sDatabaseHostname . ";dbname=" . $sDatabaseNamePrefix . $_SERVER['USER'] . ";charset=utf8mb4",
             $sDatabaseUsernamePrefix . $_SERVER['USER'],
             $sDatabasePassword,
-            array(
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false
-            )
+            array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false)
         );
     } catch (PDOException $oException) {
         error_log((string)$oException);
@@ -2453,6 +2429,7 @@ function initializeSession($blStartOnlyIfExists = false) {
     ini_set("session.use_only_cookies", 1);
     ini_set("session.use_trans_sid", 0);
     ini_set("session.gc_maxlifetime", $iSessionLifetime);
+    session_name("__Host-SID");
     $sSessionName = null;
     if ($blStartOnlyIfExists) {
         $sSessionName = session_name();

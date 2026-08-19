@@ -4301,7 +4301,7 @@ document.addEventListener("DOMContentLoaded", function () {
     setupIbanCalculator();
 });
 
-function getSchemaSnapdomLayoutPlugin() {
+function getSchemaSnapdomLayoutPlugin(sBackgroundColor) {
     var oSource = null;
 
     function cleanup() {
@@ -4323,7 +4323,7 @@ function getSchemaSnapdomLayoutPlugin() {
             }
             cleanup();
             oSource = document.createElement("div");
-            oSource.style.backgroundColor = "#FFF";
+            oSource.style.backgroundColor = sBackgroundColor;
             oSource.style.boxSizing = "border-box";
             oSource.style.left = "-100000px";
             oSource.style.padding = "6px";
@@ -4373,15 +4373,17 @@ function setupSchemaSavePngButton() {
                 var iScale = parseInt(oButton.getAttribute("data-scale"), 10);
                 var oElement = document.body;
                 var oLayoutPlugin;
+                var sBackgroundColor;
                 var sFileName = oButton.getAttribute("data-file-name") || "database_schema";
                 if (!oElement || typeof snapdom != "function" || typeof snapdom.toCanvas != "function" || isNaN(iScale) || iScale < 1 || iScale > 5) {
                     return;
                 }
                 setPngExportMenuDisabled(oButton, true);
                 flashMenuLink(oButton);
-                oLayoutPlugin = getSchemaSnapdomLayoutPlugin();
+                sBackgroundColor = window.getComputedStyle(oElement).backgroundColor;
+                oLayoutPlugin = getSchemaSnapdomLayoutPlugin(sBackgroundColor);
                 snapdom.toCanvas(oElement, {
-                    backgroundColor: "#FFF",
+                    backgroundColor: sBackgroundColor,
                     dpr: 1,
                     plugins: [oLayoutPlugin],
                     scale: iScale,

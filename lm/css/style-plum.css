@@ -1395,9 +1395,60 @@ td.numeric, th.numeric, .email-overview-table th, .email-overview-table td, .bus
 }
 
 .request-overview hr {
-    background-color: #CCC;
+    background-color: var(--admin-theme-border);
     border: 0;
     height: 1px;
+}
+
+.request-overview .dump-var-boolean {
+    font-weight: bold;
+}
+
+.request-overview .dump-var-null {
+    color: var(--request-dump-var-null, #808);
+    font-style: italic;
+    font-weight: bold;
+}
+
+.request-overview .dump-var-type {
+    color: var(--admin-theme-muted, #888);
+}
+
+.request-overview .dump-var-integer {
+    color: var(--request-dump-var-integer, #088);
+    font-weight: bold;
+}
+
+.request-overview .dump-var-float {
+    color: var(--request-dump-var-float, #080);
+    font-weight: bold;
+}
+
+.request-overview .dump-var-string {
+    color: var(--request-dump-var-string, #080);
+}
+
+.request-overview .dump-var-array {
+    color: var(--request-dump-var-array, #F0F);
+    font-weight: bold;
+}
+
+.request-overview .dump-var-punctuation {
+    color: var(--admin-theme-text, #000);
+}
+
+.request-overview .dump-var-object {
+    color: var(--request-dump-var-object, #F00);
+    font-weight: bold;
+}
+
+.request-overview .dump-var-key-muted {
+    color: var(--admin-theme-muted, #BBB);
+}
+
+.request-overview .dump-var-key-special {
+    color: var(--admin-theme-link, #00F);
+    font-weight: bold;
 }
 
 .admin-table-groups table {
@@ -2581,6 +2632,12 @@ body.php-generated-output hr {
     --admin-theme-even: #291C2C;
     --admin-theme-inactive: #3B2B3E;
     --admin-theme-tinymce-skin: tinymce-5-dark;
+    --request-dump-var-null: #D2A8FF;
+    --request-dump-var-integer: #79C0FF;
+    --request-dump-var-float: #7EE787;
+    --request-dump-var-string: #7EE787;
+    --request-dump-var-array: #F778BA;
+    --request-dump-var-object: #FF7B72;
 }
 
 input:not([type]), input[type="date"], input[type="datetime-local"], input[type="email"], input[type="month"], input[type="number"], input[type="password"], input[type="search"], input[type="tel"], input[type="text"], input[type="time"], input[type="url"], input[type="week"], textarea {

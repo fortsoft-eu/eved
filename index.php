@@ -27,13 +27,15 @@ if ($blPortalIndexAllowed) {
     $aLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats." . $sWebHostingDomain . "/", "icon" => "&#128202;", "name" => "AWStats", "title" => html($user) . " site statistics");
     list($user, $pass) = arrayReadNext($aAWStatsAccounts);
     $aLinks[] = array("href" => "https://" . rawurlencode($user) . ":" . rawurlencode($pass) . "@stats." . $sWebHostingDomain . "/", "icon" => "&#128200;", "name" => "AWStats", "title" => html($user) . " site statistics");
-    $aLinks[] = array("href" => "https://securityheaders.com/", "icon" => "&#128274;", "name" => "Security Headers", "title" => "HTTP security header scanner");
-    $aLinks[] = array("href" => "https://developer.mozilla.org/en-US/observatory", "icon" => "&#128301;", "name" => "MDN Observatory", "title" => "Mozilla site security scanner");
     $aLinks[] = array("href" => "https://github.com/fortsoft-eu", "icon" => "&#128008;", "name" => "GitHub", "title" => "Source code hosting");
-    $aLinks[] = array("href" => "https://unicode.org/emoji/charts/full-emoji-list.html", "icon" => "&#9786;&#65039;", "name" => "Emoji List", "title" => "Unicode full emoji list");
     $aLinks[] = array("href" => "https://www.profisms.cz/", "icon" => "&#128241;", "name" => "ProfiSMS", "title" => "SMS administration");
     $aLinks[] = array("href" => "https://marketplace.apilayer.com/whois-api", "icon" => "&#128268;", "name" => "APILayer WHOIS", "title" => "APILayer WHOIS API dashboard");
     $aLinks[] = array("href" => "https://app.abstractapi.com/dashboard", "icon" => "&#129513;", "name" => "Abstract API", "title" => "Abstract API dashboard");
+    $aLinks[] = array("href" => "https://securityheaders.com/", "icon" => "&#128274;", "name" => "Security Headers", "title" => "HTTP security header scanner");
+    $aLinks[] = array("href" => "https://developer.mozilla.org/en-US/observatory", "icon" => "&#128301;", "name" => "MDN Observatory", "title" => "Mozilla site security scanner");
+    $aLinks[] = array("href" => "https://www.ssl.org/", "icon" => "&#128209;", "name" => "SSL Checker", "title" => "SSL Certificate Checker");
+    $aLinks[] = array("href" => "https://www.ssllabs.com/ssltest/", "icon" => "&#128737;&#65039;", "name" => "SSL Server Test", "title" => "Qualys SSL Server Test");
+    $aLinks[] = array("href" => "https://unicode.org/emoji/charts/full-emoji-list.html", "icon" => "&#9786;&#65039;", "name" => "Emoji List", "title" => "Unicode full emoji list");
 
     if ($blMsie) {
 
