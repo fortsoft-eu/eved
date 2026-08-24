@@ -617,7 +617,6 @@ if ($oPdo) {
   <div id="hnd-splitter" style="left: 350px"></div>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jquery-3.5.1/jquery.min.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/js/bootstrap.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/js/ie10-viewport-bug-workaround.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/uri-1.19.2/uri.min.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/headroom-0.11.0/headroom.min.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jstree-3.3.10/jstree.min.js"></script>

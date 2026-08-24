@@ -2351,11 +2351,7 @@ function decryptConfigurationCipherValue($sType, $sName, $sValue, $sKey) {
     }
     $sNonce = substr($sEncryptedBytes, 0, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
     $sEncryptedValue = substr($sEncryptedBytes, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
-    $sValue = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($sEncryptedValue, getConfigurationCipherAdditionalData($sType, $sName), $sNonce, $sKey);
-    if ($sValue === false) {
-        throw new RuntimeException("The encrypted configuration value cannot be decrypted.");
-    }
-    return $sValue;
+    return sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($sEncryptedValue, getConfigurationCipherAdditionalData($sType, $sName), $sNonce, $sKey);
 }
 
 function loadConfiguration() {
@@ -2375,7 +2371,7 @@ function loadConfiguration() {
         $oStatement = $oPdo->prepare("SELECT `type`, `name`, `value` FROM fs_configuration ORDER BY `order` ASC, id ASC");
         $oStatement->execute();
         while ($aRow = $oStatement->fetch()) {
-            if ($aRow["name"] != "" && $aRow["type"] != "deploy_credential") {
+            if ($aRow["name"] != "") {
                 $aRow["value"] = decryptConfigurationCipherValue($aRow["type"], $aRow["name"], $aRow["value"], $sKey);
             }
             switch ($aRow["type"]) {
