@@ -154,9 +154,11 @@ form {
 }
 
 .mail-recipient-suggest-box {
-    background: #FFF;
-    border: 1px solid #C0C0C0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: var(--admin-theme-surface);
+    border: 1px solid var(--admin-theme-border);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--admin-theme-text);
     box-sizing: border-box;
     max-height: 180px;
     overflow-x: hidden;
@@ -166,9 +168,10 @@ form {
 }
 
 .mail-recipient-suggest-option {
-    background: #FFF;
+    background: var(--admin-theme-surface);
     border: 0;
     box-sizing: border-box;
+    color: var(--admin-theme-text);
     cursor: pointer;
     display: block;
     margin: 0;
@@ -197,7 +200,7 @@ form {
         background-color: transparent;
     }
     50% {
-        background-color: #DCDCE4;
+        background-color: var(--admin-theme-header);
     }
 }
 
@@ -590,12 +593,8 @@ body.mail-page .admin-controls .mail-send-button {
     display: inline-block;
 }
 
-hr, .menu-separator {
-    border: 0;
-    border-top: 1px solid var(--admin-theme-border);
-}
-
 .menu-separator {
+    border-top: 1px solid var(--admin-theme-inactive);
     display: block;
     margin: 4px 0;
 }
@@ -860,8 +859,8 @@ body.phpinfo-page .admin-controls {
 }
 
 .phpinfo-frame {
-    background: #FFF;
-    border: 1px solid #C0C0C0;
+    background: var(--admin-theme-surface);
+    border: 1px solid var(--admin-theme-border);
     box-sizing: border-box;
     display: block;
     flex: 1 1 0;
@@ -1525,10 +1524,11 @@ td.numeric, th.numeric, .email-overview-table th, .email-overview-table td, .bus
 }
 
 .domain-result-table caption, .domain-dns-table caption, .ares-result-table caption {
-    background: #DDD;
-    border: 1px solid #C0C0C0;
+    background: var(--admin-theme-header);
+    border: 1px solid var(--admin-theme-border);
     border-bottom: 0;
     caption-side: top;
+    color: var(--admin-theme-text);
     font-weight: bold;
     padding: 8px;
     text-align: left;
@@ -1891,7 +1891,8 @@ body.fancy-text-page .admin-controls {
 }
 
 .business-hours-card.admin-row-modal, .admin-row-modal > td {
-    background: #EADFFF !important;
+    background: var(--admin-theme-surface) !important;
+    color: var(--admin-theme-text);
 }
 
 .business-hours-card.admin-row-saved, .admin-row-saved > td {
@@ -2132,7 +2133,7 @@ body.php-generated-output hr {
         background-color: transparent;
     }
     50% {
-        background-color: #DFF0D8;
+        background-color: var(--admin-theme-header);
     }
 }
 
@@ -2496,7 +2497,7 @@ a:focus, a:hover {
     color: #274B6C;
 }
 
-form, .login-panel, .admin-top, .film-link-page .admin-top, .order-detail, .film-link-page .admin-controls, .film-link-page .admin-top > form, .film-link-page .order-detail, .confirm-dialog-box, .render-throbber-box, .menu-panel, .mail-recipient-suggest-box, .character-palette-tone-popup, .subject-date-calendar, .business-hours-card, .holiday-month, .calendar-tooltip, .request-overview, table, .schema-table, .snippet-board-form .tox-tinymce, .snippet-board-form .tox .tox-editor-header {
+form, .login-panel, .admin-top, .film-link-page .admin-top, .order-detail, .film-link-page .admin-controls, .film-link-page .admin-top > form, .film-link-page .order-detail, .confirm-dialog-box, .render-throbber-box, .menu-panel, .character-palette-tone-popup, .subject-date-calendar, .business-hours-card, .holiday-month, .calendar-tooltip, .request-overview, table, .schema-table, .snippet-board-form .tox-tinymce, .snippet-board-form .tox .tox-editor-header {
     background-color: #F8FAFC;
     border-color: #9AA8B4;
     color: #26323D;
@@ -2507,7 +2508,7 @@ form {
     padding: 10px;
 }
 
-.login-panel, .confirm-dialog-box, .render-throbber-box, .menu-panel, .mail-recipient-suggest-box, .character-palette-tone-popup, .subject-date-calendar, .order-detail, .business-hours-card, .holiday-month, .calendar-tooltip, .request-overview {
+.login-panel, .confirm-dialog-box, .render-throbber-box, .menu-panel, .character-palette-tone-popup, .subject-date-calendar, .order-detail, .business-hours-card, .holiday-month, .calendar-tooltip, .request-overview {
     border-radius: 0;
     box-shadow: 0 1px 4px rgba(35, 48, 60, 0.16);
 }
@@ -2586,11 +2587,7 @@ tr:nth-child(even), #addresses-table tr:nth-child(even) > .address-cell, #contac
     background: transparent;
 }
 
-.admin-row-modal > td, .business-hours-card.admin-row-modal {
-    background-color: #F8FAFC;
-}
-
-.business-hours-card-inactive, .dashboard-service-inactive > td, .issues-table .issue-row-done > td, .phone-book-row-inactive > td, .ri > td, #addresses-table .address-subject-inactive, #contacts-table .contact-subject-inactive {
+.business-hours-card-inactive, .dashboard-status-inactive, .dashboard-service-inactive > td, .issue-priority-low, .issues-table .issue-row-done > td, .phone-book-row-inactive > td, .ri > td, #addresses-table .address-subject-inactive, #contacts-table .contact-subject-inactive {
     background-color: #DCE2E7;
     color: #6E7983;
 }
@@ -2687,7 +2684,7 @@ input::placeholder, textarea::placeholder, .cf {
     color: #4D3800;
 }
 
-.message-error, .snippet-board-status-error, .subject-edit-error, .contact-edit-error, .dashboard-status-failed, .dashboard-status-error, .issue-priority-urgent {
+.message-error, .snippet-board-status-error, .subject-edit-error, .contact-edit-error, .dashboard-status-failed, .dashboard-status-error, .issue-type-bug, .issue-priority-urgent {
     background-color: #FCE8E6;
     border-color: #C66A63;
     color: #5C1611;

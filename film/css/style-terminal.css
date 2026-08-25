@@ -265,7 +265,7 @@ form {
 }
 
 .film-link-page .film-link-table-scroll {
-    background: #FFF;
+    background: var(--admin-theme-surface);
     max-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
@@ -622,12 +622,8 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     display: inline-block;
 }
 
-hr, .menu-separator {
-    border: 0;
-    border-top: 1px solid var(--admin-theme-border);
-}
-
 .menu-separator {
+    border-top: 1px solid var(--admin-theme-hover);
     display: block;
     margin: 4px 0;
 }
@@ -649,7 +645,7 @@ hr, .menu-separator {
         background-color: transparent;
     }
     50% {
-        background-color: #DCDCE4;
+        background-color: var(--admin-theme-header);
     }
 }
 
@@ -798,7 +794,8 @@ tr:nth-child(even) {
 }
 
 .admin-row-modal > td {
-    background: #EADFFF !important;
+    background: var(--admin-theme-surface) !important;
+    color: var(--admin-theme-text);
 }
 
 .admin-row-saved > td {
@@ -810,7 +807,7 @@ tr:nth-child(even) {
         background-color: transparent;
     }
     50% {
-        background-color: #DFF0D8;
+        background-color: var(--admin-theme-header);
     }
 }
 
@@ -1102,8 +1099,8 @@ body.film-link-page[data-pmd-like="1"] .order-detail-columns {
 }
 
 .phpinfo-frame {
-    background: #FFF;
-    border: 1px solid #C0C0C0;
+    background: var(--admin-theme-surface);
+    border: 1px solid var(--admin-theme-border);
     box-sizing: border-box;
     height: calc(100vh - 110px);
     margin-top: 12px;
@@ -1365,10 +1362,6 @@ tr:nth-child(even), #addresses-table tr:nth-child(even) > .address-cell, #contac
 
 .business-hours-table tbody, .business-hours-table tr {
     background: transparent;
-}
-
-.admin-row-modal > td, .business-hours-card.admin-row-modal {
-    background-color: #0D1D13;
 }
 
 .business-hours-card-inactive, .dashboard-service-inactive > td, .issues-table .issue-row-done > td, .phone-book-row-inactive > td, .ri > td, #addresses-table .address-subject-inactive, #contacts-table .contact-subject-inactive {

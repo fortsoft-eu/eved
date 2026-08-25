@@ -1214,12 +1214,8 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     display: inline-block;
 }
 
-hr, .menu-separator {
-    border: 0;
-    border-top: 1px solid #E5E5E5;
-}
-
 .menu-separator {
+    border-top: 1px solid #E5E5E5;
     display: block;
     margin: 4px 0;
 }

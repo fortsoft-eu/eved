@@ -433,12 +433,8 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     display: inline-block;
 }
 
-hr, .menu-separator {
-    border: 0;
-    border-top: 1px solid var(--admin-theme-border);
-}
-
 .menu-separator {
+    border-top: 1px solid var(--admin-theme-border);
     display: block;
     margin: 4px 0;
 }
@@ -460,7 +456,7 @@ hr, .menu-separator {
         background-color: transparent;
     }
     50% {
-        background-color: #DCDCE4;
+        background-color: var(--admin-theme-header);
     }
 }
 
@@ -889,7 +885,8 @@ tr:nth-child(even) {
 }
 
 .iban-page .admin-top {
-    background: #F8F8F8;
+    background: var(--admin-theme-surface);
+    color: var(--admin-theme-text);
     padding-bottom: 8px;
 }
 
@@ -1144,7 +1141,8 @@ td.numeric, th.numeric {
 }
 
 .admin-row-modal > td {
-    background: #EADFFF !important;
+    background: var(--admin-theme-surface) !important;
+    color: var(--admin-theme-text);
 }
 
 .admin-row-saved > td {
@@ -1156,7 +1154,7 @@ td.numeric, th.numeric {
         background-color: transparent;
     }
     50% {
-        background-color: #DFF0D8;
+        background-color: var(--admin-theme-header);
     }
 }
 
@@ -1238,12 +1236,6 @@ button:hover, select:focus, select:hover, .button-link:hover, .admin-controls .p
     color: #000000;
 }
 
-.admin-controls .complex-filter-active, .admin-controls .quick-filter-active, .business-hours-tab-active, .filter-focus-button.filter-focus-active, .mail-recipient-suggest-active, .menu-link-active, .snippet-board-tab-active {
-    background-color: var(--admin-theme-selected);
-    border-color: var(--admin-theme-selected-border);
-    color: var(--admin-theme-selected-text);
-}
-
 .menu-activating .menu-link:not(.menu-link-active):not(.menu-link-activating):hover {
     background: transparent;
 }
@@ -1258,6 +1250,12 @@ button:hover, select:focus, select:hover, .button-link:hover, .admin-controls .p
 
 .menu-activating .menu-link:not(.menu-link-active):not(.menu-link-activating):hover {
     color: #FFFFFF;
+}
+
+.admin-controls .complex-filter-active, .admin-controls .quick-filter-active, .business-hours-tab-active, .filter-focus-button.filter-focus-active, .mail-recipient-suggest-active, .menu-link-active, .snippet-board-tab-active {
+    background-color: var(--admin-theme-selected);
+    border-color: var(--admin-theme-selected-border);
+    color: var(--admin-theme-selected-text);
 }
 
 .button-link-disabled, .button-link-disabled:hover, .button-link:disabled, .button-link:disabled:hover {
@@ -1300,10 +1298,6 @@ tr:nth-child(even), #addresses-table tr:nth-child(even) > .address-cell, #contac
     background: transparent;
 }
 
-.admin-row-modal > td, .business-hours-card.admin-row-modal {
-    background-color: #000000;
-}
-
 .business-hours-card-inactive, .dashboard-service-inactive > td, .issues-table .issue-row-done > td, .phone-book-row-inactive > td, .ri > td, #addresses-table .address-subject-inactive, #contacts-table .contact-subject-inactive {
     background-color: #1A1A1A;
     color: #D0D0D0;
@@ -1331,7 +1325,7 @@ body.php-generated-output .v {
 }
 
 body.php-generated-output hr {
-    background-color: var(--admin-theme-border);
+    border-color: var(--admin-theme-border);
 }
 /* Theme component coherence. */
 :root {

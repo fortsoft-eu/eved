@@ -146,9 +146,11 @@ form {
 }
 
 .mail-recipient-suggest-box {
-    background: #FFF;
-    border: 1px solid #C0C0C0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: var(--admin-theme-surface);
+    border: 1px solid var(--admin-theme-border);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--admin-theme-text);
     box-sizing: border-box;
     max-height: 180px;
     overflow-x: hidden;
@@ -158,9 +160,10 @@ form {
 }
 
 .mail-recipient-suggest-option {
-    background: #FFF;
+    background: var(--admin-theme-surface);
     border: 0;
     box-sizing: border-box;
+    color: var(--admin-theme-text);
     cursor: pointer;
     display: block;
     margin: 0;
@@ -189,7 +192,7 @@ form {
         background-color: transparent;
     }
     50% {
-        background-color: #DCDCE4;
+        background-color: var(--admin-theme-header);
     }
 }
 
@@ -1195,12 +1198,8 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     display: inline-block;
 }
 
-hr, .menu-separator {
-    border: 0;
-    border-top: 1px solid var(--admin-theme-border);
-}
-
 .menu-separator {
+    border-top: 1px solid var(--admin-theme-inactive);
     display: block;
     margin: 4px 0;
 }
@@ -1585,8 +1584,8 @@ body.phpinfo-page .admin-controls {
 }
 
 .phpinfo-frame {
-    background: #FFF;
-    border: 1px solid #C0C0C0;
+    background: var(--admin-theme-surface);
+    border: 1px solid var(--admin-theme-border);
     box-sizing: border-box;
     display: block;
     flex: 1 1 0;
@@ -2069,7 +2068,8 @@ body.phpinfo-page .admin-controls {
 }
 
 .admin-row-modal > td {
-    background: #EADFFF !important;
+    background: var(--admin-theme-surface) !important;
+    color: var(--admin-theme-text);
 }
 
 .admin-row-saved > td {
@@ -2081,7 +2081,7 @@ body.phpinfo-page .admin-controls {
         background-color: transparent;
     }
     50% {
-        background-color: #DFF0D8;
+        background-color: var(--admin-theme-header);
     }
 }
 
@@ -2397,7 +2397,7 @@ a:focus, a:hover {
     color: #203F57;
 }
 
-form, .login-panel, .admin-top, .film-link-page .admin-top, .order-detail, .film-link-page .admin-controls, .film-link-page .admin-top > form, .film-link-page .order-detail, .confirm-dialog-box, .render-throbber-box, .menu-panel, .mail-recipient-suggest-box, .character-palette-tone-popup, .subject-date-calendar, .business-hours-card, .holiday-month, .calendar-tooltip, .request-overview, table, .schema-table, .snippet-board-form .tox-tinymce, .snippet-board-form .tox .tox-editor-header {
+form, .login-panel, .admin-top, .film-link-page .admin-top, .order-detail, .film-link-page .admin-controls, .film-link-page .admin-top > form, .film-link-page .order-detail, .confirm-dialog-box, .render-throbber-box, .menu-panel, .character-palette-tone-popup, .subject-date-calendar, .business-hours-card, .holiday-month, .calendar-tooltip, .request-overview, table, .schema-table, .snippet-board-form .tox-tinymce, .snippet-board-form .tox .tox-editor-header {
     background-color: #FFFFFF;
     border-color: #C5C5BC;
     color: #262626;
@@ -2408,7 +2408,7 @@ form {
     padding: 10px;
 }
 
-.login-panel, .confirm-dialog-box, .render-throbber-box, .menu-panel, .mail-recipient-suggest-box, .character-palette-tone-popup, .subject-date-calendar, .order-detail, .business-hours-card, .holiday-month, .calendar-tooltip, .request-overview {
+.login-panel, .confirm-dialog-box, .render-throbber-box, .menu-panel, .character-palette-tone-popup, .subject-date-calendar, .order-detail, .business-hours-card, .holiday-month, .calendar-tooltip, .request-overview {
     border-radius: 0;
     box-shadow: none;
 }
@@ -2485,10 +2485,6 @@ tr:nth-child(even), #addresses-table tr:nth-child(even) > .address-cell, #contac
 
 .business-hours-table tbody, .business-hours-table tr {
     background: transparent;
-}
-
-.admin-row-modal > td, .business-hours-card.admin-row-modal {
-    background-color: #FFFFFF;
 }
 
 .business-hours-card-inactive, .dashboard-service-inactive > td, .issues-table .issue-row-done > td, .phone-book-row-inactive > td, .ri > td, #addresses-table .address-subject-inactive, #contacts-table .contact-subject-inactive {

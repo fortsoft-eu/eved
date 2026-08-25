@@ -58,7 +58,7 @@ nav .tab-tabs .hnd-toggle {
 nav .tab-tabs .hnd-toggle.active, nav .tab-tabs .hnd-toggle:active, nav .tab-tabs .hnd-toggle.focus, nav .tab-tabs .hnd-toggle:focus, nav .tab-tabs .hnd-toggle:active:focus, nav .tab-tabs .hnd-toggle:hover {
     background-color: #FFFF00;
     border-color: #FFFF00;
-    color: #FFFF00;
+    color: #000000;
 }
 
 nav .tab-tabs > li > a, nav .tab-tabs > li.active > a, nav .tab-tabs > li.active > a:focus, nav .tab-tabs > li.active > a:hover, .jstree .jstree-anchor {
@@ -161,6 +161,7 @@ div#main > article .navigation .nav-arrows a:hover, div#main > article .navigati
 .btn-primary {
     background-color: #FFFF00;
     border-color: #FFFF00;
+    color: #000000;
 }
 
 div#main > article mark {
