@@ -1195,8 +1195,12 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     display: inline-block;
 }
 
+hr, .menu-separator {
+    border: 0;
+    border-top: 1px solid var(--admin-theme-border);
+}
+
 .menu-separator {
-    border-top: 1px solid var(--admin-theme-inactive);
     display: block;
     margin: 4px 0;
 }
@@ -1232,7 +1236,7 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
 
 .index-settings-options hr {
     border: 0;
-    border-top: 1px solid #C0C0C0;
+    border-top: 1px solid var(--admin-theme-border);
     margin: 2px 0;
     width: 100%;
 }
@@ -2514,7 +2518,7 @@ body.php-generated-output .v {
 }
 
 body.php-generated-output hr {
-    border-color: #6E4B55;
+    background-color: var(--admin-theme-border);
 }
 
 .holiday-month {
@@ -2791,4 +2795,8 @@ input[type="file"]::file-selector-button:hover {
     color: var(--admin-theme-hover-text);
 }
 
-/* End theme component coherence. */
+.cell-nowrap {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
+}

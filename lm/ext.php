@@ -65,7 +65,7 @@ renderMenu();
   <table id="extensions-table" class="table-filter-target">
     <thead>
       <tr>
-        <th style="text-align: right; width: 1px;">#</th>
+        <th class="cell-key">#</th>
         <th>Extension Name</th>
       </tr>
     </thead>
@@ -74,7 +74,7 @@ renderMenu();
 
 foreach ($aExtensions as $iKey => $sExtensionName) {
     echo "      <tr>\n",
-        "        <td style=\"text-align: right;\">" . $iKey . "</td>\n",
+        "        <td class=\"cell-number\">" . $iKey . "</td>\n",
         "        <td>" . html($sExtensionName) . "</td>\n",
         "      </tr>\n";
 }

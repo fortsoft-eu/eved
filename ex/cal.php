@@ -58,7 +58,7 @@ if ($iCal == 1 || $iCal == 2) {
         send500AndExit("Database error: " . $oException->getMessage());
     }
 }
-$iTime = sendPageHeaders("", "cs-CZ");
+$iTime = sendPageHeaders("", "cs-CZ", true);
 
 ?>
 <!DOCTYPE html>

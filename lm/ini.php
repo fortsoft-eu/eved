@@ -79,8 +79,8 @@ foreach ($aIniVariables as $sVariableName => $aDetails) {
     $sLocalValue = is_string($aDetails["local_value"]) ? wordwrap($aDetails["local_value"], 50, "\n", true) : (string)$aDetails["local_value"];
     echo "      <tr>\n",
         "        <td>" . html($sVariableName) . "</td>\n",
-        "        <td style=\"white-space: pre-wrap;\">" . html($sGlobalValue) . "</td>\n",
-        "        <td style=\"white-space: pre-wrap;\">" . html($sLocalValue) . "</td>\n",
+        "        <td class=\"cell-pre-wrap\">" . html($sGlobalValue) . "</td>\n",
+        "        <td class=\"cell-pre-wrap\">" . html($sLocalValue) . "</td>\n",
         "        <td>" . html($aDetails["access"]) . "</td>\n",
         "      </tr>\n";
 }

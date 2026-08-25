@@ -101,7 +101,7 @@ renderMenu();
     <button type="button" class="button-link js-filter-operator" data-filter-input="table-filter" data-filter-operator="OR">OR</button>
     <button type="button" class="button-link js-filter-reset" data-filter-input="table-filter">Reset</button>
     <span class="table-record-count js-table-record-count" data-table-count="film-work-table" aria-live="polite"><?php echo count($aRows); ?></span>
-    <span class="message-box message-success js-film-work-message" style="display: none;" hidden></span>
+    <span class="message-box message-success js-film-work-message" hidden></span>
   </p>
 <?php
 
@@ -113,7 +113,7 @@ if (!$aRows) {
   <table id="film-work-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
-        <th style="text-align: right; width: 1px;">#</th>
+        <th class="cell-key">#</th>
         <th>Archive Folder Name</th>
         <th>Film Stock</th>
         <th>Cartridge</th>
@@ -133,7 +133,7 @@ if (!$aRows) {
         }
         $sResolution = (int)$aRow["scan_width"] . " x " . (int)$aRow["scan_height"];
         echo "      <tr data-film-scan-id=\"" . html($aRow["id"]) . "\">\n",
-            "        <td style=\"text-align: right;\">" . html($aRow["archive_no"]) . "</td>\n",
+            "        <td class=\"cell-number\">" . html($aRow["archive_no"]) . "</td>\n",
             "        <td>" . html($aRow["folder_name"]) . "</td>\n",
             "        <td>" . html($aRow["film_stock"]) . "</td>\n",
             "        <td>" . html($aRow["cartridge"]) . "</td>\n",

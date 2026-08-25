@@ -78,7 +78,7 @@ renderMenu();
   <table id="film-scans-table" class="table-filter-target<?php echo getCondensedTableClass(); ?>">
     <thead>
       <tr>
-        <th style="text-align: right; width: 1px;">#</th>
+        <th class="cell-key">#</th>
         <th>Archive Folder Name</th>
         <th>Film Stock</th>
         <th>Cartridge</th>
@@ -124,7 +124,7 @@ renderMenu();
         $sScanDateDisplay = str_replace(" ", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", html($sScanDateDisplay));
         $sOrderNumber = $aRow["order_no"] ?? "";
         echo "      <tr data-order-id=\"" . html($sOrderNumber) . "\" data-order-no=\"" . html($sOrderNumber) . "\">\n",
-            "      <td style=\"text-align: right;\">" . html($aRow["archive_no"]) . "</td>\n";
+            "      <td class=\"cell-number\">" . html($aRow["archive_no"]) . "</td>\n";
         renderCell($sFolderName, false);
         renderCell($aRow["film_stock"], !$blFilmStockOk);
         renderCell($aRow["cartridge"], !$blCartridgeOk);

@@ -123,7 +123,7 @@ function setAdminDialogError(oError, sMessage) {
         return;
     }
     oError.textContent = sMessage || "";
-    oError.style.display = sMessage ? "" : "none";
+    oError.hidden = !sMessage;
 }
 
 function getAdminElementText(oElement) {
@@ -3007,6 +3007,11 @@ function setupHolidayCalendarDaySelection() {
 
     if (!document.querySelector(".holiday-day")) {
         return;
+    }
+    var aInitialDays = document.querySelectorAll(".holiday-day[data-calendar-background-image]");
+    var iInitialDay;
+    for (iInitialDay = 0; iInitialDay < aInitialDays.length; iInitialDay += 1) {
+        applyDayColor(aInitialDays[iInitialDay]);
     }
 
     document.addEventListener("mousedown", function (oEvent) {
@@ -7151,7 +7156,7 @@ document.addEventListener("DOMContentLoaded", function () {
         oClose.setAttribute("aria-label", "Close");
         oClose.textContent = "\u00D7";
         oError.className = "contact-edit-error";
-        oError.style.display = "none";
+        oError.hidden = true;
         oActions.className = "confirm-dialog-actions";
         oSave.type = "submit";
         oSave.className = "confirm-dialog-button";

@@ -622,8 +622,12 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     display: inline-block;
 }
 
+hr, .menu-separator {
+    border: 0;
+    border-top: 1px solid var(--admin-theme-border);
+}
+
 .menu-separator {
-    border-top: 1px solid var(--admin-theme-inactive);
     display: block;
     margin: 4px 0;
 }
@@ -1394,7 +1398,7 @@ body.php-generated-output .v {
 }
 
 body.php-generated-output hr {
-    border-color: #A5A5A5;
+    background-color: var(--admin-theme-border);
 }
 /* Theme component coherence. */
 :root {
@@ -1512,16 +1516,26 @@ body:not(.php-generated-output) table:not(.business-hours-table) tbody tr[data-s
     background-color: var(--admin-theme-hover) !important;
     color: var(--admin-theme-hover-text);
 }
+
 .admin-controls .png-export-menu-option {
     background-color: transparent;
     display: flex;
     font-family: inherit;
     min-height: 29px;
 }
+
 .admin-controls .png-export-menu-option {
     background-color: transparent;
     display: flex;
     font-family: inherit;
     min-height: 29px;
 }
-/* End theme component coherence. */
+
+.cell-number {
+    text-align: right;
+}
+
+.cell-key {
+    text-align: right;
+    width: 1px;
+}

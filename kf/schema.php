@@ -86,7 +86,7 @@ $aSchemaRelationRoutes = array(
 );
 
 
-$iTime = sendPageHeaders();
+$iTime = sendPageHeaders("", "en-US", true);
 
 ?>
 <!DOCTYPE html>

@@ -3152,7 +3152,7 @@ function exCalendarRenderMonth($iYear, $iMonth, $aHolidays) {
             $sClass .= " " . $sHolidayClass;
         }
         $sBackgroundImage = exCalendarGetHolidayBackgroundImage($aHolidayItems);
-        $sBackgroundAttribute = $sBackgroundImage != "" ? " style=\"background-image: " . html($sBackgroundImage) . ";\" data-calendar-background-image=\"" . html($sBackgroundImage) . "\"" : "";
+        $sBackgroundAttribute = $sBackgroundImage != "" ? " data-calendar-background-image=\"" . html($sBackgroundImage) . "\"" : "";
         $sTooltipAttribute = " data-calendar-tooltip-title=\"" . htmlTooltip(exCalendarGetHolidayTooltipTitle($iDay, $aMonthNames[$iMonth], $iYear, $aHolidayItems)) . "\"";
         if ($aHolidayItems) {
             $sTooltipAttribute .= " data-calendar-tooltip=\"" . str_replace("\n", "&#10;", htmlTooltip(exCalendarGetHolidayTooltip($aHolidayItems))) . "\"";
@@ -3968,11 +3968,11 @@ function subjectRowOption($aOptions, $sName, $mDefault) {
 
 function renderSubjectTableCell($sHtml, $sClass = "", $sStyle = "") {
     $sAttributes = "";
+    if ($sStyle != "") {
+        $sClass = trim($sClass . " cell-nowrap");
+    }
     if ($sClass != "") {
         $sAttributes .= " class=\"" . html($sClass) . "\"";
-    }
-    if ($sStyle != "") {
-        $sAttributes .= " style=\"" . html($sStyle) . "\"";
     }
     return "<td" . $sAttributes . ">" . $sHtml . "</td>";
 }

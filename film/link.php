@@ -261,7 +261,7 @@ foreach ($aOrders as $aOrder) {
   <table id="film-link-table" class="<?php echo trim(getCondensedTableClass() . " film-link-table"); ?>">
     <thead>
       <tr>
-        <th style="text-align: right; width: 1px;">#</th>
+        <th class="cell-key">#</th>
         <th>Archive Folder Name</th>
         <th>Bag Number</th>
         <th>Order Number</th>
@@ -295,7 +295,7 @@ foreach ($aLinks as $aLink) {
 
 ?>
       <tr data-order-id="<?php echo html($aLink["lab_order_id"] ?? ""); ?>" data-order-no="<?php echo html($aLink["order_no"] ?? ""); ?>" data-lab="<?php echo html($aLink["lab"] ?? ""); ?>" data-bag-no="<?php echo html($aLink["bag_no"] ?? ""); ?>" data-price="<?php echo html($sPrice); ?>" data-currency="<?php echo html($aLink["currency"] ?? ""); ?>" data-order-date="<?php echo html($sOrderDetailDate); ?>" data-return-date="<?php echo html($sReturnDetailDate); ?>" data-invoice-date="<?php echo html($sInvoiceDetailDate); ?>" data-film-scan-dates="<?php echo html($aLink["film_scan_dates"] ?? ""); ?>" data-lab-scan-dates="<?php echo html($sScanDetailDates); ?>">
-        <td style="text-align: right;"><?php echo html($aLink["archive_no"]); ?></td>
+        <td class="cell-number"><?php echo html($aLink["archive_no"]); ?></td>
         <td><?php echo html($aLink["folder_name"]); ?></td>
         <td><?php echo html($aLink["bag_no"] ?? ""); ?></td>
         <td><?php echo html($aLink["order_no"] ?? ""); ?></td>

@@ -590,8 +590,12 @@ body.mail-page .admin-controls .mail-send-button {
     display: inline-block;
 }
 
+hr, .menu-separator {
+    border: 0;
+    border-top: 1px solid var(--admin-theme-border);
+}
+
 .menu-separator {
-    border-top: 1px solid var(--admin-theme-inactive);
     display: block;
     margin: 4px 0;
 }
@@ -1396,7 +1400,7 @@ td.numeric, th.numeric, .email-overview-table th, .email-overview-table td, .bus
 }
 
 .request-overview hr {
-    background-color: #CCC;
+    background-color: var(--admin-theme-border);
     border: 0;
     height: 1px;
 }
@@ -2637,7 +2641,7 @@ body.php-generated-output .v {
 }
 
 body.php-generated-output hr {
-    border-color: #FFFFFF;
+    background-color: var(--admin-theme-border);
 }
 /* Theme component coherence. */
 :root {
@@ -2837,4 +2841,15 @@ body.snippet-board-page .tox.tox-tinymce-aux .tox-collection__item--active svg, 
     background-color: var(--admin-theme-editor) !important;
 }
 
-/* End theme component coherence. */
+.cell-pre-wrap {
+    white-space: pre-wrap;
+}
+
+.cell-number {
+    text-align: right;
+}
+
+.cell-key {
+    text-align: right;
+    width: 1px;
+}

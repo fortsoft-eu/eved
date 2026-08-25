@@ -218,7 +218,7 @@ if ($sUaId == "") {
 
 session_write_close();
 $sTitle = $sError ? "Error" : ($sJoined ? html($sJoined) : "Film Scans");
-$iTime = sendPageHeaders();
+$iTime = sendPageHeaders("", "en-US", true);
 
 ?>
 <!DOCTYPE html>
@@ -401,7 +401,7 @@ if ($oPdo) {
         $aModes = array("All", "OK", "Public", "Private", "Internal", "Colorized");
         if ($sVisibility == "all") {
             echo "            <form method=\"get\" action=\"" . $sBaseUrl . "\" enctype=\"application/x-www-form-urlencoded\">\n",
-                "              <select class=\"select-like-btn js-gallery-select\" name=\"mode\" style=\"width: 85px;\">\n";
+                "              <select class=\"select-like-btn js-gallery-select gallery-mode-select\" name=\"mode\">\n";
             for ($iI = 0; $iI < 6; $iI++) {
                 echo "                <option value=\"" . $iI . "\"" . ($_SESSION["film"]["gallery"]["mode"] == $iI ? " selected" : "") . ">" . $aModes[$iI] . "</option>\n";
             }
@@ -412,7 +412,7 @@ if ($oPdo) {
 
 ?>
             <form method="get" action="<?php echo $sBaseUrl; ?>" enctype="application/x-www-form-urlencoded">
-              <select class="select-like-btn js-gallery-select" name="cover" style="width: 85px;">
+              <select class="select-like-btn js-gallery-select gallery-mode-select" name="cover">
                 <option value="0"<?php if ($_SESSION["film"]["gallery"]["cover"] == 0) echo " selected"; ?>>Contain</option>
                 <option value="1"<?php if ($_SESSION["film"]["gallery"]["cover"] == 1) echo " selected"; ?>>Cover</option>
               </select>
@@ -620,7 +620,7 @@ if ($oPdo) {
       </div>
     </div>
   </div>
-  <div id="hnd-splitter" style="left: 350px"></div>
+  <div id="hnd-splitter" class="film-splitter-expanded"></div>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jquery-3.5.1/jquery.min.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/js/bootstrap.min.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/uri-1.19.2/uri.min.js"></script>

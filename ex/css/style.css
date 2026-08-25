@@ -1214,8 +1214,12 @@ body[data-chromium="1"][data-pmd-like="0"] .admin-controls .png-export-menu-butt
     display: inline-block;
 }
 
-.menu-separator {
+hr, .menu-separator {
+    border: 0;
     border-top: 1px solid #E5E5E5;
+}
+
+.menu-separator {
     display: block;
     margin: 4px 0;
 }
@@ -2397,4 +2401,10 @@ body.php-generated-output hr {
     body.php-generated-output hr {
         background-color: #505153;
     }
+}
+
+.cell-nowrap {
+    overflow-wrap: normal;
+    white-space: nowrap;
+    word-break: normal;
 }

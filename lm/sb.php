@@ -163,7 +163,7 @@ if ($blLmEncryptionUnlocked) {
     }
 }
 
-$iTime = sendPageHeaders();
+$iTime = sendPageHeaders("", "en-US", true);
 
 
 ?>

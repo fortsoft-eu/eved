@@ -100,7 +100,7 @@ foreach ($aConstants as $sGroup => $aGroupConstants) {
         echo "      <tr>\n",
             "        <td>" . html($sGroup) . "</td>\n",
             "        <td>" . html($sName) . "</td>\n",
-            "        <td style=\"white-space: pre-wrap;\">" . html($sValue) . "</td>\n",
+            "        <td class=\"cell-pre-wrap\">" . html($sValue) . "</td>\n",
             "        <td>" . html(gettype($mValue)) . "</td>\n",
             "      </tr>\n";
     }

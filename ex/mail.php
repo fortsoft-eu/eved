@@ -163,7 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-$iTime = sendPageHeaders();
+$iTime = sendPageHeaders("", "en-US", true);
 
 
 ?>

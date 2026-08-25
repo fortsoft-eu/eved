@@ -94,7 +94,7 @@ $aSchemaRelationRoutes = array(
     "ex_user_permission.user_id>ex_users.id" => array("source" => "right", "target" => "left", "curve" => "24", "via-x-offset" => "-36")
 );
 
-$iTime = sendPageHeaders();
+$iTime = sendPageHeaders("", "en-US", true);
 
 ?>
 <!DOCTYPE html>

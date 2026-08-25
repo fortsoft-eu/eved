@@ -178,7 +178,7 @@ if ($blCanEdit) {
         <button type="button" class="confirm-dialog-close js-phone-book-remove-close" aria-label="Close">&times;</button>
       </div>
       <p class="confirm-dialog-message">Remove this contact from Phone Book?<br><strong class="js-phone-book-remove-value"></strong></p>
-      <div class="contact-edit-error" style="display: none;"></div>
+      <div class="contact-edit-error" hidden></div>
       <div class="confirm-dialog-actions">
         <button type="submit" class="confirm-dialog-button">Yes</button>
         <button type="button" class="confirm-dialog-button js-phone-book-remove-cancel">No</button>

@@ -374,7 +374,7 @@ if (!$aRows) {
         <th class="ch">Last Name</th>
         <th class="c1">Birth Name</th>
         <th class="ch">Birth Number</th>
-        <th class="c2" style="overflow-wrap: normal; white-space: nowrap; word-break: normal;">Birth Date</th>
+        <th class="c2 cell-nowrap">Birth Date</th>
         <th class="ch">Death Date</th>
         <th class="c1">Nicknames</th>
         <th>Addresses</th>

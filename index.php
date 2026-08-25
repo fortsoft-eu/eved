@@ -13,7 +13,7 @@ $blPortalIndexAllowed = isAllowedIp() || isProjectViewAllowed("portal");
 if ($blPortalIndexAllowed) {
     $sUserAgent = isset($_SERVER["HTTP_USER_AGENT"]) ? $_SERVER["HTTP_USER_AGENT"] : "";
     $blMsie = strpos($sUserAgent, "MSIE ") !== false || strpos($sUserAgent, "Trident/") !== false;
-    $iTime = sendPageHeaders($blMsie ? "" : $sStyleNonce);
+    $iTime = sendPageHeaders($sStyleNonce);
     $aProjects = array(
         array("href" => "lm/", "icon" => "&#128736;&#65039;", "name" => "Technical", "title" => "Monitoring and management"),
         array("href" => "ex/", "icon" => "&#128214;", "name" => "Portal", "title" => "Subjects and contacts directory"),
@@ -52,7 +52,7 @@ if ($blPortalIndexAllowed) {
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title>EVED</title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <style type="text/css">
+  <style type="text/css" nonce="<?php echo html($sStyleNonce); ?>">
     body {
         margin: 0;
         padding: 24px;

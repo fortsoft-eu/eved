@@ -552,13 +552,14 @@ function getContentSecurityPolicySource() {
     return $sRequestScheme . "://" . $sHost;
 }
 
-function sendSecurityHeaders($sStyleNonce = "") {
+function sendSecurityHeaders($sStyleNonce = "", $blAllowVendorInlineStyles = false) {
     $sContentSecurityPolicySource = getContentSecurityPolicySource();
     $sScriptSource = $sContentSecurityPolicySource;
-    $sStyleSource = $sContentSecurityPolicySource;
+    $sStyleSource = "'self'";
     if ($sStyleNonce != "") {
         $sStyleSource .= " 'nonce-" . $sStyleNonce . "'";
-    } else {
+    }
+    if ($blAllowVendorInlineStyles) {
         $sStyleSource .= " 'unsafe-inline'";
     }
     $sContentSecurityPolicy = "default-src 'none'; "
@@ -581,11 +582,11 @@ function sendSecurityHeaders($sStyleNonce = "") {
     header("Content-Security-Policy: " . $sContentSecurityPolicy, true);
 }
 
-function sendPageHeaders($sStyleNonce = "", $sContentLanguage = "en-US") {
+function sendPageHeaders($sStyleNonce = "", $sContentLanguage = "en-US", $blAllowVendorInlineStyles = false) {
     $iTime = time();
     if (isset($_SERVER["HTTP_IF_MODIFIED_SINCE"])) {
         if (strtotime($_SERVER["HTTP_IF_MODIFIED_SINCE"]) >= $iTime) {
-            sendSecurityHeaders($sStyleNonce);
+            sendSecurityHeaders($sStyleNonce, $blAllowVendorInlineStyles);
             header("Content-Language: " . $sContentLanguage, true);
             header("HTTP/1.1 304 Not Modified", true);
             exit;
@@ -600,7 +601,7 @@ function sendPageHeaders($sStyleNonce = "", $sContentLanguage = "en-US") {
     header("Cache-Control: post-check=0, pre-check=0", false);
     header("Pragma: no-cache", true);
     header("X-Robots-Tag: noindex, nofollow", true);
-    sendSecurityHeaders($sStyleNonce);
+    sendSecurityHeaders($sStyleNonce, $blAllowVendorInlineStyles);
     return $iTime;
 }
 
@@ -648,12 +649,20 @@ function getPhpGeneratedStyleTag($sStyleNonce) {
         . "  </style>\n";
 }
 
+function addPhpGeneratedStyleNonces($sHtml, $sStyleNonce) {
+    if ($sStyleNonce == "") {
+        return $sHtml;
+    }
+    $sNonce = html($sStyleNonce);
+    return preg_replace("#<style\\b(?![^>]*\\bnonce\\s*=)#i", "<style nonce=\"" . $sNonce . "\"", $sHtml);
+}
+
 function formatPhpGeneratedOutput($sHtml, $sStyleNonce, $sTitle) {
     if (stripos($sHtml, "<html") !== false) {
         if (stripos($sHtml, "<style") === false && stripos($sHtml, "</head>") !== false) {
             $sHtml = preg_replace("#</head>#i", getPhpGeneratedStyleTag($sStyleNonce) . "</head>", $sHtml, 1);
         }
-        return addPhpGeneratedViewportMeta($sHtml);
+        return addPhpGeneratedViewportMeta(addPhpGeneratedStyleNonces($sHtml, $sStyleNonce));
     }
     $sTitle = html($sTitle);
     ob_start();
@@ -688,7 +697,7 @@ function sendPhpGeneratedOutputAndExit($sType, $iSelect) {
         }
     }
     $sHtml = ob_get_clean();
-    $sStyleNonce = stripos($sHtml, "<html") !== false ? "" : base64_encode(random_bytes(16));
+    $sStyleNonce = base64_encode(random_bytes(16));
     $sHtml = formatPhpGeneratedOutput($sHtml, $sStyleNonce, getPageTitleText());
     sendPhpGeneratedHeaders($sStyleNonce);
     echo $sHtml;

@@ -78,8 +78,8 @@ renderMenu();
         <th>Bag Number</th>
         <th>Film Rolls</th>
         <th>Scan Dates and Times</th>
-        <th style="text-align: right;">Price</th>
-        <th style="text-align: right;">Price (VAT)</th>
+        <th class="cell-number">Price</th>
+        <th class="cell-number">Price (VAT)</th>
         <th>Currency</th>
         <th>Order Date and Time</th>
         <th>Scan Dates and Times</th>
@@ -123,8 +123,8 @@ foreach ($aOrders as $aRow) {
         "        <td>" . html($aRow["bag_no"]) . "</td>\n",
         "        <td>" . $sFilmRolls . "</td>\n",
         "        <td>" . $sFilmScanDates . "</td>\n",
-        "        <td style=\"text-align: right;\">" . html($aRow["price"]) . "</td>\n",
-        "        <td style=\"text-align: right;\">" . html($aRow["price_vat"]) . "</td>\n",
+        "        <td class=\"cell-number\">" . html($aRow["price"]) . "</td>\n",
+        "        <td class=\"cell-number\">" . html($aRow["price_vat"]) . "</td>\n",
         "        <td>" . html($aRow["currency"]) . "</td>\n",
         "        <td>" . $sOrderedAt . "</td>\n",
         "        <td>" . $sScans . "</td>\n",

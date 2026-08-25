@@ -46,7 +46,7 @@ $aSchemaRelationRoutes = array(
     "fs_photo_tags.equip_id>fs_photo_equip.id" => array("source" => "right", "target" => "right", "curve" => "24", "target-y" => "24", "via-x-offset" => "42")
 );
 
-$iTime = sendPageHeaders();
+$iTime = sendPageHeaders("", "en-US", true);
 
 ?>
 <!DOCTYPE html>
