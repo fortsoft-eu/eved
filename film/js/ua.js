@@ -5,9 +5,9 @@ function logEvedUaException(oException) {
 }
 
 function getEvedUaId() {
-    var oMeta = document.querySelector("meta[name=\"eved-ua-id\"]");
-    var iId = oMeta ? parseInt(oMeta.getAttribute("content") || "0", 10) : 0;
-    return isNaN(iId) ? 0 : iId;
+    var oBody = document.body;
+    var sId = oBody ? oBody.getAttribute("data-ua-id") || "" : "";
+    return /^[0-9a-f]{32}$/i.test(sId) ? sId.toLowerCase() : "";
 }
 
 function getEvedUaGpu() {
@@ -171,14 +171,14 @@ function addEvedUaBrowserData(oFingerprint, oUserAgentData) {
 }
 
 function collectAndSendEvedUaFingerprint() {
-    var iUaId = getEvedUaId();
+    var sUaId = getEvedUaId();
     var iCssWidth = window.screen.width;
     var iCssHeight = window.screen.height;
     var iDpr = window.devicePixelRatio || 1;
     var sTimeZone = "";
     var oFingerprint;
     var oLowEntropyData = null;
-    if (iUaId < 1 || (!window.fetch && !navigator.sendBeacon)) {
+    if (!sUaId || (!window.fetch && !navigator.sendBeacon)) {
         return;
     }
     try {
@@ -190,7 +190,7 @@ function collectAndSendEvedUaFingerprint() {
         sTimeZone = "";
     }
     oFingerprint = {
-        ua_id: iUaId,
+        ua_id: sUaId,
         gpu: getEvedUaGpu(),
         fonts: detectEvedUaFonts(),
         screen: iCssWidth + "x" + iCssHeight,

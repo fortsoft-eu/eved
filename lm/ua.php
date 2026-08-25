@@ -19,7 +19,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["admin_auto_refresh_act
 
 $aRows = array();
 try {
-    $oStatement = $oPdo->prepare("SELECT id, ip_address, x_geo_continent_code, x_geo_country_code, user_agent, browser_name, browser_version, os_name, os_version, platform_type, device_vendor, device_model, architecture, bitness, is_mobile, ua_brands, gpu_info, fonts, screen_resolution, screen_physical, color_depth, timezone, language, platform, plugins, mime_types, `timestamp` FROM fs_eved_ua ORDER BY `timestamp` DESC, id DESC LIMIT 100");
+    $oStatement = $oPdo->prepare("SELECT id, ip_address, x_geo_continent_code, x_geo_country_code, user_agent, browser_name, browser_version, os_name, os_version, platform_type, device_vendor, device_model, architecture, bitness, is_mobile, ua_brands, gpu_info, fonts, screen_resolution, screen_physical, color_depth, timezone, language, platform, plugins, mime_types, `timestamp` FROM fs_ua ORDER BY `timestamp` DESC, id DESC LIMIT 100");
     $oStatement->execute();
     $aRows = $oStatement->fetchAll();
 } catch (Exception $oException) {

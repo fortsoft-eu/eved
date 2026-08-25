@@ -60,7 +60,7 @@ if (isset($_GET["mode"])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET["fingerprint"]) && $_GET["fingerprint"] == "1") {
-    sendFilmUaFingerprintResponse($oPdo);
+    sendFilmUaFingerprintResponse();
 }
 
 if (isset($_GET["img"])) {
@@ -96,7 +96,7 @@ if (isset($_GET["img"])) {
         }
 
         if (is_file($sFilePath)) {
-            markFilmUaImageRequest($oPdo, $sImgParam, $sExtension);
+            markFilmUaImageRequest($sImgParam, $sExtension);
             session_write_close();
             sendSecurityHeaders();
             header("Content-Type: " . mime_content_type($sFilePath), true);
@@ -204,10 +204,16 @@ if ($iId > 0) {
     }
 }
 
+$sUaId = "";
 if (isAllowedIp()) {
     unset($_SESSION["film"]["ua"]);
+    $sUaId = insertEvedUaRequest();
 } else {
-    startFilmUaPageRequest($iId > 0 ? $iId : null);
+    $sUaId = startFilmUaPageRequest($iId > 0 ? $iId : null);
+}
+
+if ($sUaId == "") {
+    send500AndExit("Database error: UA request could not be logged.");
 }
 
 session_write_close();
@@ -292,7 +298,7 @@ $iTime = sendPageHeaders();
   <style type="text/css">nav { width: 350px} @media screen and (min-width:769px) { body.md-nav-expanded div#main { margin-left: 350px} body.md-nav-expanded header { padding-left: 364px} }</style>
   <style type="text/css">.navigation #inline-toc { width: auto !important} .js-save-png { white-space: nowrap}</style>
 </head>
-<body itemscope itemtype="https://schema.org/CreativeWork" class="md-nav-expanded">
+<body itemscope itemtype="https://schema.org/CreativeWork" class="md-nav-expanded" data-ua-id="<?php echo $sUaId; ?>">
   <meta itemprop="name" content="Film Scans">
   <meta itemprop="description" content="High-quality film scans of negatives and slides.">
   <meta itemprop="url" content="https://eved.cz/film/">
@@ -617,7 +623,6 @@ if ($oPdo) {
   <div id="hnd-splitter" style="left: 350px"></div>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jquery-3.5.1/jquery.min.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/js/bootstrap.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/js/ie10-viewport-bug-workaround.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/uri-1.19.2/uri.min.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/headroom-0.11.0/headroom.min.js"></script>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jstree-3.3.10/jstree.min.js"></script>

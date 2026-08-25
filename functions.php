@@ -329,10 +329,41 @@ function getUaFingerprintNullableText($aData, $sName, $iMaxLength = 0) {
     return $sValue;
 }
 
-function insertEvedUaRequest($oPdo) {
+function executeUaInsertWithPublicId($oStatement, $aParameters, $sTableName, $sPublicId = "") {
+    $blPublicIdProvided = $sPublicId != "";
+    if ($blPublicIdProvided && (strlen($sPublicId) != 32 || !ctype_xdigit($sPublicId))) {
+        return "";
+    }
+    $iMaxAttempts = $blPublicIdProvided ? 1 : 3;
+    for ($iAttempt = 0; $iAttempt < $iMaxAttempts; $iAttempt += 1) {
+        $sPublicId = $blPublicIdProvided ? strtolower($sPublicId) : bin2hex(random_bytes(16));
+        $aParameters["public_id"] = $sPublicId;
+        try {
+            $oStatement->execute($aParameters);
+            return $sPublicId;
+        } catch (PDOException $oException) {
+            $aErrorInfo = $oException->errorInfo;
+            if (isset($aErrorInfo[1]) && (int)$aErrorInfo[1] == 1062) {
+                continue;
+            }
+            throw $oException;
+        }
+    }
+    if (!$blPublicIdProvided) {
+        error_log("Unable to generate a unique " . $sTableName . ".public_id after 3 attempts.");
+    }
+    return "";
+}
+
+function insertEvedUaRequest($sPublicId = "") {
+    global $oPdo;
+
+    if (!$oPdo) {
+        return "";
+    }
     try {
-        $oStatement = $oPdo->prepare("INSERT INTO fs_eved_ua (ip_address, x_real_ip, x_forwarded_for, x_web_id, x_geo_provider, x_geo_continent_code, x_geo_country_code, request_uri, referer, user_agent, accept_language, `timestamp`) VALUES (:ip_address, :x_real_ip, :x_forwarded_for, :x_web_id, :x_geo_provider, :x_geo_continent_code, :x_geo_country_code, :request_uri, :referer, :user_agent, :accept_language, CURRENT_TIMESTAMP(6))");
-        $oStatement->execute(array(
+        $oStatement = $oPdo->prepare("INSERT INTO fs_ua (public_id, ip_address, x_real_ip, x_forwarded_for, x_web_id, x_geo_provider, x_geo_continent_code, x_geo_country_code, request_uri, referer, user_agent, accept_language, `timestamp`) VALUES (:public_id, :ip_address, :x_real_ip, :x_forwarded_for, :x_web_id, :x_geo_provider, :x_geo_continent_code, :x_geo_country_code, :request_uri, :referer, :user_agent, :accept_language, CURRENT_TIMESTAMP(6))");
+        return executeUaInsertWithPublicId($oStatement, array(
             "ip_address"           => isset($_SERVER["REMOTE_ADDR"]) ? substr((string)$_SERVER["REMOTE_ADDR"], 0, 45) : "",
             "x_real_ip"            => isset($_SERVER["HTTP_X_REAL_IP"]) ? substr((string)$_SERVER["HTTP_X_REAL_IP"], 0, 45) : null,
             "x_forwarded_for"      => isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ? substr((string)$_SERVER["HTTP_X_FORWARDED_FOR"], 0, 1024) : null,
@@ -344,16 +375,17 @@ function insertEvedUaRequest($oPdo) {
             "referer"              => isset($_SERVER["HTTP_REFERER"]) ? substr((string)$_SERVER["HTTP_REFERER"], 0, 1024) : null,
             "user_agent"           => isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : "",
             "accept_language"      => isset($_SERVER["HTTP_ACCEPT_LANGUAGE"]) ? substr((string)$_SERVER["HTTP_ACCEPT_LANGUAGE"], 0, 255) : null
-        ));
-        return (int)$oPdo->lastInsertId();
+        ), "fs_ua", $sPublicId);
     } catch (PDOException $oException) {
         error_log((string)$oException);
     }
-    return 0;
+    return "";
 }
 
-function updateEvedUaFingerprint($oPdo, $iEvedUaId, $aData) {
-    if (!$oPdo || $iEvedUaId < 1) {
+function updateEvedUaFingerprint($sEvedUaId, $aData) {
+    global $oPdo;
+
+    if (!$oPdo || strlen($sEvedUaId) != 32 || !ctype_xdigit($sEvedUaId)) {
         return false;
     }
     try {
@@ -383,18 +415,18 @@ function updateEvedUaFingerprint($oPdo, $iEvedUaId, $aData) {
             "platform"          => getUaFingerprintText($aData, "platform"),
             "plugins"           => getUaFingerprintText($aData, "plugins"),
             "mime_types"        => getUaFingerprintText($aData, "mimes"),
-            "id"                => $iEvedUaId,
+            "public_id"         => strtolower($sEvedUaId),
             "ip_address"        => isset($_SERVER["REMOTE_ADDR"]) ? substr((string)$_SERVER["REMOTE_ADDR"], 0, 45) : "",
             "user_agent"        => isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : ""
         );
-        $oStatement = $oPdo->prepare("UPDATE fs_eved_ua SET browser_name = :browser_name, browser_version = :browser_version, os_name = :os_name, os_version = :os_version, platform_type = :platform_type, device_vendor = :device_vendor, device_model = :device_model, architecture = :architecture, bitness = :bitness, is_mobile = :is_mobile, ua_brands = :ua_brands, gpu_info = :gpu_info, fonts = :fonts, screen_resolution = :screen_resolution, screen_physical = :screen_physical, color_depth = :color_depth, timezone = :timezone, language = :language, platform = :platform, plugins = :plugins, mime_types = :mime_types WHERE id = :id AND ip_address = :ip_address AND user_agent = :user_agent AND `timestamp` >= DATE_SUB(CURRENT_TIMESTAMP(6), INTERVAL 10 MINUTE)");
+        $oStatement = $oPdo->prepare("UPDATE fs_ua SET browser_name = :browser_name, browser_version = :browser_version, os_name = :os_name, os_version = :os_version, platform_type = :platform_type, device_vendor = :device_vendor, device_model = :device_model, architecture = :architecture, bitness = :bitness, is_mobile = :is_mobile, ua_brands = :ua_brands, gpu_info = :gpu_info, fonts = :fonts, screen_resolution = :screen_resolution, screen_physical = :screen_physical, color_depth = :color_depth, timezone = :timezone, language = :language, platform = :platform, plugins = :plugins, mime_types = :mime_types WHERE public_id = :public_id AND ip_address = :ip_address AND user_agent = :user_agent AND `timestamp` >= DATE_SUB(CURRENT_TIMESTAMP(6), INTERVAL 10 MINUTE)");
         $oStatement->execute($aParameters);
         if ($oStatement->rowCount() > 0) {
             return true;
         }
-        $oStatement = $oPdo->prepare("SELECT 1 FROM fs_eved_ua WHERE id = :id AND ip_address = :ip_address AND user_agent = :user_agent AND `timestamp` >= DATE_SUB(CURRENT_TIMESTAMP(6), INTERVAL 10 MINUTE) LIMIT 1");
+        $oStatement = $oPdo->prepare("SELECT 1 FROM fs_ua WHERE public_id = :public_id AND ip_address = :ip_address AND user_agent = :user_agent AND `timestamp` >= DATE_SUB(CURRENT_TIMESTAMP(6), INTERVAL 10 MINUTE) LIMIT 1");
         $oStatement->execute(array(
-            "id"         => $aParameters["id"],
+            "public_id"  => $aParameters["public_id"],
             "ip_address" => $aParameters["ip_address"],
             "user_agent" => $aParameters["user_agent"]
         ));
@@ -414,7 +446,9 @@ function sendUaJsonAndExit($aResponse, $iStatus = 200) {
     exit;
 }
 
-function sendEvedUaFingerprintResponse($oPdo) {
+function sendEvedUaFingerprintResponse() {
+    global $oPdo;
+
     if (isAllowedIp()) {
         sendUaJsonAndExit(array("status" => "ignored"));
     }
@@ -426,8 +460,8 @@ function sendEvedUaFingerprintResponse($oPdo) {
     if (!is_array($aData)) {
         $aData = array();
     }
-    $iEvedUaId = isset($aData["ua_id"]) ? (int)$aData["ua_id"] : 0;
-    if (!updateEvedUaFingerprint($oPdo, $iEvedUaId, $aData)) {
+    $sEvedUaId = isset($aData["ua_id"]) && is_scalar($aData["ua_id"]) ? (string)$aData["ua_id"] : "";
+    if (!updateEvedUaFingerprint($sEvedUaId, $aData)) {
         sendUaJsonAndExit(array("status" => "error"), 500);
     }
     sendUaJsonAndExit(array("status" => "ok"));
@@ -2351,11 +2385,7 @@ function decryptConfigurationCipherValue($sType, $sName, $sValue, $sKey) {
     }
     $sNonce = substr($sEncryptedBytes, 0, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
     $sEncryptedValue = substr($sEncryptedBytes, SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES);
-    $sValue = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($sEncryptedValue, getConfigurationCipherAdditionalData($sType, $sName), $sNonce, $sKey);
-    if ($sValue === false) {
-        throw new RuntimeException("The encrypted configuration value cannot be decrypted.");
-    }
-    return $sValue;
+    return sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($sEncryptedValue, getConfigurationCipherAdditionalData($sType, $sName), $sNonce, $sKey);
 }
 
 function loadConfiguration() {
@@ -2375,7 +2405,7 @@ function loadConfiguration() {
         $oStatement = $oPdo->prepare("SELECT `type`, `name`, `value` FROM fs_configuration ORDER BY `order` ASC, id ASC");
         $oStatement->execute();
         while ($aRow = $oStatement->fetch()) {
-            if ($aRow["name"] != "" && $aRow["type"] != "deploy_credential") {
+            if ($aRow["name"] != "") {
                 $aRow["value"] = decryptConfigurationCipherValue($aRow["type"], $aRow["name"], $aRow["value"], $sKey);
             }
             switch ($aRow["type"]) {

@@ -1,13 +1,17 @@
+var app = new Hnd.App();
+var oCameraImageResizeObserver = null;
+
 function logFilmException(oException) {
     if (window.console && window.console.error) {
         window.console.error(oException);
     }
 }
 
-var app = new Hnd.App();
-
-var oCameraImageResizeObserver = null;
-
+function getFilmUaId() {
+    var oBody = document.body;
+    var sId = oBody ? oBody.getAttribute("data-ua-id") || "" : "";
+    return /^[0-9a-f]{32}$/i.test(sId) ? sId.toLowerCase() : "";
+}
 
 function getFilmUaGpu() {
     try {
@@ -146,13 +150,14 @@ function addFilmUaBrowserData(oFingerprint, oUserAgentData) {
 }
 
 function collectAndSendFilmUaFingerprint() {
+    var sUaId = getFilmUaId();
     var iCssWidth = window.screen.width;
     var iCssHeight = window.screen.height;
     var iDpr = window.devicePixelRatio || 1;
     var sTimeZone = "";
     var oFingerprint;
     var oLowEntropyData = null;
-    if (!window.fetch) {
+    if (!sUaId || !window.fetch) {
         return;
     }
     try {
@@ -165,6 +170,7 @@ function collectAndSendFilmUaFingerprint() {
         sTimeZone = "";
     }
     oFingerprint = {
+        ua_id: sUaId,
         gpu: getFilmUaGpu(),
         fonts: detectFilmUaFonts(),
         screen: iCssWidth + "x" + iCssHeight,

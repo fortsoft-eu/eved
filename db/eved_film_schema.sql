@@ -72,6 +72,7 @@ CREATE TABLE `fs_film_photos` (
 
 CREATE TABLE `fs_film_ua` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `public_id` char(32) NOT NULL,
   `ip_address` varchar(45) NOT NULL,
   `x_real_ip` varchar(45) DEFAULT NULL,
   `x_forwarded_for` varchar(1024) DEFAULT NULL,
@@ -108,6 +109,7 @@ CREATE TABLE `fs_film_ua` (
   `mime_types` text DEFAULT NULL,
   `timestamp` datetime(6) NOT NULL DEFAULT current_timestamp(6),
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_fs_film_ua_public_id` (`public_id`),
   KEY `idx_fs_film_ua_created_at` (`timestamp`),
   KEY `idx_fs_film_ua_requested_film_scan_id` (`requested_film_scan_id`),
   KEY `idx_fs_film_ua_requested_img` (`requested_img`)

@@ -28,16 +28,16 @@ function startFilmUaPageRequest($iRequestedFilmScanId) {
     } else {
         unset($_SESSION["film"]["ua"]["visits"]);
     }
-    $_SESSION["film"]["ua"]["request"] = array(
+    return insertEvedAndFilmUaRequests(array(
         "requested_film_scan_id" => $iRequestedFilmScanId !== null && $iRequestedFilmScanId > 0 ? $iRequestedFilmScanId : null,
         "request_uri"            => $_SERVER["REQUEST_URI"],
         "referer"                => isset($_SERVER["HTTP_REFERER"]) ? $_SERVER["HTTP_REFERER"] : "",
         "requested_img"          => null
-    );
+    ), array());
 }
 
-function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension) {
-    global $iVisitTimeout;
+function markFilmUaImageRequest($sImgParam, $sExtension) {
+    global $iVisitTimeout, $oPdo;
 
     if (!$oPdo || isAllowedIp()) {
         return;
@@ -88,7 +88,7 @@ function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension) {
     if (isset($_SESSION["film"]["ua"]["fingerprint"]) && is_array($_SESSION["film"]["ua"]["fingerprint"])) {
         $aData = $_SESSION["film"]["ua"]["fingerprint"];
     }
-    insertFilmUaRequest($oPdo, array(
+    insertEvedAndFilmUaRequests(array(
         "request_uri"            => $_SERVER["REQUEST_URI"],
         "requested_film_scan_id" => $iRequestedFilmScanId,
         "requested_img"          => substr($sRequestedImg, 0, 64),
@@ -96,17 +96,19 @@ function markFilmUaImageRequest($oPdo, $sImgParam, $sExtension) {
     ), $aData);
 }
 
-function insertFilmUaRequest($oPdo, $aRequest, $aData) {
+function insertFilmUaRequest($aRequest, $aData, $sPublicId = "") {
+    global $oPdo;
+
     if (!$oPdo) {
-        return false;
+        return "";
     }
     try {
         $mIsMobile = null;
         if (array_key_exists("is_mobile", $aData) && is_scalar($aData["is_mobile"]) && $aData["is_mobile"] != "") {
             $mIsMobile = $aData["is_mobile"] ? 1 : 0;
         }
-        $oPdoStatement = $oPdo->prepare("INSERT INTO fs_film_ua (ip_address, x_real_ip, x_forwarded_for, x_web_id, x_geo_provider, x_geo_continent_code, x_geo_country_code, user_agent, browser_name, browser_version, os_name, os_version, platform_type, device_vendor, device_model, architecture, bitness, is_mobile, ua_brands, request_uri, requested_film_scan_id, requested_img, referer, gpu_info, fonts, screen_resolution, screen_physical, color_depth, timezone, language, platform, plugins, mime_types, `timestamp`) VALUES (:ip_address, :x_real_ip, :x_forwarded_for, :x_web_id, :x_geo_provider, :x_geo_continent_code, :x_geo_country_code, :user_agent, :browser_name, :browser_version, :os_name, :os_version, :platform_type, :device_vendor, :device_model, :architecture, :bitness, :is_mobile, :ua_brands, :request_uri, :requested_film_scan_id, :requested_img, :referer, :gpu_info, :fonts, :screen_resolution, :screen_physical, :color_depth, :timezone, :language, :platform, :plugins, :mime_types, CURRENT_TIMESTAMP(6))");
-        $oPdoStatement->execute(array(
+        $oPdoStatement = $oPdo->prepare("INSERT INTO fs_film_ua (public_id, ip_address, x_real_ip, x_forwarded_for, x_web_id, x_geo_provider, x_geo_continent_code, x_geo_country_code, user_agent, browser_name, browser_version, os_name, os_version, platform_type, device_vendor, device_model, architecture, bitness, is_mobile, ua_brands, request_uri, requested_film_scan_id, requested_img, referer, gpu_info, fonts, screen_resolution, screen_physical, color_depth, timezone, language, platform, plugins, mime_types, `timestamp`) VALUES (:public_id, :ip_address, :x_real_ip, :x_forwarded_for, :x_web_id, :x_geo_provider, :x_geo_continent_code, :x_geo_country_code, :user_agent, :browser_name, :browser_version, :os_name, :os_version, :platform_type, :device_vendor, :device_model, :architecture, :bitness, :is_mobile, :ua_brands, :request_uri, :requested_film_scan_id, :requested_img, :referer, :gpu_info, :fonts, :screen_resolution, :screen_physical, :color_depth, :timezone, :language, :platform, :plugins, :mime_types, CURRENT_TIMESTAMP(6))");
+        return executeUaInsertWithPublicId($oPdoStatement, array(
             "ip_address"             => isset($_SERVER["REMOTE_ADDR"]) ? $_SERVER["REMOTE_ADDR"] : "",
             "x_real_ip"              => isset($_SERVER["HTTP_X_REAL_IP"]) ? substr($_SERVER["HTTP_X_REAL_IP"], 0, 45) : null,
             "x_forwarded_for"        => isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ? substr($_SERVER["HTTP_X_FORWARDED_FOR"], 0, 1024) : null,
@@ -140,17 +142,108 @@ function insertFilmUaRequest($oPdo, $aRequest, $aData) {
             "platform"               => getUaFingerprintText($aData, "platform"),
             "plugins"                => getUaFingerprintText($aData, "plugins"),
             "mime_types"             => getUaFingerprintText($aData, "mimes")
-        ));
+        ), "fs_film_ua", $sPublicId);
     } catch (PDOException $oException) {
         error_log((string)$oException);
-        return false;
+        return "";
     }
-    return true;
+    return "";
 }
 
-function sendFilmUaFingerprintResponse($oPdo) {
+function insertEvedAndFilmUaRequests($aRequest, $aData) {
+    global $oPdo;
+
+    if (!$oPdo) {
+        return "";
+    }
+    for ($iAttempt = 0; $iAttempt < 3; $iAttempt += 1) {
+        $sPublicId = bin2hex(random_bytes(16));
+        try {
+            $oPdo->beginTransaction();
+            $sEvedPublicId = insertEvedUaRequest($sPublicId);
+            $sFilmPublicId = insertFilmUaRequest($aRequest, $aData, $sPublicId);
+            if ($sEvedPublicId === $sPublicId && $sFilmPublicId === $sPublicId) {
+                $oPdo->commit();
+                return $sPublicId;
+            }
+            if ($oPdo->inTransaction()) {
+                $oPdo->rollBack();
+            }
+        } catch (Exception $oException) {
+            if ($oPdo->inTransaction()) {
+                $oPdo->rollBack();
+            }
+            error_log((string)$oException);
+            return "";
+        }
+    }
+    error_log("Unable to insert matching public_id values into fs_ua and fs_film_ua after 3 attempts.");
+    return "";
+}
+
+function updateFilmUaFingerprint($sPublicId, $aData) {
+    global $oPdo;
+
+    if (!$oPdo || strlen($sPublicId) != 32 || !ctype_xdigit($sPublicId)) {
+        return false;
+    }
+    try {
+        $mIsMobile = null;
+        if (array_key_exists("is_mobile", $aData) && is_scalar($aData["is_mobile"]) && $aData["is_mobile"] != "") {
+            $mIsMobile = $aData["is_mobile"] ? 1 : 0;
+        }
+        $aParameters = array(
+            "browser_name"      => getUaFingerprintNullableText($aData, "browser_name", 100),
+            "browser_version"   => getUaFingerprintNullableText($aData, "browser_version", 100),
+            "os_name"           => getUaFingerprintNullableText($aData, "os_name", 100),
+            "os_version"        => getUaFingerprintNullableText($aData, "os_version", 100),
+            "platform_type"     => getUaFingerprintNullableText($aData, "platform_type", 32),
+            "device_vendor"     => getUaFingerprintNullableText($aData, "device_vendor", 100),
+            "device_model"      => getUaFingerprintNullableText($aData, "device_model", 191),
+            "architecture"      => getUaFingerprintNullableText($aData, "architecture", 32),
+            "bitness"           => getUaFingerprintNullableText($aData, "bitness", 16),
+            "is_mobile"         => $mIsMobile,
+            "ua_brands"         => getUaFingerprintNullableText($aData, "ua_brands"),
+            "gpu_info"          => getUaFingerprintText($aData, "gpu"),
+            "fonts"             => getUaFingerprintText($aData, "fonts"),
+            "screen_resolution" => getUaFingerprintText($aData, "screen"),
+            "screen_physical"   => getUaFingerprintText($aData, "screen_physical"),
+            "color_depth"       => getUaFingerprintText($aData, "depth"),
+            "timezone"          => getUaFingerprintText($aData, "tz"),
+            "language"          => getUaFingerprintText($aData, "lang"),
+            "platform"          => getUaFingerprintText($aData, "platform"),
+            "plugins"           => getUaFingerprintText($aData, "plugins"),
+            "mime_types"        => getUaFingerprintText($aData, "mimes"),
+            "public_id"         => strtolower($sPublicId),
+            "ip_address"        => isset($_SERVER["REMOTE_ADDR"]) ? (string)$_SERVER["REMOTE_ADDR"] : "",
+            "user_agent"        => isset($_SERVER["HTTP_USER_AGENT"]) ? (string)$_SERVER["HTTP_USER_AGENT"] : ""
+        );
+        $oPdoStatement = $oPdo->prepare("UPDATE fs_film_ua SET browser_name = :browser_name, browser_version = :browser_version, os_name = :os_name, os_version = :os_version, platform_type = :platform_type, device_vendor = :device_vendor, device_model = :device_model, architecture = :architecture, bitness = :bitness, is_mobile = :is_mobile, ua_brands = :ua_brands, gpu_info = :gpu_info, fonts = :fonts, screen_resolution = :screen_resolution, screen_physical = :screen_physical, color_depth = :color_depth, timezone = :timezone, language = :language, platform = :platform, plugins = :plugins, mime_types = :mime_types WHERE public_id = :public_id AND ip_address = :ip_address AND user_agent = :user_agent AND `timestamp` >= DATE_SUB(CURRENT_TIMESTAMP(6), INTERVAL 10 MINUTE)");
+        $oPdoStatement->execute($aParameters);
+        if ($oPdoStatement->rowCount() > 0) {
+            return true;
+        }
+        $oPdoStatement = $oPdo->prepare("SELECT 1 FROM fs_film_ua WHERE public_id = :public_id AND ip_address = :ip_address AND user_agent = :user_agent AND `timestamp` >= DATE_SUB(CURRENT_TIMESTAMP(6), INTERVAL 10 MINUTE) LIMIT 1");
+        $oPdoStatement->execute(array(
+            "public_id"  => $aParameters["public_id"],
+            "ip_address" => $aParameters["ip_address"],
+            "user_agent" => $aParameters["user_agent"]
+        ));
+        return $oPdoStatement->fetchColumn() !== false;
+    } catch (PDOException $oException) {
+        error_log((string)$oException);
+    }
+    return false;
+}
+
+function sendFilmUaFingerprintResponse() {
+    global $oPdo;
+
     if (!isset($_SESSION["film"]) || !is_array($_SESSION["film"])) {
         $_SESSION["film"] = array();
+    }
+    if (!isset($_SESSION["film"]["ua"]) || !is_array($_SESSION["film"]["ua"])) {
+        $_SESSION["film"]["ua"] = array();
     }
     if (isAllowedIp()) {
         unset($_SESSION["film"]["ua"]);
@@ -159,20 +252,19 @@ function sendFilmUaFingerprintResponse($oPdo) {
     if (!$oPdo) {
         sendUaJsonAndExit(array("status" => "error"), 500);
     }
-    if (!isset($_SESSION["film"]["ua"]["request"]) || !is_array($_SESSION["film"]["ua"]["request"])) {
-        unset($_SESSION["film"]["ua"]["request"]);
-        sendUaJsonAndExit(array("status" => "ignored"));
-    }
     $sInput = file_get_contents("php://input");
     $aData = json_decode($sInput, true);
     if (!is_array($aData)) {
         $aData = array();
     }
-    $_SESSION["film"]["ua"]["fingerprint"] = $aData;
-    if (!insertFilmUaRequest($oPdo, $_SESSION["film"]["ua"]["request"], $aData)) {
+    $sPublicId = isset($aData["ua_id"]) && is_scalar($aData["ua_id"]) ? (string)$aData["ua_id"] : "";
+    $blEvedUpdated = updateEvedUaFingerprint($sPublicId, $aData);
+    $blFilmUpdated = updateFilmUaFingerprint($sPublicId, $aData);
+    if (!$blEvedUpdated || !$blFilmUpdated) {
         sendUaJsonAndExit(array("status" => "error"), 500);
     }
-    unset($_SESSION["film"]["ua"]["request"]);
+    unset($aData["ua_id"]);
+    $_SESSION["film"]["ua"]["fingerprint"] = $aData;
     sendUaJsonAndExit(array("status" => "ok"));
 }
 

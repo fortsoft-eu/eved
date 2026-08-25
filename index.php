@@ -4,7 +4,7 @@ include "main.php";
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_GET["fingerprint"]) && (string)$_GET["fingerprint"] == "1") {
-    sendEvedUaFingerprintResponse($oPdo);
+    sendEvedUaFingerprintResponse();
 }
 
 $sStyleNonce = base64_encode(random_bytes(16));
@@ -286,7 +286,10 @@ include "ex/functions.php";
 runKfExchangeRateProcess($oPdo, $sError);
 runExCalendarProcess($oPdo, $sError);
 
-$iEvedUaId = insertEvedUaRequest($oPdo);
+$sEvedUaId = insertEvedUaRequest();
+if ($sEvedUaId == "") {
+    send500AndExit("Database error: UA request could not be logged.");
+}
 $iTime     = time();
 $iExpires  = $iTime + 10;
 $sDate     = gmdate("D, d M Y H:i:s", $iTime);
@@ -315,7 +318,6 @@ sendSecurityHeaders($sStyleNonce);
   <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
   <title>עבד יהוה</title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="eved-ua-id" content="<?php echo (int)$iEvedUaId; ?>">
   <link href="<?php echo $sBaseUrl; ?>css/style.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style.css")); ?>" rel="stylesheet" type="text/css" title="Original">
   <link href="<?php echo $sBaseUrl; ?>css/style-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-graphite.css")); ?>" rel="alternate stylesheet" type="text/css" title="Graphite">
   <link href="<?php echo $sBaseUrl; ?>css/style-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-midnight.css")); ?>" rel="alternate stylesheet" type="text/css" title="Midnight">
@@ -339,7 +341,7 @@ sendSecurityHeaders($sStyleNonce);
   <link href="<?php echo $sBaseUrl; ?>css/style-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/style.js")); ?>"></script>
 </head>
-<body>
+<body data-ua-id="<?php echo $sEvedUaId; ?>">
   <h1>עֶבֶד יְהוָה</h1>
   <h2>וְאָנֹכִי וּבֵיתִי נַעֲבֹד אֶת־יְהוָה</h2>
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bowser-2.14.1/es5.js"></script>
