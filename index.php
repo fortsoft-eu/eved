@@ -44,14 +44,14 @@ if ($blPortalIndexAllowed) {
 <html dir="ltr">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>EVED</title>
   <meta http-equiv="Content-Language" content="en-US">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title>EVED</title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
+  <link rel="icon" type="image/x-icon" href="<?php echo $sBaseUrl; ?>gfx/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="<?php echo $sBaseUrl; ?>gfx/favicon.ico">
   <style type="text/css" nonce="<?php echo html($sStyleNonce); ?>">
     body {
         margin: 0;
@@ -212,34 +212,34 @@ if ($blPortalIndexAllowed) {
 <html lang="en-US" dir="ltr">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>EVED</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title>EVED</title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost.css")); ?>" rel="stylesheet" type="text/css" title="Original">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-graphite.css")); ?>" rel="alternate stylesheet" type="text/css" title="Graphite">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-midnight.css")); ?>" rel="alternate stylesheet" type="text/css" title="Midnight">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-slate.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-slate.css")); ?>" rel="alternate stylesheet" type="text/css" title="Slate">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-sepia.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-sepia.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sepia">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-sand.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-sand.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sand">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-forest.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-forest.css")); ?>" rel="alternate stylesheet" type="text/css" title="Forest">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-moss.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-moss.css")); ?>" rel="alternate stylesheet" type="text/css" title="Moss">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-ocean.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-ocean.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ocean">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-ice.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-ice.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ice">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-lavender.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-lavender.css")); ?>" rel="alternate stylesheet" type="text/css" title="Lavender">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-rose.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-rose.css")); ?>" rel="alternate stylesheet" type="text/css" title="Rose">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-copper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-copper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Copper">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-burgundy.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-burgundy.css")); ?>" rel="alternate stylesheet" type="text/css" title="Burgundy">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-monochrome.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-monochrome.css")); ?>" rel="alternate stylesheet" type="text/css" title="Monochrome">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-high-contrast.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-high-contrast.css")); ?>" rel="alternate stylesheet" type="text/css" title="High Contrast">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-soft.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-soft.css")); ?>" rel="alternate stylesheet" type="text/css" title="Soft">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-paper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-paper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Paper">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-terminal.css")); ?>" rel="alternate stylesheet" type="text/css" title="Terminal">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-cobalt.css")); ?>" rel="alternate stylesheet" type="text/css" title="Cobalt">
-  <link href="<?php echo $sBaseUrl; ?>css/guidepost-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
+  <link rel="icon" type="image/x-icon" href="<?php echo $sBaseUrl; ?>gfx/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="<?php echo $sBaseUrl; ?>gfx/favicon.ico">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost.css")); ?>" title="Original">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-graphite.css")); ?>" title="Graphite">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-midnight.css")); ?>" title="Midnight">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-slate.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-slate.css")); ?>" title="Slate">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-sepia.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-sepia.css")); ?>" title="Sepia">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-sand.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-sand.css")); ?>" title="Sand">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-forest.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-forest.css")); ?>" title="Forest">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-moss.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-moss.css")); ?>" title="Moss">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-ocean.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-ocean.css")); ?>" title="Ocean">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-ice.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-ice.css")); ?>" title="Ice">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-lavender.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-lavender.css")); ?>" title="Lavender">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-rose.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-rose.css")); ?>" title="Rose">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-copper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-copper.css")); ?>" title="Copper">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-burgundy.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-burgundy.css")); ?>" title="Burgundy">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-monochrome.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-monochrome.css")); ?>" title="Monochrome">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-high-contrast.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-high-contrast.css")); ?>" title="High Contrast">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-soft.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-soft.css")); ?>" title="Soft">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-paper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-paper.css")); ?>" title="Paper">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-terminal.css")); ?>" title="Terminal">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-cobalt.css")); ?>" title="Cobalt">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/guidepost-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/guidepost-plum.css")); ?>" title="Plum">
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/style.js")); ?>"></script>
 </head>
 <body>
@@ -311,34 +311,34 @@ sendSecurityHeaders($sStyleNonce);
 <html lang="he" dir="rtl">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>עבד יהוה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
   <meta name="contact" content="cervinka@fortsoft.cz">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title>עבד יהוה</title>
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <link href="<?php echo $sBaseUrl; ?>css/style.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style.css")); ?>" rel="stylesheet" type="text/css" title="Original">
-  <link href="<?php echo $sBaseUrl; ?>css/style-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-graphite.css")); ?>" rel="alternate stylesheet" type="text/css" title="Graphite">
-  <link href="<?php echo $sBaseUrl; ?>css/style-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-midnight.css")); ?>" rel="alternate stylesheet" type="text/css" title="Midnight">
-  <link href="<?php echo $sBaseUrl; ?>css/style-slate.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-slate.css")); ?>" rel="alternate stylesheet" type="text/css" title="Slate">
-  <link href="<?php echo $sBaseUrl; ?>css/style-sepia.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-sepia.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sepia">
-  <link href="<?php echo $sBaseUrl; ?>css/style-sand.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-sand.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sand">
-  <link href="<?php echo $sBaseUrl; ?>css/style-forest.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-forest.css")); ?>" rel="alternate stylesheet" type="text/css" title="Forest">
-  <link href="<?php echo $sBaseUrl; ?>css/style-moss.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-moss.css")); ?>" rel="alternate stylesheet" type="text/css" title="Moss">
-  <link href="<?php echo $sBaseUrl; ?>css/style-ocean.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-ocean.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ocean">
-  <link href="<?php echo $sBaseUrl; ?>css/style-ice.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-ice.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ice">
-  <link href="<?php echo $sBaseUrl; ?>css/style-lavender.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-lavender.css")); ?>" rel="alternate stylesheet" type="text/css" title="Lavender">
-  <link href="<?php echo $sBaseUrl; ?>css/style-rose.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-rose.css")); ?>" rel="alternate stylesheet" type="text/css" title="Rose">
-  <link href="<?php echo $sBaseUrl; ?>css/style-copper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-copper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Copper">
-  <link href="<?php echo $sBaseUrl; ?>css/style-burgundy.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-burgundy.css")); ?>" rel="alternate stylesheet" type="text/css" title="Burgundy">
-  <link href="<?php echo $sBaseUrl; ?>css/style-monochrome.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-monochrome.css")); ?>" rel="alternate stylesheet" type="text/css" title="Monochrome">
-  <link href="<?php echo $sBaseUrl; ?>css/style-high-contrast.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-high-contrast.css")); ?>" rel="alternate stylesheet" type="text/css" title="High Contrast">
-  <link href="<?php echo $sBaseUrl; ?>css/style-soft.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-soft.css")); ?>" rel="alternate stylesheet" type="text/css" title="Soft">
-  <link href="<?php echo $sBaseUrl; ?>css/style-paper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-paper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Paper">
-  <link href="<?php echo $sBaseUrl; ?>css/style-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-terminal.css")); ?>" rel="alternate stylesheet" type="text/css" title="Terminal">
-  <link href="<?php echo $sBaseUrl; ?>css/style-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-cobalt.css")); ?>" rel="alternate stylesheet" type="text/css" title="Cobalt">
-  <link href="<?php echo $sBaseUrl; ?>css/style-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
+  <link rel="icon" type="image/x-icon" href="<?php echo $sBaseUrl; ?>gfx/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="<?php echo $sBaseUrl; ?>gfx/favicon.ico">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style.css")); ?>" title="Original">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-graphite.css")); ?>" title="Graphite">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-midnight.css")); ?>" title="Midnight">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-slate.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-slate.css")); ?>" title="Slate">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-sepia.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-sepia.css")); ?>" title="Sepia">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-sand.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-sand.css")); ?>" title="Sand">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-forest.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-forest.css")); ?>" title="Forest">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-moss.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-moss.css")); ?>" title="Moss">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-ocean.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-ocean.css")); ?>" title="Ocean">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-ice.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-ice.css")); ?>" title="Ice">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-lavender.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-lavender.css")); ?>" title="Lavender">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-rose.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-rose.css")); ?>" title="Rose">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-copper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-copper.css")); ?>" title="Copper">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-burgundy.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-burgundy.css")); ?>" title="Burgundy">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-monochrome.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-monochrome.css")); ?>" title="Monochrome">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-high-contrast.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-high-contrast.css")); ?>" title="High Contrast">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-soft.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-soft.css")); ?>" title="Soft">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-paper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-paper.css")); ?>" title="Paper">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-terminal.css")); ?>" title="Terminal">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-cobalt.css")); ?>" title="Cobalt">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-plum.css")); ?>" title="Plum">
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/style.js")); ?>"></script>
 </head>
 <body data-ua-id="<?php echo $sEvedUaId; ?>">

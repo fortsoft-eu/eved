@@ -220,21 +220,20 @@ session_write_close();
 $sTitle = $sError ? "Error" : ($sJoined ? html($sJoined) : "Film Scans");
 $iTime = sendPageHeaders("", "en-US", true);
 
+
 ?>
 <!DOCTYPE html>
 <html lang="en-US" dir="ltr">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
-  <meta name="contact" content="cervinka@fortsoft.cz">
+  <title><?php echo $sTitle; ?></title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#FFD8BB">
-  <link rel="icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="<?php echo $sBaseUrl; ?>favicon.ico" type="image/x-icon">
-  <title><?php echo $sTitle; ?></title>
+  <meta name="author" content="Petr Červinka &lt;cervinka@fortsoft.eu&gt;">
+  <meta name="contact" content="cervinka@fortsoft.eu">
   <meta name="description" content="High-quality film scans of negatives and slides.">
   <meta name="keywords" content="film, scans, film scans, negatives, slides, digitization, photography, archival">
-  <meta name="owner" content="Petr Červinka &lt;cervinka@fortsoft.cz&gt;">
+  <meta name="owner" content="Petr Červinka &lt;cervinka@fortsoft.eu&gt;">
   <meta name="url" content="<?php echo $sBaseUrl; ?>">
   <meta name="identifier-URL" content="<?php echo $sBaseUrl; ?>">
   <meta name="coverage" content="worldwide">
@@ -242,7 +241,7 @@ $iTime = sendPageHeaders("", "en-US", true);
   <meta name="rating" content="general">
   <meta name="target" content="all">
   <meta name="date" content="<?php echo gmdate("D, d M Y H:i:s", $iTime); ?> GMT">
-  <meta name="revised" content="<?php echo date("l, F jS, Y, g:i a", $iTime); ?>">
+  <meta name="revised" content="<?php echo date("l, F jS, Y, g:i a T (P)", $iTime); ?>">
   <meta name="language" content="en-US">
   <meta name="copyright" content="Petr Červinka <?php echo date("Y", $iTime); ?>">
   <meta name="robots" content="noindex, nofollow">
@@ -251,10 +250,11 @@ $iTime = sendPageHeaders("", "en-US", true);
   <meta name="twitter:description" content="High-quality film scans of negatives and slides.">
   <meta name="twitter:url" content="<?php echo $sBaseUrl; ?>">
   <meta name="twitter:label1" content="Created On">
-  <meta name="twitter:data1" content="<?php echo date("F j, Y", $iTime); ?>">
+  <meta name="twitter:data1" content="<?php echo date("j. n. Y H:i:s T (P)", $iTime); ?>">
   <meta name="twitter:label2" content="Rating">
   <meta name="twitter:data2" content="General">
   <meta name="twitter:image" content="<?php echo $sBaseUrl; ?>gfx/bg.webp">
+  <meta name="twitter:image:alt" content="Film Scans">
   <meta property="og:title" content="Film Scans">
   <meta property="og:type" content="website">
   <meta property="og:url" content="<?php echo $sBaseUrl; ?>">
@@ -264,50 +264,55 @@ $iTime = sendPageHeaders("", "en-US", true);
   <meta property="og:image:type" content="image/webp">
   <meta property="og:image:width" content="1600">
   <meta property="og:image:height" content="1280">
+  <meta property="og:image:alt" content="Film Scans">
   <meta property="og:locale" content="en-US">
   <meta property="og:site_name" content="Film Scans">
-  <link href="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/css/bootstrap.min.css" rel="stylesheet" type="text/css">
-  <link href="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/css/ie10-viewport-bug-workaround.css" rel="stylesheet" type="text/css">
-  <link href="<?php echo $sOrigin; ?>/vendors/jstree-3.3.10/themes/default/style.min.css" rel="stylesheet" type="text/css">
-  <link href="<?php echo $sOrigin; ?>/vendors/fancybox-6.1.14/css/fancybox.css" rel="stylesheet" type="text/css">
-  <link href="<?php echo $sBaseUrl; ?>css/layout.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/layout.min.css")); ?>" rel="stylesheet" type="text/css">
-  <link href="<?php echo $sBaseUrl; ?>css/effects.min.css" rel="stylesheet" type="text/css">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-light-blue.min.css" rel="stylesheet" type="text/css" title="Original">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-graphite.css")); ?>" rel="alternate stylesheet" type="text/css" title="Graphite">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-midnight.css")); ?>" rel="alternate stylesheet" type="text/css" title="Midnight">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-slate.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-slate.css")); ?>" rel="alternate stylesheet" type="text/css" title="Slate">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-sepia.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-sepia.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sepia">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-sand.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-sand.css")); ?>" rel="alternate stylesheet" type="text/css" title="Sand">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-forest.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-forest.css")); ?>" rel="alternate stylesheet" type="text/css" title="Forest">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-moss.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-moss.css")); ?>" rel="alternate stylesheet" type="text/css" title="Moss">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-ocean.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-ocean.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ocean">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-ice.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-ice.css")); ?>" rel="alternate stylesheet" type="text/css" title="Ice">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-lavender.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-lavender.css")); ?>" rel="alternate stylesheet" type="text/css" title="Lavender">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-rose.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-rose.css")); ?>" rel="alternate stylesheet" type="text/css" title="Rose">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-copper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-copper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Copper">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-burgundy.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-burgundy.css")); ?>" rel="alternate stylesheet" type="text/css" title="Burgundy">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-monochrome.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-monochrome.css")); ?>" rel="alternate stylesheet" type="text/css" title="Monochrome">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-high-contrast.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-high-contrast.css")); ?>" rel="alternate stylesheet" type="text/css" title="High Contrast">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-soft.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-soft.css")); ?>" rel="alternate stylesheet" type="text/css" title="Soft">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-paper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-paper.css")); ?>" rel="alternate stylesheet" type="text/css" title="Paper">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-terminal.css")); ?>" rel="alternate stylesheet" type="text/css" title="Terminal">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-cobalt.css")); ?>" rel="alternate stylesheet" type="text/css" title="Cobalt">
-  <link href="<?php echo $sBaseUrl; ?>css/theme-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-plum.css")); ?>" rel="alternate stylesheet" type="text/css" title="Plum">
+  <link rel="canonical" href="<?php echo $sBaseUrl; ?>">
+  <link rel="icon" type="image/x-icon" href="<?php echo $sBaseUrl; ?>gfx/favicon.ico">
+  <link rel="shortcut icon" type="image/x-icon" href="<?php echo $sBaseUrl; ?>gfx/favicon.ico">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/css/ie10-viewport-bug-workaround.css">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sOrigin; ?>/vendors/jstree-3.3.10/themes/default/style.min.css">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sOrigin; ?>/vendors/fancybox-6.1.14/css/fancybox.css">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/layout.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/layout.min.css")); ?>">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/effects.min.css">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-light-blue.min.css" title="Original">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-graphite.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-graphite.css")); ?>" title="Graphite">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-midnight.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-midnight.css")); ?>" title="Midnight">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-slate.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-slate.css")); ?>" title="Slate">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-sepia.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-sepia.css")); ?>" title="Sepia">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-sand.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-sand.css")); ?>" title="Sand">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-forest.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-forest.css")); ?>" title="Forest">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-moss.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-moss.css")); ?>" title="Moss">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-ocean.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-ocean.css")); ?>" title="Ocean">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-ice.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-ice.css")); ?>" title="Ice">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-lavender.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-lavender.css")); ?>" title="Lavender">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-rose.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-rose.css")); ?>" title="Rose">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-copper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-copper.css")); ?>" title="Copper">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-burgundy.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-burgundy.css")); ?>" title="Burgundy">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-monochrome.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-monochrome.css")); ?>" title="Monochrome">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-high-contrast.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-high-contrast.css")); ?>" title="High Contrast">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-soft.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-soft.css")); ?>" title="Soft">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-paper.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-paper.css")); ?>" title="Paper">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-terminal.css")); ?>" title="Terminal">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-cobalt.css")); ?>" title="Cobalt">
+  <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-plum.css")); ?>" title="Plum">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/print.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/print.min.css")); ?>" type="text/css" media="print">
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
-  <link href="<?php echo $sBaseUrl; ?>css/print.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/print.min.css")); ?>" rel="stylesheet" type="text/css" media="print">
   <style type="text/css">nav { width: 350px} @media screen and (min-width:769px) { body.md-nav-expanded div#main { margin-left: 350px} body.md-nav-expanded header { padding-left: 364px} }</style>
   <style type="text/css">.navigation #inline-toc { width: auto !important} .js-save-png { white-space: nowrap}</style>
 </head>
 <body itemscope itemtype="https://schema.org/CreativeWork" class="md-nav-expanded" data-ua-id="<?php echo $sUaId; ?>">
   <meta itemprop="name" content="Film Scans">
   <meta itemprop="description" content="High-quality film scans of negatives and slides.">
-  <meta itemprop="url" content="https://eved.cz/film/">
+  <link itemprop="url" href="<?php echo $sBaseUrl; ?>">
   <meta itemprop="inLanguage" content="en-US">
-  <meta itemprop="dateModified" content="<?php echo gmdate("Y-m-d\TH:i:s\Z", $iTime); ?> GMT">
+  <meta itemprop="dateModified" content="<?php echo gmdate("Y-m-d\TH:i:s\Z", $iTime); ?>">
+  <link itemprop="image" href="<?php echo $sBaseUrl; ?>gfx/bg.webp">
   <div itemprop="author" itemscope itemtype="https://schema.org/Person">
     <meta itemprop="name" content="Petr Červinka">
-    <meta itemprop="email" content="mailto:cervinka@fortsoft.cz">
-    <meta itemprop="url" content="https://eved.cz/film/">
+    <meta itemprop="email" content="mailto:cervinka@fortsoft.eu">
+    <link itemprop="url" href="<?php echo $sBaseUrl; ?>">
   </div>
   <div id="skip-link">
     <a href="#main-content" class="element-invisible">Skip to main content</a>
