@@ -748,7 +748,7 @@ html[data-render-throbber-lock-target="html"]:has(.js-render-throbber:not([hidde
     color: #000;
     font-size: 20px;
     margin: 0;
-    padding: 0 16px;
+    padding: 0 16px 1px 16px;
     width: auto;
 }
 

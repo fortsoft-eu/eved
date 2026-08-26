@@ -430,7 +430,7 @@ body[data-chromium="1"] input[type="password"], body[data-chromium="1"] input[ty
     color: #000;
     font-size: 20px;
     margin: 0;
-    padding: 0 16px;
+    padding: 0 16px 1px 16px;
     width: auto;
 }
 
