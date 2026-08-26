@@ -452,7 +452,7 @@ body[data-chromium="1"] input[type="password"], body[data-chromium="1"] input[ty
 
 .confirm-dialog-button {
     margin-top: 0;
-    padding: 4px 16px;
+    padding: 4px 16px 5px 16px;
     width: 75px;
 }
 
