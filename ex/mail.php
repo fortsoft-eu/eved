@@ -200,7 +200,7 @@ $iTime = sendPageHeaders("", "en-US", true);
   <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-terminal.css")); ?>" title="Terminal">
   <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-cobalt.css")); ?>" title="Cobalt">
   <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/style-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/style-plum.css")); ?>" title="Plum">
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>" integrity="sha384-Y1RNflBlpVdW8pnre87MlysCCOkrIrejOEni6hIeWzTbOmboT6BgObKOeMYSJ5C5"></script>
 </head>
 <body class="mail-page" data-pmd-like="<?php echo isDesktop() ? "0" : "1"; ?>" data-chromium="<?php echo isChromiumBased() ? "1" : "0"; ?>">
   <p class="admin-controls">
@@ -249,7 +249,7 @@ if (!$blMailRestrictFromToOneAddress) {
     <textarea id="mail-message" name="mail_message" class="snippet-board-textarea js-snippet-board-textarea mail-message-textarea" rows="18" spellcheck="true"><?php echo html($aMailValues["message"]); ?></textarea>
   </form>
   <div id="admin-reusable-dialog" class="confirm-dialog" role="dialog" aria-modal="true" hidden></div>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/tinymce-8.8.1/tinymce.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/tinymce-8.8.1/tinymce.min.js" integrity="sha384-EVluCEb/WcelN32wQoUON0WS02blf7mK1zOWd0W6jvusWRW3l2JDcEtuVqa6O0Xs"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/admin.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/admin.js")); ?>" integrity="sha384-oHdXfQhvOT58T7e0YFwo8th/cLzvNe9sCC5pV4R2lSHc/pXurCJ8LnrZNF8Ciprj"></script>
 </body>
 </html>

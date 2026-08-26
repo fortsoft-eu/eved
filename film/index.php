@@ -298,7 +298,7 @@ $iTime = sendPageHeaders("", "en-US", true);
   <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-cobalt.css")); ?>" title="Cobalt">
   <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-plum.css")); ?>" title="Plum">
   <link rel="stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/print.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/print.min.css")); ?>" type="text/css" media="print">
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>" integrity="sha384-Y1RNflBlpVdW8pnre87MlysCCOkrIrejOEni6hIeWzTbOmboT6BgObKOeMYSJ5C5"></script>
   <style type="text/css">nav { width: 350px} @media screen and (min-width:769px) { body.md-nav-expanded div#main { margin-left: 350px} body.md-nav-expanded header { padding-left: 364px} }</style>
   <style type="text/css">.navigation #inline-toc { width: auto !important} .js-save-png { white-space: nowrap}</style>
 </head>
@@ -626,18 +626,18 @@ if ($oPdo) {
     </div>
   </div>
   <div id="hnd-splitter" class="film-splitter-expanded"></div>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jquery-3.5.1/jquery.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/js/bootstrap.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/uri-1.19.2/uri.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/headroom-0.11.0/headroom.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jstree-3.3.10/jstree.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/interactjs-1.10.27/interact.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/snapdom-2.23.1/snapdom.js"></script>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/hndsd.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/hndse.min.js"></script>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/app.min.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/app.min.js")); ?>"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/fancybox-6.1.14/js/fancybox.umd.js"></script>
-  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bowser-2.14.1/es5.js"></script>
-  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/gallery.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/gallery.js")); ?>"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jquery-3.5.1/jquery.min.js" integrity="sha384-hwlT4a2hgOo0vz5stHV0lSB+ceQRevUw055l2aYd52MHWEaNT1ghB/1E2BIjxW0t"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bootstrap-3.4.1/js/bootstrap.min.js" integrity="sha384-lcmwIA3tf549Nepucl70Iup6P6ZfL3YV+IRCsyxHLsbGdL27iqaK31MN5OVJZoep"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/uri-1.19.2/uri.min.js" integrity="sha384-bgqpGo2qMzpJg4JuuPGwO5bVf5BX6SQXAHFcKHo/C72hGBMk5xNnIK1dPs95KmfS"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/headroom-0.11.0/headroom.min.js" integrity="sha384-x0mgoHevBV2y/cTMnd+hYdiCvJv2gkTShZmgVInM7+LXvaHCdvDSRQqy7pkEfiHE"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/jstree-3.3.10/jstree.min.js" integrity="sha384-elJOMsZhcmvb6hBwZo4wAGKG7cXhkeD4337gVLWVsj7ULPk0Tb1YLX/cJ72gsfAc"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/interactjs-1.10.27/interact.min.js" integrity="sha384-lxBkTj4e4KpXHNVVWi6ML8EoUHPmUrPQ1jv3+3eSw+3EDqj/biYzmaSQlDIlhPAS"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/snapdom-2.23.1/snapdom.js" integrity="sha384-OOorWE0hg3qdeCje1TartTH85qL/YQLV6OtmKwgbJJNGGShvyi8dmcuVqxvT4Jd/"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/hndsd.min.js" integrity="sha384-a5ZzlVe3sTyD47FQjOkyE6zL4G0McBZa35R1RiGI1nBggnyJ0ZiOTWN2XyiBjUlQ"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/hndse.min.js" integrity="sha384-0qwnZOrWrWmY1L+i5OlZnI1wR3iuMq5rZeOyeB/9i+jRMkp4CO7tc8d7tUJhoeai"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/app.min.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/app.min.js")); ?>" integrity="sha384-ke4xkQlAPHfBRD13tPbG9dKHWxAmFU/0XypSSGCUkhYgY3FUvxFcM7WTjVx0cWhO"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/fancybox-6.1.14/js/fancybox.umd.js" integrity="sha384-SxPYmiWLA5tJl393q3hg6xFSqXdHuys9f63LkJOGQrfYwOGkph/Fh3T5pMz/cvGj"></script>
+  <script type="text/javascript" src="<?php echo $sOrigin; ?>/vendors/bowser-2.14.1/es5.js" integrity="sha384-cmTaw5RKX6Cm5u7iCsI3+4sR2uFMl5DL7luhvrg/DgphgH7NgvukeKWHbq8bOzrR"></script>
+  <script type="text/javascript" src="<?php echo $sBaseUrl; ?>js/gallery.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/js/gallery.js")); ?>" integrity="sha384-h9G4H/dmyGPEkb8zTxColzC0TX3Hr4cRVBXnKL3ZHMCrxWEDijxqkAurelCC0hRf"></script>
 </body>
 </html>
