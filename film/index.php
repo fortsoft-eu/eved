@@ -297,7 +297,7 @@ $iTime = sendPageHeaders("", "en-US", true);
   <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-terminal.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-terminal.css")); ?>" title="Terminal">
   <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-cobalt.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-cobalt.css")); ?>" title="Cobalt">
   <link rel="alternate stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/theme-plum.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/theme-plum.css")); ?>" title="Plum">
-  <link rel="stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/print.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/print.min.css")); ?>" type="text/css" media="print">
+  <link rel="stylesheet" type="text/css" href="<?php echo $sBaseUrl; ?>css/print.min.css?sToken=<?php echo dechex(filemtime(__DIR__ . "/css/print.min.css")); ?>" media="print">
   <script type="text/javascript" src="<?php echo $sOrigin; ?>/js/style.js?sToken=<?php echo dechex(filemtime(__DIR__ . "/../js/style.js")); ?>" integrity="sha384-Y1RNflBlpVdW8pnre87MlysCCOkrIrejOEni6hIeWzTbOmboT6BgObKOeMYSJ5C5"></script>
   <style type="text/css">nav { width: 350px} @media screen and (min-width:769px) { body.md-nav-expanded div#main { margin-left: 350px} body.md-nav-expanded header { padding-left: 364px} }</style>
   <style type="text/css">.navigation #inline-toc { width: auto !important} .js-save-png { white-space: nowrap}</style>
