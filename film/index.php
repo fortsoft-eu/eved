@@ -396,7 +396,7 @@ if ($oPdo) {
   </nav>
   <div id="main">
     <article>
-      <div id="topic-content" class="container-fluid" data-hnd-id="<?php echo $aCurrent ? (int)$aCurrent["id"] : 0; ?>" data-hnd-context="0" data-hnd-title="<?php echo $sTitle; ?>">
+      <div id="topic-content" class="container-fluid" data-hnd-id="<?php echo (int)$aCurrent["id"]; ?>" data-hnd-context="0" data-hnd-title="<?php echo $sTitle; ?>">
 <?php
 
 if ($oPdo) {
@@ -577,9 +577,9 @@ if ($oPdo) {
 ?>
                 <form class="overlay-form" method="get" action="<?php echo $sBaseUrl; ?>" enctype="application/x-www-form-urlencoded">
                   <select class="select-like-btn js-gallery-set-select" name="set">
-                    <option value="2"<?php if ($sStatus == "ok_public" ) echo " selected"; ?>>Public</option>
-                    <option value="1"<?php if ($sStatus == "ok_private") echo " selected"; ?>>Private</option>
-                    <option value="0"<?php if ($sStatus == "internal"  ) echo " selected"; ?>>Internal</option>
+                    <option value="2"<?php echo $sStatus == "ok_public"  ? " selected" : ""; ?>>Public</option>
+                    <option value="1"<?php echo $sStatus == "ok_private" ? " selected" : ""; ?>>Private</option>
+                    <option value="0"<?php echo $sStatus == "internal"   ? " selected" : ""; ?>>Internal</option>
                   </select>
                   <input type="hidden" name="img" value="<?php echo $sBaseName; ?>">
                   <input type="hidden" name="dir" value="<?php echo $sSubDirectory; ?>">
